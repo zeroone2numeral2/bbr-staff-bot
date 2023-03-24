@@ -13,7 +13,7 @@ from telegram.error import TimedOut
 from telegram.ext import CallbackContext
 
 from database.base import get_session
-from database.models import User
+from database.models import User, Chat
 import utilities
 from config import config
 
@@ -61,6 +61,7 @@ def catch_exception(silent=False):
 
 def pass_session(
         pass_user=False,
+        pass_chat=False,
         create_if_not_existing=True,
         rollback_on_exception=False,
         commit_on_exception=False
@@ -85,10 +86,27 @@ def pass_session(
                 user = session.query(User).filter(User.user_id == update.effective_user.id).one_or_none()
 
                 if not user and create_if_not_existing:
-                    user = User(user_id=update.effective_user.id, language_code=update.effective_user.language_code)
+                    user = User(
+                        user_id=update.effective_user.id,
+                        name=update.effective_user.full_name,
+                        username=update.effective_user.username,
+                        language_code=update.effective_user.language_code
+                    )
                     session.add(user)
 
                 kwargs['user'] = user
+
+            if pass_chat:
+                if update.effective_chat.id > 0:
+                    raise ValueError("'pass_chat' cannot be True for handlers that work in private chats")
+
+                chat = session.query(Chat).filter(Chat.chat_id == update.effective_chat.id).one_or_none()
+
+                if not chat and create_if_not_existing:
+                    chat = Chat(chat_id=update.effective_chat.id)
+                    session.add(chat)
+
+                kwargs['chat'] = chat
 
             # noinspection PyBroadException
             try:
