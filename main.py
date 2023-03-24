@@ -92,6 +92,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
 
     setting_key = f"welcome_{language_code}"
+    # TODO: query per estrarre id di chat con default == True
     welcome_setting = get_setting(session, setting_key, -1001072024039, create_if_missing=False)
     if not welcome_setting:
         logger.warning(f"no welcome setting for language {language_code}")
