@@ -4,7 +4,7 @@ from typing import List, Optional
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from telegram import ChatMember, ChatMemberAdministrator
+from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser
 
 from .base import Base, engine
 
@@ -13,6 +13,9 @@ class User(Base):
     __tablename__ = 'users'
 
     user_id = Column(Integer, primary_key=True)
+    started = Column(Boolean, default=False)  # we need to save every staff chat's admin, and they might have not started the bot yet
+    language_code = Column(String, default=None)
+    selected_language = Column(String, default=None)
     banned = Column(Boolean, default=False)
     banned_reason = Column(String, default=None)
     banned_on = Column(DateTime, default=None)
@@ -22,8 +25,21 @@ class User(Base):
 
     chats_administrator = relationship("ChatAdministrator", back_populates="user")
 
-    def __init__(self, user_id):
+    def __init__(self, user_id, language_code: Optional[str] = None, started: Optional[bool] = None):
         self.user_id = user_id
+        self.language_code = language_code
+        if started is not None:
+            self.started = started
+
+    def set_started(self, update_last_message=False):
+        self.started = True
+        if not self.started_on:
+            self.started_on = func.now()
+        if update_last_message:
+            self.update_last_message()
+
+    def update_last_message(self):
+        self.last_message = func.now()
 
     def ban(self, reason: Optional[str] = None):
         self.banned = True
@@ -45,7 +61,7 @@ class StaffChat(Base):
     last_administrators_fetch = Column(DateTime(timezone=True), default=None, nullable=True)
 
     chat_administrators = relationship("ChatAdministrator", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
-    messages_to_delete = relationship("MessageToDelete", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
+    settings = relationship("Setting", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
 
     def __init__(self, chat_id):
         self.chat_id = chat_id
@@ -141,11 +157,11 @@ class ChatAdministrator(Base):
     can_pin_messages = Column(Boolean, default=False)
     can_manage_topics = Column(Boolean, default=False)
 
-    updated_on = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # updated_on = Column(DateTime(timezone=True), onupdate=func.now())  # https://stackoverflow.com/a/33532154
 
     user = relationship("User", back_populates="chats_administrator")
-    chat = relationship("Chat", back_populates="chat_administrators")
+    chat = relationship("StaffChat", back_populates="chat_administrators")
 
     @classmethod
     def from_chat_member(cls, chat_id, chat_member: ChatMemberAdministrator):
@@ -162,12 +178,34 @@ class UserMessage(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'))
     forwarded_chat_id = Column(Integer, ForeignKey('staff_chats.chat_id'))
     forwarded_message_id = Column(Integer)
-    processed_on = Column(DateTime, default=None)
+    replies_count = Column(Integer, default=0)
+    message_datetime = Column(DateTime, default=None)
+    forwarded_on = Column(DateTime, server_default=func.now())
+    updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     def __init__(self, message_id, user_id, forwarded_chat_id, forwarded_message_id):
         self.message_id = message_id
         self.user_id = user_id
         self.forwarded_chat_id = forwarded_chat_id
         self.forwarded_message_id = forwarded_message_id
-        self.processed_on = datetime.datetime.utcnow()
+
+    def add_reply(self, count=1):
+        self.replies_count = self.replies_count + count
+
+
+class Setting(Base):
+    __tablename__ = 'settings'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chat_id = Column(Integer, ForeignKey('staff_chats.chat_id'))
+    key = Column(String, nullable=False)
+    value = Column(String, default=None)
+    updated_on = Column(DateTime, server_default=func.utcnow(), onupdate=func.utcnow())
+
+    chat = relationship("StaffChat", back_populates="settings")
+
+    def __init__(self, chat_id, key, value):
+        self.chat_id = chat_id
+        self.key = key
+        self.value = value
 

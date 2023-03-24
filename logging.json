@@ -43,10 +43,13 @@
         "telegram": {
             "level": "WARNING"
         },
-        "JobQueue": {
+        "apscheduler.scheduler": {
             "level": "WARNING"
         },
-        "bot.bot": {
+        "hpack": {
+            "level": "INFO"
+        },
+        "httpx": {
             "level": "INFO"
         }
     },

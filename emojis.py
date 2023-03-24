@@ -1,0 +1,2 @@
+class Emoji:
+    BANNED = "🚫"

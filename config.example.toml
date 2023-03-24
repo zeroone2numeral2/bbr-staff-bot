@@ -6,3 +6,6 @@ admins = [
 
 [staff]
 chat_id = 0
+
+[database]
+engine_string = "sqlite:///bot.db"
