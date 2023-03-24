@@ -222,7 +222,7 @@ class Setting(Base):
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
     chat = relationship("Chat", back_populates="settings")
-    user = relationship("User", back_populates="settings")
+    user = relationship("User")
 
     def __init__(self, chat_id, key, value: Optional[str] = None):
         self.chat_id = chat_id

@@ -176,6 +176,7 @@ async def on_welcome_language_button(update: Update, context: ContextTypes.DEFAU
 
     welcome_text = context.user_data.get("welcome_text")
     setting.value = welcome_text
+    setting.updated_by = update.effective_user.id
 
     await update.effective_message.edit_text(f"Welcome text set ({selected_language}):\n\n{setting.value}")
 
