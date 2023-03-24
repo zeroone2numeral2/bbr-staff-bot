@@ -45,10 +45,14 @@ new_group = NewGroup()
 filter_reply_to_bot = FilterReplyToBot()
 
 
-def get_start_text_and_markup(user_language: Optional[str] = None) -> Tuple[str, InlineKeyboardMarkup]:
-    if not user_language:
-        user_language = "en"
+def get_language_code(selected_language_code, telegram_language_code):
+    if selected_language_code:
+        return selected_language_code
 
+    return telegram_language_code or "en"
+
+
+def get_start_reply_markup(user_language: str) -> InlineKeyboardMarkup:
     keyboard = [[]]
     if user_language != "it":
         button = InlineKeyboardButton("it", callback_data="setlang:it")
@@ -63,17 +67,7 @@ def get_start_text_and_markup(user_language: Optional[str] = None) -> Tuple[str,
         button = InlineKeyboardButton("en", callback_data="setlang:en")
         keyboard[0].append(button)
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    text = "lang: en"
-    if user_language == "it":
-        text = "lang: it"
-    elif user_language == "fr":
-        text = "lang: fr"
-    elif user_language == "es":
-        text = "lang: es"
-
-    return text, reply_markup
+    return InlineKeyboardMarkup(keyboard)
 
 
 @decorators.pass_session(pass_user=True)
@@ -84,16 +78,28 @@ async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_T
 
     await update.callback_query.answer(f"langauge set to {user.selected_language}", show_alert=False)
 
-    text, reply_markup = get_start_text_and_markup(user.selected_language or update.effective_user.language_code)
-    await update.effective_message.edit_text(text, reply_markup=reply_markup)
+    language_code = get_language_code(user.selected_language, update.effective_user.language_code)
+    reply_markup = get_start_reply_markup(language_code)
+    await update.effective_message.edit_text(f"language set: {language_code}", reply_markup=reply_markup)
 
     user.set_started(update_last_message=True)
 
 
 @decorators.pass_session(pass_user=True)
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
-    text, reply_markup = get_start_text_and_markup(user.selected_language or update.effective_user.language_code)
-    await update.message.reply_text(text, reply_markup=reply_markup)
+    logger.info(f"/start from {update.effective_user.id} ({update.effective_user.first_name}) (lang: {update.effective_user.language_code})")
+
+    language_code = get_language_code(user.selected_language, update.effective_user.language_code)
+
+    setting_key = f"welcome_{language_code}"
+    welcome_setting = get_setting(session, setting_key, -1001072024039, create_if_missing=False)
+    if not welcome_setting:
+        logger.warning(f"no welcome setting for language {language_code}")
+        return
+
+    reply_markup = get_start_reply_markup(language_code)
+
+    await update.message.reply_text(welcome_setting.value, reply_markup=reply_markup)
 
     user.set_started(update_last_message=True)
 
@@ -146,13 +152,13 @@ async def on_welcome_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(f"Select the language for this welcome text", reply_markup=reply_markup)
 
 
-def get_setting(session: Session, key: str, chat_id: int):
+def get_setting(session: Session, key: str, chat_id: int, create_if_missing=True):
     setting: Setting = session.query(Setting).filter(
         Setting.chat_id == chat_id,
         Setting.key == key
     ).one_or_none()
 
-    if not setting:
+    if not setting and create_if_missing:
         setting = Setting(chat_id=chat_id, key=key)
         session.add(setting)
 
