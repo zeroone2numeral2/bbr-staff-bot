@@ -182,7 +182,7 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
     for placeholder, _ in PLACEHOLDER_REPLACEMENTS.items():
         text += "• <code>{" + placeholder + "}</code>\n"
 
-    text += "\n\nHold on a placeholder to copy quickly it"
+    text += "\nHold on a placeholder to copy quickly it"
 
     await update.message.reply_text(text)
 

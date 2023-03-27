@@ -249,7 +249,7 @@ class CustomCommand(Base):
 
     chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     trigger = Column(String, primary_key=True)
-    language = Column(String, primary_key=True, default="en")
+    language = Column(String, primary_key=True, default=Language.EN)
     text = Column(String, default=None)
     created_on = Column(DateTime, server_default=func.now())
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
