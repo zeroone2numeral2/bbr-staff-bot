@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Optional, Tuple, List, Union
 
 import pytz
@@ -8,15 +9,16 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatMem
     ChatMemberOwner, ChatMember, Message
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Defaults, filters, MessageHandler, \
-    CallbackQueryHandler, ChatMemberHandler
+    CallbackQueryHandler, ChatMemberHandler, PrefixHandler
 from telegram.ext.filters import MessageFilter
+from telegram import helpers
 
 from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator
-from database.queries import settings, chats
+from database.queries import settings, chats, user_messages
 import decorators
 import utilities
 from emojis import Emoji
-from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP
+from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES, PLACEHOLDERS
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -67,22 +69,20 @@ def get_start_reply_markup(user_language: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+PLACEHOLDER_REPLACEMENTS = {
+    "{NAME}": lambda u: utilities.escape_html(u.first_name),
+    "{SURNAME}": lambda u: utilities.escape_html(u.last_name),
+    "{FULLNAME}": lambda u: utilities.escape_html(u.full_name),
+    "{USERNAME}": lambda u: f"@{u.username}" if u.username else "-",
+    "{MENTION}": lambda u: helpers.mention_html(u.id, utilities.escape_html(u.first_name)),
+    "{LANG}": lambda u: LANGUAGES[u.language_code]["desc"] if u.language_code else LANGUAGES[Language.EN]["desc"],
+    "{LANGEMOJI}": lambda u: LANGUAGES[u.language_code]["emoji"] if u.language_code else LANGUAGES[Language.EN]["emoji"]
+}
+
+
 def replace_placeholders(text: str, user: TelegramUser):
-    if "{NAME}" in text:
-        text = text.replace("{NAME}", utilities.escape_html(user.first_name))
-    if "{SURNAME}" in text:
-        text = text.replace("{SURNAME}", utilities.escape_html(user.last_name))
-    if "{FULLNAME}" in text:
-        text = text.replace("{FULLNAME}", utilities.escape_html(user.full_name))
-    if "{USERNAME}" in text:
-        username = f"@{user.username}" if user.username else "-"
-        text = text.replace("{USERNAME}", username)
-    if "{LANG}" in text:
-        language = LANGUAGES[user.language_code]["desc"] if user.language_code else LANGUAGES[Language.EN]["desc"]
-        text = text.replace("{LANG}", language)
-    if "{LANGEMOJI}" in text:
-        language = LANGUAGES[user.language_code]["emoji"] if user.language_code else LANGUAGES[Language.EN]["emoji"]
-        text = text.replace("{LANGEMOJI}", language)
+    for placeholder, repl_func in PLACEHOLDER_REPLACEMENTS.items():
+        text = text.replace(placeholder, repl_func(user))
 
     return text
 
@@ -145,9 +145,9 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     user.update_metadata(update.effective_user)
 
     if user.banned:
-        logger.info(f"ignoring user message because the user was banned")
+        logger.info(f"ignoring user message because the user was banned (shadowban: {user.shadowban})")
         if not user.shadowban:
-            reason = user.banned_reason or "-"
+            reason = user.banned_reason or "not provided"
             await update.message.reply_text(f"{Emoji.BANNED} You were banned from using this bot. Reason: {utilities.escape_html(reason)}")
         return
 
@@ -175,15 +175,31 @@ async def on_chatid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @decorators.catch_exception()
 @decorators.pass_session()
 @decorators.staff_admin()
+async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/placeholders command from {update.effective_user.id} ({update.effective_user.full_name})")
+
+    text = ""
+    for placeholder, _ in PLACEHOLDER_REPLACEMENTS.items():
+        text += "• <code>{" + placeholder + "}</code>\n"
+
+    text += "\n\nHold on a placeholder to copy quickly it"
+
+    await update.message.reply_text(text)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
 async def on_welcome_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/welcome command from {update.effective_user.id} ({update.effective_user.full_name})")
 
-    if update.message.text.lower() == "/welcome":
+    welcome_text = utilities.get_argument("welcome", update.effective_message.text_html)
+    if not welcome_text:
         callback_data_prefix = "getwelcome"
         text = f"Select the language you want to get the welcome message of:"
     else:
         callback_data_prefix = "setwelcome"
-        context.user_data["welcome_text"] = update.effective_message.text_html.lstrip("/welcome ")
+        context.user_data["welcome_text"] = welcome_text
         text = f"Select the language for this welcome text:"
 
     keyboard = [[]]
@@ -202,7 +218,7 @@ async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     staff_chat: Chat = chats.get_staff_chat(session)
     if not staff_chat.is_admin(update.effective_user.id):
         logger.debug("user is not admin")
-        return await on_start_command(update, context, session, user)
+        return await on_start_command(update, context)
 
     await update.message.reply_text(ADMIN_HELP)
 
@@ -288,16 +304,11 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"reply to a bot message in {update.effective_chat.title} ({update.effective_chat.id})")
 
-    chat_id = update.effective_chat.id
-    replied_to_message_id = update.message.reply_to_message.message_id
-
-    user_message: UserMessage = session.query(UserMessage).filter(
-        UserMessage.forwarded_chat_id == chat_id,
-        UserMessage.forwarded_message_id == replied_to_message_id
-    ).one_or_none()
-
+    user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:
-        logger.warning(f"couldn't find replied-to message, chat_id: {chat_id}; message_id: {replied_to_message_id}")
+        logger.warning(f"couldn't find replied-to message, "
+                       f"chat_id: {update.effective_chat.id}; "
+                       f"message_id: {update.message.reply_to_message.message_id}")
         return
 
     await update.message.copy(
@@ -334,6 +345,57 @@ async def on_reloadadmins_command(update: Update, _, session: Session, chat: Cha
     chats.update_administrators(session, chat, administrators)
 
     await update.effective_message.reply_text(f"Saved {len(administrators)} administrators")
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_chat=True)
+async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info("/ban or /shadowban in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+
+    user_message: UserMessage = user_messages.get_user_message(session, update)
+    if not user_message:
+        logger.warning(f"couldn't find replied-to message, "
+                       f"chat_id: {update.effective_chat.id}; "
+                       f"message_id: {update.message.reply_to_message.message_id}")
+        return
+
+    logger.info("banning user...")
+    reason = utilities.get_argument(["ban", "shadowban"], update.message.text) or None
+    shadowban = bool(re.search(rf"[{COMMAND_PREFIXES}]shadowban", update.message.text, re.I))
+
+    user_message.user.ban(reason=reason, shadowban=shadowban)
+
+    text = f"User {utilities.escape_html(user_message.user.name)} {'shadow' if shadowban else ''}banned, reason: {reason or '-'}\n" \
+           f"#id{user_message.user.user_id}"
+
+    await update.effective_message.reply_text(text)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info("/info in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+
+    user_message: UserMessage = user_messages.get_user_message(session, update)
+    if not user_message:
+        logger.warning(f"couldn't find replied-to message, "
+                       f"chat_id: {update.effective_chat.id}; "
+                       f"message_id: {update.message.reply_to_message.message_id}")
+        return
+
+    text = f"• <b>name</b>: {utilities.escape_html(user_message.user.name)}\n" \
+           f"• <b>username</b>: @{user_message.user.username or '-'}\n" \
+           f"• <b>first seen</b>: {user_message.user.started_on}\n" \
+           f"• <b>last seen</b>: {user_message.user.last_message}"
+
+    if user_message.user.banned:
+        text += f"\n• <b>banned</b>: {user_message.user.banned} (shadowban: {user_message.user.shadowban})\n" \
+                f"• <b>reason</b>: {user_message.user.banned_reason}\n" \
+                f"• <b>banned on</b>: {user_message.user.banned_on}" \
+
+    text += f"\n• #id{user_message.user.user_id}"
+
+    await update.effective_message.reply_text(text)
 
 
 @decorators.catch_exception()
@@ -386,9 +448,10 @@ def main():
 
     # private chat: admins
     bot.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
+    bot.add_handler(CommandHandler('placeholders', on_placeholders_command, filters.ChatType.PRIVATE))
 
     # private chat: mixed
-    bot.add_handler(CommandHandler('help', on_help_command, filters.ChatType.PRIVATE))
+    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE))
 
     # private chat: users
     bot.add_handler(CommandHandler('start', on_start_command, filters.ChatType.PRIVATE))
@@ -396,9 +459,11 @@ def main():
     bot.add_handler(MessageHandler(filters.ChatType.PRIVATE, on_user_message))
 
     # staff chat
+    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'setstaff', on_setstaff_command, filters.ChatType.GROUPS))
+    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS))
+    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
+    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     bot.add_handler(MessageHandler(filters.ChatType.GROUPS & filter_reply_to_bot, on_bot_message_reply))
-    bot.add_handler(CommandHandler('setstaff', on_setstaff_command, filters.ChatType.GROUPS))
-    bot.add_handler(CommandHandler('reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS))
     # bot.add_handler(CommandHandler('chatid', on_chatid_command, filters.ChatType.GROUPS))
 
     # callback query

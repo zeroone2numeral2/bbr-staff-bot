@@ -34,6 +34,8 @@ class Language:
     ES = "es"
 
 
+COMMAND_PREFIXES = ["/", "!", "."]
+
 ADMIN_HELP = """<b>Admin commands (private)</b>:
 - <code>/welcome [welcome text]</code>:  set the welcome text for a specific language (the bot will ask you which one \
 later)
@@ -46,9 +48,10 @@ later)
 - <code>/ban [reason]</code>: ban an user from using the bot. The bot will tell the user they are banned 
 when they send new messages. The reason is optional
 - <code>/shadowban [reason]</code>: like <code>/ban</code>, but the user won't know they were banned
+- <code>/info</code> (in reply to an user's forwarded message): show everything we know about that user
 
 <b>Things to keep in mind</b>
-- an admin is whoever is an administrator in the current staff chat. Admins are updated as soon as they are changed, \
+- an admin is whoever is an administrator in the current staff chat. Admins are updated as soon as they are added/removed, \
 but <code>/reloadadmins</code> can be used to force-refresh the admins list
-- <i>anyone</i> in the admins chat is allowed to reply to users, but only admins can ban them
+- <i>anyone</i> in the staff chat is allowed to reply to users or ban them
 """
