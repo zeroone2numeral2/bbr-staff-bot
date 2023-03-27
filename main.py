@@ -70,7 +70,7 @@ def replace_placeholders(text: str, user: TelegramUser):
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
-    logger.info(f"user changed language: %s", update.callback_query.data)
+    logger.info(f"set language button from {utilities.user_log(update.effective_user)}: {update.callback_query.data}")
     selected_language = context.matches[0].group(1)
     user.selected_language = selected_language
 
@@ -91,7 +91,7 @@ async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_T
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
-    logger.info(f"/start from {update.effective_user.id} ({update.effective_user.first_name}) (lang: {update.effective_user.language_code})")
+    logger.info(f"/start from {utilities.user_log(update.effective_user)}")
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
 
@@ -108,7 +108,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_lang_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
-    logger.info(f"/lang from {update.effective_user.id} ({update.effective_user.first_name}) (lang: {update.effective_user.language_code})")
+    logger.info(f"/lang from {utilities.user_log(update.effective_user)}")
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
     reply_markup = get_start_reply_markup(language_code)
@@ -120,7 +120,7 @@ async def on_lang_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
-    logger.info(f"new user message from {update.effective_user.id} ({update.effective_user.full_name})")
+    logger.info(f"new user message from {utilities.user_log(update.effective_user)}")
 
     user.update_metadata(update.effective_user)
 
@@ -160,7 +160,7 @@ async def on_chatid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @decorators.pass_session()
 @decorators.staff_admin()
 async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/placeholders command from {update.effective_user.id} ({update.effective_user.full_name})")
+    logger.info(f"/placeholders command from {utilities.user_log(update.effective_user)}")
 
     text = ""
     for placeholder, _ in PLACEHOLDER_REPLACEMENTS.items():
@@ -175,7 +175,7 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
 @decorators.pass_session()
 @decorators.staff_admin()
 async def on_welcome_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/welcome command from {update.effective_user.id} ({update.effective_user.full_name})")
+    logger.info(f"/welcome command from {utilities.user_log(update.effective_user)}")
 
     welcome_text = utilities.get_argument("welcome", update.effective_message.text_html)
     if not welcome_text:
@@ -197,7 +197,7 @@ async def on_welcome_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/help command from {update.effective_user.id} ({update.effective_user.full_name})")
+    logger.info(f"/help command from {utilities.user_log(update.effective_user)}")
 
     staff_chat: Chat = chats.get_staff_chat(session)
     if not staff_chat.is_admin(update.effective_user.id):
@@ -286,7 +286,7 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"reply to a bot message in {update.effective_chat.title} ({update.effective_chat.id})")
+    logger.info(f"reply to a bot message in {update.effective_chat.title} ({update.effective_chat.id}) by {utilities.user_log(update.effective_user)}")
 
     user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:

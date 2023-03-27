@@ -49,4 +49,4 @@ async def edit_text_safe(update: Update, *args, **kwargs):
 
 
 def user_log(user: User):
-    return f"{user.id} ({user.full_name})"
+    return f"{user.id} ({user.full_name} [{user.language_code}])"
