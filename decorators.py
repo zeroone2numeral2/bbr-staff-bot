@@ -14,6 +14,7 @@ from telegram.ext import CallbackContext
 
 from database.base import get_session
 from database.models import User, Chat
+from database.queries import chats
 import utilities
 from config import config
 
@@ -103,7 +104,7 @@ def pass_session(
                 chat = session.query(Chat).filter(Chat.chat_id == update.effective_chat.id).one_or_none()
 
                 if not chat and create_if_not_existing:
-                    chat = Chat(chat_id=update.effective_chat.id)
+                    chat = Chat(chat_id=update.effective_chat.id, title=update.effective_chat.title)
                     session.add(chat)
 
                 kwargs['chat'] = chat
@@ -126,6 +127,27 @@ def pass_session(
             logger.debug("committing session...")
             session.commit()
 
+            return result
+
+        return wrapped
+
+    return real_decorator
+
+
+def staff_admin():
+    def real_decorator(func):
+        @wraps(func)
+        async def wrapped(update: Update, context: CallbackContext, session: Session, *args, **kwargs):
+            # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
+            chat: Chat = chats.get_staff_chat(session)
+            if not chat.is_admin(update.effective_user.id):
+                logger.warning(f"{update.effective_user.id} ({update.effective_user.full_name}) not recognized as admin of {update.effective_chat.id} ({update.effective_chat.title})")
+                await update.message.reply_text(f"You're not an admin of {utilities.escape_html(chat.title)}. "
+                                                f"If you think this is an error, please ask a recognized admin to "
+                                                f"use <code>/reloadadmins</code> in the staff chat")
+                return
+
+            result = await func(update, context, session=session, *args, **kwargs)
             return result
 
         return wrapped

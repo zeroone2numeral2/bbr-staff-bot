@@ -1,12 +1,16 @@
 import datetime
-from typing import List, Optional
+import logging
+from typing import List, Optional, Union, Tuple
 
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser
+from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, ChatMemberOwner
 
+from constants import Language
 from .base import Base, engine
+
+logger = logging.getLogger(__name__)
 
 
 class User(Base):
@@ -19,6 +23,7 @@ class User(Base):
     language_code = Column(String, default=None)
     selected_language = Column(String, default=None)
     banned = Column(Boolean, default=False)
+    shadowban = Column(Boolean, default=False)
     banned_reason = Column(String, default=None)
     banned_on = Column(DateTime, default=None)
 
@@ -26,6 +31,7 @@ class User(Base):
     last_message = Column(DateTime, default=None)
 
     chats_administrator = relationship("ChatAdministrator", back_populates="user")
+    user_messages = relationship("UserMessage", back_populates="user")
 
     def __init__(
             self,
@@ -57,13 +63,15 @@ class User(Base):
     def update_last_message(self):
         self.last_message = func.now()
 
-    def ban(self, reason: Optional[str] = None):
+    def ban(self, reason: Optional[str] = None, shadowban=False):
         self.banned = True
+        self.shadowban = shadowban
         self.banned_reason = reason
         self.banned_on = datetime.datetime.utcnow()
 
     def unban(self):
         self.banned = False
+        self.shadowban = False
         self.banned_reason = None
         self.banned_on = None
 
@@ -72,19 +80,22 @@ class Chat(Base):
     __tablename__ = 'chats'
 
     chat_id = Column(Integer, primary_key=True)
+    title = Column(String, default=None)
     default = Column(Boolean, default=False)  # wether this is the current staff chat or not
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
     first_seen = Column(DateTime, server_default=func.now())
-    last_administrators_fetch = Column(DateTime(timezone=True), default=None, nullable=True)
+    last_administrators_fetch = Column(DateTime, default=None, nullable=True)
 
     chat_administrators = relationship("ChatAdministrator", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
     settings = relationship("Setting", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
+    custom_commands = relationship("CustomCommand", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
 
-    def __init__(self, chat_id):
+    def __init__(self, chat_id, title):
         self.chat_id = chat_id
+        self.title = title
 
-    def is_admin(self, user_id: int, permissions: [None, List], any_permission: bool = True, all_permissions: bool = False) -> bool:
+    def is_admin(self, user_id: int, permissions: Optional[List] = None, any_permission: bool = True, all_permissions: bool = False) -> bool:
         if any_permission == all_permissions:
             raise ValueError("only one between any_permission and all_permissions can be True or False")
 
@@ -124,17 +135,17 @@ def chat_member_to_dict(chat_member: ChatMemberAdministrator, chat_id: [None, in
         custom_title=chat_member.custom_title,
         is_anonymous=chat_member.is_anonymous,
         is_bot=chat_member.user.is_bot,
-        can_manage_chat=chat_member.can_manage_chat or is_owner,
-        can_delete_messages=chat_member.can_delete_messages or is_owner,
-        can_manage_video_chats=chat_member.can_manage_video_chats or is_owner,
-        can_restrict_members=chat_member.can_restrict_members or is_owner,
-        can_promote_members=chat_member.can_promote_members or is_owner,
-        can_change_info=chat_member.can_change_info or is_owner,
-        can_invite_users=chat_member.can_invite_users or is_owner,
-        can_post_messages=chat_member.can_post_messages or is_owner,
-        can_edit_messages=chat_member.can_edit_messages or is_owner,
-        can_pin_messages=chat_member.can_pin_messages or is_owner,
-        can_manage_topics=chat_member.can_manage_topics or is_owner,
+        can_manage_chat=True if is_owner else chat_member.can_manage_chat,
+        can_delete_messages=True if is_owner else chat_member.can_delete_messages,
+        can_manage_video_chats=True if is_owner else chat_member.can_manage_video_chats,
+        can_restrict_members=True if is_owner else chat_member.can_restrict_members,
+        can_promote_members=True if is_owner else chat_member.can_promote_members,
+        can_change_info=True if is_owner else chat_member.can_change_info,
+        can_invite_users=True if is_owner else chat_member.can_invite_users,
+        can_post_messages=True if is_owner else chat_member.can_post_messages,
+        can_edit_messages=True if is_owner else chat_member.can_edit_messages,
+        can_pin_messages=True if is_owner else chat_member.can_pin_messages,
+        can_manage_topics=True if is_owner else chat_member.can_manage_topics,
     )
 
     if chat_id:
@@ -143,7 +154,7 @@ def chat_member_to_dict(chat_member: ChatMemberAdministrator, chat_id: [None, in
     return chat_member_dict
 
 
-def chat_members_to_dict(chat_id: int, chat_members: List[ChatMemberAdministrator]):
+def chat_members_to_dict(chat_id: int, chat_members: Tuple[Union[ChatMemberOwner, ChatMemberAdministrator]]):
     result = {}
     for chat_member in chat_members:
         chat_member_dict = chat_member_to_dict(chat_member)
@@ -201,6 +212,8 @@ class UserMessage(Base):
     forwarded_on = Column(DateTime, server_default=func.now())
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    user = relationship("User", back_populates="user_messages")
+
     def __init__(self, message_id, user_id, forwarded_chat_id, forwarded_message_id, message_datetime):
         self.message_id = message_id
         self.user_id = user_id
@@ -217,15 +230,38 @@ class Setting(Base):
 
     chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     key = Column(String, primary_key=True)
+    language = Column(String, primary_key=True, default="en")
     value = Column(String, default=None)
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
     chat = relationship("Chat", back_populates="settings")
-    user = relationship("User")
 
-    def __init__(self, chat_id, key, value: Optional[str] = None):
+    def __init__(self, chat_id, key, value: Optional[str] = None, language: Optional[str] = None):
         self.chat_id = chat_id
+        self.language = language
         self.key = key.lower()
         self.value = value
+
+
+class CustomCommand(Base):
+    __tablename__ = 'custom_commands'
+
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    trigger = Column(String, primary_key=True)
+    language = Column(String, primary_key=True, default="en")
+    text = Column(String, default=None)
+    created_on = Column(DateTime, server_default=func.now())
+    updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey('users.user_id'))
+
+    chat = relationship("Chat", back_populates="custom_commands")
+
+    def __init__(self, chat_id, trigger: str, text: str, updated_by: int, language=Language.EN):
+        self.chat_id = chat_id
+        self.trigger = trigger
+        self.language = language
+        self.trigger = trigger
+        self.text = text
+        self.updated_by = updated_by
 
