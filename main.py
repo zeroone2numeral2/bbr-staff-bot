@@ -18,7 +18,7 @@ from database.queries import settings, chats, user_messages
 import decorators
 import utilities
 from emojis import Emoji
-from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES, PLACEHOLDERS
+from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -349,6 +349,22 @@ async def on_reloadadmins_command(update: Update, _, session: Session, chat: Cha
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
+async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info("/unban in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+
+    user_message: UserMessage = user_messages.get_user_message(session, update)
+    if not user_message:
+        logger.warning(f"couldn't find replied-to message, "
+                       f"chat_id: {update.effective_chat.id}; "
+                       f"message_id: {update.message.reply_to_message.message_id}")
+        return
+
+    user_message.user.unban()
+    await update.effective_message.reply_text(f"User unbanned")
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_chat=True)
 async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info("/ban or /shadowban in %d (%s)", update.effective_chat.id, update.effective_chat.title)
 
@@ -383,7 +399,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                        f"message_id: {update.message.reply_to_message.message_id}")
         return
 
-    text = f"• <b>name</b>: {utilities.escape_html(user_message.user.name)}\n" \
+    text = f"• <b>name</b>: {helpers.mention_html(user_message.user.user_id, utilities.escape_html(user_message.user.name))}\n" \
            f"• <b>username</b>: @{user_message.user.username or '-'}\n" \
            f"• <b>first seen</b>: {user_message.user.started_on}\n" \
            f"• <b>last seen</b>: {user_message.user.last_message}"
@@ -462,6 +478,7 @@ def main():
     bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'setstaff', on_setstaff_command, filters.ChatType.GROUPS))
     bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS))
     bot.add_handler(PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
+    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     bot.add_handler(MessageHandler(filters.ChatType.GROUPS & filter_reply_to_bot, on_bot_message_reply))
     # bot.add_handler(CommandHandler('chatid', on_chatid_command, filters.ChatType.GROUPS))
