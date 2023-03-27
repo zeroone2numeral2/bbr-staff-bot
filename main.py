@@ -146,7 +146,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     )
     session.add(user_message)
 
-    await update.message.reply_text("<i>message sent to the staff, now wait for an admin to answer it</i> :)", quote=True)
+    await update.message.reply_text("<i>Message sent to the staff, now wait for an admin's reply. "
+                                    "Please be aware that it might take some time</i> :)", quote=True)
 
     user.set_started(update_last_message=True)
 
