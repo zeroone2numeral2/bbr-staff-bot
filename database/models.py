@@ -230,17 +230,13 @@ class UserMessage(Base):
 class Setting(Base):
     __tablename__ = 'settings'
 
-    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     key = Column(String, primary_key=True)
-    language = Column(String, primary_key=True, default="en")
+    language = Column(String, primary_key=True, default=Language.EN)
     value = Column(String, default=None)
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
-    chat = relationship("Chat", back_populates="settings")
-
-    def __init__(self, chat_id, key, value: Optional[str] = None, language: Optional[str] = None):
-        self.chat_id = chat_id
+    def __init__(self, key, value: Optional[str] = None, language: Optional[str] = None):
         self.language = language
         self.key = key.lower()
         self.value = value
@@ -249,18 +245,18 @@ class Setting(Base):
 class CustomCommand(Base):
     __tablename__ = 'custom_commands'
 
-    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     trigger = Column(String, primary_key=True)
     language = Column(String, primary_key=True, default=Language.EN)
     text = Column(String, default=None)
+    enabled_text = Column(Boolean, default=True)
+    enabled_inline = Column(Boolean, default=True)
     created_on = Column(DateTime, server_default=func.now())
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
     chat = relationship("Chat", back_populates="custom_commands")
 
-    def __init__(self, chat_id, trigger: str, text: str, updated_by: int, language=Language.EN):
-        self.chat_id = chat_id
+    def __init__(self, trigger: str, text: str, updated_by: int, language=Language.EN):
         self.trigger = trigger
         self.language = language
         self.trigger = trigger

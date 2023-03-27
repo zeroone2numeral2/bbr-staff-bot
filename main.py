@@ -80,7 +80,7 @@ async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_T
     reply_markup = get_start_reply_markup(language_code)
 
     # also update the welcome text
-    welcome_setting = settings.get_welcome(session, language_code)
+    welcome_setting = settings.get_localized_setting(session, SettingKey.WELCOME, language_code)
     text = replace_placeholders(welcome_setting.value, update.effective_user)
 
     await update.effective_message.edit_text(text, reply_markup=reply_markup)
@@ -95,7 +95,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
 
-    welcome_setting = settings.get_welcome(session, language_code)
+    welcome_setting = settings.get_localized_setting(session, SettingKey.WELCOME, language_code)
 
     reply_markup = get_start_reply_markup(language_code)
 
