@@ -145,6 +145,9 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         message_datetime=update.effective_message.date
     )
     session.add(user_message)
+
+    await update.message.reply_text("<i>message sent to the staff, now wait for an admin to answer it</i> :)", quote=True)
+
     user.set_started(update_last_message=True)
 
 
@@ -304,6 +307,10 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
     logger.info("/setstaff in %d (%s)", update.effective_chat.id, update.effective_chat.title)
 
+    if not utilities.is_admin(update.effective_user):
+        logger.warning(f"user {update.effective_user.id} ({update.effective_user.full_name}) tried to use /setstaff")
+        return
+
     sqlalchemy_update(Chat).where().values(default=False)
     chat.default = True
     await update.message.reply_text("This group has been set as staff chat")
@@ -442,14 +449,39 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Chat)
         logger.info("chat member: updated/inserted db record")
 
 
-def get_welcome_settings_keyboard():
+def get_localized_settings_keyboard(setting_key):
     keyboard = [
-        [InlineKeyboardButton("read:", callback_data=f"welcome:helper:read")],
-        [InlineKeyboardButton("edit:", callback_data=f"welcome:helper:edit")],
+        [InlineKeyboardButton("read:", callback_data=f"{setting_key}:helper:read")],
+        [InlineKeyboardButton("edit:", callback_data=f"{setting_key}:helper:edit")],
     ]
     for i, action in enumerate(("read", "edit")):
         for lang_code, lang_data in LANGUAGES.items():
-            keyboard[i].append(InlineKeyboardButton(lang_data["emoji"], callback_data=f"welcome:{action}:{lang_code}"))
+            keyboard[i].append(InlineKeyboardButton(lang_data["emoji"], callback_data=f"{setting_key}:{action}:{lang_code}"))
+
+    return keyboard
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_welcome_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/welcome command from {update.effective_user.id} ({update.effective_user.full_name})")
+
+    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
+    await update.message.reply_text("Welcome message settings. Select what you want to do:", reply_markup=reply_markup)
+
+
+def get_sent_to_staff_keyboard(current_status) -> InlineKeyboardMarkup:
+    if current_status and current_status == "true":
+        stt_button = InlineKeyboardButton("disable", callback_data=f"{SettingKey.SENT_TO_STAFF_STATUS}:disable")
+    else:
+        stt_button = InlineKeyboardButton("enable", callback_data=f"{SettingKey.SENT_TO_STAFF_STATUS}:enable")
+
+    keyboard = get_localized_settings_keyboard(SettingKey.SENT_TO_STAFF)
+    # add a bottun as the first line to quickly enable/disable the message
+    keyboard.insert(0, [
+        stt_button
+    ])
 
     return InlineKeyboardMarkup(keyboard)
 
@@ -457,17 +489,18 @@ def get_welcome_settings_keyboard():
 @decorators.catch_exception()
 @decorators.pass_session()
 @decorators.staff_admin()
-async def on_welcome_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/wc command from {update.effective_user.id} ({update.effective_user.full_name})")
+async def on_senttostaff_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/senttostaff command from {utilities.user_log(update.effective_user)})")
 
-    reply_markup = get_welcome_settings_keyboard()
-    await update.message.reply_text("Welcome message settings. Select what you want to do:", reply_markup=reply_markup)
+    stt_status = settings.get_setting(session, SettingKey.SENT_TO_STAFF_STATUS)
+    reply_markup = get_sent_to_staff_keyboard(stt_status.value)
+    await update.message.reply_text("\"sent to staff\" message settings. Select what you want to do:", reply_markup=reply_markup)
 
 
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_welcome_helper_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"welcome helper: %s", update.callback_query.data)
+    logger.info(f"welcome helper from {utilities.user_log(update.effective_user)}: {update.callback_query.data}")
     action = context.matches[0].group(1)
     helper_tips = {
         "read": "tap on the language's flag to read the currently set welcome message",
@@ -480,7 +513,7 @@ async def on_welcome_helper_button(update: Update, context: ContextTypes.DEFAULT
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"welcome read: %s", update.callback_query.data)
+    logger.info(f"welcome read from {utilities.user_log(update.effective_user)}: {update.callback_query.data}")
     language = context.matches[0].group(1)
     langauge_emoji = LANGUAGES[language]["emoji"]
 
@@ -494,7 +527,7 @@ async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_T
         await update.callback_query.answer(f"There's no welcome message set for {langauge_emoji}")
         return
 
-    reply_markup = get_welcome_settings_keyboard()
+    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
     text = f"Current welcome message for {langauge_emoji}:\n\n{setting.value}"
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
@@ -502,7 +535,7 @@ async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_T
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_welcome_edit_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"welcome edit: %s", update.callback_query.data)
+    logger.info(f"welcome edit from {utilities.user_log(update.effective_user)}: {update.callback_query.data}")
     language = context.matches[0].group(1)
     langauge_emoji = LANGUAGES[language]["emoji"]
 
@@ -517,7 +550,7 @@ async def on_welcome_edit_button(update: Update, context: ContextTypes.DEFAULT_T
 @decorators.pass_session()
 @decorators.staff_admin()
 async def on_welcome_receive(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"received new welcome message from {update.effective_user.id} ({update.effective_user.full_name})")
+    logger.info(f"received new welcome message from {utilities.user_log(update.effective_user)})")
 
     language = context.user_data.pop(TempDataKey.WELCOME_LANGUAGE)
 
@@ -530,7 +563,7 @@ async def on_welcome_receive(update: Update, context: ContextTypes.DEFAULT_TYPE,
     setting.value = update.effective_message.text_html
     setting.updated_by = update.effective_user.id
 
-    reply_markup = get_welcome_settings_keyboard()
+    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
     await update.effective_message.reply_text(f"Welcome text set for {LANGUAGES[language]['emoji']}:\n\n{setting.value}")
     await update.effective_message.reply_text(f"Use the keyboard to see/edit a welcome message:", reply_markup=reply_markup)
 
@@ -541,7 +574,7 @@ async def on_welcome_receive(update: Update, context: ContextTypes.DEFAULT_TYPE,
 @decorators.pass_session()
 @decorators.staff_admin()
 async def on_welcome_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"(unexpected) received new welcome message from {update.effective_user.id} ({update.effective_user.full_name})")
+    logger.info(f"(unexpected) received new welcome message from {utilities.user_log(update.effective_user)}")
 
     await update.message.reply_text("Please send me the new welcome message for the selected language")
 
@@ -552,7 +585,7 @@ async def on_welcome_receive_unexpected(update: Update, context: ContextTypes.DE
 @decorators.pass_session()
 @decorators.staff_admin()
 async def on_welcome_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"welcome: /cancel command from {update.effective_user.id} ({update.effective_user.full_name})")
+    logger.info(f"welcome: /cancel command from {utilities.user_log(update.effective_user)}")
 
     context.user_data.pop(TempDataKey.WELCOME_LANGUAGE, None)
 
@@ -628,11 +661,12 @@ def main():
     # private chat: admins
     # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
     app.add_handler(CommandHandler('placeholders', on_placeholders_command, filters.ChatType.PRIVATE))
+
     app.add_handler(CommandHandler('welcome', on_welcome_settings_command, filters.ChatType.PRIVATE))
-    app.add_handler(CallbackQueryHandler(on_welcome_helper_button, r"welcome:helper:(.*)"))
-    app.add_handler(CallbackQueryHandler(on_welcome_read_button, r"welcome:read:(.*)"))
+    app.add_handler(CallbackQueryHandler(on_welcome_helper_button, rf"{SettingKey.WELCOME}:helper:(.*)"))
+    app.add_handler(CallbackQueryHandler(on_welcome_read_button, rf"{SettingKey.WELCOME}:read:(.*)"))
     edit_welcome_conversation_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(on_welcome_edit_button, r"welcome:edit:(.*)")],
+        entry_points=[CallbackQueryHandler(on_welcome_edit_button, rf"{SettingKey.WELCOME}:edit:(.*)")],
         states={
             State.WAITING_WELCOME: [
                 PrefixHandler(COMMAND_PREFIXES, "cancel", on_welcome_cancel_command),
@@ -651,6 +685,8 @@ def main():
         conversation_timeout=30*60
     )
     app.add_handler(edit_welcome_conversation_handler)
+
+    # app.add_handler(CommandHandler('senttostaff', on_senttostaff_settings_command, filters.ChatType.PRIVATE))
 
     # private chat: mixed
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE))

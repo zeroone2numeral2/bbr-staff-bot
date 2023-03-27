@@ -46,3 +46,7 @@ async def edit_text_safe(update: Update, *args, **kwargs):
     except BadRequest as e:
         if "message is not modified" not in e.message.lower():
             raise e
+
+
+def user_log(user: User):
+    return f"{user.id} ({user.full_name})"

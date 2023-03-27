@@ -25,6 +25,7 @@ LANGUAGES = {
 class SettingKey:
     WELCOME = "welcome"
     SENT_TO_STAFF = "sent_to_staff"
+    SENT_TO_STAFF_STATUS = "sent_to_staff_status"
 
 
 class TempDataKey:
