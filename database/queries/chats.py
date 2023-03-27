@@ -3,7 +3,7 @@ from typing import Optional, List, Tuple, Union
 from sqlalchemy import true, false
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
-from telegram import ChatMemberAdministrator, ChatMemberOwner
+from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
 
 from database.models import Setting, Chat, ChatAdministrator, chat_members_to_dict
 from constants import SettingKey, Language
@@ -14,7 +14,7 @@ def get_staff_chat(session: Session) -> Optional[Chat]:
     return chat
 
 
-def update_administrators(session: Session, chat: Chat, administrators: Tuple[Union[ChatMemberOwner, ChatMemberAdministrator]]):
+def update_administrators(session: Session, chat: Chat, administrators: Tuple[ChatMember]):
     current_chat_administrators_dict = chat_members_to_dict(chat.chat_id, administrators)
 
     chat_administrators = []

@@ -27,6 +27,10 @@ class SettingKey:
     SENT_TO_STAFF = "sent_to_staff"
 
 
+class TempDataKey:
+    WELCOME_LANGUAGE = "_welcome_language"
+
+
 class Language:
     EN = "en"
     IT = "it"
@@ -36,10 +40,10 @@ class Language:
 
 COMMAND_PREFIXES = ["/", "!", "."]
 
+CACHE_TIME = 10
+
 ADMIN_HELP = """<b><u>Admin commands (private)</u></b>:
-- <code>/welcome [welcome text]</code>:  set the welcome text for a specific language (the bot will ask you which one \
-later)
-- <code>/welcome</code>: see or delete a langauge's welcome text
+- <code>/welcome</code>: see or edit a langauge's welcome text
 - <code>/placeholders</code>: list available placeholders (they can be used in welcome texts)
 
 <b><u>Admin commands (staff chat)</u></b>:
@@ -58,3 +62,8 @@ when they send new messages. The reason is optional
 but <code>/reloadadmins</code> can be used to force-refresh the admins list
 - <i>anyone</i> in the staff chat is allowed to reply to users or ban them
 """
+
+
+class State:
+    WAITING_WELCOME = 10
+    WAITING_SENT_TO_STAFF_MESSAGE = 20

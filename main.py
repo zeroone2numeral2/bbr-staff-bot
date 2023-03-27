@@ -6,10 +6,10 @@ import pytz
 from sqlalchemy.orm import Session
 from sqlalchemy import update as sqlalchemy_update, true
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberAdministrator, User as TelegramUser, \
-    ChatMemberOwner, ChatMember, Message
+    ChatMemberOwner, ChatMember, Message, BotCommand, BotCommandScopeAllPrivateChats
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Defaults, filters, MessageHandler, \
-    CallbackQueryHandler, ChatMemberHandler, PrefixHandler
+    CallbackQueryHandler, ChatMemberHandler, PrefixHandler, Application, ExtBot, ConversationHandler
 from telegram.ext.filters import MessageFilter
 from telegram import helpers
 
@@ -18,37 +18,17 @@ from database.queries import settings, chats, user_messages
 import decorators
 import utilities
 from emojis import Emoji
-from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES
+from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey
 from config import config
 
 logger = logging.getLogger(__name__)
 
 defaults = Defaults(
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True,
-        tzinfo=pytz.timezone('Europe/Rome'),
-        quote=False
-    )
-bot = ApplicationBuilder().token(config.telegram.token).defaults(defaults).build()
-
-
-class FilterReplyToBot(MessageFilter):
-    def filter(self, message):
-        if message.reply_to_message and message.reply_to_message.from_user:
-            return message.reply_to_message.from_user.id == bot.bot.id
-
-
-class NewGroup(MessageFilter):
-    def filter(self, message):
-        if message.new_chat_members:
-            member: TelegramUser
-            for member in message.new_chat_members:
-                if member.id == bot.bot.id:
-                    return True
-
-
-new_group = NewGroup()
-filter_reply_to_bot = FilterReplyToBot()
+    parse_mode=ParseMode.HTML,
+    disable_web_page_preview=True,
+    tzinfo=pytz.timezone('Europe/Rome'),
+    quote=False
+)
 
 
 def get_language_code(selected_language_code, telegram_language_code):
@@ -160,7 +140,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     user_message = UserMessage(
         message_id=update.message.message_id,
         user_id=update.effective_user.id,
-        forwarded_chat_id=config.staff.chat_id,
+        forwarded_chat_id=chat.chat_id,
         forwarded_message_id=forwarded_message.message_id,
         message_datetime=update.effective_message.date
     )
@@ -402,7 +382,9 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     text = f"• <b>name</b>: {helpers.mention_html(user_message.user.user_id, utilities.escape_html(user_message.user.name))}\n" \
            f"• <b>username</b>: @{user_message.user.username or '-'}\n" \
            f"• <b>first seen</b>: {user_message.user.started_on}\n" \
-           f"• <b>last seen</b>: {user_message.user.last_message}"
+           f"• <b>last seen</b>: {user_message.user.last_message}\n" \
+           f"• <b>language code (telegram)</b>: {user_message.user.language_code}\n" \
+           f"• <b>selected language</b>: {user_message.user.selected_language}"
 
     if user_message.user.banned:
         text += f"\n• <b>banned</b>: {user_message.user.banned} (shadowban: {user_message.user.shadowban})\n" \
@@ -453,48 +435,252 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Chat)
             logger.info("no record to delete")
     elif new_chat_member.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER):
         # user was promoted/their admin permissions changed
+        # noinspection PyTypeChecker
         new_chat_member_dict = chat_member_to_dict(new_chat_member, update.effective_chat.id)
         chat_administrator = ChatAdministrator(**new_chat_member_dict)
         session.merge(chat_administrator)
         logger.info("chat member: updated/inserted db record")
 
 
+def get_welcome_settings_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("read:", callback_data=f"welcome:helper:read")],
+        [InlineKeyboardButton("edit:", callback_data=f"welcome:helper:edit")],
+    ]
+    for i, action in enumerate(("read", "edit")):
+        for lang_code, lang_data in LANGUAGES.items():
+            keyboard[i].append(InlineKeyboardButton(lang_data["emoji"], callback_data=f"welcome:{action}:{lang_code}"))
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_welcome_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/wc command from {update.effective_user.id} ({update.effective_user.full_name})")
+
+    reply_markup = get_welcome_settings_keyboard()
+    await update.message.reply_text("Welcome message settings. Select what you want to do:", reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_welcome_helper_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"welcome helper: %s", update.callback_query.data)
+    action = context.matches[0].group(1)
+    helper_tips = {
+        "read": "tap on the language's flag to read the currently set welcome message",
+        "edit": "tap on the language's flag to edit that language's welcome message",
+    }
+
+    await update.callback_query.answer(helper_tips[action], show_alert=True, cache_time=CACHE_TIME)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"welcome read: %s", update.callback_query.data)
+    language = context.matches[0].group(1)
+    langauge_emoji = LANGUAGES[language]["emoji"]
+
+    setting = settings.get_setting(
+        session,
+        key=SettingKey.WELCOME,
+        language=language,
+        create_if_missing=False
+    )
+    if not setting:
+        await update.callback_query.answer(f"There's no welcome message set for {langauge_emoji}")
+        return
+
+    reply_markup = get_welcome_settings_keyboard()
+    text = f"Current welcome message for {langauge_emoji}:\n\n{setting.value}"
+    await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_welcome_edit_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"welcome edit: %s", update.callback_query.data)
+    language = context.matches[0].group(1)
+    langauge_emoji = LANGUAGES[language]["emoji"]
+
+    context.user_data[TempDataKey.WELCOME_LANGUAGE] = language
+    await update.effective_message.edit_text(f"Please send me the new welcome text for {langauge_emoji} "
+                                             f"(or use /cancel to cancel):")
+
+    return State.WAITING_WELCOME
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_welcome_receive(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"received new welcome message from {update.effective_user.id} ({update.effective_user.full_name})")
+
+    language = context.user_data.pop(TempDataKey.WELCOME_LANGUAGE)
+
+    setting = settings.get_setting(
+        session,
+        key=SettingKey.WELCOME,
+        language=language,
+        create_if_missing=True
+    )
+    setting.value = update.effective_message.text_html
+    setting.updated_by = update.effective_user.id
+
+    reply_markup = get_welcome_settings_keyboard()
+    await update.effective_message.reply_text(f"Welcome text set for {LANGUAGES[language]['emoji']}:\n\n{setting.value}")
+    await update.effective_message.reply_text(f"Use the keyboard to see/edit a welcome message:", reply_markup=reply_markup)
+
+    return ConversationHandler.END
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_welcome_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"(unexpected) received new welcome message from {update.effective_user.id} ({update.effective_user.full_name})")
+
+    await update.message.reply_text("Please send me the new welcome message for the selected language")
+
+    return State.WAITING_WELCOME
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_welcome_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"welcome: /cancel command from {update.effective_user.id} ({update.effective_user.full_name})")
+
+    context.user_data.pop(TempDataKey.WELCOME_LANGUAGE, None)
+
+    await update.effective_message.reply_text("Okay, operation canceled :)")
+
+    return ConversationHandler.END
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_welcome_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"waiting for welcome text: timed out")
+
+    context.user_data.pop(TempDataKey.WELCOME_LANGUAGE, None)
+
+    await update.effective_message.reply_text("Okay, it looks like you forgot... "
+                                              "I'm exiting the welcome message configuration. "
+                                              "Use /welcome to open it again")
+
+    return ConversationHandler.END
+
+
+async def post_init(application: Application) -> None:
+    bot: ExtBot = application.bot
+
+    await bot.set_my_commands(
+        [BotCommand("start", "see the welcome message"), BotCommand("lang", "set your language")],
+        scope=BotCommandScopeAllPrivateChats()
+    )
+    await bot.set_my_commands(
+        [BotCommand("start", "messaggio di benvenuto"), BotCommand("lang", "cambia lingua")],
+        language_code=Language.IT,
+        scope=BotCommandScopeAllPrivateChats()
+    )
+    await bot.set_my_commands(
+        [BotCommand("start", "mensaje de bienvenida"), BotCommand("lang", "cambiar idioma")],
+        language_code=Language.ES,
+        scope=BotCommandScopeAllPrivateChats()
+    )
+    await bot.set_my_commands(
+        [BotCommand("start", "message d'accueil"), BotCommand("lang", "changer langue")],
+        language_code=Language.FR,
+        scope=BotCommandScopeAllPrivateChats()
+    )
+
+
 def main():
     utilities.load_logging_config('logging.json')
 
+    app: Application = ApplicationBuilder() \
+        .token(config.telegram.token) \
+        .defaults(defaults) \
+        .post_init(post_init) \
+        .build()
+
+    class FilterReplyToBot(MessageFilter):
+        def filter(self, message):
+            if message.reply_to_message and message.reply_to_message.from_user:
+                return message.reply_to_message.from_user.id == app.bot.id
+
+    class NewGroup(MessageFilter):
+        def filter(self, message):
+            if message.new_chat_members:
+                member: TelegramUser
+                for member in message.new_chat_members:
+                    if member.id == app.bot.id:
+                        return True
+
+    new_group = NewGroup()
+    filter_reply_to_bot = FilterReplyToBot()
+
     # private chat: admins
-    bot.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
-    bot.add_handler(CommandHandler('placeholders', on_placeholders_command, filters.ChatType.PRIVATE))
+    # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
+    app.add_handler(CommandHandler('placeholders', on_placeholders_command, filters.ChatType.PRIVATE))
+    app.add_handler(CommandHandler('welcome', on_welcome_settings_command, filters.ChatType.PRIVATE))
+    app.add_handler(CallbackQueryHandler(on_welcome_helper_button, r"welcome:helper:(.*)"))
+    app.add_handler(CallbackQueryHandler(on_welcome_read_button, r"welcome:read:(.*)"))
+    edit_welcome_conversation_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(on_welcome_edit_button, r"welcome:edit:(.*)")],
+        states={
+            State.WAITING_WELCOME: [
+                PrefixHandler(COMMAND_PREFIXES, "cancel", on_welcome_cancel_command),
+                MessageHandler(filters.TEXT, on_welcome_receive),
+                MessageHandler(~filters.TEXT, on_welcome_receive_unexpected)
+            ],
+            ConversationHandler.TIMEOUT: [
+                # on timeout, the *last update* is broadcasted to all users. it might be a callback query or a text
+                MessageHandler(filters.ALL, on_welcome_timeout),
+                CallbackQueryHandler(on_welcome_timeout, ".*"),
+            ]
+        },
+        fallbacks=[
+            PrefixHandler(COMMAND_PREFIXES, "cancel", on_welcome_cancel_command)
+        ],
+        conversation_timeout=30*60
+    )
+    app.add_handler(edit_welcome_conversation_handler)
 
     # private chat: mixed
-    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE))
 
     # private chat: users
-    bot.add_handler(CommandHandler('start', on_start_command, filters.ChatType.PRIVATE))
-    bot.add_handler(CommandHandler('lang', on_lang_command, filters.ChatType.PRIVATE))
-    bot.add_handler(MessageHandler(filters.ChatType.PRIVATE, on_user_message))
+    app.add_handler(CommandHandler('start', on_start_command, filters.ChatType.PRIVATE))
+    app.add_handler(CommandHandler('lang', on_lang_command, filters.ChatType.PRIVATE))
+    app.add_handler(MessageHandler(filters.ChatType.PRIVATE, on_user_message))
 
     # staff chat
-    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'setstaff', on_setstaff_command, filters.ChatType.GROUPS))
-    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS))
-    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
-    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
-    bot.add_handler(PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filter_reply_to_bot))
-    bot.add_handler(MessageHandler(filters.ChatType.GROUPS & filter_reply_to_bot, on_bot_message_reply))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'setstaff', on_setstaff_command, filters.ChatType.GROUPS))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filter_reply_to_bot))
+    app.add_handler(MessageHandler(filters.ChatType.GROUPS & filter_reply_to_bot, on_bot_message_reply))
     # bot.add_handler(CommandHandler('chatid', on_chatid_command, filters.ChatType.GROUPS))
 
     # callback query
-    bot.add_handler(CallbackQueryHandler(on_set_language_button, pattern="^setlang:(..)$"))
-    bot.add_handler(CallbackQueryHandler(on_setwelcome_language_button, pattern="^setwelcome:(..)$"))
-    bot.add_handler(CallbackQueryHandler(on_getwelcome_language_button, pattern="^getwelcome:(..)$"))
-    bot.add_handler(CallbackQueryHandler(on_unsetwelcome_language_button, pattern="^unsetwelcome:(..)$"))
+    app.add_handler(CallbackQueryHandler(on_set_language_button, pattern="^setlang:(..)$"))
+    app.add_handler(CallbackQueryHandler(on_setwelcome_language_button, pattern="^setwelcome:(..)$"))
+    app.add_handler(CallbackQueryHandler(on_getwelcome_language_button, pattern="^getwelcome:(..)$"))
+    app.add_handler(CallbackQueryHandler(on_unsetwelcome_language_button, pattern="^unsetwelcome:(..)$"))
 
     # other
-    bot.add_handler(MessageHandler(new_group, on_new_group_chat))
-    bot.add_handler(ChatMemberHandler(on_chat_member_update, ChatMemberHandler.ANY_CHAT_MEMBER))
+    app.add_handler(MessageHandler(new_group, on_new_group_chat))
+    app.add_handler(ChatMemberHandler(on_chat_member_update, ChatMemberHandler.ANY_CHAT_MEMBER))
 
-    logger.info("polling for updates...")
-    bot.run_polling(
+    logger.info(f"polling for updates...")
+    app.run_polling(
         drop_pending_updates=False,
         allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY, Update.CHAT_MEMBER, Update.MY_CHAT_MEMBER]
     )

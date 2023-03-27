@@ -6,7 +6,8 @@ from html import escape
 from typing import Union
 from typing import List
 
-from telegram import User
+from telegram import User, Update
+from telegram.error import BadRequest
 
 from config import config
 from constants import COMMAND_PREFIXES
@@ -37,3 +38,11 @@ def get_argument(commands: Union[List, str], text: str) -> str:
         text = re.sub(rf"^[{prefixes}]{command}\s*", "", text, re.I)
 
     return text.strip()
+
+
+async def edit_text_safe(update: Update, *args, **kwargs):
+    try:
+        await update.effective_message.edit_text(*args, **kwargs)
+    except BadRequest as e:
+        if "message is not modified" not in e.message.lower():
+            raise e

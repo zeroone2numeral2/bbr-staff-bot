@@ -4,8 +4,10 @@ admins = [
     23646077,
 ]
 
-[staff]
-chat_id = 0
-
 [database]
 engine_string = "sqlite:///bot.db"
+
+[handlers]
+import = [
+    ""
+]

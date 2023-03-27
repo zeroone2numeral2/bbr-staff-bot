@@ -154,9 +154,10 @@ def chat_member_to_dict(chat_member: ChatMemberAdministrator, chat_id: [None, in
     return chat_member_dict
 
 
-def chat_members_to_dict(chat_id: int, chat_members: Tuple[Union[ChatMemberOwner, ChatMemberAdministrator]]):
+def chat_members_to_dict(chat_id: int, chat_members: Tuple[ChatMember]):
     result = {}
     for chat_member in chat_members:
+        # noinspection PyTypeChecker
         chat_member_dict = chat_member_to_dict(chat_member)
         chat_member_dict.update({"chat_id": chat_id})
 
@@ -211,6 +212,7 @@ class UserMessage(Base):
     message_datetime = Column(DateTime, default=None)
     forwarded_on = Column(DateTime, server_default=func.now())
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    message_json = Column(String, default=None)
 
     user = relationship("User", back_populates="user_messages")
 

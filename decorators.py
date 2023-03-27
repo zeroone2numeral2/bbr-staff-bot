@@ -8,7 +8,7 @@ from sqlalchemy.sql import func as sql_func
 # noinspection PyPackageRequirements
 from telegram import Update, ChatMember
 # noinspection PyPackageRequirements
-from telegram.error import TimedOut
+from telegram.error import TimedOut, BadRequest
 # noinspection PyPackageRequirements
 from telegram.ext import CallbackContext
 
@@ -33,7 +33,7 @@ def action(chat_action):
     return real_decorator
 
 
-def catch_exception(silent=False):
+def catch_exception(silent=False, skip_not_modified_exception=False):
     def real_decorator(func):
         @wraps(func)
         async def wrapped(update: Update, context: CallbackContext, *args, **kwargs):
