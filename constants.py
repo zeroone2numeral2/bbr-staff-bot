@@ -43,8 +43,8 @@ COMMAND_PREFIXES = ["/", "!", "."]
 CACHE_TIME = 10
 
 ADMIN_HELP = """<b><u>Admin commands (private)</u></b>:
-- <code>/welcome</code>: see or edit a langauge's welcome text
-- <code>/placeholders</code>: list available placeholders (they can be used in welcome texts)
+- /welcome: see or edit a langauge's welcome text
+- /placeholders: list available placeholders (they can be used in welcome texts)
 
 <b><u>Admin commands (staff chat)</u></b>:
 - <code>/setstaff</code>: use the current chat as staff chat

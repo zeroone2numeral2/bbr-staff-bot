@@ -88,8 +88,6 @@ class Chat(Base):
     last_administrators_fetch = Column(DateTime, default=None, nullable=True)
 
     chat_administrators = relationship("ChatAdministrator", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
-    settings = relationship("Setting", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
-    custom_commands = relationship("CustomCommand", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
 
     def __init__(self, chat_id, title):
         self.chat_id = chat_id
@@ -253,8 +251,6 @@ class CustomCommand(Base):
     created_on = Column(DateTime, server_default=func.now())
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
-
-    chat = relationship("Chat", back_populates="custom_commands")
 
     def __init__(self, trigger: str, text: str, updated_by: int, language=Language.EN):
         self.trigger = trigger

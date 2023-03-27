@@ -67,3 +67,15 @@ def get_or_create_localized_setting(session: Session, key: str, language: str, c
         session.add(setting)
 
     return setting
+
+
+def get_or_create_setting(session: Session, key: str, create_if_missing=True):
+    setting: Setting = session.query(Setting).filter(
+        Setting.key == key
+    ).one_or_none()
+
+    if not setting and create_if_missing:
+        setting = Setting(key=key)
+        session.add(setting)
+
+    return setting
