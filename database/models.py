@@ -212,6 +212,8 @@ class UserMessage(Base):
     message_datetime = Column(DateTime, default=None)
     forwarded_on = Column(DateTime, server_default=func.now())
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    revoked = Column(Boolean, default=False)
+    revoked_on = Column(DateTime, default=None)
     message_json = Column(String, default=None)
 
     user = relationship("User", back_populates="user_messages")
@@ -227,6 +229,10 @@ class UserMessage(Base):
     def add_reply(self, count=1):
         self.replies_count = self.replies_count + count
 
+    def revoke(self):
+        self.revoked = True
+        self.revoked_on = func.now()
+
 
 class AdminMessage(Base):
     __tablename__ = 'admin_messages'
@@ -241,6 +247,7 @@ class AdminMessage(Base):
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     revoked = Column(Boolean, default=False)
     revoked_on = Column(DateTime, default=None)
+    revoked_by = Column(Integer, ForeignKey('users.user_id'), nullable=True)
     message_json = Column(String, default=None)
 
     chat = relationship("Chat", back_populates="admin_messages")
@@ -255,9 +262,10 @@ class AdminMessage(Base):
         self.reply_message_id = reply_message_id
         self.message_datetime = message_datetime
 
-    def revoke(self):
+    def revoke(self, revoked_by: Optional[int] = None):
         self.revoked = True
         self.revoked_on = func.now()
+        self.revoked_by = revoked_by
 
 
 class Setting(Base):
