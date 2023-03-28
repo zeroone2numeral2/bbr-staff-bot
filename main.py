@@ -14,7 +14,7 @@ from telegram.ext.filters import MessageFilter
 from telegram import helpers
 
 from database import engine
-from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator
+from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage
 from database.queries import settings, chats, user_messages
 import decorators
 import utilities
@@ -321,12 +321,23 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
                        f"message_id: {update.message.reply_to_message.message_id}")
         return
 
-    await update.message.copy(
+    sent_message = await update.message.copy(
         chat_id=user_message.user_id,
         reply_to_message_id=user_message.message_id
     )
 
     user_message.add_reply()
+    session.commit()
+
+    admin_message = AdminMessage(
+        message_id=update.effective_message.id,
+        chat_id=update.effective_chat.id,
+        user_id=update.effective_user.id,
+        user_message_id=user_message.message_id,
+        reply_message_id=sent_message.message_id,
+        message_datetime=update.effective_message.date
+    )
+    session.add(admin_message)
 
 
 @decorators.catch_exception()

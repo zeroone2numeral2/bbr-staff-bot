@@ -32,6 +32,7 @@ class User(Base):
 
     chats_administrator = relationship("ChatAdministrator", back_populates="user")
     user_messages = relationship("UserMessage", back_populates="user")
+    admin_messages = relationship("AdminMessage", back_populates="user")
 
     def __init__(
             self,
@@ -88,6 +89,7 @@ class Chat(Base):
     last_administrators_fetch = Column(DateTime, default=None, nullable=True)
 
     chat_administrators = relationship("ChatAdministrator", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
+    admin_messages = relationship("AdminMessage", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
 
     def __init__(self, chat_id, title):
         self.chat_id = chat_id
@@ -213,6 +215,7 @@ class UserMessage(Base):
     message_json = Column(String, default=None)
 
     user = relationship("User", back_populates="user_messages")
+    admin_messages = relationship("AdminMessage", back_populates="user_message")
 
     def __init__(self, message_id, user_id, forwarded_chat_id, forwarded_message_id, message_datetime):
         self.message_id = message_id
@@ -223,6 +226,32 @@ class UserMessage(Base):
 
     def add_reply(self, count=1):
         self.replies_count = self.replies_count + count
+
+
+class AdminMessage(Base):
+    __tablename__ = 'admin_messages'
+
+    message_id = Column(Integer, primary_key=True)
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    user_message_id = Column(Integer, ForeignKey('user_messages.message_id'))
+    user_id = Column(Integer, ForeignKey('users.user_id'))
+    reply_message_id = Column(Integer, nullable=False)  # forwarded reply sent to the user's private chat
+    reply_datetime = Column(DateTime, server_default=func.now())
+    message_datetime = Column(DateTime, default=None)
+    updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    message_json = Column(String, default=None)
+
+    chat = relationship("Chat", back_populates="admin_messages")
+    user = relationship("User", back_populates="admin_messages")
+    user_message = relationship("UserMessage", back_populates="admin_messages")
+
+    def __init__(self, message_id, chat_id, user_id, user_message_id, reply_message_id, message_datetime):
+        self.message_id = message_id
+        self.chat_id = chat_id
+        self.user_id = user_id
+        self.user_message_id = user_message_id
+        self.reply_message_id = reply_message_id
+        self.message_datetime = message_datetime
 
 
 class Setting(Base):
