@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy import true, false
+from sqlalchemy import true, false, select
 
 from database.models import Setting, Chat
 from constants import SettingKey, Language
@@ -54,6 +54,11 @@ def get_localized_setting(
         raise ValueError(f"no {language}/en <{key}> setting")
 
     return setting
+
+
+def get_settings(session: Session, key: str):
+    statement = select(Setting).where(Setting.key == key)
+    return session.execute(statement)
 
 
 def get_or_create_localized_setting(session: Session, key: str, language: str, create_if_missing=True):

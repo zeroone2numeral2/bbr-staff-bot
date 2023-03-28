@@ -239,6 +239,9 @@ class Setting(Base):
         self.key = key.lower()
         self.value = value
 
+    def __frmt__(self):
+        return f"Setting(key={self.key}, language={self.language}, value={self.value})"
+
 
 class CustomCommand(Base):
     __tablename__ = 'custom_commands'

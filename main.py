@@ -4,7 +4,7 @@ from typing import Optional, Tuple, List, Union
 
 import pytz
 from sqlalchemy.orm import Session
-from sqlalchemy import update as sqlalchemy_update, true
+from sqlalchemy import update as sqlalchemy_update, true, ChunkedIteratorResult, select
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberAdministrator, User as TelegramUser, \
     ChatMemberOwner, ChatMember, Message, BotCommand, BotCommandScopeAllPrivateChats
 from telegram.constants import ParseMode
@@ -66,6 +66,31 @@ def replace_placeholders(text: str, user: TelegramUser):
         text = text.replace(placeholder, repl_func(user))
 
     return text
+
+
+def get_localized_setting_resume_text(session: Session, setting_key: str):
+    result = settings.get_settings(session, setting_key)
+    settings_statuses = {}
+
+    setting: Setting
+    for setting in result.scalars():
+        settings_statuses[setting.language] = "set" if setting.value else "<b>not set</b>"
+
+    for lang_code, lang_data in LANGUAGES.items():
+        if lang_code in settings_statuses:
+            continue
+
+        settings_statuses[lang_code] = "<b>not set</b>"
+
+    text = ""
+    for lang_code, current_status in settings_statuses.items():
+        text += f"\n{LANGUAGES[lang_code]['emoji']} -> {current_status}"
+
+    return text.strip()
+
+
+def get_welcome_settings_main_text(settings_resume):
+    return f"Welcome message settings\n{settings_resume}\n\nUse the buttons below to read/edit/delete a language's welcome message:"
 
 
 @decorators.catch_exception()
@@ -313,8 +338,8 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
         logger.warning(f"user {update.effective_user.id} ({update.effective_user.full_name}) tried to use /setstaff")
         return
 
-    with engine.begin() as conn:
-        conn.execute(sqlalchemy_update(Chat).values(default=False))
+    session.execute(sqlalchemy_update(Chat).values(default=False))
+    session.commit()
 
     chat.default = True
     await update.message.reply_text("This group has been set as staff chat")
@@ -457,8 +482,9 @@ def get_localized_settings_keyboard(setting_key):
     keyboard = [
         [InlineKeyboardButton("read:", callback_data=f"{setting_key}:helper:read")],
         [InlineKeyboardButton("edit:", callback_data=f"{setting_key}:helper:edit")],
+        [InlineKeyboardButton("delete:", callback_data=f"{setting_key}:helper:delete")],
     ]
-    for i, action in enumerate(("read", "edit")):
+    for i, action in enumerate(("read", "edit", "delete")):
         for lang_code, lang_data in LANGUAGES.items():
             keyboard[i].append(InlineKeyboardButton(lang_data["emoji"], callback_data=f"{setting_key}:{action}:{lang_code}"))
 
@@ -472,7 +498,9 @@ async def on_welcome_settings_command(update: Update, context: ContextTypes.DEFA
     logger.info(f"/welcome command {utilities.log(update)}")
 
     reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
-    await update.message.reply_text("Welcome message settings. Select what you want to do:", reply_markup=reply_markup)
+    settings_resume = get_localized_setting_resume_text(session, SettingKey.WELCOME)
+    text = get_welcome_settings_main_text(settings_resume)
+    await update.message.reply_text(text, reply_markup=reply_markup)
 
 
 def get_sent_to_staff_keyboard(current_status) -> InlineKeyboardMarkup:
@@ -509,6 +537,8 @@ async def on_welcome_helper_button(update: Update, context: ContextTypes.DEFAULT
     helper_tips = {
         "read": "tap on the language's flag to read the currently set welcome message",
         "edit": "tap on the language's flag to edit that language's welcome message",
+        "delete": "tap on the language's flag to delete that language's welcome message. "
+                  "Users who selected that language will receive the fallback language's welcome message (en)",
     }
 
     await update.callback_query.answer(helper_tips[action], show_alert=True, cache_time=CACHE_TIME)
@@ -533,6 +563,29 @@ async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_T
 
     reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
     text = f"Current welcome message for {langauge_emoji}:\n\n{setting.value}"
+    await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_welcome_delete_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"welcome delete {utilities.log(update)}")
+    language = context.matches[0].group(1)
+    langauge_emoji = LANGUAGES[language]["emoji"]
+
+    setting = settings.get_setting(
+        session,
+        key=SettingKey.WELCOME,
+        language=language,
+        create_if_missing=False
+    )
+    if setting:
+        session.delete(setting)
+
+    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
+    settings_resume = get_localized_setting_resume_text(session, SettingKey.WELCOME)
+    text = get_welcome_settings_main_text(settings_resume)
+    await update.callback_query.answer(f"Welcome message deleted for {langauge_emoji}")
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
 
@@ -569,7 +622,10 @@ async def on_welcome_receive(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
     await update.effective_message.reply_text(f"Welcome text set for {LANGUAGES[language]['emoji']}:\n\n{setting.value}")
-    await update.effective_message.reply_text(f"Use the keyboard to see/edit a welcome message:", reply_markup=reply_markup)
+
+    settings_resume = get_localized_setting_resume_text(session, SettingKey.WELCOME)
+    text = get_welcome_settings_main_text(settings_resume)
+    await update.effective_message.reply_text(text, reply_markup=reply_markup)
 
     return ConversationHandler.END
 
@@ -669,6 +725,7 @@ def main():
     app.add_handler(CommandHandler('welcome', on_welcome_settings_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_welcome_helper_button, rf"{SettingKey.WELCOME}:helper:(.*)"))
     app.add_handler(CallbackQueryHandler(on_welcome_read_button, rf"{SettingKey.WELCOME}:read:(.*)"))
+    app.add_handler(CallbackQueryHandler(on_welcome_delete_button, rf"{SettingKey.WELCOME}:delete:(.*)"))
     edit_welcome_conversation_handler = ConversationHandler(
         entry_points=[CallbackQueryHandler(on_welcome_edit_button, rf"{SettingKey.WELCOME}:edit:(.*)")],
         states={
