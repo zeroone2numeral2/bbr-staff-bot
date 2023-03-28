@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from typing import Optional, Tuple, List, Union
 
 import pytz
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import update as sqlalchemy_update, true, ChunkedIteratorResult, select
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberAdministrator, User as TelegramUser, \
     ChatMemberOwner, ChatMember, Message, BotCommand, BotCommandScopeAllPrivateChats
-from telegram.constants import ParseMode
+from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Defaults, filters, MessageHandler, \
     CallbackQueryHandler, ChatMemberHandler, PrefixHandler, Application, ExtBot, ConversationHandler
 from telegram.ext.filters import MessageFilter
@@ -320,6 +321,9 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
                        f"chat_id: {update.effective_chat.id}; "
                        f"message_id: {update.message.reply_to_message.message_id}")
         return
+
+    await context.bot.send_chat_action(user_message.user_id, ChatAction.TYPING)
+    # time.sleep(3)
 
     sent_message = await update.message.copy(
         chat_id=user_message.user_id,

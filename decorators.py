@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 def action(chat_action):
     def real_decorator(func):
         @wraps(func)
-        def wrapped(update: Update, context: CallbackContext, *args, **kwargs):
-            context.bot.send_chat_action(update.effective_chat.id, chat_action)
+        async def wrapped(update: Update, context: CallbackContext, *args, **kwargs):
+            await context.bot.send_chat_action(update.effective_chat.id, chat_action)
             return func(update, context, *args, **kwargs)
 
         return wrapped
