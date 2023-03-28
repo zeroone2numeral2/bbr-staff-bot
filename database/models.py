@@ -239,6 +239,8 @@ class AdminMessage(Base):
     reply_datetime = Column(DateTime, server_default=func.now())
     message_datetime = Column(DateTime, default=None)
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    revoked = Column(Boolean, default=False)
+    revoked_on = Column(DateTime, default=None)
     message_json = Column(String, default=None)
 
     chat = relationship("Chat", back_populates="admin_messages")
@@ -252,6 +254,10 @@ class AdminMessage(Base):
         self.user_message_id = user_message_id
         self.reply_message_id = reply_message_id
         self.message_datetime = message_datetime
+
+    def revoke(self):
+        self.revoked = True
+        self.revoked_on = func.now()
 
 
 class Setting(Base):

@@ -50,6 +50,7 @@ ADMIN_HELP = """<b><u>Admin commands (private)</u></b>:
 <b><u>Admin commands (staff chat)</u></b>:
 - <code>/setstaff</code>: use the current chat as staff chat
 - <code>/reloadadmins</code>: update the staff chat's admins list
+- <code>/revoke</code> (in reply to an admin message): delete an admin's reply from the user's private chat
 
 The following commands work in reply to an user's forwarded message in the staff chat:
 - <code>/ban [reason]</code>: ban an user from using the bot. The bot will tell the user that they are banned 

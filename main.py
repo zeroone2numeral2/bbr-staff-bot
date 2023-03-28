@@ -15,7 +15,7 @@ from telegram import helpers
 
 from database import engine
 from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage
-from database.queries import settings, chats, user_messages
+from database.queries import settings, chats, user_messages, admin_messages
 import decorators
 import utilities
 from emojis import Emoji
@@ -444,6 +444,36 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 @decorators.catch_exception()
+@decorators.pass_session()
+async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/revoke {utilities.log(update)}")
+
+    admin_message: AdminMessage = admin_messages.get_admin_message(session, update)
+    if not admin_message:
+        logger.warning(f"couldn't find replied-to admin message, "
+                       f"chat_id: {update.effective_chat.id}; "
+                       f"message_id: {update.message.reply_to_message.message_id}")
+        await update.message.reply_text(
+            "can't find the message to revoke in the database",
+            reply_to_message_id=update.message.reply_to_message.message_id
+        )
+        return
+
+    logger.info(f"revoking message_id {admin_message.reply_message_id} in chat_id {admin_message.user_message.user.user_id}")
+    await context.bot.delete_message(
+        chat_id=admin_message.user_message.user.user_id,
+        message_id=admin_message.reply_message_id
+    )
+
+    await update.message.reply_text(
+        "message revoked",
+        reply_to_message_id=update.message.reply_to_message.message_id
+    )
+
+    admin_message.revoke()
+
+
+@decorators.catch_exception()
 @decorators.pass_session(pass_user=True, pass_chat=True)
 async def on_new_group_chat(update: Update, _, session: Session, user: User, chat: Chat):
     logger.info(f"new group chat {utilities.log(update)}")
@@ -774,6 +804,7 @@ def main():
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filter_reply_to_bot))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'revoke', on_revoke_admin_command, filters.ChatType.GROUPS & filters.REPLY))
     app.add_handler(MessageHandler(filters.ChatType.GROUPS & filter_reply_to_bot, on_bot_message_reply))
     # bot.add_handler(CommandHandler('chatid', on_chatid_command, filters.ChatType.GROUPS))
 
