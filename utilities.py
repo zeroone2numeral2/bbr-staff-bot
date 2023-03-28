@@ -12,6 +12,8 @@ from telegram.error import BadRequest
 from config import config
 from constants import COMMAND_PREFIXES
 
+logger = logging.getLogger(__name__)
+
 
 def load_logging_config(file_name='logging.json'):
     with open(file_name, 'r') as f:
@@ -64,13 +66,20 @@ def log_old(obj: Union[User, Chat]):
 
 
 def log(update: Update):
-    if update.message:
-        if update.effective_chat.id != update.effective_user.id:
-            # group chat
-            return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})" \
-                   f" in {update.effective_chat.id} ({update.effective_chat.title})"
-        else:
-            # private chat
-            return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})"
-    elif update.callback_query:
-        return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code}), cbdata: {update.callback_query.data}"
+    try:
+        if update.message:
+            if update.effective_chat.id != update.effective_user.id:
+                # group chat
+                return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})" \
+                       f" in {update.effective_chat.id} ({update.effective_chat.title})"
+            else:
+                # private chat
+                return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})"
+        elif update.callback_query:
+            return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code}), cbdata: {update.callback_query.data}"
+        elif update.chat_member or update.my_chat_member:
+            chat_member = update.chat_member or update.my_chat_member
+            return f"from admin {chat_member.from_user.id} ({chat_member.from_user.full_name}) " \
+                   f"in {chat_member.chat.id} ({chat_member.chat.title})"
+    except Exception as e:
+        logger.error(f"error while logging update: {e}")

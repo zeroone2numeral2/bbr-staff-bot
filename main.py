@@ -504,7 +504,7 @@ async def on_new_group_chat(update: Update, _, session: Session, user: User, cha
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
-    logger.info(f"chat member update for user {utilities.user_log(update.chat_member.from_user)}")
+    logger.info(f"chat member update {utilities.log(update)}")
 
     new_chat_member: ChatMember = update.chat_member.new_chat_member if update.chat_member else update.my_chat_member.new_chat_member
     old_chat_member: ChatMember = update.chat_member.old_chat_member if update.chat_member else update.my_chat_member.old_chat_member
