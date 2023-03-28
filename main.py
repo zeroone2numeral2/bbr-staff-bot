@@ -349,11 +349,19 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
         logger.warning(f"user {update.effective_user.id} ({update.effective_user.full_name}) tried to use /setstaff")
         return
 
+    if "ssilent" in update.message.text.lower():
+        # noinspection PyBroadException
+        try:
+            await update.message.delete()
+        except:
+            pass
+
     session.execute(sqlalchemy_update(Chat).values(default=False))
     session.commit()
 
     chat.default = True
-    await update.message.reply_text("This group has been set as staff chat")
+    if "ssilent" not in update.message.text.lower():
+        await update.message.reply_text("This group has been set as staff chat")
 
     session.commit()  # make sure to commit now, just in case something unexpected happens while saving admins
 
@@ -799,7 +807,7 @@ def main():
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE, on_user_message))
 
     # staff chat
-    app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'setstaff', on_setstaff_command, filters.ChatType.GROUPS))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['setstaff', 'ssilent'], on_setstaff_command, filters.ChatType.GROUPS))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
