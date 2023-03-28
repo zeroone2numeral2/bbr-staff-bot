@@ -247,7 +247,7 @@ class AdminMessage(Base):
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     revoked = Column(Boolean, default=False)
     revoked_on = Column(DateTime, default=None)
-    revoked_by = Column(Integer, ForeignKey('users.user_id'), nullable=True)
+    revoked_by = Column(Integer, nullable=True)
     message_json = Column(String, default=None)
 
     chat = relationship("Chat", back_populates="admin_messages")
