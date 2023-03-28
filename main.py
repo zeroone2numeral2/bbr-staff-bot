@@ -10,7 +10,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatMem
     ChatMemberOwner, ChatMember, Message, BotCommand, BotCommandScopeAllPrivateChats
 from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Defaults, filters, MessageHandler, \
-    CallbackQueryHandler, ChatMemberHandler, PrefixHandler, Application, ExtBot, ConversationHandler
+    CallbackQueryHandler, ChatMemberHandler, PrefixHandler, Application, ExtBot, ConversationHandler, TypeHandler
 from telegram.ext.filters import MessageFilter
 from telegram import helpers
 
@@ -308,6 +308,12 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
         session.delete(setting)
 
     await update.effective_message.edit_text(f"Welcome text for {langauge_emoji} deleted")
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_edited_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"message edit")
 
 
 @decorators.catch_exception()
@@ -770,6 +776,10 @@ def main():
 
     new_group = NewGroup()
     filter_reply_to_bot = FilterReplyToBot()
+
+    # edited messages NEED to be catched before anything else, otherwise they will procedded by other MessageHandlers
+    # app.add_handler(TypeHandler(Update.EDITED_MESSAGE, on_edited_message))
+    app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE, on_edited_message))
 
     # private chat: admins
     # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
