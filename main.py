@@ -13,6 +13,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Defau
 from telegram.ext.filters import MessageFilter
 from telegram import helpers
 
+from database import engine
 from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator
 from database.queries import settings, chats, user_messages
 import decorators
@@ -312,7 +313,9 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
         logger.warning(f"user {update.effective_user.id} ({update.effective_user.full_name}) tried to use /setstaff")
         return
 
-    sqlalchemy_update(Chat).where().values(default=False)
+    with engine.begin() as conn:
+        conn.execute(sqlalchemy_update(Chat).values(default=False))
+
     chat.default = True
     await update.message.reply_text("This group has been set as staff chat")
 
