@@ -94,6 +94,7 @@ def pass_session(
                         language_code=update.effective_user.language_code
                     )
                     session.add(user)
+                    session.commit()
 
                 kwargs['user'] = user
 
@@ -106,6 +107,7 @@ def pass_session(
                 if not chat and create_if_not_existing:
                     chat = Chat(chat_id=update.effective_chat.id, title=update.effective_chat.title)
                     session.add(chat)
+                    session.commit()
 
                 kwargs['chat'] = chat
 
