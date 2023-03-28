@@ -310,8 +310,8 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 
 
 @decorators.catch_exception()
-@decorators.pass_session()
-async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+@decorators.pass_session(pass_user=True)
+async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"reply to a bot message {utilities.log(update)}")
 
     user_message: UserMessage = user_messages.get_user_message(session, update)
@@ -452,8 +452,8 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 @decorators.catch_exception()
-@decorators.pass_session()
-async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+@decorators.pass_session(pass_user=True)
+async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/revoke {utilities.log(update)}")
 
     admin_message: AdminMessage = admin_messages.get_admin_message(session, update)
@@ -478,7 +478,7 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
         reply_to_message_id=update.message.reply_to_message.message_id
     )
 
-    admin_message.revoke()
+    admin_message.revoke(revoked_by=update.effective_user.id)
 
 
 @decorators.catch_exception()
