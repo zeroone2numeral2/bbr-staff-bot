@@ -56,8 +56,21 @@ def chat_log(chat: Chat):
     return f"{chat.id} ({chat.title})"
 
 
-def log(obj: Union[User, Chat]):
+def log_old(obj: Union[User, Chat]):
     if isinstance(obj, User):
         return user_log(obj)
     elif isinstance(obj, Chat):
         return chat_log(obj)
+
+
+def log(update: Update):
+    if update.message:
+        if update.effective_chat.id != update.effective_user.id:
+            # group chat
+            return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})" \
+                   f" in {update.effective_chat.id} ({update.effective_chat.title})"
+        else:
+            # private chat
+            return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})"
+    elif update.callback_query:
+        return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code}), cbdata: {update.callback_query.data}"
