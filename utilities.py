@@ -6,7 +6,7 @@ from html import escape
 from typing import Union
 from typing import List
 
-from telegram import User, Update
+from telegram import User, Update, Chat
 from telegram.error import BadRequest
 
 from config import config
@@ -50,3 +50,14 @@ async def edit_text_safe(update: Update, *args, **kwargs):
 
 def user_log(user: User):
     return f"{user.id} ({user.full_name} [{user.language_code}])"
+
+
+def chat_log(chat: Chat):
+    return f"{chat.id} ({chat.title})"
+
+
+def log(obj: Union[User, Chat]):
+    if isinstance(obj, User):
+        return user_log(obj)
+    elif isinstance(obj, Chat):
+        return chat_log(obj)

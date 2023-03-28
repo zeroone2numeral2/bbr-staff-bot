@@ -286,7 +286,7 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"reply to a bot message in {update.effective_chat.title} ({update.effective_chat.id}) by {utilities.user_log(update.effective_user)}")
+    logger.info(f"reply to a bot message in {utilities.log(update.effective_chat)} from {utilities.log(update.effective_user)}")
 
     user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:
@@ -306,7 +306,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
-    logger.info("/setstaff in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+    logger.info(f"/setstaff in {utilities.log(update.effective_chat)} from {utilities.log(update.effective_user)}")
 
     if not utilities.is_admin(update.effective_user):
         logger.warning(f"user {update.effective_user.id} ({update.effective_user.full_name}) tried to use /setstaff")
@@ -326,7 +326,7 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_reloadadmins_command(update: Update, _, session: Session, chat: Chat):
-    logger.info("/reloadadmins in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+    logger.info(f"/reloadadmins in {utilities.log(update.effective_chat)} from {utilities.log(update.effective_user)}")
 
     logger.info("saving administrators...")
     administrators: Tuple[ChatMember] = await update.effective_chat.get_administrators()
@@ -338,7 +338,7 @@ async def on_reloadadmins_command(update: Update, _, session: Session, chat: Cha
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
-    logger.info("/unban in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+    logger.info(f"/unban in {utilities.log(update.effective_chat)} from {utilities.log(update.effective_user)}")
 
     user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:
@@ -354,7 +354,7 @@ async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
-    logger.info("/ban or /shadowban in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+    logger.info(f"/ban or /shadowban in {utilities.log(update.effective_chat)} from {utilities.log(update.effective_user)}")
 
     user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:
@@ -378,7 +378,7 @@ async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info("/info in %d (%s)", update.effective_chat.id, update.effective_chat.title)
+    logger.info(f"/info in {utilities.log(update.effective_chat)} from {utilities.log(update.effective_user)}")
 
     user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:
@@ -407,7 +407,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True, pass_chat=True)
 async def on_new_group_chat(update: Update, _, session: Session, user: User, chat: Chat):
-    logger.info("new group chat %d (%s)", update.effective_chat.id, update.effective_chat.title)
+    logger.info(f"new group chat: {utilities.log(update.effective_chat)}")
 
     if not utilities.is_admin(update.effective_user):
         logger.info("unauthorized: leaving...")
@@ -427,7 +427,7 @@ async def on_new_group_chat(update: Update, _, session: Session, user: User, cha
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
-    logger.info("chat member update")
+    logger.info(f"chat member update for user {utilities.log(update.chat_member.from_user)}")
 
     new_chat_member: ChatMember = update.chat_member.new_chat_member if update.chat_member else update.my_chat_member.new_chat_member
     old_chat_member: ChatMember = update.chat_member.old_chat_member if update.chat_member else update.my_chat_member.old_chat_member
@@ -438,16 +438,16 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Chat)
         chat_administrator = chat.get_administrator(user_id)
         if chat_administrator:
             session.delete(chat_administrator)
-            logger.info("chat member: deleted db record")
+            logger.info(f"user was demoted: deleted db record")
         else:
-            logger.info("no record to delete")
+            logger.info("user was demoted, but there's no record to delete")
     elif new_chat_member.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER):
         # user was promoted/their admin permissions changed
         # noinspection PyTypeChecker
         new_chat_member_dict = chat_member_to_dict(new_chat_member, update.effective_chat.id)
         chat_administrator = ChatAdministrator(**new_chat_member_dict)
         session.merge(chat_administrator)
-        logger.info("chat member: updated/inserted db record")
+        logger.info("user was promoted or their admin permissions changed: updated/inserted db record")
 
 
 def get_localized_settings_keyboard(setting_key):
