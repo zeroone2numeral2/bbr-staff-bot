@@ -194,8 +194,8 @@ class ChatAdministrator(Base):
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # updated_on = Column(DateTime(timezone=True), onupdate=func.now())  # https://stackoverflow.com/a/33532154
 
-    user = relationship("User", back_populates="chats_administrator")
-    chat = relationship("Chat", back_populates="chat_administrators")
+    user: User = relationship("User", back_populates="chats_administrator")
+    chat: Chat = relationship("Chat", back_populates="chat_administrators")
 
     @classmethod
     def from_chat_member(cls, chat_id, chat_member: ChatMemberAdministrator):
@@ -220,7 +220,7 @@ class UserMessage(Base):
     revoked_on = Column(DateTime, default=None)
     message_json = Column(String, default=None)
 
-    user = relationship("User", back_populates="user_messages")
+    user: User = relationship("User", back_populates="user_messages")
     admin_messages = relationship("AdminMessage", back_populates="user_message")
 
     def __init__(self, message_id, user_id, forwarded_chat_id, forwarded_message_id, message_datetime):
@@ -256,9 +256,9 @@ class AdminMessage(Base):
     revoked_by = Column(Integer, nullable=True)
     message_json = Column(String, default=None)
 
-    chat = relationship("Chat", back_populates="admin_messages")
-    user = relationship("User", back_populates="admin_messages")
-    user_message = relationship("UserMessage", back_populates="admin_messages")
+    chat: Chat = relationship("Chat", back_populates="admin_messages")
+    user: User = relationship("User", back_populates="admin_messages")
+    user_message: UserMessage = relationship("UserMessage", back_populates="admin_messages")
 
     def __init__(self, message_id, chat_id, user_id, user_message_id, reply_message_id, message_datetime):
         self.message_id = message_id
