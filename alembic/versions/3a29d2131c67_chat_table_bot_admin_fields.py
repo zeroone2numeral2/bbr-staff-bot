@@ -15,6 +15,8 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+# test
+
 
 def upgrade() -> None:
     op.add_column('chats', sa.Column('is_admin', sa.Boolean, default=False))
