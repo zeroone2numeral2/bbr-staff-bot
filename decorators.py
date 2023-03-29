@@ -142,7 +142,7 @@ def staff_admin():
         async def wrapped(update: Update, context: CallbackContext, session: Session, *args, **kwargs):
             # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
             chat: Chat = chats.get_staff_chat(session)
-            if not chat.is_admin(update.effective_user.id):
+            if not chat.is_user_admin(update.effective_user.id):
                 logger.warning(f"{update.effective_user.id} ({update.effective_user.full_name}) not recognized as admin of {update.effective_chat.id} ({update.effective_chat.title})")
                 await update.message.reply_text(f"You're not an admin of {utilities.escape_html(chat.title)}. "
                                                 f"If you think this is an error, please ask a recognized admin to "

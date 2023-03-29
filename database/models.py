@@ -101,7 +101,7 @@ class Chat(Base):
         self.chat_id = chat_id
         self.title = title
 
-    def is_admin(self, user_id: int, permissions: Optional[List] = None, any_permission: bool = True, all_permissions: bool = False) -> bool:
+    def is_user_admin(self, user_id: int, permissions: Optional[List] = None, any_permission: bool = True, all_permissions: bool = False) -> bool:
         if any_permission == all_permissions:
             raise ValueError("only one between any_permission and all_permissions can be True or False")
 

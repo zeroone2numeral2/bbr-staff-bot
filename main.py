@@ -231,7 +231,7 @@ async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info(f"/help {utilities.log(update)}")
 
     staff_chat: Chat = chats.get_staff_chat(session)
-    if not staff_chat.is_admin(update.effective_user.id):
+    if not staff_chat.is_user_admin(update.effective_user.id):
         logger.debug("user is not admin")
         return await on_start_command(update, context)
 
