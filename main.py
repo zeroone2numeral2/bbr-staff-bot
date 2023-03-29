@@ -263,7 +263,7 @@ async def on_setwelcome_language_button(update: Update, context: ContextTypes.DE
     await update.effective_message.edit_text(f"Welcome text set for {LANGUAGES[selected_language]['emoji']}:")
     await update.effective_message.reply_text(f"{setting.value}", quote=False)
 
-    user.set_started(update_last_message=True)
+    user.set_started()
 
 
 @decorators.catch_exception()
