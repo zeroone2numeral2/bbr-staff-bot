@@ -23,7 +23,8 @@ from database.queries import settings, chats, user_messages, admin_messages
 import decorators
 import utilities
 from emojis import Emoji
-from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey
+from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
+    SETTING_KEYS_NOT_LOCALIZED, SettingKeyNotLocalized
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -177,7 +178,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     )
     session.add(user_message)
 
-    if config.settings.sent_to_staff_message:
+    sent_to_staff_setting = settings.get_or_create_setting(session, SettingKeyNotLocalized.SENT_TO_STAFF_STATUS, value="true")
+    if sent_to_staff_setting.as_bool():
         await update.message.reply_text("<i>Message sent to the staff, now wait for an admin's reply. "
                                         "Please be aware that it might take some time</i> :)", quote=True)
 
@@ -201,6 +203,45 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
 
     text += "\nHold on a placeholder to copy quickly it"
 
+    await update.message.reply_text(text)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/settings {utilities.log(update)}")
+
+    all_settings = settings.get_settings_not_localized(session)
+    text = ""
+    setting: Setting
+    for setting in all_settings.scalars():
+        text += f"• <code>{setting.key}</code> -{utilities.escape_html('>')} {setting.value_pretty()}\n"
+
+    await update.message.reply_text(text)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/set {utilities.log(update)}")
+
+    try:
+        key = context.args[0].lower()
+        value = context.args[1]
+    except IndexError:
+        await update.message.reply_text(f"Usage: <code>/set [setting] [value]</code>\nUse /settings for a list of settings")
+        return
+
+    if key not in SETTING_KEYS_NOT_LOCALIZED:
+        await update.message.reply_text(f"<code>{key}</code> is not a recognized setting")
+        return
+
+    setting = settings.get_or_create_setting(session, key)
+    setting.value = value
+
+    text = f"New value for <code>{key}</code>: {value}"
     await update.message.reply_text(text)
 
 
@@ -320,7 +361,9 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 @decorators.pass_session(pass_chat=True)
 async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"message edit in a group {utilities.log(update)}")
-    if not config.settings.broadcast_message_edits:
+    broadcast_edits = settings.get_or_create_setting(session, SettingKeyNotLocalized.BROADCAST_EDITS, value="false")
+    if not broadcast_edits.as_bool():
+        logger.info("message edits are disabled")
         return
 
     if not chat.default:
@@ -594,6 +637,11 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 @decorators.pass_session(pass_user=True)
 async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/revoke (user) {utilities.log(update)}")
+
+    user_revoke_setting = settings.get_or_create_setting(session, SettingKeyNotLocalized.ALLOW_USER_REVOKE, value="true")
+    if not user_revoke_setting.as_bool():
+        logger.info("user revoke is not allowed")
+        return
 
     if not update.message.reply_to_message or update.message.reply_to_message.from_user.id != update.effective_user.id:
         await update.message.reply_text("⚠️ <i>please reply to the message you want to be deleted from the staff's chat</i>")
@@ -947,8 +995,10 @@ def main():
 
     # private chat: admins
     # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
-    app.add_handler(CommandHandler('placeholders', on_placeholders_command, filters.ChatType.PRIVATE))
-    app.add_handler(CommandHandler('welcome', on_welcome_settings_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['set'], on_set_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['welcome', 'w'], on_welcome_settings_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_welcome_helper_button, rf"{SettingKey.WELCOME}:helper:(.*)"))
     app.add_handler(CallbackQueryHandler(on_welcome_read_button, rf"{SettingKey.WELCOME}:read:(.*)"))
     app.add_handler(CallbackQueryHandler(on_welcome_delete_button, rf"{SettingKey.WELCOME}:delete:(.*)"))

@@ -297,7 +297,7 @@ class Setting(Base):
     __tablename__ = 'settings'
 
     key = Column(String, primary_key=True)
-    language = Column(String, primary_key=True, default=Language.EN)
+    language = Column(String, primary_key=True, default="-")
     value = Column(String, default=None)
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
@@ -307,8 +307,14 @@ class Setting(Base):
         self.key = key.lower()
         self.value = value
 
-    def __frmt__(self):
-        return f"Setting(key={self.key}, language={self.language}, value={self.value})"
+    def as_bool(self):
+        return self.value and self.value == "true"
+
+    def value_pretty(self):
+        if self.value is None:
+            return "null"
+
+        return self.value
 
 
 class CustomCommand(Base):

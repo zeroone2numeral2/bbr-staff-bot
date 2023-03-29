@@ -25,7 +25,19 @@ LANGUAGES = {
 class SettingKey:
     WELCOME = "welcome"
     SENT_TO_STAFF = "sent_to_staff"
-    SENT_TO_STAFF_STATUS = "sent_to_staff_status"
+
+
+class SettingKeyNotLocalized:
+    SENT_TO_STAFF_STATUS = "sent_to_staff_message"
+    BROADCAST_EDITS = "broadcast_edits"
+    ALLOW_USER_REVOKE = "allow_user_revoke"
+
+
+SETTING_KEYS_NOT_LOCALIZED = (
+    SettingKeyNotLocalized.SENT_TO_STAFF_STATUS,
+    SettingKeyNotLocalized.BROADCAST_EDITS,
+    SettingKeyNotLocalized.ALLOW_USER_REVOKE
+)
 
 
 class TempDataKey:
