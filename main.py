@@ -316,6 +316,8 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 @decorators.pass_session(pass_user=True)
 async def on_edited_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"message edit")
+    if not config.settings.broadcast_message_edits:
+        return
 
 
 @decorators.catch_exception()
@@ -466,7 +468,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/revoke {utilities.log(update)}")
+    logger.info(f"/revoke (admin) {utilities.log(update)}")
 
     admin_message: AdminMessage = admin_messages.get_admin_message(session, update)
     if not admin_message:
@@ -491,6 +493,39 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
     )
 
     admin_message.revoke(revoked_by=update.effective_user.id)
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/revoke (user) {utilities.log(update)}")
+
+    if update.message.reply_to_message.from_user.id != update.effective_user.id:
+        await update.message.reply_text("⚠️ <i>please reply to the message you want to be deleted from the staff's chat</i>")
+        return
+
+    user_message: UserMessage = user_messages.get_user_message_by_id(session, update.message.reply_to_message.message_id)
+    if not user_message:
+        logger.warning(f"couldn't find replied-to message, message_id: {update.message.reply_to_message.message_id}")
+        await update.message.reply_text(
+            "⚠️ <i>can't find the message to revoke in the database</i>",
+            reply_to_message_id=update.message.reply_to_message.message_id
+        )
+        return
+
+    logger.info(f"revoking message_id {user_message.forwarded_message_id} in staff chat_id {user_message.forwarded_chat_id}")
+    await context.bot.delete_message(
+        chat_id=user_message.forwarded_chat_id,
+        message_id=user_message.forwarded_message_id
+    )
+
+    await update.message.reply_text(
+        "🚮 <i>message revoked successfully</i>",
+        reply_to_message_id=update.message.reply_to_message.message_id
+    )
+
+    user_message.revoke()
+    user_message.user.set_started()
 
 
 @decorators.catch_exception()
@@ -786,7 +821,6 @@ def main():
     # private chat: admins
     # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
     app.add_handler(CommandHandler('placeholders', on_placeholders_command, filters.ChatType.PRIVATE))
-
     app.add_handler(CommandHandler('welcome', on_welcome_settings_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_welcome_helper_button, rf"{SettingKey.WELCOME}:helper:(.*)"))
     app.add_handler(CallbackQueryHandler(on_welcome_read_button, rf"{SettingKey.WELCOME}:read:(.*)"))
@@ -820,6 +854,7 @@ def main():
     # private chat: users
     app.add_handler(CommandHandler('start', on_start_command, filters.ChatType.PRIVATE))
     app.add_handler(CommandHandler('lang', on_lang_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['revoke', 'del'], on_revoke_user_command, filters.ChatType.PRIVATE & filters.REPLY))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE, on_user_message))
 
     # staff chat

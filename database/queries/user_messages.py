@@ -9,6 +9,14 @@ from database.models import UserMessage, Chat, ChatAdministrator, chat_members_t
 from constants import SettingKey, Language
 
 
+def get_user_message_by_id(session: Session, message_id: int) -> Optional[UserMessage]:
+    user_message: UserMessage = session.query(UserMessage).filter(
+        UserMessage.message_id == message_id
+    ).one_or_none()
+
+    return user_message
+
+
 def get_user_message(session: Session, update: Update) -> Optional[UserMessage]:
     chat_id = update.effective_chat.id
     replied_to_message_id = update.message.reply_to_message.message_id

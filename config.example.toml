@@ -8,6 +8,9 @@ admins = [
 [database]
 engine_string = "sqlite:///bot.db"
 
+[settings]
+broadcast_message_edits = true
+
 [handlers]
 import = [
     ""
