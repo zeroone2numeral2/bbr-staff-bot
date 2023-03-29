@@ -317,6 +317,21 @@ class Setting(Base):
         return self.value
 
 
+class LocalizedText(Base):
+    __tablename__ = 'localized_texts'
+
+    key = Column(String, primary_key=True)
+    language = Column(String, primary_key=True, default=Language.EN)
+    value = Column(String, default=None)
+    updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey('users.user_id'))
+
+    def __init__(self, key, language: str, value: Optional[str] = None):
+        self.key = key.lower()
+        self.language = language
+        self.value = value
+
+
 class CustomCommand(Base):
     __tablename__ = 'custom_commands'
 
