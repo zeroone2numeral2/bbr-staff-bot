@@ -43,29 +43,25 @@ COMMAND_PREFIXES = ["/", "!", "."]
 
 CACHE_TIME = 10
 
-ADMIN_HELP = """<b><u>Admin commands (private)</u></b>:
-- /welcome: see or edit a langauge's welcome text
-- /placeholders: list available placeholders (they can be used in welcome texts)
+ADMIN_HELP = """••• <b><u>Admin commands (private)</u></b>:
+•• Only the staff chat's administrators are allowed to use these commands
+• /welcome: see or edit a langauge's welcome text
+• /placeholders: list available placeholders (they can be used in welcome texts)
 
-<b><u>Admin commands (staff chat)</u></b>:
-- <code>/setstaff</code>: use the current chat as staff chat
-- <code>/reloadadmins</code>: update the staff chat's admins list
-- <code>/revoke</code> or <code>/del</code> (in reply to an admin message): delete an admin's reply from the user's private chat
-- <code>++[reply]</code>: you can reply to an admin's message that was previously sent to the user by answering it with \
+••• <b><u>Staff chat commands</u></b>:
+•• Anyone in the staff chat is allowed to use these commands or perform these actions
+• <code>/reloadadmins</code>: update the staff chat's admins list
+• <code>/revoke</code> or <code>/del</code> (in reply to an admin message): delete an admin's reply from the user's private chat
+• <code>++[reply]</code>: you can reply to an admin's message that was previously sent to the user by answering it with \
 "<code>++</code>". The text after "<code>++</code>" will be sent to the user <b>in reply</b> to the admin message they \
 previously received
 
-The following commands work in reply to an user's forwarded message in the staff chat:
-- <code>/ban [reason]</code>: ban an user from using the bot. The bot will tell the user that they are banned 
+•• The following commands work in reply to an user's forwarded message in the staff chat:
+• <code>/ban [reason]</code>: ban an user from using the bot. The bot will tell the user that they are banned \
 when they send new messages. The reason is optional
-- <code>/shadowban [reason]</code>: like <code>/ban</code>, but the user won't know they were banned
-- <code>/unban</code>: unban the user
-- <code>/info</code>: show everything we know about that user
-
-<b><u>Things to keep in mind</u></b>
-- an admin is whoever is an administrator in the current staff chat. Admins are updated as soon as they are added/removed, \
-but <code>/reloadadmins</code> can be used to force-refresh the admins list
-- <i>anyone</i> in the staff chat is allowed to reply to users or ban them
+• <code>/shadowban [reason]</code>: like <code>/ban</code>, but the user won't know they were banned
+• <code>/unban</code>: unban the user
+• <code>/info</code>: show everything we know about that user
 """
 
 
