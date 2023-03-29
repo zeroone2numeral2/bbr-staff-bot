@@ -15,6 +15,7 @@ from telegram.ext.filters import MessageFilter
 from telegram import helpers
 
 from database import engine
+from database.base import get_session
 from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage
 from database.queries import settings, chats, user_messages, admin_messages
 import decorators
@@ -792,6 +793,17 @@ async def post_init(application: Application) -> None:
         language_code=Language.FR,
         scope=BotCommandScopeAllPrivateChats()
     )
+
+    session: Session = get_session()
+    staff_chat = chats.get_staff_chat(session)
+    if not staff_chat:
+        return
+
+    staff_chat_chat_member: ChatMember = await bot.get_chat_member(staff_chat.chat_id, bot.id)
+    if not isinstance(staff_chat_chat_member, ChatMemberAdministrator):
+        logger.info(f"not an admin in the staff chat {staff_chat.chat_id}, current status: {staff_chat_chat_member.status}")
+    else:
+        logger.info(f"admin in the staff chat {staff_chat.chat_id}, can_delete_messages: {staff_chat_chat_member.can_delete_messages}")
 
 
 def main():
