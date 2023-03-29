@@ -131,6 +131,19 @@ class Chat(Base):
             if administrator.user_id == user_id:
                 return administrator
 
+    def set_as_administrator(self, can_delete_messages: bool = None):
+        self.is_admin = True
+        if can_delete_messages is not None:
+            self.can_delete_messages = can_delete_messages
+
+    def unset_as_administrator(self):
+        self.is_admin = False
+        self.can_delete_messages = False
+
+    def set_left(self):
+        self.left = True
+        self.unset_as_administrator()
+
 
 def chat_member_to_dict(chat_member: ChatMemberAdministrator, chat_id: [None, int] = None) -> dict:
     is_owner = chat_member.status == ChatMember.OWNER

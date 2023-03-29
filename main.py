@@ -7,10 +7,12 @@ import pytz
 from sqlalchemy.orm import Session
 from sqlalchemy import update as sqlalchemy_update, true, ChunkedIteratorResult, select
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberAdministrator, User as TelegramUser, \
-    ChatMemberOwner, ChatMember, Message, BotCommand, BotCommandScopeAllPrivateChats
+    ChatMemberOwner, ChatMember, Message, BotCommand, BotCommandScopeAllPrivateChats, ChatMemberMember, \
+    ChatMemberRestricted, ChatMemberLeft, ChatMemberBanned
 from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Defaults, filters, MessageHandler, \
-    CallbackQueryHandler, ChatMemberHandler, PrefixHandler, Application, ExtBot, ConversationHandler, TypeHandler
+    CallbackQueryHandler, ChatMemberHandler, PrefixHandler, Application, ExtBot, ConversationHandler, TypeHandler, \
+    CallbackContext
 from telegram.ext.filters import MessageFilter
 from telegram import helpers
 
@@ -580,13 +582,13 @@ async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_T
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_new_group_chat(update: Update, _, session: Session, user: User, chat: Chat):
+async def on_new_group_chat(update: Update, context: CallbackContext, session: Session, user: User, chat: Chat):
     logger.info(f"new group chat {utilities.log(update)}")
 
     if not utilities.is_admin(update.effective_user):
         logger.info("unauthorized: leaving...")
         await update.effective_chat.leave()
-        chat.left = True
+        chat.set_left()
         return
 
     chat.left = False  # override, it might be True if the chat was previously set
@@ -597,11 +599,25 @@ async def on_new_group_chat(update: Update, _, session: Session, user: User, cha
     administrators: Tuple[ChatMember] = await update.effective_chat.get_administrators()
     chats.update_administrators(session, chat, administrators)
 
+    administrator: ChatMemberAdministrator
+    for administrator in administrators:
+        if administrator.user.id == context.bot.id:
+            chat.set_as_administrator(administrator.can_delete_messages)
+
 
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
     logger.info(f"chat member update {utilities.log(update)}")
+
+    if update.my_chat_member:
+        logger.info(f"MyChatMember update, new status: {update.my_chat_member.new_chat_member.status}")
+        if isinstance(update.my_chat_member.new_chat_member, ChatMemberAdministrator):
+            chat.set_as_administrator(update.my_chat_member.new_chat_member.can_delete_messages)
+        elif isinstance(update.my_chat_member.new_chat_member, (ChatMemberMember, ChatMemberRestricted)):
+            chat.unset_as_administrator()
+        elif isinstance(update.my_chat_member.new_chat_member, (ChatMemberLeft, ChatMemberBanned)):
+            chat.set_left()
 
     new_chat_member: ChatMember = update.chat_member.new_chat_member if update.chat_member else update.my_chat_member.new_chat_member
     old_chat_member: ChatMember = update.chat_member.old_chat_member if update.chat_member else update.my_chat_member.old_chat_member
@@ -846,8 +862,13 @@ async def post_init(application: Application) -> None:
     staff_chat_chat_member: ChatMember = await bot.get_chat_member(staff_chat.chat_id, bot.id)
     if not isinstance(staff_chat_chat_member, ChatMemberAdministrator):
         logger.info(f"not an admin in the staff chat {staff_chat.chat_id}, current status: {staff_chat_chat_member.status}")
+        staff_chat.unset_as_administrator()
     else:
         logger.info(f"admin in the staff chat {staff_chat.chat_id}, can_delete_messages: {staff_chat_chat_member.can_delete_messages}")
+        staff_chat.set_as_administrator(staff_chat_chat_member.can_delete_messages)
+
+    session.add(staff_chat)
+    session.commit()
 
 
 def main():
