@@ -2,7 +2,7 @@ import datetime
 import logging
 from typing import List, Optional, Union, Tuple
 
-from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, ChatMemberOwner
@@ -330,6 +330,72 @@ class LocalizedText(Base):
         self.key = key.lower()
         self.language = language
         self.value = value
+
+
+class ValueType:
+    BOOL = "bool"
+    INT = "integer"
+    STR = "string"
+    FLOAT = "float"
+    DATETIME = "datetime"
+    DATE = "date"
+
+
+class BotSetting(Base):
+    __tablename__ = 'bot_settings'
+
+    key = Column(String, primary_key=True)
+
+    value_bool = Column(Boolean, default=None)
+    value_int = Column(Integer, default=None)
+    value_float = Column(Float, default=None)
+    value_str = Column(String, default=None)
+    value_datetime = Column(DateTime, default=None)
+    value_date = Column(Date, default=None)
+
+    value_type = Column(String, default=None)
+
+    updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey('users.user_id'))
+
+    def __init__(self, key, value=None):
+        self.key = key.lower()
+        if value is not None:
+            # auto-detect the setting type
+            if isinstance(value, bool):
+                self.value_bool = value
+                self.value_type = ValueType.BOOL
+            elif isinstance(value, int):
+                self.value_int = value
+                self.value_type = ValueType.INT
+            elif isinstance(value, float):
+                self.value_float = value
+                self.value_type = ValueType.FLOAT
+            elif isinstance(value, str):
+                self.value_str = value
+                self.value_type = ValueType.STR
+            elif isinstance(value, datetime.datetime):
+                self.value_datetime = value
+                self.value_type = ValueType.DATETIME
+            elif isinstance(value, datetime.date):
+                self.value_date = value
+                self.value_type = ValueType.DATE
+            else:
+                raise ValueError(f"provided value of unrecognized type: {type(value)}")
+
+    def value(self):
+        if self.value_type == ValueType.BOOL:
+            return self.value_bool
+        elif self.value_type == ValueType.INT:
+            return self.value_int
+        elif self.value_type == ValueType.FLOAT:
+            return self.value_float
+        elif self.value_type == ValueType.STR:
+            return self.value_str
+        elif self.value_type == ValueType.DATETIME:
+            return self.value_datetime
+        elif self.value_type == ValueType.DATE:
+            return self.value_date
 
 
 class CustomCommand(Base):
