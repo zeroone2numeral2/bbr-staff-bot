@@ -19,7 +19,7 @@ from telegram import helpers
 from database import engine
 from database.base import get_session
 from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage
-from database.queries import settings, chats, user_messages, admin_messages
+from database.queries import settings_old, chats, user_messages, admin_messages
 import decorators
 import utilities
 from emojis import Emoji
