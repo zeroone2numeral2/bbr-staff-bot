@@ -19,16 +19,22 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     name = Column(String, default=None)
     username = Column(String, default=None)
+
+    # started
     started = Column(Boolean, default=False)  # we need to save every staff chat's admin, and they might have not started the bot yet
+    started_on = Column(DateTime, default=None)
+
+    # langauge
     language_code = Column(String, default=None)
     selected_language = Column(String, default=None)
+
+    # ban
     banned = Column(Boolean, default=False)
     shadowban = Column(Boolean, default=False)
     banned_reason = Column(String, default=None)
     banned_on = Column(DateTime, default=None)
 
-    started_on = Column(DateTime, default=None)
-    last_message = Column(DateTime, default=None)
+    last_message = Column(DateTime, default=None)  # to the staff's chat
 
     chats_administrator = relationship("ChatAdministrator", back_populates="user")
     user_messages = relationship("UserMessage", back_populates="user")
@@ -54,12 +60,10 @@ class User(Base):
         self.username = telegram_user.username
         self.language_code = telegram_user.language_code
 
-    def set_started(self, update_last_message=False):
+    def set_started(self):
         self.started = True
         if not self.started_on:
             self.started_on = func.now()
-        if update_last_message:
-            self.update_last_message()
 
     def update_last_message(self):
         self.last_message = func.now()

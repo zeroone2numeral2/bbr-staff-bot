@@ -112,7 +112,7 @@ async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_T
 
     await update.effective_message.edit_text(text, reply_markup=reply_markup)
 
-    user.set_started(update_last_message=True)
+    user.set_started()
 
 
 @decorators.catch_exception()
@@ -129,7 +129,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     text = replace_placeholders(welcome_setting.value, update.effective_user)
     await update.message.reply_text(text, reply_markup=reply_markup)
 
-    user.set_started(update_last_message=True)
+    user.set_started()
     user.update_metadata(update.effective_user)
 
 
@@ -177,7 +177,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     await update.message.reply_text("<i>Message sent to the staff, now wait for an admin's reply. "
                                     "Please be aware that it might take some time</i> :)", quote=True)
 
-    user.set_started(update_last_message=True)
+    user.set_started()
+    user.update_last_message()
 
 
 async def on_chatid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
