@@ -18,7 +18,7 @@ from telegram import helpers
 
 from database import engine
 from database.base import get_session
-from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage, \
+from database.models import User, UserMessage, Chat, chat_member_to_dict, ChatAdministrator, AdminMessage, \
     BotSetting, ValueType, LocalizedText
 from database.queries import settings, chats, user_messages, admin_messages, texts
 import decorators
@@ -1053,23 +1053,6 @@ async def post_init(application: Application) -> None:
         staff_chat.set_as_administrator(staff_chat_chat_member.can_delete_messages)
 
     session.add(staff_chat)
-    session.commit()
-
-    logger.info(f"migrating old welcome settings...")
-    old_welcome_settings = session.scalars(select(Setting).where(Setting.key == "welcome"))
-    setting: Setting
-    for setting in old_welcome_settings:
-        ltext = texts.get_localized_text(session, LocalizedTextKey.WELCOME, setting.language, create_if_missing=False)
-        if not ltext:
-            ltext = LocalizedText(
-                key=LocalizedTextKey.WELCOME,
-                language=setting.language,
-                value=setting.value,
-                updated_by=setting.updated_by
-            )
-            session.add(ltext)
-            logger.info(f"migrating localized text: {ltext.key}, {ltext.language}")
-
     session.commit()
 
 
