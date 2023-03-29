@@ -557,7 +557,7 @@ async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_T
         logger.info("staff chat not set or the bot is not allowed to delete messages")
         return
 
-    if update.message.reply_to_message.from_user.id != update.effective_user.id:
+    if not update.message.reply_to_message or update.message.reply_to_message.from_user.id != update.effective_user.id:
         await update.message.reply_text("⚠️ <i>please reply to the message you want to be deleted from the staff's chat</i>")
         return
 
@@ -941,7 +941,7 @@ def main():
     # private chat: users
     app.add_handler(CommandHandler('start', on_start_command, filters.ChatType.PRIVATE))
     app.add_handler(CommandHandler('lang', on_lang_command, filters.ChatType.PRIVATE))
-    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['revoke', 'del'], on_revoke_user_command, filters.ChatType.PRIVATE & filters.REPLY))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['revoke', 'del'], on_revoke_user_command, filters.ChatType.PRIVATE))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE, on_user_message))
 
     # staff chat
