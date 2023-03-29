@@ -552,11 +552,6 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/revoke (user) {utilities.log(update)}")
 
-    staff_chat = chats.get_staff_chat(session)
-    if not staff_chat or not staff_chat.can_delete_messages:
-        logger.info("staff chat not set or the bot is not allowed to delete messages")
-        return
-
     if not update.message.reply_to_message or update.message.reply_to_message.from_user.id != update.effective_user.id:
         await update.message.reply_text("⚠️ <i>please reply to the message you want to be deleted from the staff's chat</i>")
         return
