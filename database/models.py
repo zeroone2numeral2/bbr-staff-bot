@@ -227,6 +227,8 @@ class UserMessage(Base):
         self.message_datetime = message_datetime
 
     def add_reply(self, count=1):
+        if self.replies_count is None:
+            self.replies_count = 0
         self.replies_count = self.replies_count + count
 
     def revoke(self):
