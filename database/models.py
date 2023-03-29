@@ -36,6 +36,7 @@ class User(Base):
 
     last_message = Column(DateTime, default=None)  # to the staff's chat
 
+    # relationships
     chats_administrator = relationship("ChatAdministrator", back_populates="user")
     user_messages = relationship("UserMessage", back_populates="user")
     admin_messages = relationship("AdminMessage", back_populates="user")
