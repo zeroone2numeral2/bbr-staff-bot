@@ -22,13 +22,9 @@ LANGUAGES = {
 }
 
 
-class SettingKey:
-    WELCOME = "welcome"
-    SENT_TO_STAFF = "sent_to_staff"
-
-
 class LocalizedTextKey:
     WELCOME = "welcome"
+    SENT_TO_STAFF = "sent_to_staff"
 
 
 class BotSettingKey:

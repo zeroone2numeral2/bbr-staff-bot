@@ -54,17 +54,17 @@ def get_localized_text_with_fallback(
 
 def get_texts(session: Session, key: str):
     statement = select(LocalizedText).where(LocalizedText.key == key)
-    return session.execute(statement)
+    return session.scalars(statement)
 
 
-def get_or_create_localized_text(session: Session, key: str, language: str, create_if_missing=True):
+def get_or_create_localized_text(session: Session, key: str, language: str, create_if_missing=True, value: Optional[str] = None):
     text: LocalizedText = session.query(LocalizedText).filter(
         LocalizedText.key == key,
         LocalizedText.language == language
     ).one_or_none()
 
     if not text and create_if_missing:
-        text = LocalizedText(key=key, language=language)
+        text = LocalizedText(key=key, language=language, value=value)
         session.add(text)
 
     return text

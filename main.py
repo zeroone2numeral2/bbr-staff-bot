@@ -19,13 +19,13 @@ from telegram import helpers
 from database import engine
 from database.base import get_session
 from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage, \
-    BotSetting, ValueType
-from database.queries import settings, settings_old, chats, user_messages, admin_messages
+    BotSetting, ValueType, LocalizedText
+from database.queries import settings, chats, user_messages, admin_messages, texts
 import decorators
 import utilities
 from emojis import Emoji
-from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
-    BOT_SETTINGS_DEFAULTS, BotSettingKey
+from constants import LANGUAGES, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
+    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -42,10 +42,28 @@ def get_language_code(selected_language_code, telegram_language_code):
     if selected_language_code:
         return selected_language_code
 
-    return telegram_language_code or "en"
+    return telegram_language_code or Language.EN
 
 
-def get_start_reply_markup(user_language: str) -> InlineKeyboardMarkup:
+def get_start_reply_markup(start_message_language: str, welcome_texts) -> Optional[InlineKeyboardMarkup]:
+    keyboard = [[]]
+
+    for welcome_text in welcome_texts:
+        if welcome_text.language not in LANGUAGES:
+            logger.debug(f"welcome text found for language {welcome_text.language}, but not available in LANGUAGES")
+            continue
+        if start_message_language != welcome_text.language:
+            emoji = LANGUAGES[welcome_text.language]["emoji"]
+            button = InlineKeyboardButton(emoji, callback_data=f"setlangstart:{welcome_text.language}")
+            keyboard[0].append(button)
+
+    if len(keyboard[0]) < 1:
+        return
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_all_languages_reply_markup(user_language: str) -> InlineKeyboardMarkup:
     keyboard = [[]]
 
     for language_code, language_data in LANGUAGES.items():
@@ -74,22 +92,22 @@ def replace_placeholders(text: str, user: TelegramUser):
     return text
 
 
-def get_localized_setting_resume_text(session: Session, setting_key: str):
-    result = settings_old.get_settings(session, setting_key)
-    settings_statuses = {}
+def get_localized_text_resume_text(session: Session, setting_key: str):
+    result = texts.get_texts(session, setting_key)
+    ltexts_statuses = {}
 
-    setting: Setting
-    for setting in result.scalars():
-        settings_statuses[setting.language] = "set" if setting.value else "<b>not set</b>"
+    ltext: LocalizedText
+    for ltext in result:
+        ltexts_statuses[ltext.language] = "set" if ltext.value else "<b>not set</b>"
 
     for lang_code, lang_data in LANGUAGES.items():
-        if lang_code in settings_statuses:
+        if lang_code in ltexts_statuses:
             continue
 
-        settings_statuses[lang_code] = "<b>not set</b>"
+        ltexts_statuses[lang_code] = "<b>not set</b>"
 
     text = ""
-    for lang_code, current_status in settings_statuses.items():
+    for lang_code, current_status in ltexts_statuses.items():
         text += f"\n{LANGUAGES[lang_code]['emoji']} -> {current_status}"
 
     return text.strip()
@@ -106,14 +124,28 @@ async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_T
     selected_language = context.matches[0].group(1)
     user.selected_language = selected_language
 
-    await update.callback_query.answer(f"langauge set to {LANGUAGES[user.selected_language]['emoji']}", show_alert=False)
+    await update.callback_query.edit_message_text(
+        f"Your language has been set to {LANGUAGES[user.selected_language]['emoji']}\nUse the buttons below to change language:",
+        reply_markup=get_all_languages_reply_markup(selected_language)
+    )
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_set_language_button_start(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
+    logger.info(f"set language button (from /start) {utilities.log(update)}")
+    selected_language = context.matches[0].group(1)
+    user.selected_language = selected_language
+
+    await update.callback_query.answer(f"language set to {LANGUAGES[user.selected_language]['emoji']}", show_alert=False)
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
-    reply_markup = get_start_reply_markup(language_code)
 
-    # also update the welcome text
-    welcome_setting = settings_old.get_localized_setting(session, SettingKey.WELCOME, language_code)
-    text = replace_placeholders(welcome_setting.value, update.effective_user)
+    welcome_text = texts.get_localized_text(session, LocalizedTextKey.WELCOME, language_code)
+    welcome_texts = texts.get_texts(session, LocalizedTextKey.WELCOME).all()
+    reply_markup = get_start_reply_markup(language_code, welcome_texts)
+
+    text = replace_placeholders(welcome_text.value, update.effective_user)
 
     await update.effective_message.edit_text(text, reply_markup=reply_markup)
 
@@ -127,11 +159,11 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
 
-    welcome_setting = settings_old.get_localized_setting(session, SettingKey.WELCOME, language_code)
+    welcome_text = texts.get_localized_text_with_fallback(session, LocalizedTextKey.WELCOME, language_code)
+    welcome_texts = texts.get_texts(session, LocalizedTextKey.WELCOME).all()
+    reply_markup = get_start_reply_markup(welcome_text.language, welcome_texts)
 
-    reply_markup = get_start_reply_markup(language_code)
-
-    text = replace_placeholders(welcome_setting.value, update.effective_user)
+    text = replace_placeholders(welcome_text.value, update.effective_user)
     await update.message.reply_text(text, reply_markup=reply_markup)
 
     user.set_started()
@@ -144,9 +176,9 @@ async def on_lang_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info(f"/lang {utilities.log(update)}")
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
-    reply_markup = get_start_reply_markup(language_code)
+    reply_markup = get_all_languages_reply_markup(language_code)
 
-    text = f"Your current language is {LANGUAGES[language_code]['emoji']}. Use the buttons below to change language:"
+    text = f"Your current language is {LANGUAGES[language_code]['emoji']}\nUse the buttons below to change language:"
     await update.effective_message.reply_text(text, reply_markup=reply_markup)
 
 
@@ -315,8 +347,8 @@ async def on_welcome_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         text = f"Select the language for this welcome text:"
 
     keyboard = [[]]
-    for langauge_code, language_data in LANGUAGES.items():
-        keyboard[0].append(InlineKeyboardButton(language_data["emoji"], callback_data=f"{callback_data_prefix}:{langauge_code}"))
+    for language_code, language_data in LANGUAGES.items():
+        keyboard[0].append(InlineKeyboardButton(language_data["emoji"], callback_data=f"{callback_data_prefix}:{language_code}"))
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(text, reply_markup=reply_markup)
@@ -348,19 +380,19 @@ async def on_setwelcome_language_button(update: Update, context: ContextTypes.DE
                                                  "<code>/setstaff</code> to set that chat as default staff chat")
         return
 
-    setting = settings_old.get_setting(
+    welcome_text = texts.get_localized_text(
         session,
-        key=SettingKey.WELCOME,
+        key=LocalizedTextKey.WELCOME,
         language=selected_language,
         create_if_missing=True
     )
 
-    welcome_text = context.user_data.get("welcome_text")
-    setting.value = welcome_text
-    setting.updated_by = update.effective_user.id
+    welcome_text_from_user_data = context.user_data.get("welcome_text")
+    welcome_text.value = welcome_text_from_user_data
+    welcome_text.updated_by = update.effective_user.id
 
     await update.effective_message.edit_text(f"Welcome text set for {LANGUAGES[selected_language]['emoji']}:")
-    await update.effective_message.reply_text(f"{setting.value}", quote=False)
+    await update.effective_message.reply_text(f"{welcome_text.value}", quote=False)
 
     user.set_started()
 
@@ -370,16 +402,16 @@ async def on_setwelcome_language_button(update: Update, context: ContextTypes.DE
 async def on_getwelcome_language_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"getting welcome for language: %s", update.callback_query.data)
     selected_language = context.matches[0].group(1)
-    langauge_emoji = LANGUAGES[selected_language]['emoji']
+    language_emoji = LANGUAGES[selected_language]['emoji']
 
-    setting = settings_old.get_setting(
+    welcome_text = texts.get_localized_text(
         session,
-        key=SettingKey.WELCOME,
+        key=LocalizedTextKey.WELCOME,
         language=selected_language,
         create_if_missing=False
     )
-    if not setting:
-        await update.effective_message.edit_text(f"There's no welcome message for {langauge_emoji}. "
+    if not welcome_text:
+        await update.effective_message.edit_text(f"There's no welcome message for {language_emoji}. "
                                                  f"Use <code>/welcome [welcome message]</code> to set it")
         return
 
@@ -388,8 +420,8 @@ async def on_getwelcome_language_button(update: Update, context: ContextTypes.DE
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.effective_message.edit_text(f"Welcome text for {langauge_emoji}:")
-    await update.effective_message.reply_text(f"{setting.value}", reply_markup=reply_markup)
+    await update.effective_message.edit_text(f"Welcome text for {language_emoji}:")
+    await update.effective_message.reply_text(f"{welcome_text.value}", reply_markup=reply_markup)
 
 
 @decorators.catch_exception()
@@ -397,18 +429,18 @@ async def on_getwelcome_language_button(update: Update, context: ContextTypes.DE
 async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"deleting welcome for language: %s", update.callback_query.data)
     selected_language = context.matches[0].group(1)
-    langauge_emoji = LANGUAGES[selected_language]['emoji']
+    language_emoji = LANGUAGES[selected_language]['emoji']
 
-    setting = settings_old.get_setting(
+    welcome_text = texts.get_localized_text(
         session,
-        key=SettingKey.WELCOME,
+        key=LocalizedTextKey.WELCOME,
         language=selected_language,
         create_if_missing=False
     )
-    if setting:
-        session.delete(setting)
+    if welcome_text:
+        session.delete(welcome_text)
 
-    await update.effective_message.edit_text(f"Welcome text for {langauge_emoji} deleted")
+    await update.effective_message.edit_text(f"Welcome text for {language_emoji} deleted")
 
 
 @decorators.catch_exception()
@@ -783,7 +815,7 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Chat)
         logger.info("user was promoted or their admin permissions changed: updated/inserted db record")
 
 
-def get_localized_settings_keyboard(setting_key):
+def get_localized_text_keyboard(setting_key):
     keyboard = [
         [InlineKeyboardButton("read:", callback_data=f"{setting_key}:helper:read")],
         [InlineKeyboardButton("edit:", callback_data=f"{setting_key}:helper:edit")],
@@ -802,19 +834,19 @@ def get_localized_settings_keyboard(setting_key):
 async def on_welcome_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/welcome command {utilities.log(update)}")
 
-    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
-    settings_resume = get_localized_setting_resume_text(session, SettingKey.WELCOME)
+    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(LocalizedTextKey.WELCOME))
+    settings_resume = get_localized_text_resume_text(session, LocalizedTextKey.WELCOME)
     text = get_welcome_settings_main_text(settings_resume)
     await update.message.reply_text(text, reply_markup=reply_markup)
 
 
 def get_sent_to_staff_keyboard(current_status) -> InlineKeyboardMarkup:
     if current_status and current_status == "true":
-        stt_button = InlineKeyboardButton("disable", callback_data=f"{SettingKey.SENT_TO_STAFF_STATUS}:disable")
+        stt_button = InlineKeyboardButton("disable", callback_data=f"{BotSettingKey.SENT_TO_STAFF}:disable")
     else:
-        stt_button = InlineKeyboardButton("enable", callback_data=f"{SettingKey.SENT_TO_STAFF_STATUS}:enable")
+        stt_button = InlineKeyboardButton("enable", callback_data=f"{BotSettingKey.SENT_TO_STAFF}:enable")
 
-    keyboard = get_localized_settings_keyboard(SettingKey.SENT_TO_STAFF)
+    keyboard = get_localized_text_keyboard(LocalizedTextKey.SENT_TO_STAFF)
     # add a bottun as the first line to quickly enable/disable the message
     keyboard.insert(0, [
         stt_button
@@ -829,7 +861,7 @@ def get_sent_to_staff_keyboard(current_status) -> InlineKeyboardMarkup:
 async def on_senttostaff_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/senttostaff command {utilities.log(update)})")
 
-    stt_status = settings_old.get_setting(session, SettingKey.SENT_TO_STAFF_STATUS)
+    stt_status = settings.get_or_create(session, BotSettingKey.SENT_TO_STAFF)
     reply_markup = get_sent_to_staff_keyboard(stt_status.value)
     await update.message.reply_text("\"sent to staff\" message settings. Select what you want to do:", reply_markup=reply_markup)
 
@@ -854,20 +886,20 @@ async def on_welcome_helper_button(update: Update, context: ContextTypes.DEFAULT
 async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"welcome read {utilities.log(update)}")
     language = context.matches[0].group(1)
-    langauge_emoji = LANGUAGES[language]["emoji"]
+    language_emoji = LANGUAGES[language]["emoji"]
 
-    setting = settings_old.get_setting(
+    welcome_text = texts.get_localized_text(
         session,
-        key=SettingKey.WELCOME,
+        key=LocalizedTextKey.WELCOME,
         language=language,
         create_if_missing=False
     )
-    if not setting:
-        await update.callback_query.answer(f"There's no welcome message set for {langauge_emoji}")
+    if not welcome_text:
+        await update.callback_query.answer(f"There's no welcome message set for {language_emoji}")
         return
 
-    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
-    text = f"Current welcome message for {langauge_emoji}:\n\n{setting.value}"
+    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(LocalizedTextKey.WELCOME))
+    text = f"Current welcome message for {language_emoji}:\n\n{welcome_text.value}"
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
 
@@ -876,21 +908,21 @@ async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_T
 async def on_welcome_delete_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"welcome delete {utilities.log(update)}")
     language = context.matches[0].group(1)
-    langauge_emoji = LANGUAGES[language]["emoji"]
+    language_emoji = LANGUAGES[language]["emoji"]
 
-    setting = settings_old.get_setting(
+    welcome_text = texts.get_localized_text(
         session,
-        key=SettingKey.WELCOME,
+        key=LocalizedTextKey.WELCOME,
         language=language,
         create_if_missing=False
     )
-    if setting:
-        session.delete(setting)
+    if welcome_text:
+        session.delete(welcome_text)
 
-    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
-    settings_resume = get_localized_setting_resume_text(session, SettingKey.WELCOME)
+    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(LocalizedTextKey.WELCOME))
+    settings_resume = get_localized_text_resume_text(session, LocalizedTextKey.WELCOME)
     text = get_welcome_settings_main_text(settings_resume)
-    await update.callback_query.answer(f"Welcome message deleted for {langauge_emoji}")
+    await update.callback_query.answer(f"Welcome message deleted for {language_emoji}")
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
 
@@ -899,10 +931,10 @@ async def on_welcome_delete_button(update: Update, context: ContextTypes.DEFAULT
 async def on_welcome_edit_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"welcome edit {utilities.log(update)}")
     language = context.matches[0].group(1)
-    langauge_emoji = LANGUAGES[language]["emoji"]
+    language_emoji = LANGUAGES[language]["emoji"]
 
     context.user_data[TempDataKey.WELCOME_LANGUAGE] = language
-    await update.effective_message.edit_text(f"Please send me the new welcome text for {langauge_emoji} "
+    await update.effective_message.edit_text(f"Please send me the new welcome text for {language_emoji} "
                                              f"(or use /cancel to cancel):")
 
     return State.WAITING_WELCOME
@@ -916,19 +948,19 @@ async def on_welcome_receive(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     language = context.user_data.pop(TempDataKey.WELCOME_LANGUAGE)
 
-    setting = settings_old.get_setting(
+    welcome_text = texts.get_localized_text(
         session,
-        key=SettingKey.WELCOME,
+        key=LocalizedTextKey.WELCOME,
         language=language,
         create_if_missing=True
     )
-    setting.value = update.effective_message.text_html
-    setting.updated_by = update.effective_user.id
+    welcome_text.value = update.effective_message.text_html
+    welcome_text.updated_by = update.effective_user.id
 
-    reply_markup = InlineKeyboardMarkup(get_localized_settings_keyboard(SettingKey.WELCOME))
-    await update.effective_message.reply_text(f"Welcome text set for {LANGUAGES[language]['emoji']}:\n\n{setting.value}")
+    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(LocalizedTextKey.WELCOME))
+    await update.effective_message.reply_text(f"Welcome text set for {LANGUAGES[language]['emoji']}:\n\n{welcome_text.value}")
 
-    settings_resume = get_localized_setting_resume_text(session, SettingKey.WELCOME)
+    settings_resume = get_localized_text_resume_text(session, LocalizedTextKey.WELCOME)
     text = get_welcome_settings_main_text(settings_resume)
     await update.effective_message.reply_text(text, reply_markup=reply_markup)
 
@@ -1023,6 +1055,23 @@ async def post_init(application: Application) -> None:
     session.add(staff_chat)
     session.commit()
 
+    logger.info(f"migrating old welcome settings...")
+    old_welcome_settings = session.scalars(select(Setting).where(Setting.key == "welcome"))
+    setting: Setting
+    for setting in old_welcome_settings:
+        ltext = texts.get_localized_text(session, LocalizedTextKey.WELCOME, setting.language, create_if_missing=False)
+        if not ltext:
+            ltext = LocalizedText(
+                key=LocalizedTextKey.WELCOME,
+                language=setting.language,
+                value=setting.value,
+                updated_by=setting.updated_by
+            )
+            session.add(ltext)
+            logger.info(f"migrating localized text: {ltext.key}, {ltext.language}")
+
+    session.commit()
+
 
 def main():
     utilities.load_logging_config('logging.json')
@@ -1062,11 +1111,11 @@ def main():
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['enable', 'disable'], on_enable_disable_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['welcome', 'w'], on_welcome_settings_command, filters.ChatType.PRIVATE))
-    app.add_handler(CallbackQueryHandler(on_welcome_helper_button, rf"{SettingKey.WELCOME}:helper:(.*)"))
-    app.add_handler(CallbackQueryHandler(on_welcome_read_button, rf"{SettingKey.WELCOME}:read:(.*)"))
-    app.add_handler(CallbackQueryHandler(on_welcome_delete_button, rf"{SettingKey.WELCOME}:delete:(.*)"))
+    app.add_handler(CallbackQueryHandler(on_welcome_helper_button, rf"{LocalizedTextKey.WELCOME}:helper:(.*)"))
+    app.add_handler(CallbackQueryHandler(on_welcome_read_button, rf"{LocalizedTextKey.WELCOME}:read:(.*)"))
+    app.add_handler(CallbackQueryHandler(on_welcome_delete_button, rf"{LocalizedTextKey.WELCOME}:delete:(.*)"))
     edit_welcome_conversation_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(on_welcome_edit_button, rf"{SettingKey.WELCOME}:edit:(.*)")],
+        entry_points=[CallbackQueryHandler(on_welcome_edit_button, rf"{LocalizedTextKey.WELCOME}:edit:(.*)")],
         states={
             State.WAITING_WELCOME: [
                 PrefixHandler(COMMAND_PREFIXES, "cancel", on_welcome_cancel_command),
@@ -1110,6 +1159,7 @@ def main():
 
     # callback query
     app.add_handler(CallbackQueryHandler(on_set_language_button, pattern="^setlang:(..)$"))
+    app.add_handler(CallbackQueryHandler(on_set_language_button_start, pattern="^setlangstart:(..)$"))
     app.add_handler(CallbackQueryHandler(on_setwelcome_language_button, pattern="^setwelcome:(..)$"))
     app.add_handler(CallbackQueryHandler(on_getwelcome_language_button, pattern="^getwelcome:(..)$"))
     app.add_handler(CallbackQueryHandler(on_unsetwelcome_language_button, pattern="^unsetwelcome:(..)$"))

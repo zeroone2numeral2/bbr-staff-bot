@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import true, false, select, null
 
 from database.models import BotSetting, Chat
-from constants import SettingKey, Language
+from constants import Language
 
 
 def get_settings(session: Session):

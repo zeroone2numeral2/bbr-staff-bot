@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
 
 from database.models import Setting, Chat, ChatAdministrator, chat_members_to_dict
-from constants import SettingKey, Language
+from constants import Language
 
 
 def get_staff_chat(session: Session) -> Optional[Chat]:

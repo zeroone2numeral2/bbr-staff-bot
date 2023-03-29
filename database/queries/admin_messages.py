@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 from telegram import ChatMemberAdministrator, ChatMemberOwner, Message, Update
 
 from database.models import UserMessage, Chat, ChatAdministrator, AdminMessage
-from constants import SettingKey, Language
+from constants import Language
 
 
 def get_admin_message(session: Session, update: Update) -> Optional[AdminMessage]:

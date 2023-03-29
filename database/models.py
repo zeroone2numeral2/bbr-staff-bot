@@ -326,10 +326,11 @@ class LocalizedText(Base):
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
-    def __init__(self, key, language: str, value: Optional[str] = None):
+    def __init__(self, key, language: str, value: Optional[str] = None, updated_by: Optional[int] = None):
         self.key = key.lower()
         self.language = language
         self.value = value
+        self.updated_by = updated_by
 
 
 class ValueType:

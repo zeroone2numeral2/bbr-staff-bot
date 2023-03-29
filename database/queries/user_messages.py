@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 from telegram import ChatMemberAdministrator, ChatMemberOwner, Message, Update
 
 from database.models import UserMessage, Chat, ChatAdministrator, chat_members_to_dict
-from constants import SettingKey, Language
+from constants import Language
 
 
 def get_user_message_by_id(session: Session, message_id: int) -> Optional[UserMessage]:
