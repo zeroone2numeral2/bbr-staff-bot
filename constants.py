@@ -27,17 +27,17 @@ class SettingKey:
     SENT_TO_STAFF = "sent_to_staff"
 
 
-class SettingKeyNotLocalized:
-    SENT_TO_STAFF_STATUS = "sent_to_staff_message"
+class BotSettingKey:
+    SENT_TO_STAFF = "sent_to_staff_message"
     BROADCAST_EDITS = "broadcast_edits"
     ALLOW_USER_REVOKE = "allow_user_revoke"
 
 
-SETTING_KEYS_NOT_LOCALIZED = (
-    SettingKeyNotLocalized.SENT_TO_STAFF_STATUS,
-    SettingKeyNotLocalized.BROADCAST_EDITS,
-    SettingKeyNotLocalized.ALLOW_USER_REVOKE
-)
+BOT_SETTINGS_DEFAULTS = {
+    BotSettingKey.SENT_TO_STAFF: dict(default=True, description="when an user sends a message, tell them it has been sent to the staff"),
+    BotSettingKey.BROADCAST_EDITS: dict(default=True, description="edit staff messages sent to users when the original message in the staff chat is edited"),
+    BotSettingKey.ALLOW_USER_REVOKE: dict(default=True, description="allow users to revoke the messages forwarded in the staff chat")
+}
 
 
 class TempDataKey:
@@ -60,8 +60,7 @@ ADMIN_HELP = """••• <b><u>Admin commands (private)</u></b>:
 • /welcome: see or edit a langauge's welcome text
 • /placeholders: list available placeholders (they can be used in welcome texts)
 • /settings: list all available settings
-• /set <code>[setting] [new value]</code>: change a setting. "<code>true</code>" and "<code>false</code>" are the \
-values to use to switch between booleans
+• /set <code>[setting] [new value]</code>: change a setting
 
 ••• <b><u>Staff chat commands</u></b>:
 •• Anyone in the staff chat is allowed to use these commands or perform these actions

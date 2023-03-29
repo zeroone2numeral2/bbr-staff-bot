@@ -18,13 +18,14 @@ from telegram import helpers
 
 from database import engine
 from database.base import get_session
-from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage
-from database.queries import settings_old, chats, user_messages, admin_messages
+from database.models import User, UserMessage, Chat, Setting, chat_member_to_dict, ChatAdministrator, AdminMessage, \
+    BotSetting, ValueType
+from database.queries import settings, settings_old, chats, user_messages, admin_messages
 import decorators
 import utilities
 from emojis import Emoji
 from constants import LANGUAGES, SettingKey, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
-    SETTING_KEYS_NOT_LOCALIZED, SettingKeyNotLocalized
+    BOT_SETTINGS_DEFAULTS, BotSettingKey
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ def replace_placeholders(text: str, user: TelegramUser):
 
 
 def get_localized_setting_resume_text(session: Session, setting_key: str):
-    result = settings.get_settings(session, setting_key)
+    result = settings_old.get_settings(session, setting_key)
     settings_statuses = {}
 
     setting: Setting
@@ -111,7 +112,7 @@ async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_T
     reply_markup = get_start_reply_markup(language_code)
 
     # also update the welcome text
-    welcome_setting = settings.get_localized_setting(session, SettingKey.WELCOME, language_code)
+    welcome_setting = settings_old.get_localized_setting(session, SettingKey.WELCOME, language_code)
     text = replace_placeholders(welcome_setting.value, update.effective_user)
 
     await update.effective_message.edit_text(text, reply_markup=reply_markup)
@@ -126,7 +127,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
 
-    welcome_setting = settings.get_localized_setting(session, SettingKey.WELCOME, language_code)
+    welcome_setting = settings_old.get_localized_setting(session, SettingKey.WELCOME, language_code)
 
     reply_markup = get_start_reply_markup(language_code)
 
@@ -178,8 +179,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     )
     session.add(user_message)
 
-    sent_to_staff_setting = settings.get_or_create_setting(session, SettingKeyNotLocalized.SENT_TO_STAFF_STATUS, value="true")
-    if sent_to_staff_setting.as_bool():
+    if settings.get_or_create(session, BotSettingKey.SENT_TO_STAFF).value():
         await update.message.reply_text("<i>Message sent to the staff, now wait for an admin's reply. "
                                         "Please be aware that it might take some time</i> :)", quote=True)
 
@@ -212,12 +212,56 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
 async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/settings {utilities.log(update)}")
 
-    all_settings = settings.get_settings_not_localized(session)
+    all_settings = settings.get_settings(session)
     text = ""
-    setting: Setting
+    setting: BotSetting
     for setting in all_settings.scalars():
-        text += f"• <code>{setting.key}</code> -{utilities.escape_html('>')} {setting.value_pretty()}\n"
+        text += f"•• [<code>{setting.value_type}</code>] <code>{setting.key}</code> -{utilities.escape_html('>')} {setting.value_pretty()}\n" \
+                f"• <i>{BOT_SETTINGS_DEFAULTS[setting.key]['description']}</i>\n\n"
 
+    text += "\nTo change a setting, use <code>/set [setting] [new value]</code>\n" \
+            "For settings of type <code>bool</code>, you can also use the <code>/enable</code> or " \
+            "<code>/disable</code> commands: <code>/enable [setting]</code>\n\n" \
+            "Settings of type <code>bool</code> can be changed using the values " \
+            "'true' and 'false', 'none' or 'null' can be used to set a setting to <code>NULL</code>\n" \
+            "<code>int</code>, <code>float</code> and <code>str</code> " \
+            "are auto-detected"
+
+    await update.message.reply_text(text)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_enable_disable_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/enable or /disable {utilities.log(update)}")
+
+    command = re.search(r"^.(enable|disable).*", update.message.text, re.I).group(1).lower()
+
+    try:
+        key = context.args[0].lower()
+    except IndexError:
+        await update.message.reply_text(f"Usage: <code>/{command} [setting]</code>\nUse /settings for a list of settings. "
+                                        f"Only <code>bool</code> settings can be enabled/disabled")
+        return
+
+    if key not in BOT_SETTINGS_DEFAULTS:
+        await update.message.reply_text(f"<code>{key}</code> is not a recognized setting")
+        return
+
+    value = True if command == "enable" else False
+
+    logger.info(f"new value for {key}: {value}")
+
+    setting = settings.get_or_create(session, key, value=value)
+    if setting.value_type != ValueType.BOOL:
+        await update.message.reply_text(f"<code>{key}</code> is not a boolean setting that can be enabled/disabled")
+        return
+
+    setting.update_value(value)
+    session.add(setting)
+
+    text = f"<code>{key}</code> {command}d"
     await update.message.reply_text(text)
 
 
@@ -234,14 +278,24 @@ async def on_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
         await update.message.reply_text(f"Usage: <code>/set [setting] [value]</code>\nUse /settings for a list of settings")
         return
 
-    if key not in SETTING_KEYS_NOT_LOCALIZED:
+    if key not in BOT_SETTINGS_DEFAULTS:
         await update.message.reply_text(f"<code>{key}</code> is not a recognized setting")
         return
 
-    setting = settings.get_or_create_setting(session, key)
-    setting.value = value
+    if value.lower() in ("true", "false"):
+        value = value.lower() == "true"
+    elif value in ("none", "null"):
+        value = None
+    elif re.search(r"^\d+$", value):
+        value = int(value)
+    elif re.match(r'^-?\d+(?:\.\d+)$', value):
+        # https://stackoverflow.com/a/736050
+        value = float(value)
 
-    text = f"New value for <code>{key}</code>: {value}"
+    setting = settings.get_or_create(session, key, value=value)
+    session.add(setting)
+
+    text = f"New value for <code>{key}</code>: {setting.value_pretty()}"
     await update.message.reply_text(text)
 
 
@@ -294,7 +348,7 @@ async def on_setwelcome_language_button(update: Update, context: ContextTypes.DE
                                                  "<code>/setstaff</code> to set that chat as default staff chat")
         return
 
-    setting = settings.get_setting(
+    setting = settings_old.get_setting(
         session,
         key=SettingKey.WELCOME,
         language=selected_language,
@@ -318,7 +372,7 @@ async def on_getwelcome_language_button(update: Update, context: ContextTypes.DE
     selected_language = context.matches[0].group(1)
     langauge_emoji = LANGUAGES[selected_language]['emoji']
 
-    setting = settings.get_setting(
+    setting = settings_old.get_setting(
         session,
         key=SettingKey.WELCOME,
         language=selected_language,
@@ -345,7 +399,7 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
     selected_language = context.matches[0].group(1)
     langauge_emoji = LANGUAGES[selected_language]['emoji']
 
-    setting = settings.get_setting(
+    setting = settings_old.get_setting(
         session,
         key=SettingKey.WELCOME,
         language=selected_language,
@@ -361,8 +415,7 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 @decorators.pass_session(pass_chat=True)
 async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"message edit in a group {utilities.log(update)}")
-    broadcast_edits = settings.get_or_create_setting(session, SettingKeyNotLocalized.BROADCAST_EDITS, value="false")
-    if not broadcast_edits.as_bool():
+    if not settings.get_or_create(session, BotSettingKey.BROADCAST_EDITS).value():
         logger.info("message edits are disabled")
         return
 
@@ -638,8 +691,7 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/revoke (user) {utilities.log(update)}")
 
-    user_revoke_setting = settings.get_or_create_setting(session, SettingKeyNotLocalized.ALLOW_USER_REVOKE, value="true")
-    if not user_revoke_setting.as_bool():
+    if not settings.get_or_create(session, BotSettingKey.ALLOW_USER_REVOKE).value():
         logger.info("user revoke is not allowed")
         return
 
@@ -777,7 +829,7 @@ def get_sent_to_staff_keyboard(current_status) -> InlineKeyboardMarkup:
 async def on_senttostaff_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/senttostaff command {utilities.log(update)})")
 
-    stt_status = settings.get_setting(session, SettingKey.SENT_TO_STAFF_STATUS)
+    stt_status = settings_old.get_setting(session, SettingKey.SENT_TO_STAFF_STATUS)
     reply_markup = get_sent_to_staff_keyboard(stt_status.value)
     await update.message.reply_text("\"sent to staff\" message settings. Select what you want to do:", reply_markup=reply_markup)
 
@@ -804,7 +856,7 @@ async def on_welcome_read_button(update: Update, context: ContextTypes.DEFAULT_T
     language = context.matches[0].group(1)
     langauge_emoji = LANGUAGES[language]["emoji"]
 
-    setting = settings.get_setting(
+    setting = settings_old.get_setting(
         session,
         key=SettingKey.WELCOME,
         language=language,
@@ -826,7 +878,7 @@ async def on_welcome_delete_button(update: Update, context: ContextTypes.DEFAULT
     language = context.matches[0].group(1)
     langauge_emoji = LANGUAGES[language]["emoji"]
 
-    setting = settings.get_setting(
+    setting = settings_old.get_setting(
         session,
         key=SettingKey.WELCOME,
         language=language,
@@ -864,7 +916,7 @@ async def on_welcome_receive(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     language = context.user_data.pop(TempDataKey.WELCOME_LANGUAGE)
 
-    setting = settings.get_setting(
+    setting = settings_old.get_setting(
         session,
         key=SettingKey.WELCOME,
         language=language,
@@ -946,6 +998,16 @@ async def post_init(application: Application) -> None:
     )
 
     session: Session = get_session()
+
+    logger.info("populating default settings...")
+    for bot_setting_key, bot_setting_data in BOT_SETTINGS_DEFAULTS.items():
+        setting = session.query(BotSetting).filter(BotSetting.key == bot_setting_key).one_or_none()
+        if not setting:
+            setting = BotSetting(bot_setting_key, bot_setting_data["default"])
+            session.add(setting)
+
+    session.commit()
+
     staff_chat = chats.get_staff_chat(session)
     if not staff_chat:
         return
@@ -997,6 +1059,7 @@ def main():
     # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['set'], on_set_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['enable', 'disable'], on_enable_disable_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['welcome', 'w'], on_welcome_settings_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_welcome_helper_button, rf"{SettingKey.WELCOME}:helper:(.*)"))

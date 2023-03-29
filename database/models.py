@@ -334,8 +334,8 @@ class LocalizedText(Base):
 
 class ValueType:
     BOOL = "bool"
-    INT = "integer"
-    STR = "string"
+    INT = "int"
+    STR = "str"
     FLOAT = "float"
     DATETIME = "datetime"
     DATE = "date"
@@ -360,28 +360,40 @@ class BotSetting(Base):
 
     def __init__(self, key, value=None):
         self.key = key.lower()
-        if value is not None:
-            # auto-detect the setting type
-            if isinstance(value, bool):
-                self.value_bool = value
-                self.value_type = ValueType.BOOL
-            elif isinstance(value, int):
-                self.value_int = value
-                self.value_type = ValueType.INT
-            elif isinstance(value, float):
-                self.value_float = value
-                self.value_type = ValueType.FLOAT
-            elif isinstance(value, str):
-                self.value_str = value
-                self.value_type = ValueType.STR
-            elif isinstance(value, datetime.datetime):
-                self.value_datetime = value
-                self.value_type = ValueType.DATETIME
-            elif isinstance(value, datetime.date):
-                self.value_date = value
-                self.value_type = ValueType.DATE
-            else:
+        self.update_value(value, raise_on_unknown_type=True)
+
+    def update_value(self, value, raise_on_unknown_type=True):
+        # auto-detect the setting type
+        if isinstance(value, bool):
+            self.value_bool = value
+            self.value_type = ValueType.BOOL
+        elif isinstance(value, int):
+            self.value_int = value
+            self.value_type = ValueType.INT
+        elif isinstance(value, float):
+            self.value_float = value
+            self.value_type = ValueType.FLOAT
+        elif isinstance(value, str):
+            self.value_str = value
+            self.value_type = ValueType.STR
+        elif isinstance(value, datetime.datetime):
+            self.value_datetime = value
+            self.value_type = ValueType.DATETIME
+        elif isinstance(value, datetime.date):
+            self.value_date = value
+            self.value_type = ValueType.DATE
+        else:
+            if raise_on_unknown_type:
                 raise ValueError(f"provided value of unrecognized type: {type(value)}")
+
+    def update_null(self):
+        self.value_type = None
+        self.value_int = None
+        self.value_bool = None
+        self.value_str = None
+        self.value_float = None
+        self.value_date = None
+        self.value_datetime = None
 
     def value(self):
         if self.value_type == ValueType.BOOL:
@@ -396,6 +408,18 @@ class BotSetting(Base):
             return self.value_datetime
         elif self.value_type == ValueType.DATE:
             return self.value_date
+
+    def value_pretty(self):
+        raw_value = self.value()
+        if self.value_type == ValueType.BOOL:
+            return str(raw_value).lower()
+        elif raw_value is None:
+            return "null"
+        else:
+            return raw_value
+
+    def __repr__(self):
+        return f"BotSetting(key=\"{self.key}\", value_type=\"{self.value_type}\", value={self.value()})"
 
 
 class CustomCommand(Base):
