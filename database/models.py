@@ -90,8 +90,8 @@ class Chat(Base):
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
     first_seen = Column(DateTime, server_default=func.now())
-    is_admin = Column(Boolean, default=False)
-    can_delete_messages = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)  # whether the bot is admin or not
+    can_delete_messages = Column(Boolean, default=False)  # whether the bot is allowed to delete messages or not
     last_administrators_fetch = Column(DateTime, default=None, nullable=True)
 
     chat_administrators = relationship("ChatAdministrator", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
