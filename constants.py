@@ -27,6 +27,10 @@ class SettingKey:
     SENT_TO_STAFF = "sent_to_staff"
 
 
+class LocalizedTextKey:
+    WELCOME = "welcome"
+
+
 class BotSettingKey:
     SENT_TO_STAFF = "sent_to_staff_message"
     BROADCAST_EDITS = "broadcast_edits"
