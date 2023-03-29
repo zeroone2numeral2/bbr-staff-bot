@@ -470,6 +470,11 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/revoke (admin) {utilities.log(update)}")
 
+    if update.message.reply_to_message.from_user.id == context.bot.id:
+        await update.message.reply_text("⚠️ <i>please reply to the staff message you want "
+                                        "to be deleted from the user's chat with the bot</i>")
+        return
+
     admin_message: AdminMessage = admin_messages.get_admin_message(session, update)
     if not admin_message:
         logger.warning(f"couldn't find replied-to admin message, "
