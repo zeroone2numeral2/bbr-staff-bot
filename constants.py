@@ -59,6 +59,9 @@ ADMIN_HELP = """••• <b><u>Admin commands (private)</u></b>:
 •• Only the staff chat's administrators are allowed to use these commands
 • /welcome: see or edit a langauge's welcome text
 • /placeholders: list available placeholders (they can be used in welcome texts)
+• /settings: list all available settings
+• /set <code>[setting] [new value]</code>: change a setting. "<code>true</code>" and "<code>false</code>" are the \
+values to use to switch between booleans
 
 ••• <b><u>Staff chat commands</u></b>:
 •• Anyone in the staff chat is allowed to use these commands or perform these actions
@@ -74,6 +77,9 @@ when they send new messages. The reason is optional
 • <code>/shadowban [reason]</code>: like <code>/ban</code>, but the user won't know they were banned
 • <code>/unban</code>: unban the user
 • <code>/info</code>: show everything we know about that user
+
+••• <b><u>Other</u></b>:
+• all commands work with <code>/</code>, <code>!</code> and <code>.</code> as triggers
 """
 
 
