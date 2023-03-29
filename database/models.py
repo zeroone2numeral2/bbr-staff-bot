@@ -172,6 +172,7 @@ def chat_members_to_dict(chat_id: int, chat_members: Tuple[ChatMember]):
 
 class ChatAdministrator(Base):
     __tablename__ = 'chat_administrators'
+    __allow_unmapped__ = True
 
     user_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
     chat_id = Column(Integer, ForeignKey('chats.chat_id', ondelete="CASCADE"), primary_key=True)
@@ -207,6 +208,7 @@ class ChatAdministrator(Base):
 
 class UserMessage(Base):
     __tablename__ = 'user_messages'
+    __allow_unmapped__ = True
 
     message_id = Column(Integer, primary_key=True)  # we receive this just in private chats and it's incremental, so we can use it as primary key
     user_id = Column(Integer, ForeignKey('users.user_id'))
@@ -242,11 +244,12 @@ class UserMessage(Base):
 
 class AdminMessage(Base):
     __tablename__ = 'admin_messages'
+    __allow_unmapped__ = True
 
     message_id = Column(Integer, primary_key=True)
     chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     user_message_id = Column(Integer, ForeignKey('user_messages.message_id'))
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_id = Column(Integer, ForeignKey('users.user_id'))  # id of the admin
     reply_message_id = Column(Integer, nullable=False)  # forwarded reply sent to the user's private chat
     reply_datetime = Column(DateTime, server_default=func.now())
     message_datetime = Column(DateTime, default=None)

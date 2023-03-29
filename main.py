@@ -357,6 +357,49 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 @decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"reply to an admin message starting by ++ {utilities.log(update)}")
+
+    if update.message.reply_to_message.from_user.id == context.bot.id:
+        await update.message.reply_text("⚠️ <i>please reply to the admin message you want "
+                                        "to reply to</i>")
+        return
+
+    admin_message: AdminMessage = admin_messages.get_admin_message(session, update)
+    if not admin_message:
+        logger.warning(f"couldn't find replied-to admin message, "
+                       f"chat_id: {update.effective_chat.id}; "
+                       f"message_id: {update.message.reply_to_message.message_id}")
+        await update.message.reply_text(
+            "⚠️ <i>can't find the message to reply to in the database</i>",
+            reply_to_message_id=update.message.reply_to_message.message_id
+        )
+        return
+
+    await context.bot.send_chat_action(admin_message.user_message.user_id, ChatAction.TYPING)
+    # time.sleep(3)
+
+    sent_message = await context.bot.send_message(
+        chat_id=admin_message.user_message.user_id,
+        text=re.sub(r"^\+\+\s*", "", update.effective_message.text_html),
+        reply_to_message_id=admin_message.reply_message_id  # reply to the admin message we previously sent in the chat
+    )
+
+    admin_message = AdminMessage(
+        message_id=update.effective_message.id,
+        chat_id=update.effective_chat.id,
+        user_id=update.effective_user.id,  # admin's user_id
+        user_message_id=admin_message.user_message.message_id,  # root user message that generated the admins' replies chain
+        reply_message_id=sent_message.message_id,
+        message_datetime=update.effective_message.date
+    )
+    session.add(admin_message)
+
+    admin_message.user_message.add_reply()
+
+
+@decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
     logger.info(f"/setstaff {utilities.log(update)}")
@@ -882,6 +925,7 @@ def main():
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filter_reply_to_bot))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['revoke', 'del'], on_revoke_admin_command, filters.ChatType.GROUPS & filters.REPLY))
+    app.add_handler(MessageHandler(filters.ChatType.GROUPS & filters.REPLY & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply))
     app.add_handler(MessageHandler(filters.ChatType.GROUPS & filter_reply_to_bot, on_bot_message_reply))
     # bot.add_handler(CommandHandler('chatid', on_chatid_command, filters.ChatType.GROUPS))
 
