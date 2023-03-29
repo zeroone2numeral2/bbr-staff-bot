@@ -481,7 +481,7 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
                        f"chat_id: {update.effective_chat.id}; "
                        f"message_id: {update.message.reply_to_message.message_id}")
         await update.message.reply_text(
-            "can't find the message to revoke in the database",
+            "⚠️ <i>can't find the message to revoke in the database</i>",
             reply_to_message_id=update.message.reply_to_message.message_id
         )
         return
@@ -493,7 +493,7 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
     )
 
     await update.message.reply_text(
-        "message revoked",
+        "🚮 <i>message revoked successfully: it has been deleted from the user's chat</i>",
         reply_to_message_id=update.message.reply_to_message.message_id
     )
 
@@ -525,7 +525,7 @@ async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_T
     )
 
     await update.message.reply_text(
-        "🚮 <i>message revoked successfully</i>",
+        "🚮 <i>message revoked successfully: it has been deleted from the staff chat</i>",
         reply_to_message_id=update.message.reply_to_message.message_id
     )
 
