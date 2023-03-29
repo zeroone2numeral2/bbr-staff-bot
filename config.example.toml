@@ -9,6 +9,7 @@ admins = [
 engine_string = "sqlite:///bot.db"
 
 [settings]
+sent_to_staff_message = true
 broadcast_message_edits = true
 
 [handlers]
