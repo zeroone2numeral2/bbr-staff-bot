@@ -317,11 +317,54 @@ async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_edited_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"message edit")
+@decorators.pass_session(pass_chat=True)
+async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"message edit in a group {utilities.log(update)}")
     if not config.settings.broadcast_message_edits:
         return
+
+    if not chat.default:
+        logger.info(f"ignoring edited message update: chat is not the current staff chat")
+        return
+
+    admin_message: AdminMessage = session.query(AdminMessage).filter(
+        AdminMessage.chat_id == update.effective_chat.id,
+        AdminMessage.message_id == update.effective_message.message_id
+    ).one_or_none()
+    if not admin_message:
+        logger.info(f"couldn't find edited message in the db")
+        return
+
+    logger.info(f"editing message {admin_message.reply_message_id} in chat {admin_message.user_message.user_id}")
+    await context.bot.edit_message_text(
+        chat_id=admin_message.user_message.user_id,
+        message_id=admin_message.reply_message_id,
+        text=update.effective_message.text_html
+    )
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_edited_message_user(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.error("user-sent messages cannot be edited because they are forwarded")
+
+    logger.info(f"message edit in a private chat {utilities.log(update)}")
+    if not config.settings.broadcast_message_edits:
+        return
+
+    user_message: UserMessage = session.query(UserMessage).filter(
+        UserMessage.message_id == update.effective_message.message_id
+    ).one_or_none()
+    if not user_message:
+        logger.info(f"couldn't find edited message in the db")
+        return
+
+    logger.info(f"editing message {user_message.forwarded_message_id} in chat {user_message.forwarded_chat_id}")
+    await context.bot.edit_message_text(
+        chat_id=user_message.forwarded_chat_id,
+        message_id=user_message.forwarded_message_id,
+        text=update.effective_message.text_html
+    )
 
 
 @decorators.catch_exception()
@@ -898,7 +941,9 @@ def main():
 
     # edited messages NEED to be catched before anything else, otherwise they will procedded by other MessageHandlers
     # app.add_handler(TypeHandler(Update.EDITED_MESSAGE, on_edited_message))
-    app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE, on_edited_message))
+    app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff))
+    # user messages acnnot be edited because they are forwarded
+    # app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.PRIVATE, on_edited_message_user))
 
     # private chat: admins
     # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))

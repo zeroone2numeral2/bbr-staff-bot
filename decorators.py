@@ -50,7 +50,7 @@ def catch_exception(silent=False, skip_not_modified_exception=False):
                     if update.callback_query:
                         await update.callback_query.message.reply_html(text, disable_web_page_preview=True)
                     else:
-                        await update.message.reply_html(text, disable_web_page_preview=True)
+                        await update.effective_message.reply_html(text, disable_web_page_preview=True)
 
                 # return ConversationHandler.END
                 return
