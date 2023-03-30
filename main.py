@@ -256,7 +256,7 @@ async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             "<code>/disable</code> commands: <code>/enable [setting]</code>\n\n" \
             "Settings of type <code>bool</code> can be changed using the values " \
             "'true' and 'false', 'none' or 'null' can be used to set a setting to <code>NULL</code>\n" \
-            "<code>int</code>, <code>float</code> and <code>str</code> " \
+            "<code>int</code>, <code>float</code>, <code>str</code>, <code>datetime</code> and <code>date</code> " \
             "are auto-detected"
 
     await update.message.reply_text(text)
@@ -314,15 +314,7 @@ async def on_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
         await update.message.reply_text(f"<code>{key}</code> is not a recognized setting")
         return
 
-    if value.lower() in ("true", "false"):
-        value = value.lower() == "true"
-    elif value in ("none", "null"):
-        value = None
-    elif re.search(r"^\d+$", value):
-        value = int(value)
-    elif re.match(r'^-?\d+(?:\.\d+)$', value):
-        # https://stackoverflow.com/a/736050
-        value = float(value)
+    value = utilities.convert_string_to_value(value)
 
     setting = settings.get_or_create(session, key, value=value)
     session.add(setting)
