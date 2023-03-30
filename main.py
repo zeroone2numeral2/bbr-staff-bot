@@ -210,7 +210,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         session,
         LocalizedTextKey.WELCOME,
         language_code,
-        fallback_language=context.bot_data[TempDataKey.FALLBACK_LANGUAGE].value()
+        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     welcome_texts = texts.get_texts(session, LocalizedTextKey.WELCOME).all()
     reply_markup = get_start_reply_markup(welcome_text.language, welcome_texts)
@@ -271,7 +271,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 session,
                 LocalizedTextKey.SENT_TO_STAFF,
                 user_language,
-                fallback_language=context.bot_data[TempDataKey.FALLBACK_LANGUAGE].value(),
+                fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
                 raise_if_no_fallback=True
             )
             text = sent_to_staff.value
@@ -386,6 +386,7 @@ async def on_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
     value = utilities.convert_string_to_value(value)
 
     setting = settings.get_or_create(session, key, value=value)
+    setting.update_value(value)
     session.add(setting)
 
     text = f"New value for <code>{key}</code>: {setting.value_pretty()}"
@@ -1036,9 +1037,6 @@ async def post_init(application: Application) -> None:
             session.add(setting)
 
     session.commit()
-
-    default_language = settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE)
-    application.bot_data[TempDataKey.FALLBACK_LANGUAGE] = default_language
 
     staff_chat = chats.get_staff_chat(session)
     if not staff_chat:
