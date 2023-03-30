@@ -34,7 +34,7 @@ class LocalizedTextKey:
     SENT_TO_STAFF = "sent_to_staff"
 
 
-LOCALIZED_TEXTS_DESCRIPTIONS = {
+LOCALIZED_TEXTS_DESCRIPTORS = {
     LocalizedTextKey.WELCOME: dict(
         label="welcome message",
         explanation="This is the message that will be sent to users when they start the bot",
@@ -54,11 +54,12 @@ class Action:
     DELETE = "delete"
 
 
-ACTION_ICONS = {
-    Action.READ: "👀",
-    Action.EDIT: "✏️",
-    Action.DELETE: "❌",
+ACTION_DESCRIPTORS = {
+    Action.READ: dict(label="read", emoji="👀"),
+    Action.EDIT: dict(label="edit", emoji="✏️"),
+    Action.DELETE: dict(label="delete", emoji="❌"),
 }
+
 
 LOCALIZED_TEXTS_TRIGGERS = {
     "welcome": LocalizedTextKey.WELCOME,

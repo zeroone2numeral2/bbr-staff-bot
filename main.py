@@ -25,8 +25,8 @@ import decorators
 import utilities
 from emojis import Emoji
 from constants import LANGUAGES, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
-    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, LOCALIZED_TEXTS_TRIGGERS, \
-    ACTION_ICONS, Action, LOCALIZED_TEXTS_DESCRIPTIONS
+    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, LOCALIZED_TEXTS_TRIGGERS, Action, \
+    LOCALIZED_TEXTS_DESCRIPTORS, ACTION_DESCRIPTORS
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ def get_localized_text_actions_reply_markup(ltext_key, back_button=True) -> Inli
 
 def get_localized_texts_list_reply_markup() -> InlineKeyboardMarkup:
     keyboard = []
-    for ltext_key, ltext_descriptions in LOCALIZED_TEXTS_DESCRIPTIONS.items():
+    for ltext_key, ltext_descriptions in LOCALIZED_TEXTS_DESCRIPTORS.items():
         button = InlineKeyboardButton(f"{ltext_descriptions['emoji']} {ltext_descriptions['label']}", callback_data=f"lt:actions:{ltext_key}")
         keyboard.append([button])
 
@@ -151,8 +151,8 @@ def get_localized_text_resume_text(session: Session, setting_key: str):
 
 
 def get_localized_texts_main_text(ltexts_resume, ltext_key, ltext_description):
-    explanation = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]['explanation']
-    emoji = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]['emoji']
+    explanation = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]['explanation']
+    emoji = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]['emoji']
     return f"{emoji} <b>{ltext_description}</b> settings\n" \
            f"<i>{explanation}</i>\n\n" \
            f"{ltexts_resume}\n\n" \
@@ -841,7 +841,7 @@ async def on_ltexts_list_button(update: Update, context: ContextTypes.DEFAULT_TY
 async def on_localized_text_actions_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"localized text actions button {utilities.log(update)}")
     ltext_key = context.matches[0].group("key")
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]["label"]
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
 
     reply_markup = get_localized_text_actions_reply_markup(ltext_key)
     settings_resume = get_localized_text_resume_text(session, ltext_key)
@@ -857,7 +857,7 @@ async def on_localized_text_read_button(update: Update, context: ContextTypes.DE
     language = context.matches[0].group("lang")
     action = context.matches[0].group("action")
     language_emoji = LANGUAGES[language]["emoji"]
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]["label"]
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
 
     ltext = texts.get_localized_text(
         session,
@@ -882,7 +882,7 @@ async def on_localized_text_delete_button(update: Update, context: ContextTypes.
     language = context.matches[0].group("lang")
     action = context.matches[0].group("action")
     language_emoji = LANGUAGES[language]["emoji"]
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]["label"]
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
 
     ltext = texts.get_localized_text(
         session,
@@ -894,7 +894,7 @@ async def on_localized_text_delete_button(update: Update, context: ContextTypes.
         session.delete(ltext)
 
     reply_markup = get_ltext_action_languages_reply_markup(action, ltext_key)
-    text = f"{ACTION_ICONS[action]} {ltext_description}: select the language 👇"
+    text = f"{ACTION_DESCRIPTORS[action]['emoji']} {ltext_description}: select the language 👇"
     await update.callback_query.answer(f"{ltext_description} deleted for {language_emoji}")
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
@@ -906,7 +906,7 @@ async def on_localized_text_edit_button(update: Update, context: ContextTypes.DE
     ltext_key = context.matches[0].group("key")
     language = context.matches[0].group("lang")
     language_emoji = LANGUAGES[language]["emoji"]
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]["label"]
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
 
     context.user_data[TempDataKey.LOCALIZED_TEXTS] = dict(key=ltext_key, lang=language)
     await update.effective_message.edit_text(f"Please send me the new {ltext_description} text for {language_emoji} "
@@ -921,10 +921,10 @@ async def on_localized_text_action_button(update: Update, context: ContextTypes.
     logger.info(f"localized text action button {utilities.log(update)}")
     ltext_key = context.matches[0].group("key")
     action = context.matches[0].group("action")
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]["label"]
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
 
     reply_markup = get_ltext_action_languages_reply_markup(action, ltext_key)
-    text = f"{ACTION_ICONS[action]} {ltext_description}: select the language 👇"
+    text = f"{ACTION_DESCRIPTORS[action]['emoji']} {ltext_description}: select the language 👇"
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
 
@@ -938,7 +938,7 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
     ltext_key = ltext_data["key"]
     ltext_language = ltext_data["lang"]
 
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_key]["label"]
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
     lang_emoji = LANGUAGES[ltext_language]['emoji']
 
     ltext = texts.get_localized_text(
@@ -953,7 +953,7 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
     await update.effective_message.reply_text(f"{ltext_description} set for {lang_emoji}:\n\n{ltext.value}")
 
     reply_markup = get_ltext_action_languages_reply_markup(Action.EDIT, ltext_key)
-    text = f"{ACTION_ICONS[Action.EDIT]} {ltext_description}: select the language 👇"
+    text = f"{ACTION_DESCRIPTORS[Action.EDIT]['emoji']} {ltext_description}: select the language 👇"
     await update.effective_message.reply_text(text, reply_markup=reply_markup)
 
     return ConversationHandler.END
@@ -990,7 +990,7 @@ async def on_localized_text_timeout(update: Update, context: ContextTypes.DEFAUL
     logger.info(f"waiting for new localized text: timed out")
 
     ltext_data = context.user_data.pop(TempDataKey.LOCALIZED_TEXTS, None)
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTIONS[ltext_data['key']]["label"]
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_data['key']]["label"]
 
     await update.effective_message.reply_text(f"Okay, it looks like you forgot... "
                                               f"I'm exiting the {ltext_description} configuration")
