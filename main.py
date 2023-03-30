@@ -1079,10 +1079,10 @@ def main():
     app.add_handler(CallbackQueryHandler(on_ltexts_list_button, rf"lt:ltextslist$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_actions_button, rf"lt:actions:(?P<key>\w+)$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_action_button, rf"lt:(?P<key>\w+):(?P<action>\w+)$"))
-    app.add_handler(CallbackQueryHandler(on_localized_text_read_button, rf"lt:(?P<action>{Action.READ}):(?P<key>\w+):(?P<lang>.+)$"))
-    app.add_handler(CallbackQueryHandler(on_localized_text_delete_button, rf"lt:(?P<action>{Action.DELETE}):(?P<key>\w+):(?P<lang>.+)$"))
+    app.add_handler(CallbackQueryHandler(on_localized_text_read_button, rf"lt:(?P<action>{Action.READ}):(?P<key>\w+):(?P<lang>\w)$"))
+    app.add_handler(CallbackQueryHandler(on_localized_text_delete_button, rf"lt:(?P<action>{Action.DELETE}):(?P<key>\w+):(?P<lang>\w)$"))
     edit_ltext_conversation_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(on_localized_text_edit_button, rf"lt:(?P<action>{Action.EDIT}):(?P<key>\w+):(?P<lang>.+)$")],
+        entry_points=[CallbackQueryHandler(on_localized_text_edit_button, rf"lt:(?P<action>{Action.EDIT}):(?P<key>\w+):(?P<lang>\w)$")],
         states={
             State.WAITING_NEW_LOCALIZED_TEXT: [
                 PrefixHandler(COMMAND_PREFIXES, "cancel", on_localized_text_cancel_command),
