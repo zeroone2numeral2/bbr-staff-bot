@@ -108,6 +108,7 @@ class TempDataKey:
     FALLBACK_LANGUAGE = "default_language"
     LOCALIZED_TEXTS = "tmp_localized_text_data"
     LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
+    BOT_SETTINGS_LAST_MESSAGE_ID = "bot_settings_last_message_id"
 
 
 COMMAND_PREFIXES = ["/", "!", "."]

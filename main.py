@@ -101,7 +101,26 @@ def get_localized_text_actions_reply_markup(ltext_key, back_button=True) -> Inli
     ]]
 
     if back_button:
-        back_button = InlineKeyboardButton(f"🔙 back", callback_data=f"lt:ltextslist")
+        back_button = InlineKeyboardButton(f"🔙 back", callback_data=f"lt:list")
+        keyboard.append([back_button])
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> InlineKeyboardMarkup:
+    keyboard = []
+    if setting.value_type == ValueType.BOOL:
+        keyboard.append([
+            InlineKeyboardButton(f"enable", callback_data=f"bs:setbool:true:{setting.key}"),
+            InlineKeyboardButton(f"disable", callback_data=f"bs:setbool:false:{setting.key}")
+        ])
+    else:
+        keyboard.append([
+            InlineKeyboardButton(f"edit", callback_data=f"bs:edit:{setting.key}")
+        ])
+
+    if back_button:
+        back_button = InlineKeyboardButton(f"🔙 back", callback_data=f"bs:list")
         keyboard.append([back_button])
 
     return InlineKeyboardMarkup(keyboard)
@@ -111,6 +130,15 @@ def get_localized_texts_list_reply_markup() -> InlineKeyboardMarkup:
     keyboard = []
     for ltext_key, ltext_descriptions in LOCALIZED_TEXTS_DESCRIPTORS.items():
         button = InlineKeyboardButton(f"{ltext_descriptions['emoji']} {ltext_descriptions['label']}", callback_data=f"lt:actions:{ltext_key}")
+        keyboard.append([button])
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_bot_settings_list_reply_markup() -> InlineKeyboardMarkup:
+    keyboard = []
+    for setting_key, sdata in BOT_SETTINGS_DEFAULTS.items():
+        button = InlineKeyboardButton(f"{sdata['emoji']} {sdata['label']}", callback_data=f"bs:actions:{setting_key}")
         keyboard.append([button])
 
     return InlineKeyboardMarkup(keyboard)
@@ -162,6 +190,13 @@ def get_localized_texts_main_text(ltexts_resume, ltext_key, ltext_description):
            f"<i>{explanation}</i>\n\n" \
            f"{ltexts_resume}\n\n" \
            f"Use the buttons below to read/edit/delete a language's {ltext_description}:"
+
+
+def get_setting_text(setting: BotSetting):
+    setting_descriptors = BOT_SETTINGS_DEFAULTS[setting.key]
+    return f"{setting_descriptors['emoji']} <b>{setting_descriptors['label']}</b>\n" \
+           f"<i>{setting_descriptors['description']}</i>\n\n" \
+           f"Current value [<code>{setting.value_type}</code>]: {setting.value_pretty()}"
 
 
 @decorators.catch_exception()
@@ -313,7 +348,7 @@ async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     all_settings = settings.get_settings(session)
     text = ""
     setting: BotSetting
-    for setting in all_settings.scalars():
+    for setting in all_settings:
         text += f"•• [<code>{setting.value_type}</code>] <code>{setting.key}</code> -{utilities.escape_html('>')} {setting.value_pretty()}\n" \
                 f"• <i>{BOT_SETTINGS_DEFAULTS[setting.key]['description']}</i>\n\n"
 
@@ -833,12 +868,40 @@ async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_T
 
 
 @decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+@decorators.staff_admin()
+async def on_settings_config_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/sc {utilities.log(update)}")
+
+    reply_markup = get_bot_settings_list_reply_markup()
+    text = f"Select the setting to edit:"
+    sent_message = await update.message.reply_text(text, reply_markup=reply_markup)
+
+    # save this emssage's message_id and remove the last message's keyboard
+    remove_keyboard_message_id = context.user_data.get(TempDataKey.BOT_SETTINGS_LAST_MESSAGE_ID, None)
+    if remove_keyboard_message_id:
+        await context.bot.edit_message_reply_markup(update.effective_user.id, remove_keyboard_message_id,
+                                                    reply_markup=None)
+    context.user_data[TempDataKey.BOT_SETTINGS_LAST_MESSAGE_ID] = sent_message.message_id
+
+
+@decorators.catch_exception()
 @decorators.pass_session()
 async def on_ltexts_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"localized text ltexts list button {utilities.log(update)}")
+    logger.info(f"localized texts list button {utilities.log(update)}")
 
     reply_markup = get_localized_texts_list_reply_markup()
     text = f"Select the text to read/edit/delete it:"
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_settings_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"settings list button {utilities.log(update)}")
+
+    reply_markup = get_bot_settings_list_reply_markup()
+    text = f"Select the setting to edit:"
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
 
@@ -852,6 +915,19 @@ async def on_localized_text_actions_button(update: Update, context: ContextTypes
     reply_markup = get_localized_text_actions_reply_markup(ltext_key)
     settings_resume = get_localized_text_resume_text(session, ltext_key)
     text = get_localized_texts_main_text(settings_resume, ltext_key, ltext_description)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_bot_setting_actions_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"bot setting show actions button {utilities.log(update)}")
+    setting_key = context.matches[0].group("key")
+    setting_label = BOT_SETTINGS_DEFAULTS[setting_key]["label"]
+
+    setting: BotSetting = settings.get_or_create(session, setting_key)
+    reply_markup = get_setting_actions_reply_markup(setting)
+    text = get_setting_text(setting)
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
 
@@ -1091,9 +1167,14 @@ def main():
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['enable', 'disable'], on_enable_disable_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
 
+    # private chat (admins): bot settings
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['bs'], on_settings_config_command, filters.ChatType.PRIVATE))
+    app.add_handler(CallbackQueryHandler(on_settings_list_button, rf"bs:list$"))
+    app.add_handler(CallbackQueryHandler(on_bot_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"))
+
     # private chat (admins): localized texts
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['texts', 't'], on_ltexts_list_command, filters.ChatType.PRIVATE))
-    app.add_handler(CallbackQueryHandler(on_ltexts_list_button, rf"lt:ltextslist$"))
+    app.add_handler(CallbackQueryHandler(on_ltexts_list_button, rf"lt:list$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_actions_button, rf"lt:actions:(?P<key>\w+)$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_action_button, rf"lt:(?P<key>\w+):(?P<action>\w+)$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_read_button, rf"lt:langselected:(?P<action>{Action.READ}):(?P<key>\w+):(?P<lang>\w+)$"))

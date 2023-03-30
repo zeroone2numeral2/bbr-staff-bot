@@ -9,7 +9,7 @@ from constants import Language
 
 def get_settings(session: Session):
     statement = select(BotSetting).where()
-    return session.execute(statement)
+    return session.scalars(statement)
 
 
 def get_or_create(session: Session, key: str, create_if_missing=True, value=None):
