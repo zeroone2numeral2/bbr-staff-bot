@@ -44,6 +44,14 @@ def get_argument(commands: Union[List, str], text: str) -> str:
     return text.strip()
 
 
+def get_command(text: str) -> str:
+    prefixes = "".join(COMMAND_PREFIXES)
+
+    text = re.search(rf"^[{prefixes}](\w+)\s*", text, re.I).group(1)
+
+    return text.strip()
+
+
 async def edit_text_safe(update: Update, *args, **kwargs):
     try:
         await update.effective_message.edit_text(*args, **kwargs)

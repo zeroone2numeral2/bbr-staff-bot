@@ -27,6 +27,21 @@ class LocalizedTextKey:
     SENT_TO_STAFF = "sent_to_staff"
 
 
+LOCALIZED_TEXTS_DESCRIPTION = {
+    LocalizedTextKey.WELCOME: "welcome message",
+    LocalizedTextKey.SENT_TO_STAFF: "\"sent to staff\" message"
+}
+
+LOCALIZED_TEXTS_TRIGGERS = {
+    "welcome": LocalizedTextKey.WELCOME,
+    "w": LocalizedTextKey.WELCOME,
+    "senttostaff": LocalizedTextKey.SENT_TO_STAFF,
+    "sts": LocalizedTextKey.SENT_TO_STAFF,
+}
+
+LOCALIZED_TEXTS_TEMP_DATA_KEY = "tmp_localized_text_data"
+
+
 class BotSettingKey:
     SENT_TO_STAFF = "sent_to_staff_message"
     BROADCAST_EDITS = "broadcast_edits"
@@ -83,5 +98,5 @@ when they send new messages. The reason is optional
 
 
 class State:
-    WAITING_WELCOME = 10
+    WAITING_NEW_LOCALIZED_TEXT = 10
     WAITING_SENT_TO_STAFF_MESSAGE = 20
