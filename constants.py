@@ -32,6 +32,29 @@ LOCALIZED_TEXTS_DESCRIPTION = {
     LocalizedTextKey.SENT_TO_STAFF: "\"sent to staff\" message"
 }
 
+LOCALIZED_TEXTS_EMOJIS = {
+    LocalizedTextKey.WELCOME: "👋",
+    LocalizedTextKey.SENT_TO_STAFF: "👥"
+}
+
+LOCALIZED_TEXTS_EXPLANATIONS = {
+    LocalizedTextKey.WELCOME: "This is the message that will be sent to users when they start the bot",
+    LocalizedTextKey.SENT_TO_STAFF: "This is the reply message that will be sent to user when they send a message to the staff"
+}
+
+
+class Action:
+    READ = "read"
+    EDIT = "edit"
+    DELETE = "delete"
+
+
+ACTION_ICONS = {
+    Action.READ: "👀",
+    Action.EDIT: "✏️",
+    Action.DELETE: "❌",
+}
+
 LOCALIZED_TEXTS_TRIGGERS = {
     "welcome": LocalizedTextKey.WELCOME,
     "w": LocalizedTextKey.WELCOME,
@@ -71,12 +94,11 @@ CACHE_TIME = 10
 
 ADMIN_HELP = """••• <b><u>Admin commands (private)</u></b>:
 •• Only the staff chat's administrators are allowed to use these commands
-• /welcome: see or edit a langauge's welcome text
-• /sts or /senttostaff: see or edit a langauge's "sent to staff" message (that is, the message the bot sends to the \
-user after they send something to the staff chat)
-• /placeholders: list available placeholders (they can be used in welcome texts)
+• /texts: see or edit all messages that should depend on the user's language (that is: the welcome message, \
+the \"sent to staff\" message)
 • /settings: list all available settings
 • /set <code>[setting] [new value]</code>: change a setting
+• /placeholders: list available placeholders (they can be used in welcome texts)
 
 ••• <b><u>Staff chat commands</u></b>:
 •• Anyone in the staff chat is allowed to use these commands or perform these actions

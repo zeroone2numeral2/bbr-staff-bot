@@ -25,7 +25,8 @@ import decorators
 import utilities
 from emojis import Emoji
 from constants import LANGUAGES, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
-    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, LOCALIZED_TEXTS_DESCRIPTION, LOCALIZED_TEXTS_TRIGGERS
+    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, LOCALIZED_TEXTS_DESCRIPTION, LOCALIZED_TEXTS_TRIGGERS, \
+    ACTION_ICONS, Action, LOCALIZED_TEXTS_EMOJIS, LOCALIZED_TEXTS_EXPLANATIONS
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,42 @@ def get_all_languages_reply_markup(user_language: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+def get_ltext_action_languages_reply_markup(action: str, ltext_key) -> InlineKeyboardMarkup:
+    keyboard = [[]]
+
+    for language_code, language_data in LANGUAGES.items():
+        button = InlineKeyboardButton(language_data["emoji"], callback_data=f"lt:{action}:{ltext_key}:{language_code}")
+        keyboard[0].append(button)
+
+    back_button = InlineKeyboardButton(f"🔙 back", callback_data=f"lt:actions:{ltext_key}")
+    keyboard.append([back_button])
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_localized_text_actions_reply_markup(ltext_key, back_button=True) -> InlineKeyboardMarkup:
+    keyboard = [[
+        InlineKeyboardButton(f"👀 read", callback_data=f"lt:{ltext_key}:{Action.READ}"),
+        InlineKeyboardButton(f"✏️ edit", callback_data=f"lt:{ltext_key}:{Action.EDIT}"),
+        InlineKeyboardButton(f"❌ delete", callback_data=f"lt:{ltext_key}:{Action.DELETE}"),
+    ]]
+
+    if back_button:
+        back_button = InlineKeyboardButton(f"🔙 back", callback_data=f"lt:ltextslist")
+        keyboard.append([back_button])
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_localized_texts_list() -> InlineKeyboardMarkup:
+    keyboard = []
+    for ltext_key, ltext_description in LOCALIZED_TEXTS_DESCRIPTION.items():
+        button = InlineKeyboardButton(f"{LOCALIZED_TEXTS_EMOJIS[ltext_key]} {ltext_description}", callback_data=f"lt:actions:{ltext_key}")
+        keyboard.append([button])
+
+    return InlineKeyboardMarkup(keyboard)
+
+
 PLACEHOLDER_REPLACEMENTS = {
     "{NAME}": lambda u: utilities.escape_html(u.first_name),
     "{SURNAME}": lambda u: utilities.escape_html(u.last_name),
@@ -113,8 +150,13 @@ def get_localized_text_resume_text(session: Session, setting_key: str):
     return text.strip()
 
 
-def get_localized_texts_main_text(ltexts_resume, ltext_description):
-    return f"{ltext_description} settings\n{ltexts_resume}\n\nUse the buttons below to read/edit/delete a language's {ltext_description}:"
+def get_localized_texts_main_text(ltexts_resume, ltext_key, ltext_description):
+    explanation = LOCALIZED_TEXTS_EXPLANATIONS[ltext_key]
+    emoji = LOCALIZED_TEXTS_EMOJIS[ltext_key]
+    return f"{emoji} <b>{ltext_description}</b> settings\n" \
+           f"<i>{explanation}</i>\n\n" \
+           f"{ltexts_resume}\n\n" \
+           f"Use the buttons below to read/edit/delete a language's {ltext_description}:"
 
 
 @decorators.catch_exception()
@@ -756,56 +798,53 @@ def get_localized_text_keyboard(setting_key):
 
 
 @decorators.catch_exception()
-@decorators.pass_session()
+@decorators.pass_session(pass_user=True)
 @decorators.staff_admin()
-async def on_localized_text_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"localized text settings command ({update.effective_message.text}) {utilities.log(update)}")
+async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/texts {utilities.log(update)}")
 
-    command = utilities.get_command(update.effective_message.text)
-    ltext_key = LOCALIZED_TEXTS_TRIGGERS.get(command.lower(), None)
-    if not ltext_key:
-        logger.warning(f"couldn't find setting ltext_key for command \"{command}\"")
-        return
-
-    ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_key]
-
-    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(ltext_key))
-    settings_resume = get_localized_text_resume_text(session, ltext_key)
-    text = get_localized_texts_main_text(settings_resume, ltext_description)
+    reply_markup = get_localized_texts_list()
+    text = f"Select the text to read/edit/delete it:"
     sent_message = await update.message.reply_text(text, reply_markup=reply_markup)
 
     # save this emssage's message_id and remove the last message's keyboard
     remove_keyboard_message_id = context.user_data.get(TempDataKey.LOCALIZED_TEXTS_LAST_MESSAGE_ID, None)
     if remove_keyboard_message_id:
-        await context.bot.edit_message_reply_markup(update.effective_user.id, remove_keyboard_message_id, reply_markup=None)
+        await context.bot.edit_message_reply_markup(update.effective_user.id, remove_keyboard_message_id,
+                                                    reply_markup=None)
     context.user_data[TempDataKey.LOCALIZED_TEXTS_LAST_MESSAGE_ID] = sent_message.message_id
 
 
 @decorators.catch_exception()
 @decorators.pass_session()
-async def on_localized_text_helper_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"localized setting helper from {utilities.log(update)}")
-    ltext_key = context.matches[0].group(1)
-    action = context.matches[0].group(2)
+async def on_ltexts_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"localized text ltexts list button {utilities.log(update)}")
 
+    reply_markup = get_localized_texts_list()
+    text = f"Select the text to read/edit/delete it:"
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_localized_text_actions_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"localized text actions button {utilities.log(update)}")
+    ltext_key = context.matches[0].group("key")
     ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_key]
 
-    helper_tips = {
-        "read": f"tap on the language's flag to read the currently set {ltext_description}",
-        "edit": f"tap on the language's flag to edit that language's {ltext_description}",
-        "delete": f"tap on the language's flag to delete that language's {ltext_description}. "
-                  f"Users who selected that language will receive the fallback language's {ltext_description} (en)",
-    }
-
-    await update.callback_query.answer(helper_tips[action], show_alert=True, cache_time=CACHE_TIME)
+    reply_markup = get_localized_text_actions_reply_markup(ltext_key)
+    settings_resume = get_localized_text_resume_text(session, ltext_key)
+    text = get_localized_texts_main_text(settings_resume, ltext_key, ltext_description)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
 
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_localized_text_read_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"localized text read {utilities.log(update)}")
-    ltext_key = context.matches[0].group(1)
-    language = context.matches[0].group(2)
+    ltext_key = context.matches[0].group("key")
+    language = context.matches[0].group("lang")
+    action = context.matches[0].group("action")
     language_emoji = LANGUAGES[language]["emoji"]
     ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_key]
 
@@ -819,7 +858,7 @@ async def on_localized_text_read_button(update: Update, context: ContextTypes.DE
         await update.callback_query.answer(f"There's no {ltext_description} set for {language_emoji}")
         return
 
-    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(ltext_key))
+    reply_markup = get_ltext_action_languages_reply_markup(action, ltext_key)
     text = f"Current {ltext_description} for {language_emoji}:\n\n{ltext.value}"
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
@@ -828,9 +867,9 @@ async def on_localized_text_read_button(update: Update, context: ContextTypes.DE
 @decorators.pass_session()
 async def on_localized_text_delete_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"localized text delete {utilities.log(update)}")
-    ltext_key = context.matches[0].group(1)
-    language = context.matches[0].group(2)
-
+    ltext_key = context.matches[0].group("key")
+    language = context.matches[0].group("lang")
+    action = context.matches[0].group("action")
     language_emoji = LANGUAGES[language]["emoji"]
     ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_key]
 
@@ -843,9 +882,8 @@ async def on_localized_text_delete_button(update: Update, context: ContextTypes.
     if ltext:
         session.delete(ltext)
 
-    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(ltext_key))
-    ltexts_resume = get_localized_text_resume_text(session, ltext_key)
-    text = get_localized_texts_main_text(ltexts_resume, ltext_description)
+    reply_markup = get_ltext_action_languages_reply_markup(action, ltext_key)
+    text = f"{ACTION_ICONS[action]} {ltext_description}: select the language 👇"
     await update.callback_query.answer(f"{ltext_description} deleted for {language_emoji}")
     await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
@@ -854,9 +892,8 @@ async def on_localized_text_delete_button(update: Update, context: ContextTypes.
 @decorators.pass_session()
 async def on_localized_text_edit_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"localized text edit {utilities.log(update)}")
-    ltext_key = context.matches[0].group(1)
-    language = context.matches[0].group(2)
-
+    ltext_key = context.matches[0].group("key")
+    language = context.matches[0].group("lang")
     language_emoji = LANGUAGES[language]["emoji"]
     ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_key]
 
@@ -865,6 +902,19 @@ async def on_localized_text_edit_button(update: Update, context: ContextTypes.DE
                                              f"(or use /cancel to cancel):")
 
     return State.WAITING_NEW_LOCALIZED_TEXT
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_localized_text_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"localized text action button {utilities.log(update)}")
+    ltext_key = context.matches[0].group("key")
+    action = context.matches[0].group("action")
+    ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_key]
+
+    reply_markup = get_ltext_action_languages_reply_markup(action, ltext_key)
+    text = f"{ACTION_ICONS[action]} {ltext_description}: select the language 👇"
+    await utilities.edit_text_safe(update, text, reply_markup=reply_markup)
 
 
 @decorators.catch_exception()
@@ -889,11 +939,10 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
     ltext.value = update.effective_message.text_html
     ltext.updated_by = update.effective_user.id
 
-    reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(ltext_key))
     await update.effective_message.reply_text(f"{ltext_description} set for {lang_emoji}:\n\n{ltext.value}")
 
-    ltexts_resume = get_localized_text_resume_text(session, ltext_key)
-    text = get_localized_texts_main_text(ltexts_resume, ltext_description)
+    reply_markup = get_ltext_action_languages_reply_markup(Action.EDIT, ltext_key)
+    text = f"{ACTION_ICONS[Action.EDIT]} {ltext_description}: select the language 👇"
     await update.effective_message.reply_text(text, reply_markup=reply_markup)
 
     return ConversationHandler.END
@@ -1026,12 +1075,14 @@ def main():
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
 
     # private chat (admins): localized texts
-    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['welcome', 'w', 'senttostaff', 'sts'], on_localized_text_settings_command, filters.ChatType.PRIVATE))
-    app.add_handler(CallbackQueryHandler(on_localized_text_helper_button, rf"ls:(.+):helper:(.*)"))
-    app.add_handler(CallbackQueryHandler(on_localized_text_read_button, rf"ls:(.+):read:(.*)"))
-    app.add_handler(CallbackQueryHandler(on_localized_text_delete_button, rf"ls:(.+):delete:(.*)"))
-    edit_welcome_conversation_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(on_localized_text_edit_button, rf"ls:(.+):edit:(.*)")],
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['texts'], on_ltexts_list_command, filters.ChatType.PRIVATE))
+    app.add_handler(CallbackQueryHandler(on_ltexts_list_button, rf"lt:ltextslist$"))
+    app.add_handler(CallbackQueryHandler(on_localized_text_actions_button, rf"lt:actions:(?P<key>\w+)$"))
+    app.add_handler(CallbackQueryHandler(on_localized_text_action_button, rf"lt:(?P<key>\w+):(?P<action>\w+)$"))
+    app.add_handler(CallbackQueryHandler(on_localized_text_read_button, rf"lt:(?P<action>{Action.READ}):(?P<key>\w+):(?P<lang>.+)$"))
+    app.add_handler(CallbackQueryHandler(on_localized_text_delete_button, rf"lt:(?P<action>{Action.DELETE}):(?P<key>\w+):(?P<lang>.+)$"))
+    edit_ltext_conversation_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(on_localized_text_edit_button, rf"lt:(?P<action>{Action.EDIT}):(?P<key>\w+):(?P<lang>.+)$")],
         states={
             State.WAITING_NEW_LOCALIZED_TEXT: [
                 PrefixHandler(COMMAND_PREFIXES, "cancel", on_localized_text_cancel_command),
@@ -1049,7 +1100,7 @@ def main():
         ],
         conversation_timeout=30*60
     )
-    app.add_handler(edit_welcome_conversation_handler)
+    app.add_handler(edit_ltext_conversation_handler)
 
     # private chat: admins + users
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE))
