@@ -49,6 +49,19 @@ LOCALIZED_TEXTS_EXPLANATIONS = {
     LocalizedTextKey.SENT_TO_STAFF: "This is the reply message that will be sent to user when they send a message to the staff"
 }
 
+LOCALIZED_TEXTS_DESCRIPTIONS = {
+    LocalizedTextKey.WELCOME: dict(
+        label="welcome message",
+        explanation="This is the message that will be sent to users when they start the bot",
+        emoji="👋"
+    ),
+    LocalizedTextKey.SENT_TO_STAFF: dict(
+        label="\"sent to staff\" message",
+        explanation="This is the reply message that will be sent to user when they send a message to the staff",
+        emoji="👥"
+    ),
+}
+
 
 class Action:
     READ = "read"
