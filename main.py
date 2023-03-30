@@ -371,82 +371,6 @@ async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_setwelcome_language_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
-    logger.info(f"setting welcome for language: %s", update.callback_query.data)
-    selected_language = context.matches[0].group(1)
-
-    chat: Chat = chats.get_staff_chat(session)
-    if not chat:
-        logger.warning("there is no staff chat set as default")
-        await update.effective_message.edit_text("There's no staff chat set. Add me to the chat and use "
-                                                 "<code>/setstaff</code> to set that chat as default staff chat")
-        return
-
-    welcome_text = texts.get_localized_text(
-        session,
-        key=LocalizedTextKey.WELCOME,
-        language=selected_language,
-        create_if_missing=True
-    )
-
-    welcome_text_from_user_data = context.user_data.get("welcome_text")
-    welcome_text.value = welcome_text_from_user_data
-    welcome_text.updated_by = update.effective_user.id
-
-    await update.effective_message.edit_text(f"Welcome text set for {LANGUAGES[selected_language]['emoji']}:")
-    await update.effective_message.reply_text(f"{welcome_text.value}", quote=False)
-
-    user.set_started()
-
-
-@decorators.catch_exception()
-@decorators.pass_session()
-async def on_getwelcome_language_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"getting welcome for language: %s", update.callback_query.data)
-    selected_language = context.matches[0].group(1)
-    language_emoji = LANGUAGES[selected_language]['emoji']
-
-    welcome_text = texts.get_localized_text(
-        session,
-        key=LocalizedTextKey.WELCOME,
-        language=selected_language,
-        create_if_missing=False
-    )
-    if not welcome_text:
-        await update.effective_message.edit_text(f"There's no welcome message for {language_emoji}. "
-                                                 f"Use <code>/welcome [welcome message]</code> to set it")
-        return
-
-    keyboard = [[
-        InlineKeyboardButton("🗑 forget", callback_data=f"unsetwelcome:{selected_language}")
-    ]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.effective_message.edit_text(f"Welcome text for {language_emoji}:")
-    await update.effective_message.reply_text(f"{welcome_text.value}", reply_markup=reply_markup)
-
-
-@decorators.catch_exception()
-@decorators.pass_session()
-async def on_unsetwelcome_language_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"deleting welcome for language: %s", update.callback_query.data)
-    selected_language = context.matches[0].group(1)
-    language_emoji = LANGUAGES[selected_language]['emoji']
-
-    welcome_text = texts.get_localized_text(
-        session,
-        key=LocalizedTextKey.WELCOME,
-        language=selected_language,
-        create_if_missing=False
-    )
-    if welcome_text:
-        session.delete(welcome_text)
-
-    await update.effective_message.edit_text(f"Welcome text for {language_emoji} deleted")
-
-
-@decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"message edit in a group {utilities.log(update)}")
@@ -857,32 +781,6 @@ async def on_localized_text_settings_command(update: Update, context: ContextTyp
     context.user_data[TempDataKey.LOCALIZED_TEXTS_LAST_MESSAGE_ID] = sent_message.message_id
 
 
-def get_sent_to_staff_keyboard(current_status) -> InlineKeyboardMarkup:
-    if current_status and current_status == "true":
-        stt_button = InlineKeyboardButton("disable", callback_data=f"{BotSettingKey.SENT_TO_STAFF}:disable")
-    else:
-        stt_button = InlineKeyboardButton("enable", callback_data=f"{BotSettingKey.SENT_TO_STAFF}:enable")
-
-    keyboard = get_localized_text_keyboard(LocalizedTextKey.SENT_TO_STAFF)
-    # add a bottun as the first line to quickly enable/disable the message
-    keyboard.insert(0, [
-        stt_button
-    ])
-
-    return InlineKeyboardMarkup(keyboard)
-
-
-@decorators.catch_exception()
-@decorators.pass_session()
-@decorators.staff_admin()
-async def on_senttostaff_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/senttostaff command {utilities.log(update)})")
-
-    stt_status = settings.get_or_create(session, BotSettingKey.SENT_TO_STAFF)
-    reply_markup = get_sent_to_staff_keyboard(stt_status.value)
-    await update.message.reply_text("\"sent to staff\" message settings. Select what you want to do:", reply_markup=reply_markup)
-
-
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_localized_text_helper_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
@@ -1177,9 +1075,6 @@ def main():
     # callback query
     app.add_handler(CallbackQueryHandler(on_set_language_button, pattern="^setlang:(..)$"))
     app.add_handler(CallbackQueryHandler(on_set_language_button_start, pattern="^setlangstart:(..)$"))
-    app.add_handler(CallbackQueryHandler(on_setwelcome_language_button, pattern="^setwelcome:(..)$"))
-    app.add_handler(CallbackQueryHandler(on_getwelcome_language_button, pattern="^getwelcome:(..)$"))
-    app.add_handler(CallbackQueryHandler(on_unsetwelcome_language_button, pattern="^unsetwelcome:(..)$"))
 
     # other
     app.add_handler(MessageHandler(new_group, on_new_group_chat))
