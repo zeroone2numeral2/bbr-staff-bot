@@ -31,8 +31,7 @@ import decorators
 import utilities
 from emojis import Emoji
 from constants import LANGUAGES, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
-    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, LOCALIZED_TEXTS_TRIGGERS, Action, \
-    LOCALIZED_TEXTS_DESCRIPTORS, ACTION_DESCRIPTORS
+    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, Action, LOCALIZED_TEXTS_DESCRIPTORS, ACTION_DESCRIPTORS
 from config import config
 
 logger = logging.getLogger(__name__)
