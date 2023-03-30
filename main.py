@@ -1075,7 +1075,7 @@ def main():
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
 
     # private chat (admins): localized texts
-    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['texts'], on_ltexts_list_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['texts', 't'], on_ltexts_list_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_ltexts_list_button, rf"lt:ltextslist$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_actions_button, rf"lt:actions:(?P<key>\w+)$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_action_button, rf"lt:(?P<key>\w+):(?P<action>\w+)$"))
