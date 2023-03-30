@@ -111,12 +111,13 @@ def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> I
     keyboard = []
     if setting.value_type == ValueType.BOOL:
         keyboard.append([
-            InlineKeyboardButton(f"enable", callback_data=f"bs:setbool:true:{setting.key}"),
-            InlineKeyboardButton(f"disable", callback_data=f"bs:setbool:false:{setting.key}")
+            InlineKeyboardButton(f"✅ enable", callback_data=f"bs:setbool:true:{setting.key}"),
+            InlineKeyboardButton(f"☑️ disable", callback_data=f"bs:setbool:false:{setting.key}")
         ])
     else:
         keyboard.append([
-            InlineKeyboardButton(f"edit", callback_data=f"bs:edit:{setting.key}")
+            InlineKeyboardButton(f"✏️ edit", callback_data=f"bs:edit:{setting.key}"),
+            InlineKeyboardButton(f"⚫️ set null", callback_data=f"bs:null:{setting.key}")
         ])
 
     if back_button:
