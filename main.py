@@ -1062,7 +1062,7 @@ def main():
     new_group = NewGroup()
     filter_reply_to_bot = FilterReplyToBot()
 
-    # edited messages NEED to be catched before anything else, otherwise they will procedded by other MessageHandlers
+    # edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
     # app.add_handler(TypeHandler(Update.EDITED_MESSAGE, on_edited_message))
     app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff))
     # user messages cannot be edited because they are forwarded
