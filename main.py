@@ -25,8 +25,7 @@ import decorators
 import utilities
 from emojis import Emoji
 from constants import LANGUAGES, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
-    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, LOCALIZED_TEXTS_DESCRIPTION, LOCALIZED_TEXTS_TEMP_DATA_KEY, \
-    LOCALIZED_TEXTS_TEMP_DATA_KEY, LOCALIZED_TEXTS_TRIGGERS
+    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, LOCALIZED_TEXTS_DESCRIPTION, LOCALIZED_TEXTS_TRIGGERS
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -849,7 +848,13 @@ async def on_localized_text_settings_command(update: Update, context: ContextTyp
     reply_markup = InlineKeyboardMarkup(get_localized_text_keyboard(ltext_key))
     settings_resume = get_localized_text_resume_text(session, ltext_key)
     text = get_localized_texts_main_text(settings_resume, ltext_description)
-    await update.message.reply_text(text, reply_markup=reply_markup)
+    sent_message = await update.message.reply_text(text, reply_markup=reply_markup)
+
+    # save this emssage's message_id and remove the last message's keyboard
+    remove_keyboard_message_id = context.user_data.get(TempDataKey.LOCALIZED_TEXTS_LAST_MESSAGE_ID, None)
+    if remove_keyboard_message_id:
+        await context.bot.edit_message_reply_markup(update.effective_user.id, remove_keyboard_message_id, reply_markup=None)
+    context.user_data[TempDataKey.LOCALIZED_TEXTS_LAST_MESSAGE_ID] = sent_message.message_id
 
 
 def get_sent_to_staff_keyboard(current_status) -> InlineKeyboardMarkup:
@@ -957,7 +962,7 @@ async def on_localized_text_edit_button(update: Update, context: ContextTypes.DE
     language_emoji = LANGUAGES[language]["emoji"]
     ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_key]
 
-    context.user_data[LOCALIZED_TEXTS_TEMP_DATA_KEY] = dict(key=ltext_key, lang=language)
+    context.user_data[TempDataKey.LOCALIZED_TEXTS] = dict(key=ltext_key, lang=language)
     await update.effective_message.edit_text(f"Please send me the new {ltext_description} text for {language_emoji} "
                                              f"(or use /cancel to cancel):")
 
@@ -970,7 +975,7 @@ async def on_localized_text_edit_button(update: Update, context: ContextTypes.DE
 async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"received new localized text {utilities.log(update)})")
 
-    ltext_data = context.user_data.pop(LOCALIZED_TEXTS_TEMP_DATA_KEY)
+    ltext_data = context.user_data.pop(TempDataKey.LOCALIZED_TEXTS)
     ltext_key = ltext_data["key"]
     ltext_language = ltext_data["lang"]
 
@@ -1013,7 +1018,7 @@ async def on_welcome_receive_unexpected(update: Update, context: ContextTypes.DE
 async def on_localized_text_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"waiting new localized text: /cancel command {utilities.log(update)}")
 
-    context.user_data.pop(LOCALIZED_TEXTS_TEMP_DATA_KEY, None)
+    context.user_data.pop(TempDataKey.LOCALIZED_TEXTS, None)
 
     await update.effective_message.reply_text("Okay, operation canceled :)")
 
@@ -1026,7 +1031,7 @@ async def on_localized_text_cancel_command(update: Update, context: ContextTypes
 async def on_localized_text_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"waiting for new localized text: timed out")
 
-    ltext_data = context.user_data.pop(LOCALIZED_TEXTS_TEMP_DATA_KEY, None)
+    ltext_data = context.user_data.pop(TempDataKey.LOCALIZED_TEXTS, None)
     ltext_description = LOCALIZED_TEXTS_DESCRIPTION[ltext_data['key']]
 
     await update.effective_message.reply_text(f"Okay, it looks like you forgot... "

@@ -39,8 +39,6 @@ LOCALIZED_TEXTS_TRIGGERS = {
     "sts": LocalizedTextKey.SENT_TO_STAFF,
 }
 
-LOCALIZED_TEXTS_TEMP_DATA_KEY = "tmp_localized_text_data"
-
 
 class BotSettingKey:
     SENT_TO_STAFF = "sent_to_staff_message"
@@ -56,7 +54,8 @@ BOT_SETTINGS_DEFAULTS = {
 
 
 class TempDataKey:
-    WELCOME_LANGUAGE = "_welcome_language"
+    LOCALIZED_TEXTS = "tmp_localized_text_data"
+    LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
 
 
 class Language:
