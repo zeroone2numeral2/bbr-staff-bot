@@ -73,6 +73,8 @@ CACHE_TIME = 10
 ADMIN_HELP = """••• <b><u>Admin commands (private)</u></b>:
 •• Only the staff chat's administrators are allowed to use these commands
 • /welcome: see or edit a langauge's welcome text
+• /sts or /senttostaff: see or edit a langauge's "sent to staff" message (that is, the message the bot sends to the \
+user after they send something to the staff chat)
 • /placeholders: list available placeholders (they can be used in welcome texts)
 • /settings: list all available settings
 • /set <code>[setting] [new value]</code>: change a setting
