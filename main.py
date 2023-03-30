@@ -951,10 +951,10 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
 @decorators.catch_exception()
 @decorators.pass_session()
 @decorators.staff_admin()
-async def on_welcome_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"(unexpected) received new welcome message {utilities.log(update)}")
+async def on_localized_text_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"(unexpected) received new localized text message {utilities.log(update)}")
 
-    await update.message.reply_text("Please send me the new welcome message for the selected language")
+    await update.message.reply_text("Please send me the new text for the selected language")
 
     return State.WAITING_NEW_LOCALIZED_TEXT
 
@@ -1087,7 +1087,7 @@ def main():
             State.WAITING_NEW_LOCALIZED_TEXT: [
                 PrefixHandler(COMMAND_PREFIXES, "cancel", on_localized_text_cancel_command),
                 MessageHandler(filters.TEXT, on_localized_text_receive),
-                MessageHandler(~filters.TEXT, on_welcome_receive_unexpected)
+                MessageHandler(~filters.TEXT, on_localized_text_receive_unexpected)
             ],
             ConversationHandler.TIMEOUT: [
                 # on timeout, the *last update* is broadcasted to all users. it might be a callback query or a text
