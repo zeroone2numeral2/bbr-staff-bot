@@ -29,7 +29,7 @@ def get_localized_text_with_fallback(
         session: Session,
         key: str,
         language: str,
-        fallback_language: Optional[str] = Language.EN,
+        fallback_language: str,
         raise_if_no_fallback: Optional[bool] = True
 ):
     query = session.query(LocalizedText).filter(
@@ -47,7 +47,7 @@ def get_localized_text_with_fallback(
         text: LocalizedText = query.one_or_none()
 
     if not text and raise_if_no_fallback:
-        raise ValueError(f"no {language}/en <{key}> text")
+        raise ValueError(f"no {language}/{fallback_language} <{key}> text")
 
     return text
 

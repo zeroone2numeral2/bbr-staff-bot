@@ -201,7 +201,12 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     language_code = get_language_code(user.selected_language, update.effective_user.language_code)
 
-    welcome_text = texts.get_localized_text_with_fallback(session, LocalizedTextKey.WELCOME, language_code)
+    welcome_text = texts.get_localized_text_with_fallback(
+        session,
+        LocalizedTextKey.WELCOME,
+        language_code,
+        fallback_language=context.bot_data[TempDataKey.FALLBACK_LANGUAGE].value()
+    )
     welcome_texts = texts.get_texts(session, LocalizedTextKey.WELCOME).all()
     reply_markup = get_start_reply_markup(welcome_text.language, welcome_texts)
 
@@ -257,7 +262,13 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         user_language = get_language_code(user.selected_language, update.effective_user.language_code)
         logger.info(f"sending 'sent to staff' message (user language: {user_language})...")
         try:
-            sent_to_staff = texts.get_localized_text_with_fallback(session, LocalizedTextKey.SENT_TO_STAFF, user_language, raise_if_no_fallback=True)
+            sent_to_staff = texts.get_localized_text_with_fallback(
+                session,
+                LocalizedTextKey.SENT_TO_STAFF,
+                user_language,
+                fallback_language=context.bot_data[TempDataKey.FALLBACK_LANGUAGE].value(),
+                raise_if_no_fallback=True
+            )
             text = sent_to_staff.value
         except ValueError as e:
             logger.error(f"{e}")
@@ -1020,6 +1031,9 @@ async def post_init(application: Application) -> None:
             session.add(setting)
 
     session.commit()
+
+    default_language = settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE)
+    application.bot_data[TempDataKey.FALLBACK_LANGUAGE] = default_language
 
     staff_chat = chats.get_staff_chat(session)
     if not staff_chat:
