@@ -1016,15 +1016,16 @@ def main():
     # edited messages NEED to be catched before anything else, otherwise they will procedded by other MessageHandlers
     # app.add_handler(TypeHandler(Update.EDITED_MESSAGE, on_edited_message))
     app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff))
-    # user messages acnnot be edited because they are forwarded
+    # user messages cannot be edited because they are forwarded
     # app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.PRIVATE, on_edited_message_user))
 
-    # private chat: admins
-    # app.add_handler(CommandHandler('welcome', on_welcome_command, filters.ChatType.PRIVATE))
+    # private chat (admins)
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['set'], on_set_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['enable', 'disable'], on_enable_disable_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
+
+    # private chat (admins): localized texts
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['welcome', 'w', 'senttostaff', 'sts'], on_localized_text_settings_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_localized_text_helper_button, rf"ls:(.+):helper:(.*)"))
     app.add_handler(CallbackQueryHandler(on_localized_text_read_button, rf"ls:(.+):read:(.*)"))
@@ -1050,9 +1051,7 @@ def main():
     )
     app.add_handler(edit_welcome_conversation_handler)
 
-    # app.add_handler(CommandHandler('senttostaff', on_senttostaff_settings_command, filters.ChatType.PRIVATE))
-
-    # private chat: mixed
+    # private chat: admins + users
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE))
 
     # private chat: users
@@ -1070,13 +1069,12 @@ def main():
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['revoke', 'del'], on_revoke_admin_command, filters.ChatType.GROUPS & filters.REPLY))
     app.add_handler(MessageHandler(filters.ChatType.GROUPS & filters.REPLY & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply))
     app.add_handler(MessageHandler(filters.ChatType.GROUPS & filter_reply_to_bot, on_bot_message_reply))
-    # bot.add_handler(CommandHandler('chatid', on_chatid_command, filters.ChatType.GROUPS))
 
     # callback query
     app.add_handler(CallbackQueryHandler(on_set_language_button, pattern="^setlang:(..)$"))
     app.add_handler(CallbackQueryHandler(on_set_language_button_start, pattern="^setlangstart:(..)$"))
 
-    # other
+    # chat_member updates
     app.add_handler(MessageHandler(new_group, on_new_group_chat))
     app.add_handler(ChatMemberHandler(on_chat_member_update, ChatMemberHandler.ANY_CHAT_MEMBER))
 
