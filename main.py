@@ -263,6 +263,9 @@ async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     text += "\nTo change a setting, use <code>/set [setting] [new value]</code>\n" \
             "For settings of type <code>bool</code>, you can also use the <code>/enable</code> or " \
             "<code>/disable</code> commands: <code>/enable [setting]</code>\n\n" \
+            "Examples:\n" \
+            "• <code>/set broadcast_edits false</code>\n" \
+            "• <code>/enable sent_to_staff_message</code>\n\n" \
             "Settings of type <code>bool</code> can be changed using the values " \
             "'true' and 'false', 'none' or 'null' can be used to set a setting to <code>NULL</code>\n" \
             "<code>int</code>, <code>float</code>, <code>str</code>, <code>datetime</code> and <code>date</code> " \
