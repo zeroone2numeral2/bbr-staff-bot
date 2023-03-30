@@ -332,7 +332,7 @@ class BotSetting(Base):
 
     value_type = Column(String, default=None)
 
-    updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_on = Column(DateTime, default=func.now(), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
     def __init__(self, key, value=None):
