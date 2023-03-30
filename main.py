@@ -102,7 +102,7 @@ def get_localized_text_actions_reply_markup(ltext_key, back_button=True) -> Inli
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_localized_texts_list() -> InlineKeyboardMarkup:
+def get_localized_texts_list_reply_markup() -> InlineKeyboardMarkup:
     keyboard = []
     for ltext_key, ltext_description in LOCALIZED_TEXTS_DESCRIPTION.items():
         button = InlineKeyboardButton(f"{LOCALIZED_TEXTS_EMOJIS[ltext_key]} {ltext_description}", callback_data=f"lt:actions:{ltext_key}")
@@ -803,7 +803,7 @@ def get_localized_text_keyboard(setting_key):
 async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/texts {utilities.log(update)}")
 
-    reply_markup = get_localized_texts_list()
+    reply_markup = get_localized_texts_list_reply_markup()
     text = f"Select the text to read/edit/delete it:"
     sent_message = await update.message.reply_text(text, reply_markup=reply_markup)
 
@@ -820,7 +820,7 @@ async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_T
 async def on_ltexts_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"localized text ltexts list button {utilities.log(update)}")
 
-    reply_markup = get_localized_texts_list()
+    reply_markup = get_localized_texts_list_reply_markup()
     text = f"Select the text to read/edit/delete it:"
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
