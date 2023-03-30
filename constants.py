@@ -34,21 +34,6 @@ class LocalizedTextKey:
     SENT_TO_STAFF = "sent_to_staff"
 
 
-LOCALIZED_TEXTS_DESCRIPTION = {
-    LocalizedTextKey.WELCOME: "welcome message",
-    LocalizedTextKey.SENT_TO_STAFF: "\"sent to staff\" message"
-}
-
-LOCALIZED_TEXTS_EMOJIS = {
-    LocalizedTextKey.WELCOME: "👋",
-    LocalizedTextKey.SENT_TO_STAFF: "👥"
-}
-
-LOCALIZED_TEXTS_EXPLANATIONS = {
-    LocalizedTextKey.WELCOME: "This is the message that will be sent to users when they start the bot",
-    LocalizedTextKey.SENT_TO_STAFF: "This is the reply message that will be sent to user when they send a message to the staff"
-}
-
 LOCALIZED_TEXTS_DESCRIPTIONS = {
     LocalizedTextKey.WELCOME: dict(
         label="welcome message",
