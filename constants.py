@@ -1,20 +1,27 @@
+class Language:
+    EN = "en"
+    IT = "it"
+    FR = "fr"
+    ES = "es"
+
+
 LANGUAGES = {
-    "it": {
+    Language.IT: {
         "emoji": "🇮🇹",
         "desc": "italiano",
         "desc_en": "italian"
     },
-    "fr": {
+    Language.FR: {
         "emoji": "🇫🇷",
         "desc": "français",
         "desc_en": "french"
     },
-    "es": {
+    Language.ES: {
         "emoji": "🇪🇸",
         "desc": "español",
         "desc_en": "spanish"
     },
-    "en": {
+    Language.EN: {
         "emoji": "🇬🇧",
         "desc": "english",
         "desc_en": "english"
@@ -67,25 +74,36 @@ class BotSettingKey:
     SENT_TO_STAFF = "sent_to_staff_message"
     BROADCAST_EDITS = "broadcast_edits"
     ALLOW_USER_REVOKE = "allow_user_revoke"
+    FALLBACK_LANGAUGE = "fallback_language"
 
 
 BOT_SETTINGS_DEFAULTS = {
-    BotSettingKey.SENT_TO_STAFF: dict(default=True, description="when an user sends a message, tell them it has been sent to the staff"),
-    BotSettingKey.BROADCAST_EDITS: dict(default=True, description="edit staff messages sent to users when the original message in the staff chat is edited"),
-    BotSettingKey.ALLOW_USER_REVOKE: dict(default=True, description="allow users to revoke the messages forwarded in the staff chat")
+    BotSettingKey.SENT_TO_STAFF: dict(
+        default=True,
+        label="\"sent to staff\" message",
+        description="when an user sends a message, tell them it has been sent to the staff"
+    ),
+    BotSettingKey.BROADCAST_EDITS: dict(
+        default=True,
+        label="broadcast edits",
+        description="edit staff messages sent to users when the original message in the staff chat is edited"
+    ),
+    BotSettingKey.ALLOW_USER_REVOKE: dict(
+        default=True,
+        label="user messages revoke",
+        description="allow users to revoke the messages forwarded in the staff chat"
+    ),
+    BotSettingKey.FALLBACK_LANGAUGE: dict(
+        default=Language.EN,
+        label="fallback language",
+        description="the language that should be used if the user language is not available"
+    )
 }
 
 
 class TempDataKey:
     LOCALIZED_TEXTS = "tmp_localized_text_data"
     LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
-
-
-class Language:
-    EN = "en"
-    IT = "it"
-    FR = "fr"
-    ES = "es"
 
 
 COMMAND_PREFIXES = ["/", "!", "."]
