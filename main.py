@@ -347,12 +347,12 @@ async def on_enable_disable_command(update: Update, context: ContextTypes.DEFAUL
 
     value = True if command == "enable" else False
 
-    logger.info(f"new value for {key}: {value}")
-
     setting = settings.get_or_create(session, key, value=value)
     if setting.value_type != ValueType.BOOL:
         await update.message.reply_text(f"<code>{key}</code> is not a boolean setting that can be enabled/disabled")
         return
+
+    logger.info(f"new value for {key}: {value}")
 
     setting.update_value(value)
     session.add(setting)

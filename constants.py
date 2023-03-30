@@ -96,7 +96,7 @@ BOT_SETTINGS_DEFAULTS = {
     BotSettingKey.FALLBACK_LANGAUGE: dict(
         default=Language.EN,
         label="fallback language",
-        description="the language that should be used if the user language is not available"
+        description="the language that should be used if the user language's version of a text is not available"
     )
 }
 
