@@ -1,3 +1,6 @@
+from emojis import Emoji
+
+
 class Language:
     EN = "en"
     IT = "it"
@@ -74,6 +77,7 @@ class BotSettingKey:
     BROADCAST_EDITS = "broadcast_edits"
     ALLOW_USER_REVOKE = "allow_user_revoke"
     FALLBACK_LANGAUGE = "fallback_language"
+    APPROVAL_MODE = "approval_mode"
 
 
 BOT_SETTINGS_DEFAULTS = {
@@ -100,6 +104,12 @@ BOT_SETTINGS_DEFAULTS = {
         label="fallback language",
         emoji="🌍",
         description="the language that should be used if the user language's version of a text is not available"
+    ),
+    BotSettingKey.APPROVAL_MODE: dict(
+        default=False,
+        label="approval mode",
+        emoji=Emoji.LENS,
+        description="approve/refuse users who are not in the users' group chat"
     )
 }
 
