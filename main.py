@@ -110,14 +110,15 @@ def get_localized_text_actions_reply_markup(ltext_key, back_button=True) -> Inli
 def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> InlineKeyboardMarkup:
     keyboard = []
     if setting.value_type == ValueType.BOOL:
-        keyboard.append([
-            InlineKeyboardButton(f"✅ enable", callback_data=f"bs:setbool:true:{setting.key}"),
-            InlineKeyboardButton(f"☑️ disable", callback_data=f"bs:setbool:false:{setting.key}")
-        ])
+        if setting.value():
+            button = InlineKeyboardButton(f"☑️ disable", callback_data=f"bs:setbool:false:{setting.key}")
+        else:
+            button = InlineKeyboardButton(f"✅ enable", callback_data=f"bs:setbool:true:{setting.key}")
+        keyboard.append([button])
     else:
         keyboard.append([
             InlineKeyboardButton(f"✏️ edit", callback_data=f"bs:edit:{setting.key}"),
-            InlineKeyboardButton(f"⚫️ set null", callback_data=f"bs:null:{setting.key}")
+            InlineKeyboardButton(f"⚫️ nullify", callback_data=f"bs:null:{setting.key}")
         ])
 
     if back_button:
@@ -921,12 +922,26 @@ async def on_localized_text_actions_button(update: Update, context: ContextTypes
 
 @decorators.catch_exception()
 @decorators.pass_session()
-async def on_bot_setting_actions_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+async def on_bot_setting_show_setting_actions_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"bot setting show actions button {utilities.log(update)}")
     setting_key = context.matches[0].group("key")
-    setting_label = BOT_SETTINGS_DEFAULTS[setting_key]["label"]
 
     setting: BotSetting = settings.get_or_create(session, setting_key)
+    reply_markup = get_setting_actions_reply_markup(setting)
+    text = get_setting_text(setting)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_bot_setting_switch_bool_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"bot setting switch bool button {utilities.log(update)}")
+    setting_key = context.matches[0].group("key")
+    new_value = context.matches[0].group("value")
+    new_value = utilities.convert_string_to_value(new_value)
+
+    setting: BotSetting = settings.get_or_create(session, setting_key)
+    setting.update_value(new_value)
     reply_markup = get_setting_actions_reply_markup(setting)
     text = get_setting_text(setting)
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
@@ -1171,7 +1186,8 @@ def main():
     # private chat (admins): bot settings
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['bs'], on_settings_config_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_settings_list_button, rf"bs:list$"))
-    app.add_handler(CallbackQueryHandler(on_bot_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"))
+    app.add_handler(CallbackQueryHandler(on_bot_setting_show_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"))
+    app.add_handler(CallbackQueryHandler(on_bot_setting_switch_bool_button, rf"bs:setbool:(?P<value>\w+):(?P<key>\w+)$"))
 
     # private chat (admins): localized texts
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['texts', 't'], on_ltexts_list_command, filters.ChatType.PRIVATE))
