@@ -6,7 +6,7 @@ from typing import Optional, Tuple, List, Union
 import pytz
 from sqlalchemy.orm import Session
 from sqlalchemy import update as sqlalchemy_update, true, ChunkedIteratorResult, select
-from telegram import Update, Message
+from telegram import Update, Message, BotCommandScopeChat
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram import User as TelegramUser
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
@@ -1197,8 +1197,13 @@ async def on_new_setting_value_timeout(update: Update, context: ContextTypes.DEF
 async def post_init(application: Application) -> None:
     bot: ExtBot = application.bot
 
+    defaul_english_commands = [
+        BotCommand("start", "see the welcome message"),
+        BotCommand("lang", "set your language")
+    ]
+
     await bot.set_my_commands(
-        [BotCommand("start", "see the welcome message"), BotCommand("lang", "set your language")],
+        defaul_english_commands,
         scope=BotCommandScopeAllPrivateChats()
     )
     await bot.set_my_commands(
@@ -1242,6 +1247,16 @@ async def post_init(application: Application) -> None:
 
     session.add(staff_chat)
     session.commit()
+
+    admin_commands = defaul_english_commands + [
+        BotCommand("settings", "change the bot's global settings"),
+        BotCommand("texts", "manage text messages that depend on the user's language"),
+        BotCommand("placeholders", "list all available placeholders")
+    ]
+    if staff_chat.chat_administrators:
+        for chat_administrator in staff_chat.chat_administrators:
+            logger.info(f"setting admin commands for {chat_administrator.user_id}...")
+            await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_administrator.user_id))
 
 
 def main():
