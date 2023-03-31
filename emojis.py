@@ -3,3 +3,7 @@ class Emoji:
     SLEEPING = "😪"
     WARNING = "⚠️"
     LENS = "🔎"
+    ENVELOPE = "✉️"
+    PENCIL = "✏️"
+    TRASH = "🚮"
+    EARTH = "🌍"

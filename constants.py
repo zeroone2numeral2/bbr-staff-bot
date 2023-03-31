@@ -84,25 +84,25 @@ BOT_SETTINGS_DEFAULTS = {
     BotSettingKey.SENT_TO_STAFF: dict(
         default=True,
         label="\"sent to staff\" message",
-        emoji="✉️",
+        emoji=Emoji.ENVELOPE,
         description="when an user sends a message, tell them it has been sent to the staff"
     ),
     BotSettingKey.BROADCAST_EDITS: dict(
         default=True,
         label="broadcast edits",
-        emoji="✏️",
+        emoji=Emoji.PENCIL,
         description="edit staff messages sent to users when the original message in the staff chat is edited"
     ),
     BotSettingKey.ALLOW_USER_REVOKE: dict(
         default=True,
         label="user messages revoke",
-        emoji="🚮",
+        emoji=Emoji.TRASH,
         description="allow users to revoke the messages forwarded in the staff chat"
     ),
     BotSettingKey.FALLBACK_LANGAUGE: dict(
         default=Language.EN,
         label="fallback language",
-        emoji="🌍",
+        emoji=Emoji.EARTH,
         description="the language that should be used if the user language's version of a text is not available"
     ),
     BotSettingKey.APPROVAL_MODE: dict(
