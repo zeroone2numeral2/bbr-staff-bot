@@ -18,7 +18,11 @@ class User(Base):
 
     user_id = Column(Integer, primary_key=True)
     name = Column(String, default=None)
+    first_name = Column(String, default=None)
+    last_name = Column(String, default=None)
     username = Column(String, default=None)
+    is_bot = Column(Boolean, default=False)
+    is_premium = Column(Boolean, default=False)
 
     # started
     started = Column(Boolean, default=False)  # we need to save every staff chat's admin, and they might have not started the bot yet
@@ -41,25 +45,19 @@ class User(Base):
     user_messages = relationship("UserMessage", back_populates="user")
     admin_messages = relationship("AdminMessage", back_populates="user")
 
-    def __init__(
-            self,
-            user_id: int,
-            name: Optional[str] = None,
-            username: Optional[str] = None,
-            language_code: Optional[str] = None,
-            started: Optional[bool] = None
-    ):
-        self.user_id = user_id
-        self.name = name
-        self.username = username
-        self.language_code = language_code
+    def __init__(self, telegram_user: TelegramUser, started: Optional[bool] = None):
+        self.update_metadata(telegram_user)
         if started is not None:
             self.started = started
 
     def update_metadata(self, telegram_user: TelegramUser):
         self.name = telegram_user.full_name
+        self.first_name = telegram_user.first_name
+        self.last_message = telegram_user.last_name
         self.username = telegram_user.username
         self.language_code = telegram_user.language_code
+        self.is_bot = telegram_user.is_bot
+        self.is_premium = telegram_user.is_premium
 
     def set_started(self):
         self.started = True
@@ -173,6 +171,18 @@ def chat_member_to_dict(chat_member: ChatMemberAdministrator, chat_id: [None, in
         can_pin_messages=True if is_owner else chat_member.can_pin_messages,
         can_manage_topics=True if is_owner else chat_member.can_manage_topics,
     )
+    """ ChatMemberRestricted
+    can_send_messages=True if is_owner else chat_member.can_send_messages,
+    can_send_audios=True if is_owner else chat_member.can_send_audios,
+    can_send_documents=True if is_owner else chat_member.can_send_documents,
+    can_send_photos=True if is_owner else chat_member.can_send_photos,
+    can_send_videos=True if is_owner else chat_member.can_send_videos,
+    can_send_video_notes=True if is_owner else chat_member.can_send_video_notes,
+    can_send_voice_notes=True if is_owner else chat_member.can_send_voice_notes,
+    can_send_polls=True if is_owner else chat_member.can_send_polls,
+    can_send_other_messages=True if is_owner else chat_member.can_send_other_messages,
+    can_add_web_page_previews=True if is_owner else chat_member.can_add_web_page_previews,
+    """
 
     if chat_id:
         chat_member_dict["chat_id"] = chat_id
@@ -226,6 +236,58 @@ class ChatAdministrator(Base):
         chat_member_dict.update({"chat_id": chat_id})
 
         return cls(**chat_member_dict)
+
+
+"""
+class ChatMember(Base):
+    __tablename__ = 'chat_members'
+    __allow_unmapped__ = True
+
+    user_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
+    chat_id = Column(Integer, ForeignKey('chats.chat_id', ondelete="CASCADE"), primary_key=True)
+    status = Column(String)
+    is_anonymous = Column(Boolean, default=False)
+    custom_title = Column(String, default=None)
+
+    # ChatMemberAdministrator
+    can_be_edited = Column(Boolean, default=False)
+    can_manage_chat = Column(Boolean, default=True)
+    can_delete_messages = Column(Boolean, default=False)
+    can_manage_video_chats = Column(Boolean, default=False)
+    can_restrict_members = Column(Boolean, default=False)
+    can_promote_members = Column(Boolean, default=False)
+    can_change_info = Column(Boolean, default=False)
+    can_invite_users = Column(Boolean, default=False)
+    can_post_messages = Column(Boolean, default=False)
+    can_edit_messages = Column(Boolean, default=False)
+    can_pin_messages = Column(Boolean, default=False)
+    can_manage_topics = Column(Boolean, default=False)
+
+    # ChatMemberRestricted
+    can_send_messages = Column(Boolean, default=False)
+    can_send_audios = Column(Boolean, default=False)
+    can_send_documents = Column(Boolean, default=False)
+    can_send_photos = Column(Boolean, default=False)
+    can_send_videos = Column(Boolean, default=False)
+    can_send_video_notes = Column(Boolean, default=False)
+    can_send_voice_notes = Column(Boolean, default=False)
+    can_send_polls = Column(Boolean, default=False)
+    can_send_other_messages = Column(Boolean, default=False)
+    can_add_web_page_previews = Column(Boolean, default=False)
+    until_date = Column(DateTime, default=None)
+
+    updated_on = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    # user: User = relationship("User", back_populates="chats_administrator")
+    # chat: Chat = relationship("Chat", back_populates="chat_administrators")
+
+    @classmethod
+    def from_chat_member(cls, chat_id, chat_member: ChatMemberAdministrator):
+        chat_member_dict = chat_member_to_dict(chat_member)
+        chat_member_dict.update({"chat_id": chat_id})
+
+        return cls(**chat_member_dict)
+"""
 
 
 class UserMessage(Base):

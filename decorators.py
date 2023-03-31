@@ -87,12 +87,7 @@ def pass_session(
                 user = session.query(User).filter(User.user_id == update.effective_user.id).one_or_none()
 
                 if not user and create_if_not_existing:
-                    user = User(
-                        user_id=update.effective_user.id,
-                        name=update.effective_user.full_name,
-                        username=update.effective_user.username,
-                        language_code=update.effective_user.language_code
-                    )
+                    user = User(update.effective_user)
                     session.add(user)
                     session.commit()
 
