@@ -31,7 +31,8 @@ import decorators
 import utilities
 from emojis import Emoji
 from constants import LANGUAGES, Language, ADMIN_HELP, COMMAND_PREFIXES, State, CACHE_TIME, TempDataKey, \
-    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, Action, LOCALIZED_TEXTS_DESCRIPTORS, ACTION_DESCRIPTORS
+    BOT_SETTINGS_DEFAULTS, BotSettingKey, LocalizedTextKey, Action, LOCALIZED_TEXTS_DESCRIPTORS, ACTION_DESCRIPTORS, \
+    CONVERSATION_TIMEOUT
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -344,8 +345,8 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
 @decorators.catch_exception()
 @decorators.pass_session()
 @decorators.staff_admin()
-async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/settings {utilities.log(update)}")
+async def on_oldsettings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/oldsettings {utilities.log(update)}")
 
     all_settings = settings.get_settings(session)
     text = ""
@@ -949,6 +950,23 @@ async def on_bot_setting_switch_bool_button(update: Update, context: ContextType
 
 @decorators.catch_exception()
 @decorators.pass_session()
+async def on_bot_setting_nullify_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"bot setting nullify button {utilities.log(update)}")
+    setting_key = context.matches[0].group("key")
+
+    setting: BotSetting = settings.get_or_create(session, setting_key)
+    setting.update_null()
+
+    await update.callback_query.answer(f"{Emoji.WARNING} Be careful when you \"nullify\" a setting! "
+                                       f"It might break some of the bot's functionalities", show_alert=True)
+
+    reply_markup = get_setting_actions_reply_markup(setting)
+    text = get_setting_text(setting)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
 async def on_localized_text_read_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"localized text read {utilities.log(update)}")
     ltext_key = context.matches[0].group("key")
@@ -1007,10 +1025,25 @@ async def on_localized_text_edit_button(update: Update, context: ContextTypes.DE
     ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
 
     context.user_data[TempDataKey.LOCALIZED_TEXTS] = dict(key=ltext_key, lang=language)
-    await update.effective_message.edit_text(f"Please send me the new {ltext_description} text for {language_emoji} "
+    await update.effective_message.edit_text(f"Please send me the new <b>{ltext_description}</b> text for {language_emoji} "
                                              f"(or use /cancel to cancel):")
 
     return State.WAITING_NEW_LOCALIZED_TEXT
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_bot_setting_edit_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"non-bool bot setting edit {utilities.log(update)}")
+    setting_key = context.matches[0].group("key")
+    setting_label = BOT_SETTINGS_DEFAULTS[setting_key]["label"]
+    setting_emoji = BOT_SETTINGS_DEFAULTS[setting_key]["emoji"]
+
+    context.user_data[TempDataKey.BOT_SETTINGS] = dict(key=setting_key)
+    await update.effective_message.edit_text(f"Please send me the new value for {setting_emoji} <b>{setting_label}</b> "
+                                             f"(or use /cancel to cancel):")
+
+    return State.WAITING_NEW_SETTING_VALUE
 
 
 @decorators.catch_exception()
@@ -1060,12 +1093,48 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
 @decorators.catch_exception()
 @decorators.pass_session()
 @decorators.staff_admin()
+async def on_new_setting_value_receive(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"received new setting value {utilities.log(update)})")
+
+    setting_data = context.user_data.pop(TempDataKey.BOT_SETTINGS)
+    setting_key = setting_data["key"]
+
+    setting_label = BOT_SETTINGS_DEFAULTS[setting_key]["label"]
+    setting_emoji = BOT_SETTINGS_DEFAULTS[setting_key]["emoji"]
+
+    setting = settings.get_or_create(session, setting_key)
+    setting.update_value(utilities.convert_string_to_value(update.effective_message.text_html))
+    setting.updated_by = update.effective_user.id
+
+    await update.effective_message.reply_text(f"{setting_emoji} <b>{setting_label}</b> updated:\n\n{setting.value_pretty()}")
+
+    reply_markup = get_setting_actions_reply_markup(setting)
+    text = get_setting_text(setting)
+    await update.effective_message.reply_text(text, reply_markup=reply_markup)
+
+    return ConversationHandler.END
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
 async def on_localized_text_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"(unexpected) received new localized text message {utilities.log(update)}")
 
     await update.message.reply_text("Please send me the new text for the selected language")
 
     return State.WAITING_NEW_LOCALIZED_TEXT
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_new_setting_value_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"(unexpected) received new setting value {utilities.log(update)}")
+
+    await update.message.reply_text("Please send me the new value for the selected setting")
+
+    return State.WAITING_NEW_SETTING_VALUE
 
 
 @decorators.catch_exception()
@@ -1084,6 +1153,19 @@ async def on_localized_text_cancel_command(update: Update, context: ContextTypes
 @decorators.catch_exception()
 @decorators.pass_session()
 @decorators.staff_admin()
+async def on_new_setting_value_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"waiting new setting value: /cancel command {utilities.log(update)}")
+
+    context.user_data.pop(TempDataKey.BOT_SETTINGS, None)
+
+    await update.effective_message.reply_text("Okay, operation canceled :)")
+
+    return ConversationHandler.END
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
 async def on_localized_text_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"waiting for new localized text: timed out")
 
@@ -1092,6 +1174,22 @@ async def on_localized_text_timeout(update: Update, context: ContextTypes.DEFAUL
 
     await update.effective_message.reply_text(f"Okay, it looks like you forgot... "
                                               f"I'm exiting the {ltext_description} configuration")
+
+    return ConversationHandler.END
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_new_setting_value_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"waiting for new setting value: timed out")
+
+    setting_data = context.user_data.pop(TempDataKey.BOT_SETTINGS, None)
+    setting_label = BOT_SETTINGS_DEFAULTS[setting_data['key']]["label"]
+    setting_emoji = BOT_SETTINGS_DEFAULTS[setting_data['key']]["label"]
+
+    await update.effective_message.reply_text(f"Okay, it looks like you forgot {Emoji.SLEEPING}"
+                                              f"I'm exiting the {setting_emoji} <b>{setting_label}</b> configuration")
 
     return ConversationHandler.END
 
@@ -1178,16 +1276,37 @@ def main():
     # app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.PRIVATE, on_edited_message_user))
 
     # private chat (admins)
-    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['oldsettings', 'os'], on_oldsettings_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['set'], on_set_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['enable', 'disable'], on_enable_disable_command, filters.ChatType.PRIVATE))
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE))
 
     # private chat (admins): bot settings
-    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['bs'], on_settings_config_command, filters.ChatType.PRIVATE))
+    app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_config_command, filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(on_settings_list_button, rf"bs:list$"))
     app.add_handler(CallbackQueryHandler(on_bot_setting_show_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"))
     app.add_handler(CallbackQueryHandler(on_bot_setting_switch_bool_button, rf"bs:setbool:(?P<value>\w+):(?P<key>\w+)$"))
+    app.add_handler(CallbackQueryHandler(on_bot_setting_nullify_button, rf"bs:null:(?P<key>\w+)$"))
+    edit_nonbool_setting_conversation_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(on_bot_setting_edit_button, rf"bs:edit:(?P<key>\w+)$")],
+        states={
+            State.WAITING_NEW_SETTING_VALUE: [
+                PrefixHandler(COMMAND_PREFIXES, "cancel", on_new_setting_value_cancel_command),
+                MessageHandler(filters.TEXT, on_new_setting_value_receive),
+                MessageHandler(~filters.TEXT, on_new_setting_value_receive_unexpected)
+            ],
+            ConversationHandler.TIMEOUT: [
+                # on timeout, the *last update* is broadcasted to all users. it might be a callback query or a text
+                MessageHandler(filters.ALL, on_localized_text_timeout),
+                CallbackQueryHandler(on_localized_text_timeout, ".*"),
+            ]
+        },
+        fallbacks=[
+            PrefixHandler(COMMAND_PREFIXES, "cancel", on_new_setting_value_cancel_command)
+        ],
+        conversation_timeout=CONVERSATION_TIMEOUT
+    )
+    app.add_handler(edit_nonbool_setting_conversation_handler)
 
     # private chat (admins): localized texts
     app.add_handler(PrefixHandler(COMMAND_PREFIXES, ['texts', 't'], on_ltexts_list_command, filters.ChatType.PRIVATE))
@@ -1213,7 +1332,7 @@ def main():
         fallbacks=[
             PrefixHandler(COMMAND_PREFIXES, "cancel", on_localized_text_cancel_command)
         ],
-        conversation_timeout=30*60
+        conversation_timeout=CONVERSATION_TIMEOUT
     )
     app.add_handler(edit_ltext_conversation_handler)
 

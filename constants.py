@@ -107,6 +107,7 @@ BOT_SETTINGS_DEFAULTS = {
 class TempDataKey:
     FALLBACK_LANGUAGE = "default_language"
     LOCALIZED_TEXTS = "tmp_localized_text_data"
+    BOT_SETTINGS = "tmp_bot_setting_data"
     LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
     BOT_SETTINGS_LAST_MESSAGE_ID = "bot_settings_last_message_id"
 
@@ -115,12 +116,14 @@ COMMAND_PREFIXES = ["/", "!", "."]
 
 CACHE_TIME = 10
 
+CONVERSATION_TIMEOUT = 30 * 60
+
 ADMIN_HELP = """••• <b><u>Admin commands (private)</u></b>:
 •• Only the staff chat's administrators are allowed to use these commands
 • /texts: see or edit all messages that should depend on the user's language (that is: the welcome message, \
 the \"sent to staff\" message)
-• /settings: list all available settings
-• /set <code>[setting] [new value]</code>: change a setting
+• /settings: see the settings' configuration menu
+• /oldsettings: see the old setting interface (textual configuration)
 • /placeholders: list available placeholders (they can be used in welcome texts)
 
 ••• <b><u>Staff chat commands</u></b>:
@@ -145,4 +148,4 @@ when they send new messages. The reason is optional
 
 class State:
     WAITING_NEW_LOCALIZED_TEXT = 10
-    WAITING_SENT_TO_STAFF_MESSAGE = 20
+    WAITING_NEW_SETTING_VALUE = 20
