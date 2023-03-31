@@ -616,6 +616,7 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
     session.commit()
 
     chat.is_staff_chat = True
+    chat.is_users_chat = False
     if "ssilent" not in update.message.text.lower():
         await update.message.reply_text("This group has been set as staff chat")
 
