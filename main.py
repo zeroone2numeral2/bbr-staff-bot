@@ -26,7 +26,7 @@ from database import engine
 from database.base import get_session
 from database.models import User, UserMessage, Chat, chat_member_to_dict, ChatAdministrator, AdminMessage, \
     BotSetting, ValueType, LocalizedText
-from database.queries import settings, chats, user_messages, admin_messages, texts
+from database.queries import settings, chats, user_messages, admin_messages, texts, users
 import decorators
 import utilities
 from emojis import Emoji
@@ -808,6 +808,23 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
 @decorators.pass_session(pass_chat=True)
 async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
     logger.info(f"chat member update {utilities.log(update)}")
+
+    logger.info("saving or updating User objects...")
+    users_to_save = []
+    if update.chat_member:
+        users_to_save = [update.chat_member.from_user, update.chat_member.new_chat_member.user]
+    elif update.my_chat_member:
+        users_to_save = [update.my_chat_member.from_user]
+
+    for telegram_user in users_to_save:
+        user = users.get_or_create(session, telegram_user.id, create_if_missing=False)
+        if not user:
+            user = User(telegram_user)
+            session.add(user)
+        else:
+            user.update_metadata(telegram_user)
+
+    session.commit()
 
     if update.my_chat_member:
         logger.info(f"MyChatMember update, new status: {update.my_chat_member.new_chat_member.status}")
