@@ -1102,7 +1102,7 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
         create_if_missing=True
     )
     ltext.value = update.effective_message.text_html
-    ltext.updated_by = update.effective_user.id
+    ltext.save_updated_by(update.effective_user)
 
     await update.effective_message.reply_text(f"{ltext_description} set for {lang_emoji}:\n\n{ltext.value}")
 

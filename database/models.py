@@ -383,6 +383,10 @@ class LocalizedText(Base):
         self.value = value
         self.updated_by = updated_by
 
+    def save_updated_by(self, telegram_user: TelegramUser):
+        self.updated_by = telegram_user.id
+        self.updated_on = func.now()
+
 
 class ValueType:
     BOOL = "bool"
@@ -438,6 +442,8 @@ class BotSetting(Base):
             if raise_on_unknown_type:
                 raise ValueError(f"provided value of unrecognized type: {type(value)}")
 
+        self.updated_on = func.now()
+
     def update_null(self):
         self.value_type = None
         self.value_int = None
@@ -446,6 +452,8 @@ class BotSetting(Base):
         self.value_float = None
         self.value_date = None
         self.value_datetime = None
+
+        self.updated_on = func.now()
 
     def value(self):
         if self.value_type == ValueType.BOOL:
