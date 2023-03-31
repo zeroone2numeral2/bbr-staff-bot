@@ -50,6 +50,12 @@ class User(Base):
         if started is not None:
             self.started = started
 
+    def full_name(self):
+        if not self.last_name:
+            return self.first_name
+
+        return f"{self.first_name} {self.last_name}"
+
     def update_metadata(self, telegram_user: TelegramUser):
         self.name = telegram_user.full_name
         self.first_name = telegram_user.first_name
