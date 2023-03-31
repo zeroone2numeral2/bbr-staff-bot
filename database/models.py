@@ -87,7 +87,9 @@ class Chat(Base):
 
     chat_id = Column(Integer, primary_key=True)
     title = Column(String, default=None)
-    default = Column(Boolean, default=False)  # wether this is the current staff chat or not
+    default = Column(Boolean, default=False)  # deprecated
+    is_staff_chat = Column(Boolean, default=False)
+    is_users_chat = Column(Boolean, default=False)
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
     first_seen = Column(DateTime, server_default=func.now())
@@ -101,6 +103,10 @@ class Chat(Base):
     def __init__(self, chat_id, title):
         self.chat_id = chat_id
         self.title = title
+
+    def is_staff_chat_backward(self):
+        # for backward compatibility
+        return self.default or self.is_staff_chat
 
     def is_user_admin(self, user_id: int, permissions: Optional[List] = None, any_permission: bool = True, all_permissions: bool = False) -> bool:
         if any_permission == all_permissions:
