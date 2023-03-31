@@ -1256,13 +1256,6 @@ async def post_init(application: Application) -> None:
 
     session.commit()
 
-    logger.info("migrating staff chats to new property...")
-    all_chats = chats.get_all_chats(session)
-    for chat in all_chats:
-        chat.is_staff_chat = chat.default
-
-    session.commit()
-
     staff_chat = chats.get_staff_chat(session)
     if not staff_chat:
         return
