@@ -39,6 +39,7 @@ class User(Base):
     banned_on = Column(DateTime, default=None)
 
     last_message = Column(DateTime, default=None)  # to the staff's chat
+    first_seen = Column(DateTime, default=func.now())  # private chat message/ChatMember update
 
     # relationships
     chats_administrator = relationship("ChatAdministrator", back_populates="user")
