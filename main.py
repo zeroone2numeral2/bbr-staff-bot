@@ -475,7 +475,7 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
         logger.info("message edits are disabled")
         return
 
-    if not chat.default:
+    if not chat.is_staff_chat_backward():
         logger.info(f"ignoring edited message update: chat is not the current staff chat")
         return
 
@@ -612,10 +612,10 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
         except:
             pass
 
-    session.execute(sqlalchemy_update(Chat).values(default=False))
+    session.execute(sqlalchemy_update(Chat).values(default=False, is_staff_chat=False))
     session.commit()
 
-    chat.default = True
+    chat.is_staff_chat = True
     if "ssilent" not in update.message.text.lower():
         await update.message.reply_text("This group has been set as staff chat")
 
@@ -804,12 +804,7 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
             chat.set_as_administrator(administrator.can_delete_messages)
 
 
-@decorators.catch_exception(silent=True)
-@decorators.pass_session(pass_chat=True)
-async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
-    logger.info(f"chat member update {utilities.log(update)}")
-
-    logger.info("saving or updating User objects...")
+def save_or_update_users_from_chat_member_update(session: Session, update: Update, commit=True):
     users_to_save = []
     if update.chat_member:
         users_to_save = [update.chat_member.from_user, update.chat_member.new_chat_member.user]
@@ -824,7 +819,17 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Chat)
         else:
             user.update_metadata(telegram_user)
 
-    session.commit()
+    if commit:
+        session.commit()
+
+
+@decorators.catch_exception(silent=True)
+@decorators.pass_session(pass_chat=True)
+async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
+    logger.info(f"chat member update {utilities.log(update)}")
+
+    logger.info("saving or updating User objects...")
+    save_or_update_users_from_chat_member_update(session, update, commit=True)
 
     if update.my_chat_member:
         logger.info(f"MyChatMember update, new status: {update.my_chat_member.new_chat_member.status}")
@@ -1247,6 +1252,13 @@ async def post_init(application: Application) -> None:
         if not setting:
             setting = BotSetting(bot_setting_key, bot_setting_data["default"])
             session.add(setting)
+
+    session.commit()
+
+    logger.info("migrating staff chats to new property...")
+    all_chats = chats.get_all_chats(session)
+    for chat in all_chats:
+        chat.is_staff_chat = chat.default
 
     session.commit()
 

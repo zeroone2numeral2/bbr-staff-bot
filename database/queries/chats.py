@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple, Union
 
-from sqlalchemy import true, false
+from sqlalchemy import true, false, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
@@ -12,6 +12,11 @@ from constants import Language
 def get_staff_chat(session: Session) -> Optional[Chat]:
     chat: Chat = session.query(Chat).filter(Chat.default == true()).one_or_none()
     return chat
+
+
+def get_all_chats(session: Session):
+    statement = select(Chat).where()
+    return session.scalars(statement)
 
 
 def update_administrators(session: Session, chat: Chat, administrators: Tuple[ChatMember]):
