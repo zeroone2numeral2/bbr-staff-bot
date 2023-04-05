@@ -5,7 +5,8 @@ from typing import List, Optional, Union, Tuple
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, ChatMemberOwner
+from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, ChatMemberOwner, ChatMemberRestricted, \
+    ChatMemberLeft, ChatMemberBanned, ChatMemberMember
 
 from constants import Language
 from .base import Base, engine
@@ -42,7 +43,7 @@ class User(Base):
     first_seen = Column(DateTime, default=func.now())  # private chat message/ChatMember update
 
     # relationships
-    chats_administrator = relationship("ChatAdministrator", back_populates="user")
+    chat_members = relationship("ChatMember", back_populates="user")
     user_messages = relationship("UserMessage", back_populates="user")
     admin_messages = relationship("AdminMessage", back_populates="user")
 
@@ -58,6 +59,10 @@ class User(Base):
         return f"{self.first_name} {self.last_name}"
 
     def update_metadata(self, telegram_user: TelegramUser):
+        if self.user_id is None:
+            # on record creation, this field is None
+            self.user_id = telegram_user.id
+
         self.name = telegram_user.full_name
         self.first_name = telegram_user.first_name
         self.last_message = telegram_user.last_name
@@ -102,7 +107,7 @@ class Chat(Base):
     can_delete_messages = Column(Boolean, default=False)  # whether the bot is allowed to delete messages or not
     last_administrators_fetch = Column(DateTime, default=None, nullable=True)
 
-    chat_administrators = relationship("ChatAdministrator", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
+    chat_members = relationship("ChatMember", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
     admin_messages = relationship("AdminMessage", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
 
     def __init__(self, chat_id, title):
@@ -157,15 +162,27 @@ class Chat(Base):
         self.unset_as_administrator()
 
 
-def chat_member_to_dict(chat_member: ChatMemberAdministrator, chat_id: [None, int] = None) -> dict:
-    is_owner = chat_member.status == ChatMember.OWNER
+chat_member_union_type = Union[
+    ChatMember,
+    ChatMemberOwner,
+    ChatMemberAdministrator,
+    ChatMemberMember,
+    ChatMemberRestricted,
+    ChatMemberBanned,
+    ChatMemberLeft
+]
+
+
+def chat_member_to_dict(chat_member: chat_member_union_type, chat_id: [None, int] = None) -> dict:
+    is_owner = isinstance(chat_member, ChatMemberOwner)
+    is_administrator = isinstance(chat_member, ChatMemberAdministrator) or is_owner
 
     chat_member_dict = dict(
         user_id=chat_member.user.id,
         status=chat_member.status,
         custom_title=chat_member.custom_title,
         is_anonymous=chat_member.is_anonymous,
-        is_bot=chat_member.user.is_bot,
+        # ChatMemberAdministrator
         can_manage_chat=True if is_owner else chat_member.can_manage_chat,
         can_delete_messages=True if is_owner else chat_member.can_delete_messages,
         can_manage_video_chats=True if is_owner else chat_member.can_manage_video_chats,
@@ -177,19 +194,18 @@ def chat_member_to_dict(chat_member: ChatMemberAdministrator, chat_id: [None, in
         can_edit_messages=True if is_owner else chat_member.can_edit_messages,
         can_pin_messages=True if is_owner else chat_member.can_pin_messages,
         can_manage_topics=True if is_owner else chat_member.can_manage_topics,
+        # ChatMemberRestricted
+        can_send_messages=True if is_administrator else chat_member.can_send_messages,
+        can_send_audios=True if is_administrator else chat_member.can_send_audios,
+        can_send_documents=True if is_administrator else chat_member.can_send_documents,
+        can_send_photos=True if is_administrator else chat_member.can_send_photos,
+        can_send_videos=True if is_administrator else chat_member.can_send_videos,
+        can_send_video_notes=True if is_administrator else chat_member.can_send_video_notes,
+        can_send_voice_notes=True if is_administrator else chat_member.can_send_voice_notes,
+        can_send_polls=True if is_administrator else chat_member.can_send_polls,
+        can_send_other_messages=True if is_administrator else chat_member.can_send_other_messages,
+        can_add_web_page_previews=True if is_administrator else chat_member.can_add_web_page_previews,
     )
-    """ ChatMemberRestricted
-    can_send_messages=True if is_owner else chat_member.can_send_messages,
-    can_send_audios=True if is_owner else chat_member.can_send_audios,
-    can_send_documents=True if is_owner else chat_member.can_send_documents,
-    can_send_photos=True if is_owner else chat_member.can_send_photos,
-    can_send_videos=True if is_owner else chat_member.can_send_videos,
-    can_send_video_notes=True if is_owner else chat_member.can_send_video_notes,
-    can_send_voice_notes=True if is_owner else chat_member.can_send_voice_notes,
-    can_send_polls=True if is_owner else chat_member.can_send_polls,
-    can_send_other_messages=True if is_owner else chat_member.can_send_other_messages,
-    can_add_web_page_previews=True if is_owner else chat_member.can_add_web_page_previews,
-    """
 
     if chat_id:
         chat_member_dict["chat_id"] = chat_id
@@ -234,18 +250,17 @@ class ChatAdministrator(Base):
     updated_on = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # updated_on = Column(DateTime(timezone=True), onupdate=func.now())  # https://stackoverflow.com/a/33532154
 
-    user: User = relationship("User", back_populates="chats_administrator")
-    chat: Chat = relationship("Chat", back_populates="chat_administrators")
+    # user: User = relationship("User", back_populates="chats_administrator")
+    # chat: Chat = relationship("Chat", back_populates="chat_administrators")
 
     @classmethod
-    def from_chat_member(cls, chat_id, chat_member: ChatMemberAdministrator):
+    def from_chat_member(cls, chat_id: int, chat_member: chat_member_union_type):
         chat_member_dict = chat_member_to_dict(chat_member)
         chat_member_dict.update({"chat_id": chat_id})
 
         return cls(**chat_member_dict)
 
 
-"""
 class ChatMember(Base):
     __tablename__ = 'chat_members'
     __allow_unmapped__ = True
@@ -253,10 +268,10 @@ class ChatMember(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
     chat_id = Column(Integer, ForeignKey('chats.chat_id', ondelete="CASCADE"), primary_key=True)
     status = Column(String)
-    is_anonymous = Column(Boolean, default=False)
-    custom_title = Column(String, default=None)
 
     # ChatMemberAdministrator
+    is_anonymous = Column(Boolean, default=False)
+    custom_title = Column(String, default=None)
     can_be_edited = Column(Boolean, default=False)
     can_manage_chat = Column(Boolean, default=True)
     can_delete_messages = Column(Boolean, default=False)
@@ -270,31 +285,40 @@ class ChatMember(Base):
     can_pin_messages = Column(Boolean, default=False)
     can_manage_topics = Column(Boolean, default=False)
 
-    # ChatMemberRestricted
-    can_send_messages = Column(Boolean, default=False)
-    can_send_audios = Column(Boolean, default=False)
-    can_send_documents = Column(Boolean, default=False)
-    can_send_photos = Column(Boolean, default=False)
-    can_send_videos = Column(Boolean, default=False)
-    can_send_video_notes = Column(Boolean, default=False)
-    can_send_voice_notes = Column(Boolean, default=False)
-    can_send_polls = Column(Boolean, default=False)
-    can_send_other_messages = Column(Boolean, default=False)
-    can_add_web_page_previews = Column(Boolean, default=False)
+    # ChatMemberMember/ChatMemberRestricted
+    # default to None: inherit the chat's default permissions
+    can_send_messages = Column(Boolean, default=None)
+    can_send_audios = Column(Boolean, default=None)
+    can_send_documents = Column(Boolean, default=None)
+    can_send_photos = Column(Boolean, default=None)
+    can_send_videos = Column(Boolean, default=None)
+    can_send_video_notes = Column(Boolean, default=None)
+    can_send_voice_notes = Column(Boolean, default=None)
+    can_send_polls = Column(Boolean, default=None)
+    can_send_other_messages = Column(Boolean, default=None)
+    can_add_web_page_previews = Column(Boolean, default=None)
     until_date = Column(DateTime, default=None)
 
+    created_on = Column(DateTime, default=func.now())
     updated_on = Column(DateTime, default=func.now(), onupdate=func.now())
 
-    # user: User = relationship("User", back_populates="chats_administrator")
-    # chat: Chat = relationship("Chat", back_populates="chat_administrators")
+    user: User = relationship("User", back_populates="chat_members")
+    chat: Chat = relationship("Chat", back_populates="chat_members")
 
     @classmethod
-    def from_chat_member(cls, chat_id, chat_member: ChatMemberAdministrator):
+    def from_chat_member(cls, chat_id, chat_member: chat_member_union_type):
         chat_member_dict = chat_member_to_dict(chat_member)
         chat_member_dict.update({"chat_id": chat_id})
+        # from pprint import pprint
+        # pprint(chat_member_dict)
 
         return cls(**chat_member_dict)
-"""
+
+    def is_administrator(self):
+        return self.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER)
+
+    def is_member(self):
+        return self.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER, ChatMember.RESTRICTED, ChatMember.MEMBER)
 
 
 class UserMessage(Base):

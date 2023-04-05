@@ -24,7 +24,7 @@ from telegram import helpers
 
 from database import engine
 from database.base import get_session
-from database.models import User, UserMessage, Chat, chat_member_to_dict, ChatAdministrator, AdminMessage, \
+from database.models import User, UserMessage, Chat, ChatMember as DbChatMember, chat_member_to_dict, ChatAdministrator, AdminMessage, \
     BotSetting, ValueType, LocalizedText
 from database.queries import settings, chats, user_messages, admin_messages, texts, users
 import decorators
@@ -805,7 +805,7 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
             chat.set_as_administrator(administrator.can_delete_messages)
 
 
-def save_or_update_users_from_chat_member_update(session: Session, update: Update, commit=True):
+def save_or_update_users_from_chat_member_update(session: Session, update: Update, commit=False):
     users_to_save = []
     if update.chat_member:
         users_to_save = [update.chat_member.from_user, update.chat_member.new_chat_member.user]
@@ -824,6 +824,25 @@ def save_or_update_users_from_chat_member_update(session: Session, update: Updat
         session.commit()
 
 
+def save_chat_member(session: Session, update: Update, commit=False):
+    if update.chat_member:
+        # from pprint import pprint
+        # pprint(update.chat_member.to_dict())
+        chat_member_to_save = update.chat_member.new_chat_member
+    elif update.my_chat_member:
+        # from pprint import pprint
+        # pprint(update.my_chat_member.to_dict())
+        chat_member_to_save = update.my_chat_member.new_chat_member
+    else:
+        raise ValueError("couldn't find ChatMember to save")
+
+    chat_member_record = DbChatMember.from_chat_member(update.effective_chat.id, chat_member_to_save)
+    session.merge(chat_member_record)
+
+    if commit:
+        session.commit()
+
+
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
@@ -831,6 +850,8 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Chat)
 
     logger.info("saving or updating User objects...")
     save_or_update_users_from_chat_member_update(session, update, commit=True)
+    logger.info("saving new chat_member object...")
+    save_chat_member(session, update)
 
     if update.my_chat_member:
         logger.info(f"MyChatMember update, new status: {update.my_chat_member.new_chat_member.status}")
@@ -840,26 +861,6 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Chat)
             chat.unset_as_administrator()
         elif isinstance(update.my_chat_member.new_chat_member, (ChatMemberLeft, ChatMemberBanned)):
             chat.set_left()
-
-    new_chat_member: ChatMember = update.chat_member.new_chat_member if update.chat_member else update.my_chat_member.new_chat_member
-    old_chat_member: ChatMember = update.chat_member.old_chat_member if update.chat_member else update.my_chat_member.old_chat_member
-    user_id = new_chat_member.user.id
-
-    if old_chat_member.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER) and new_chat_member.status not in (ChatMember.ADMINISTRATOR, ChatMember.OWNER):
-        # user was demoted
-        chat_administrator = chat.get_administrator(user_id)
-        if chat_administrator:
-            session.delete(chat_administrator)
-            logger.info(f"user was demoted: deleted db record")
-        else:
-            logger.info("user was demoted, but there's no record to delete")
-    elif new_chat_member.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER):
-        # user was promoted/their admin permissions changed
-        # noinspection PyTypeChecker
-        new_chat_member_dict = chat_member_to_dict(new_chat_member, update.effective_chat.id)
-        chat_administrator = ChatAdministrator(**new_chat_member_dict)
-        session.merge(chat_administrator)
-        logger.info("user was promoted or their admin permissions changed: updated/inserted db record")
 
 
 def get_localized_text_keyboard(setting_key):
@@ -1276,10 +1277,11 @@ async def post_init(application: Application) -> None:
         BotCommand("texts", "manage text messages that depend on the user's language"),
         BotCommand("placeholders", "list all available placeholders")
     ]
-    if staff_chat.chat_administrators:
-        for chat_administrator in staff_chat.chat_administrators:
-            logger.info(f"setting admin commands for {chat_administrator.user_id}...")
-            await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_administrator.user_id))
+    staff_chat_administrators = chats.get_staff_chat_administrators(session)
+    chat_member: DbChatMember
+    for chat_member in staff_chat_administrators:
+        logger.info(f"setting admin commands for {chat_member.user.user_id}...")
+        await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
 
 
 def main():
