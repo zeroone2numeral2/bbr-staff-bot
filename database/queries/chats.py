@@ -14,6 +14,11 @@ def get_staff_chat(session: Session) -> Optional[Chat]:
     return chat
 
 
+def get_users_chat(session: Session) -> Optional[Chat]:
+    chat: Chat = session.query(Chat).filter(Chat.is_users_chat == true()).one_or_none()
+    return chat
+
+
 def get_all_chats(session: Session):
     statement = select(Chat).where()
     return session.scalars(statement)
