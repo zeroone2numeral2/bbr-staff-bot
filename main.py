@@ -147,7 +147,7 @@ def get_bot_settings_list_reply_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-PLACEHOLDER_REPLACEMENTS = {
+PLACEHOLDER_REPLACEMENTS_TELEGRAM_USER = {
     "{NAME}": lambda u: utilities.escape_html(u.first_name),
     "{SURNAME}": lambda u: utilities.escape_html(u.last_name),
     "{FULLNAME}": lambda u: utilities.escape_html(u.full_name),
@@ -158,9 +158,19 @@ PLACEHOLDER_REPLACEMENTS = {
 }
 
 
-def replace_placeholders(text: str, user: TelegramUser):
-    for placeholder, repl_func in PLACEHOLDER_REPLACEMENTS.items():
-        text = text.replace(placeholder, repl_func(user))
+PLACEHOLDER_REPLACEMENTS_DATABASE = {
+    "{CHATLINK}": lambda s: settings.get_or_create(s, BotSettingKey.CHAT_INVITE_LINK).value(),
+}
+
+
+def replace_placeholders(text: str, user: Optional[TelegramUser] = None, session: Optional[Session] = None):
+    if user:
+        for placeholder, repl_func in PLACEHOLDER_REPLACEMENTS_TELEGRAM_USER.items():
+            text = text.replace(placeholder, repl_func(user))
+
+    if session is not None:
+        for placeholder, repl_func in PLACEHOLDER_REPLACEMENTS_DATABASE.items():
+            text = text.replace(placeholder, repl_func(session))
 
     return text
 
@@ -230,7 +240,7 @@ async def on_set_language_button_start(update: Update, context: ContextTypes.DEF
     welcome_texts = texts.get_texts(session, LocalizedTextKey.WELCOME).all()
     reply_markup = get_start_reply_markup(language_code, welcome_texts)
 
-    text = replace_placeholders(welcome_text.value, update.effective_user)
+    text = replace_placeholders(welcome_text.value, update.effective_user, session)
 
     await update.effective_message.edit_text(text, reply_markup=reply_markup)
 
@@ -253,7 +263,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     welcome_texts = texts.get_texts(session, LocalizedTextKey.WELCOME).all()
     reply_markup = get_start_reply_markup(welcome_text.language, welcome_texts)
 
-    text = replace_placeholders(welcome_text.value, update.effective_user)
+    text = replace_placeholders(welcome_text.value, update.effective_user, session)
     await update.message.reply_text(text, reply_markup=reply_markup)
 
     user.set_started()
@@ -334,7 +344,7 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
     logger.info(f"/placeholders {utilities.log(update)}")
 
     text = ""
-    for placeholder, _ in PLACEHOLDER_REPLACEMENTS.items():
+    for placeholder, _ in {**PLACEHOLDER_REPLACEMENTS_TELEGRAM_USER, **PLACEHOLDER_REPLACEMENTS_DATABASE}.items():
         text += "• <code>{" + placeholder + "}</code>\n"
 
     text += "\nHold on a placeholder to copy quickly it"
@@ -950,6 +960,12 @@ async def on_ltexts_list_button(update: Update, context: ContextTypes.DEFAULT_TY
 
 @decorators.catch_exception()
 @decorators.pass_session()
+async def log_callback_data(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"cb data: {update.callback_query.data}")
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
 async def on_settings_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"settings list button {utilities.log(update)}")
 
@@ -1342,6 +1358,8 @@ def main():
     new_group = NewGroup()
     filter_reply_to_bot = FilterReplyToBot()
 
+    # app.add_handler(CallbackQueryHandler(on_ltexts_list_button, rf".*"), -1)
+
     # edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
     # app.add_handler(TypeHandler(Update.EDITED_MESSAGE, on_edited_message))
     app.add_handler(MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff))
@@ -1389,7 +1407,7 @@ def main():
     app.add_handler(CallbackQueryHandler(on_localized_text_read_button, rf"lt:langselected:(?P<action>{Action.READ}):(?P<key>\w+):(?P<lang>\w+)$"))
     app.add_handler(CallbackQueryHandler(on_localized_text_delete_button, rf"lt:langselected:(?P<action>{Action.DELETE}):(?P<key>\w+):(?P<lang>\w+)$"))
     edit_ltext_conversation_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(on_localized_text_edit_button, rf"lt:langselected:(?P<action>{Action.EDIT}):(?P<key>\w+):(?P<lang>\w)$")],
+        entry_points=[CallbackQueryHandler(on_localized_text_edit_button, rf"lt:langselected:(?P<action>{Action.EDIT}):(?P<key>\w+):(?P<lang>\w+)$")],
         states={
             State.WAITING_NEW_LOCALIZED_TEXT: [
                 PrefixHandler(COMMAND_PREFIXES, "cancel", on_localized_text_cancel_command),

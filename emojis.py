@@ -7,3 +7,4 @@ class Emoji:
     PENCIL = "✏️"
     TRASH = "🚮"
     EARTH = "🌍"
+    LINK = "🔗"

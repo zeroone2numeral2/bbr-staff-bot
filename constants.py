@@ -1,4 +1,5 @@
 from emojis import Emoji
+from config import config
 
 
 class Language:
@@ -77,6 +78,7 @@ class BotSettingKey:
     BROADCAST_EDITS = "broadcast_edits"
     ALLOW_USER_REVOKE = "allow_user_revoke"
     FALLBACK_LANGAUGE = "fallback_language"
+    CHAT_INVITE_LINK = "chat_invite_link"
     APPROVAL_MODE = "approval_mode"
 
 
@@ -98,6 +100,12 @@ BOT_SETTINGS_DEFAULTS = {
         label="user messages revoke",
         emoji=Emoji.TRASH,
         description="allow users to revoke the messages forwarded in the staff chat"
+    ),
+    BotSettingKey.CHAT_INVITE_LINK: dict(
+        default=config.telegram.chat_invite_link,
+        label="chat invite link",
+        emoji=Emoji.LINK,
+        description="the chat's invite link"
     ),
     BotSettingKey.FALLBACK_LANGAUGE: dict(
         default=Language.EN,
