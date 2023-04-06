@@ -1292,6 +1292,12 @@ async def post_init(application: Application) -> None:
     session.add(staff_chat)
     session.commit()
 
+    logger.info("updating staff chat administrators...")
+    # noinspection PyTypeChecker
+    administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]] = await bot.get_chat_administrators(staff_chat.chat_id)
+    chat_members.save_administrators(session, staff_chat.chat_id, administrators)
+    session.commit()
+
     admin_commands = defaul_english_commands + [
         BotCommand("settings", "change the bot's global settings"),
         BotCommand("texts", "manage text messages that depend on the user's language"),
