@@ -66,7 +66,7 @@ class User(Base):
 
         self.name = telegram_user.full_name
         self.first_name = telegram_user.first_name
-        self.last_message = telegram_user.last_name
+        self.last_name = telegram_user.last_name
         self.username = telegram_user.username
         self.language_code = telegram_user.language_code
         self.is_bot = telegram_user.is_bot
