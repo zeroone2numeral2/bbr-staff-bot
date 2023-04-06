@@ -302,6 +302,22 @@ class ChatMember(Base):
     def is_member(self):
         return self.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER, ChatMember.RESTRICTED, ChatMember.MEMBER)
 
+    def status_pretty(self):
+        if self.status == ChatMember.OWNER:
+            return "member (owner)"
+        elif self.status == ChatMember.ADMINISTRATOR:
+            return "member (admin)"
+        elif self.status == ChatMember.MEMBER:
+            return "member"
+        elif self.status == ChatMember.RESTRICTED:
+            return "member (restricted)"
+        elif self.status == ChatMember.LEFT:
+            return "not a member (never joined/left/removed but not banned)"
+        elif self.status == ChatMember.BANNED:
+            return "not a member (banned)"
+        else:
+            return self.status
+
 
 class UserMessage(Base):
     __tablename__ = 'user_messages'

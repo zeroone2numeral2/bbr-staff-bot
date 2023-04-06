@@ -707,9 +707,9 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     chat_member = chat_members.is_users_chat_member(session, user_message.user.user_id)
     if not chat_member:
-        text += f"\n• <b>is member in current users chat</b>: false (never seen)"
+        text += f"\n• <b>is member in users chat</b>: false (never seen)"
     else:
-        text += f"\n• <b>is member in current users chat</b>: {chat_member.is_member()} (last update: {chat_member.updated_on})"
+        text += f"\n• <b>is member in users chat</b>: {chat_member.status_pretty()} (last update: {chat_member.updated_on})"
 
     text += f"\n• #id{user_message.user.user_id}"
 
