@@ -174,7 +174,7 @@ chat_member_union_type = Union[
 ]
 
 
-chat_member_defaults_admins = dict(
+CHAT_MEMBER_DEFAULTS = dict(
     # ChatMemberAdministrator, ChatMemberOwner
     custom_title=None,
     is_anonymous=None,
@@ -193,8 +193,6 @@ chat_member_defaults_admins = dict(
     # these are channels-only permissions
     can_post_messages=None,
     can_edit_messages=None,
-)
-chat_member_defaults_members = dict(
     # ChatMemberRestricted, ChatMemberMember
     # None: defaults to the chat's permissions settings
     can_send_messages=None,
@@ -222,7 +220,7 @@ def chat_member_to_dict(chat_member: chat_member_union_type, chat_id: [None, int
 
     # from pprint import pprint
     # pprint(chat_member.to_dict())
-    for permission, default_value in {**chat_member_defaults_members, **chat_member_defaults_admins}.items():
+    for permission, default_value in CHAT_MEMBER_DEFAULTS.items():
         chat_member_dict[permission] = getattr(chat_member, permission, default_value)
         # logger.debug(f"<{chat_member.status}> permission <{permission}>: {chat_member_dict[permission]}")
 
@@ -253,34 +251,34 @@ class ChatMember(Base):
     status = Column(String)
 
     # ChatMemberAdministrator, ChatMemberOwner
-    is_anonymous = Column(Boolean, default=chat_member_defaults_admins["is_anonymous"])
-    custom_title = Column(String, default=chat_member_defaults_admins["custom_title"])
-    can_be_edited = Column(Boolean, default=chat_member_defaults_admins["can_be_edited"])
+    is_anonymous = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["is_anonymous"])
+    custom_title = Column(String, default=CHAT_MEMBER_DEFAULTS["custom_title"])
+    can_be_edited = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_be_edited"])
     # permissions
-    can_manage_chat = Column(Boolean, default=chat_member_defaults_admins["can_manage_chat"])
-    can_delete_messages = Column(Boolean, default=chat_member_defaults_admins["can_delete_messages"])
-    can_manage_video_chats = Column(Boolean, default=chat_member_defaults_admins["can_manage_video_chats"])
-    can_restrict_members = Column(Boolean, default=chat_member_defaults_admins["can_restrict_members"])
-    can_promote_members = Column(Boolean, default=chat_member_defaults_admins["can_promote_members"])
-    can_change_info = Column(Boolean, default=chat_member_defaults_admins["can_change_info"])
-    can_invite_users = Column(Boolean, default=chat_member_defaults_admins["can_invite_users"])
-    can_post_messages = Column(Boolean, default=chat_member_defaults_admins["can_post_messages"])
-    can_edit_messages = Column(Boolean, default=chat_member_defaults_admins["can_edit_messages"])
-    can_pin_messages = Column(Boolean, default=chat_member_defaults_admins["can_pin_messages"])
-    can_manage_topics = Column(Boolean, default=chat_member_defaults_admins["can_manage_topics"])
+    can_manage_chat = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_manage_chat"])
+    can_delete_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_delete_messages"])
+    can_manage_video_chats = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_manage_video_chats"])
+    can_restrict_members = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_restrict_members"])
+    can_promote_members = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_promote_members"])
+    can_change_info = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_change_info"])
+    can_invite_users = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_invite_users"])
+    can_post_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_post_messages"])
+    can_edit_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_edit_messages"])
+    can_pin_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_pin_messages"])
+    can_manage_topics = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_manage_topics"])
 
     # ChatMemberMember/ChatMemberRestricted
     # default to None: inherit the chat's default permissions
-    can_send_messages = Column(Boolean, default=chat_member_defaults_members["can_send_messages"])
-    can_send_audios = Column(Boolean, default=chat_member_defaults_members["can_send_audios"])
-    can_send_documents = Column(Boolean, default=chat_member_defaults_members["can_send_documents"])
-    can_send_photos = Column(Boolean, default=chat_member_defaults_members["can_send_photos"])
-    can_send_videos = Column(Boolean, default=chat_member_defaults_members["can_send_videos"])
-    can_send_video_notes = Column(Boolean, default=chat_member_defaults_members["can_send_video_notes"])
-    can_send_voice_notes = Column(Boolean, default=chat_member_defaults_members["can_send_voice_notes"])
-    can_send_polls = Column(Boolean, default=chat_member_defaults_members["can_send_polls"])
-    can_send_other_messages = Column(Boolean, default=chat_member_defaults_members["can_send_other_messages"])
-    can_add_web_page_previews = Column(Boolean, default=chat_member_defaults_members["can_add_web_page_previews"])
+    can_send_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_messages"])
+    can_send_audios = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_audios"])
+    can_send_documents = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_documents"])
+    can_send_photos = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_photos"])
+    can_send_videos = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_videos"])
+    can_send_video_notes = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_video_notes"])
+    can_send_voice_notes = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_voice_notes"])
+    can_send_polls = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_polls"])
+    can_send_other_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_send_other_messages"])
+    can_add_web_page_previews = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_add_web_page_previews"])
     until_date = Column(DateTime, default=None)
 
     created_on = Column(DateTime, default=utilities.now())
