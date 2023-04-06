@@ -692,15 +692,23 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     text = f"• <b>name</b>: {helpers.mention_html(user_message.user.user_id, utilities.escape_html(user_message.user.name))}\n" \
            f"• <b>username</b>: @{user_message.user.username or '-'}\n" \
-           f"• <b>first seen</b>: {user_message.user.started_on}\n" \
+           f"• <b>first seen</b>: {user_message.user.first_seen}\n" \
            f"• <b>last seen</b>: {user_message.user.last_message}\n" \
+           f"• <b>started on</b>: {user_message.user.started_on}\n" \
+           f"• <b>is bot/is premium</b>: {user_message.user.is_bot}, {user_message.user.is_premium}\n" \
            f"• <b>language code (telegram)</b>: {user_message.user.language_code}\n" \
            f"• <b>selected language</b>: {user_message.user.selected_language}"
 
     if user_message.user.banned:
         text += f"\n• <b>banned</b>: {user_message.user.banned} (shadowban: {user_message.user.shadowban})\n" \
                 f"• <b>reason</b>: {user_message.user.banned_reason}\n" \
-                f"• <b>banned on</b>: {user_message.user.banned_on}" \
+                f"• <b>banned on</b>: {user_message.user.banned_on}"
+
+    chat_member = chat_members.is_users_chat_member(session, user_message.user.user_id)
+    if not chat_member:
+        text += f"\n• <b>is member in current users chat</b>: false (never seen)"
+    else:
+        text += f"\n• <b>is member in current users chat</b>: {chat_member.is_member()} (last update: {chat_member.updated_on})"
 
     text += f"\n• #id{user_message.user.user_id}"
 
