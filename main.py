@@ -635,7 +635,8 @@ async def on_reloadadmins_command(update: Update, _, session: Session, chat: Cha
     administrators: Tuple[ChatMember] = await update.effective_chat.get_administrators()
     chats.update_administrators(session, chat, administrators)
 
-    await update.effective_message.reply_text(f"Saved {len(administrators)} administrators")
+    admins_names = [cm.user.first_name for cm in administrators]
+    await update.effective_message.reply_text(f"Saved {len(administrators)} administrators ({', '.join(admins_names)})")
 
 
 @decorators.catch_exception()
