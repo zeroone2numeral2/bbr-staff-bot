@@ -10,7 +10,7 @@ from constants import Language
 
 
 def get_staff_chat(session: Session) -> Optional[Chat]:
-    chat: Chat = session.query(Chat).filter(Chat.default == true()).one_or_none()
+    chat: Chat = session.query(Chat).filter(Chat.is_staff_chat == true()).one_or_none()
     return chat
 
 

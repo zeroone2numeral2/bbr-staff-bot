@@ -1279,6 +1279,7 @@ async def post_init(application: Application) -> None:
 
     staff_chat = chats.get_staff_chat(session)
     if not staff_chat:
+        logger.info("no staff chat set")
         return
 
     staff_chat_chat_member: ChatMember = await bot.get_chat_member(staff_chat.chat_id, bot.id)
