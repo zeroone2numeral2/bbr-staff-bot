@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
 
-from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
+from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict, User
 from constants import Language
 
 
@@ -20,7 +20,7 @@ def get_all_chats(session: Session):
 
 
 def get_staff_chat_administrators(session: Session):
-    statement = session.query(DbChatMember).join(Chat).where(
+    statement = session.query(DbChatMember).join(Chat).join(User).where(
         DbChatMember.status.in_([ChatMember.ADMINISTRATOR, ChatMember.OWNER]),
         Chat.is_staff_chat == true()
     )
