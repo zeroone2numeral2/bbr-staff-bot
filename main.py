@@ -1,12 +1,12 @@
 import logging
 import re
 import time
-from typing import Optional, Tuple, List, Union
+from typing import Optional, Tuple, List, Union, Iterable
 
 import pytz
 from sqlalchemy.orm import Session
 from sqlalchemy import update as sqlalchemy_update, true, ChunkedIteratorResult, select
-from telegram import Update, Message, BotCommandScopeChat
+from telegram import Update, Message, BotCommandScopeChat, ChatMemberOwner
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram import User as TelegramUser
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
@@ -24,9 +24,9 @@ from telegram import helpers
 
 from database import engine
 from database.base import get_session
-from database.models import User, UserMessage, Chat, ChatMember as DbChatMember, chat_member_to_dict, ChatAdministrator, AdminMessage, \
-    BotSetting, ValueType, LocalizedText
-from database.queries import settings, chats, user_messages, admin_messages, texts, users
+from database.models import User, UserMessage, Chat, ChatMember as DbChatMember, AdminMessage
+from database.models import BotSetting, ValueType, LocalizedText
+from database.queries import settings, chats, user_messages, admin_messages, texts, users, chat_members
 import decorators
 import utilities
 from emojis import Emoji
@@ -459,8 +459,7 @@ async def on_welcome_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/help {utilities.log(update)}")
 
-    staff_chat: Chat = chats.get_staff_chat(session)
-    if not staff_chat.is_user_admin(update.effective_user.id):
+    if not chat_members.is_staff_chat_admin(session, update.effective_user.id):
         logger.debug("user is not admin")
         return await on_start_command(update, context)
 
@@ -785,6 +784,16 @@ async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_T
 async def on_new_group_chat(update: Update, context: CallbackContext, session: Session, user: User, chat: Chat):
     logger.info(f"new group chat {utilities.log(update)}")
 
+    if utilities.is_normal_group(update.effective_chat):
+        logger.info("added to a normal group: leaving...")
+        await update.message.reply_text(
+            "I don't work in normal groups, please uprgade this chat to supergroup and add me again!",
+            quote=False
+        )
+        await update.effective_chat.leave()
+        chat.set_left()
+        return
+
     if not utilities.is_admin(update.effective_user):
         logger.info("unauthorized: leaving...")
         await update.effective_chat.leave()
@@ -796,8 +805,9 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
     session.commit()  # make sure to commit now, just in case something unexpected happens while saving admins
 
     logger.info("saving administrators...")
-    administrators: Tuple[ChatMember] = await update.effective_chat.get_administrators()
-    chats.update_administrators(session, chat, administrators)
+    # noinspection PyTypeChecker
+    administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]] = await update.effective_chat.get_administrators()
+    chat_members.save_administrators(session, chat.chat_id, administrators)
 
     administrator: ChatMemberAdministrator
     for administrator in administrators:
@@ -826,10 +836,12 @@ def save_or_update_users_from_chat_member_update(session: Session, update: Updat
 
 def save_chat_member(session: Session, update: Update, commit=False):
     if update.chat_member:
+        logger.debug(f"saving ChatMember, new user status: <{update.chat_member.new_chat_member.status}>")
         # from pprint import pprint
         # pprint(update.chat_member.to_dict())
         chat_member_to_save = update.chat_member.new_chat_member
     elif update.my_chat_member:
+        logger.debug(f"saving MyChatMember, new bot status: <{update.my_chat_member.new_chat_member.status}>")
         # from pprint import pprint
         # pprint(update.my_chat_member.to_dict())
         chat_member_to_save = update.my_chat_member.new_chat_member

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from telegram import ChatMemberAdministrator, ChatMemberOwner, Message, Update
 
-from database.models import UserMessage, Chat, ChatAdministrator, AdminMessage
+from database.models import UserMessage, Chat, AdminMessage
 from constants import Language
 
 

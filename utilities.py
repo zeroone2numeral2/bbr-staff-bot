@@ -28,8 +28,17 @@ def escape_html(string):
     return escape(str(string))
 
 
+def now():
+    return datetime.datetime.utcnow()
+
+
 def is_admin(user: User) -> bool:
     return user.id in config.telegram.admins
+
+
+def is_normal_group(chat: Chat) -> bool:
+    # return str(chat.id).startswith("-100")
+    return chat.type == Chat.GROUP
 
 
 def get_argument(commands: Union[List, str], text: str) -> str:
