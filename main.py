@@ -925,8 +925,7 @@ async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_T
     # save this emssage's message_id and remove the last message's keyboard
     remove_keyboard_message_id = context.user_data.get(TempDataKey.LOCALIZED_TEXTS_LAST_MESSAGE_ID, None)
     if remove_keyboard_message_id:
-        await context.bot.edit_message_reply_markup(update.effective_user.id, remove_keyboard_message_id,
-                                                    reply_markup=None)
+        await utilities.remove_reply_markup_safe(context.bot, update.effective_user.id, remove_keyboard_message_id)
     context.user_data[TempDataKey.LOCALIZED_TEXTS_LAST_MESSAGE_ID] = sent_message.message_id
 
 
@@ -934,7 +933,7 @@ async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_T
 @decorators.pass_session(pass_user=True)
 @decorators.staff_admin()
 async def on_settings_config_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/sc {utilities.log(update)}")
+    logger.info(f"/settings {utilities.log(update)}")
 
     reply_markup = get_bot_settings_list_reply_markup()
     text = f"Select the setting to edit:"
@@ -943,8 +942,7 @@ async def on_settings_config_command(update: Update, context: ContextTypes.DEFAU
     # save this emssage's message_id and remove the last message's keyboard
     remove_keyboard_message_id = context.user_data.get(TempDataKey.BOT_SETTINGS_LAST_MESSAGE_ID, None)
     if remove_keyboard_message_id:
-        await context.bot.edit_message_reply_markup(update.effective_user.id, remove_keyboard_message_id,
-                                                    reply_markup=None)
+        await utilities.remove_reply_markup_safe(context.bot, update.effective_user.id, remove_keyboard_message_id)
     context.user_data[TempDataKey.BOT_SETTINGS_LAST_MESSAGE_ID] = sent_message.message_id
 
 

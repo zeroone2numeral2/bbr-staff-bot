@@ -69,6 +69,14 @@ async def edit_text_safe(update: Update, *args, **kwargs):
             raise e
 
 
+async def remove_reply_markup_safe(bot, chat_id: int, message_id: int):
+    try:
+        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
+    except BadRequest as e:
+        if "message is not modified" not in e.message.lower():
+            raise e
+
+
 def user_log(user: User):
     return f"{user.id} ({user.full_name} [{user.language_code}])"
 
