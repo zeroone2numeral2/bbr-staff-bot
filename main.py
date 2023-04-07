@@ -12,6 +12,7 @@ from telegram import User as TelegramUser
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMember, ChatMemberMember, ChatMemberRestricted, ChatMemberLeft, ChatMemberBanned, ChatMemberAdministrator
 from telegram.constants import ParseMode, ChatAction
+from telegram.error import TelegramError, BadRequest
 from telegram.ext import ApplicationBuilder, Application
 from telegram.ext import ContextTypes, CallbackContext
 from telegram.ext import CommandHandler
@@ -540,8 +541,19 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
                        f"message_id: {update.message.reply_to_message.message_id}")
         return
 
-    await context.bot.send_chat_action(user_message.user_id, ChatAction.TYPING)
-    # time.sleep(3)
+    try:
+        await context.bot.send_chat_action(user_message.user_id, ChatAction.TYPING)
+        # time.sleep(3)
+    except (TelegramError, BadRequest) as e:
+        if e.message.lower() == "forbidden: bot was blocked by the user":
+            await update.message.reply_text(
+                f"{Emoji.WARNING} <i>coudln't send the message to the user: they blocked the bot</i>",
+                quote=True
+            )
+            user_message.user.set_stopped()
+            return
+        else:
+            raise e
 
     sent_message = await update.message.copy(
         chat_id=user_message.user_id,
