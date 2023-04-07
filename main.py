@@ -546,6 +546,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         # time.sleep(3)
     except (TelegramError, BadRequest) as e:
         if e.message.lower() == "forbidden: bot was blocked by the user":
+            logger.warning("bot was blocked by the user")
             await update.message.reply_text(
                 f"{Emoji.WARNING} <i>coudln't send the message to the user: they blocked the bot</i>",
                 quote=True
