@@ -29,6 +29,8 @@ class User(Base):
     # started
     started = Column(Boolean, default=False)  # we need to save every staff chat's admin, and they might have not started the bot yet
     started_on = Column(DateTime, default=None)
+    stopped = Column(Boolean, default=False)
+    stopped_on = Column(DateTime, default=None)
 
     # langauge
     language_code = Column(String, default=None)
@@ -76,6 +78,14 @@ class User(Base):
         self.started = True
         if not self.started_on:
             self.started_on = utilities.now()
+
+    def set_stopped(self):
+        self.stopped = True
+        self.stopped_on = utilities.now()
+
+    def set_restarted(self):
+        self.stopped = False
+        self.stopped_on = None
 
     def update_last_message(self):
         self.last_message = utilities.now()

@@ -705,7 +705,8 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
            f"• <b>username</b>: @{user_message.user.username or '-'}\n" \
            f"• <b>first seen</b>: {user_message.user.first_seen}\n" \
            f"• <b>last seen</b>: {user_message.user.last_message}\n" \
-           f"• <b>started on</b>: {user_message.user.started_on}\n" \
+           f"• <b>started</b>: {user_message.user.started} (on: {user_message.user.started_on})\n" \
+           f"• <b>stopped</b>: {user_message.user.stopped} (on: {user_message.user.stopped_on})\n" \
            f"• <b>is bot/is premium</b>: {user_message.user.is_bot}, {user_message.user.is_premium}\n" \
            f"• <b>language code (telegram)</b>: {user_message.user.language_code}\n" \
            f"• <b>selected language</b>: {user_message.user.selected_language}"
@@ -839,13 +840,14 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
             chat.set_as_administrator(administrator.can_delete_messages)
 
 
-def save_or_update_users_from_chat_member_update(session: Session, update: Update, commit=False):
+def save_or_update_users_from_chat_member_update(session: Session, update: Update, commit=False) -> List[User]:
     users_to_save = []
     if update.chat_member:
         users_to_save = [update.chat_member.from_user, update.chat_member.new_chat_member.user]
     elif update.my_chat_member:
         users_to_save = [update.my_chat_member.from_user]
 
+    user_records = []
     for telegram_user in users_to_save:
         user = users.get_or_create(session, telegram_user.id, create_if_missing=False)
         if not user:
@@ -853,9 +855,12 @@ def save_or_update_users_from_chat_member_update(session: Session, update: Updat
             session.add(user)
         else:
             user.update_metadata(telegram_user)
+        user_records.append(user)
 
     if commit:
         session.commit()
+
+    return user_records
 
 
 def save_chat_member(session: Session, update: Update, commit=False):
@@ -884,12 +889,21 @@ def save_chat_member(session: Session, update: Update, commit=False):
 async def on_chat_member_update(update: Update, _, session: Session, chat: Optional[Chat] = None):
     logger.info(f"chat member update {utilities.log(update)}")
 
-    if update.effective_chat.id > 0:
-        logger.info("ChatMember update from private chat: skipping")
+    logger.info("saving or updating User objects...")
+    user_records = save_or_update_users_from_chat_member_update(session, update, commit=True)
+
+    if update.effective_chat.id > 0 and update.my_chat_member:
+        user = user_records[0]  # only one will be returned
+        new_status = update.my_chat_member.new_chat_member.status
+        logger.info(f"ChatMember update from private chat, new status: {new_status}")
+        if new_status == ChatMember.BANNED:
+            user.set_stopped()
+        elif new_status == ChatMember.MEMBER:
+            user.set_restarted()
+        else:
+            logger.warning(f"unhandled new status from MyChatMember update: {new_status}")
         return
 
-    logger.info("saving or updating User objects...")
-    save_or_update_users_from_chat_member_update(session, update, commit=True)
     logger.info("saving new chat_member object...")
     save_chat_member(session, update)
 
