@@ -95,16 +95,17 @@ def pass_session(
 
             if pass_chat:
                 if update.effective_chat.id > 0:
-                    raise ValueError("'pass_chat' cannot be True for handlers that work in private chats")
+                    # raise ValueError("'pass_chat' cannot be True for updates that come from private chats")
+                    logger.warning("'pass_chat' shouldn't be True for updates that come from private chats")
+                else:
+                    chat = session.query(Chat).filter(Chat.chat_id == update.effective_chat.id).one_or_none()
 
-                chat = session.query(Chat).filter(Chat.chat_id == update.effective_chat.id).one_or_none()
+                    if not chat and create_if_not_existing:
+                        chat = Chat(chat_id=update.effective_chat.id, title=update.effective_chat.title)
+                        session.add(chat)
+                        session.commit()
 
-                if not chat and create_if_not_existing:
-                    chat = Chat(chat_id=update.effective_chat.id, title=update.effective_chat.title)
-                    session.add(chat)
-                    session.commit()
-
-                kwargs['chat'] = chat
+                    kwargs['chat'] = chat
 
             # noinspection PyBroadException
             try:

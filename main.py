@@ -881,8 +881,12 @@ def save_chat_member(session: Session, update: Update, commit=False):
 
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
-async def on_chat_member_update(update: Update, _, session: Session, chat: Chat):
+async def on_chat_member_update(update: Update, _, session: Session, chat: Optional[Chat] = None):
     logger.info(f"chat member update {utilities.log(update)}")
+
+    if update.effective_chat.id > 0:
+        logger.info("ChatMember update from private chat: skipping")
+        return
 
     logger.info("saving or updating User objects...")
     save_or_update_users_from_chat_member_update(session, update, commit=True)
