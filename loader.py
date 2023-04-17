@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 # noinspection PyPackageRequirements
-from telegram.ext import Application, BaseHandler
+from telegram.ext import Application, BaseHandler, ConversationHandler
 
 from config import config
 
@@ -102,4 +102,8 @@ def load_modules(app: Application, plugins_directory: str, manifest_file_name="m
                     continue
 
                 app.add_handler(handler, group)
-                logger.debug(f"loading {type(handler).__name__}(handler={import_path}.{handler.callback.__name__}, group={group})")
+                if isinstance(handler, ConversationHandler):
+                    handler_name = handler.name or handler.entry_points[0].callback.__name__
+                    logger.debug(f"loading ConversationHandler(handler={import_path}.{handler_name}, group={group})")
+                else:
+                    logger.debug(f"loading {type(handler).__name__}(handler={import_path}.{handler.callback.__name__}, group={group})")

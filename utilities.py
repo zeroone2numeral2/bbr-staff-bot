@@ -12,7 +12,7 @@ from telegram import User, Update, Chat
 from telegram.error import BadRequest
 
 from config import config
-from constants import COMMAND_PREFIXES
+from constants import COMMAND_PREFIXES, Language
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +59,13 @@ def get_command(text: str) -> str:
     text = re.search(rf"^[{prefixes}](\w+)\s*", text, re.I).group(1)
 
     return text.strip()
+
+
+def get_language_code(selected_language_code, telegram_language_code):
+    if selected_language_code:
+        return selected_language_code
+
+    return telegram_language_code or Language.EN
 
 
 async def edit_text_safe(update: Update, *args, **kwargs):

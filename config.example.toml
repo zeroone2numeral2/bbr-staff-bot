@@ -14,6 +14,4 @@ sent_to_staff_message = true
 broadcast_message_edits = true
 
 [handlers]
-import = [
-    ""
-]
+manifest = "manifest_feedback"
