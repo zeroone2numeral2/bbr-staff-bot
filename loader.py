@@ -17,11 +17,11 @@ def read_manifest(manifest_path: Path):
         with open(manifest_path, 'r') as f:
             manifest_str = f.read()
     except FileNotFoundError:
-        logger.debug('manifest <%s> not found', manifest_path)
+        logger.info('manifest <%s> not found', manifest_path)
         return
 
     if not manifest_str.strip():
-        logger.debug('manifest <%s> is empty', manifest_path)
+        logger.info('manifest <%s> is empty', manifest_path)
         return
 
     manifest_str = manifest_str.replace('\r\n', '\n')
@@ -52,7 +52,7 @@ def scan_modules_to_import(plugins_directory: Path, manifest_file_name="manifest
     manifest_modules = read_manifest(manifest_file_path)
 
     if manifest_modules:
-        logger.debug(f"manifest modules: {', '.join(manifest_modules)}")
+        # logger.debug(f"manifest modules: {', '.join(manifest_modules)}")
 
         # build the base import path of the plugins/jobs directory
         logger.debug(f"target dir path: {base_import_path}")
@@ -60,7 +60,7 @@ def scan_modules_to_import(plugins_directory: Path, manifest_file_name="manifest
         for module in manifest_modules:
             import_path = f"{base_import_path}.{module}"
 
-            logger.debug(f'module to import: {import_path}')
+            logger.info(f'module to import: {import_path}')
 
             paths_to_import.append(import_path)
     else:
