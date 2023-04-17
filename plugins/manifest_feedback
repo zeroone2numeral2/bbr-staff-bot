@@ -24,4 +24,6 @@ staff.chat.reply # must be after all the other commands
 chat_members.newchat
 chat_members.update
 
+# debug.callback_query
+# debug.chat_member
 # debug.chatid

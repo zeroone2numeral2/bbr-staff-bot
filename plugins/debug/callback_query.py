@@ -8,10 +8,10 @@ from constants import Group
 logger = logging.getLogger(__name__)
 
 
-async def on_chatid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"{update.effective_chat.id}")
+async def on_callback_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.debug(f"{update.callback_query.data}")
 
 
 HANDLERS = (
-    (CommandHandler('chatid', on_chatid_command), Group.DEBUG),
+    (CallbackQueryHandler(on_callback_query, r".*"), Group.DEBUG),
 )
