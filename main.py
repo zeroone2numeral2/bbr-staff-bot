@@ -114,43 +114,6 @@ def main():
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
-    # edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
-    # MOVED TO staff.chat.edits and users.edits
-
-    # private chat (admins)
-    # MOVED TO staff.private.settings_manual
-
-    # private chat (admins): bot settings
-    # MOVED TO staff.private.settings
-
-    # private chat (admins): localized texts
-    # MOVED TO staff.private.ltexts
-
-    # private chat: admins + users
-    # MOVED TO help
-
-    # private chat: users
-    # MOVED TO users.start
-    # MOVED TO users.lang
-    # MOVED TO users.revoke
-    # MOVED TO users.message
-
-    # staff chat
-    # MOVED TO staff.chat.setstaff
-    # MOVED TO staff.chat.reloadadmins
-    # MOVED TO staff.chat.ban
-    # MOVED TO staff.chat.info
-    # MOVED TO staff.chat.revoke
-    # MOVED TO staff.chat.reply
-
-    # callback query
-    # MOVED TO users.lang
-    # MOVED TO users.start
-
-    # chat_member updates
-    # MOVED TO chat_members.newchat
-    # MOVED TO chat_members.update
-
     logger.info(f"polling for updates...")
     app.run_polling(
         drop_pending_updates=False,
