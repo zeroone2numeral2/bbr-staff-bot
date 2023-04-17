@@ -14,7 +14,7 @@ from telegram.ext import CallbackContext
 
 from database.base import get_session
 from database.models import User, Chat
-from database.queries import chats, chat_members
+from database.queries import chats, chat_members, users
 import utilities
 from config import config
 
@@ -63,7 +63,6 @@ def catch_exception(silent=False, skip_not_modified_exception=False):
 def pass_session(
         pass_user=False,
         pass_chat=False,
-        create_if_not_existing=True,
         rollback_on_exception=False,
         commit_on_exception=False
 ):
@@ -83,28 +82,16 @@ def pass_session(
             # user: [User, None] = None
             # chat: [Chat, None] = None
 
-            if pass_user:
-                user = session.query(User).filter(User.user_id == update.effective_user.id).one_or_none()
-
-                if not user and create_if_not_existing:
-                    user = User(update.effective_user)
-                    session.add(user)
-                    session.commit()
-
+            if pass_user and update.effective_user:
+                user = users.get_safe(session, update.effective_user, commit=True)
                 kwargs['user'] = user
 
-            if pass_chat:
+            if pass_chat and update.effective_chat:
                 if update.effective_chat.id > 0:
                     # raise ValueError("'pass_chat' cannot be True for updates that come from private chats")
                     logger.warning("'pass_chat' shouldn't be True for updates that come from private chats")
                 else:
-                    chat = session.query(Chat).filter(Chat.chat_id == update.effective_chat.id).one_or_none()
-
-                    if not chat and create_if_not_existing:
-                        chat = Chat(update.effective_chat)
-                        session.add(chat)
-                        session.commit()
-
+                    chat = chats.get_safe(session, update.effective_chat, commit=True)
                     kwargs['chat'] = chat
 
             # noinspection PyBroadException

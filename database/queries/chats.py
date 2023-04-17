@@ -42,6 +42,21 @@ def get_or_create(session: Session, chat_id: int, create_if_missing=True, telegr
     return chat
 
 
+def get_safe(session: Session, telegram_chat: TelegramChat, create_if_missing=True, update_metadata_if_existing=True, commit=False):
+    chat: Chat = session.query(Chat).filter(Chat.chat_id == telegram_chat.id).one_or_none()
+
+    if not chat and create_if_missing:
+        chat = Chat(telegram_chat)
+        session.add(chat)
+    elif chat and update_metadata_if_existing:
+        chat.update_metadata(telegram_chat)
+
+    if commit:
+        session.commit()
+
+    return chat
+
+
 """
 def update_administrators_old(session: Session, chat: Chat, administrators: Tuple[ChatMember]):
     current_chat_administrators_dict = chat_members_to_dict(chat.chat_id, administrators)

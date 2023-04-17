@@ -15,3 +15,18 @@ def get_or_create(session: Session, user_id: int, create_if_missing=True, telegr
         session.add(user)
 
     return user
+
+
+def get_safe(session: Session, telegram_user: TelegramUser, create_if_missing=True, update_metadata_if_existing=True, commit=False):
+    user: User = session.query(User).filter(User.user_id == telegram_user.id).one_or_none()
+
+    if not user and create_if_missing:
+        chat = User(telegram_user)
+        session.add(chat)
+    elif user and update_metadata_if_existing:
+        user.update_metadata(telegram_user)
+
+    if commit:
+        session.commit()
+
+    return user
