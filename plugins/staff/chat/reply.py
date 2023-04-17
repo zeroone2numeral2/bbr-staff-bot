@@ -56,6 +56,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
         message_datetime=update.effective_message.date
     )
     session.add(admin_message)
+    session.commit()  # we need to commit now because otherwise 'admin_message.user_message' would be none
 
     admin_message.user_message.add_reply()
 
@@ -63,9 +64,9 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"reply to a bot message {utilities.log(update)}")
+    logger.info(f"reply to a message {utilities.log(update)}")
 
-    if not update.message.reply_to_message.from_user or update.message.reply_to_message.from_user.id == context.bot.id:
+    if not update.message.reply_to_message.from_user and update.message.reply_to_message.from_user.id == context.bot.id:
         await update.effective_message.reply_text("<i>Reply to an user's message</i>")
         return
 
