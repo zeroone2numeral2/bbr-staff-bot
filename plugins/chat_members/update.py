@@ -65,25 +65,32 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Optio
     logger.info(f"chat member update {utilities.log(update)}")
 
     logger.info("saving or updating User objects...")
+    save_or_update_users_from_chat_member_update(session, update, commit=True)
+
+    logger.info("saving new chat_member object...")
+    save_chat_member(session, update)
+
+
+@decorators.catch_exception(silent=True)
+@decorators.pass_session(pass_chat=True)
+async def on_my_chat_member_update(update: Update, _, session: Session, chat: Optional[Chat] = None):
+    logger.info(f"my chat member update {utilities.log(update)}")
+
+    logger.info("saving or updating User objects...")
     user_records = save_or_update_users_from_chat_member_update(session, update, commit=True)
 
-    if update.effective_chat.id > 0 and update.my_chat_member:
+    if update.effective_chat.id > 0:
         user = user_records[0]  # only one will be returned
         new_status = update.my_chat_member.new_chat_member.status
-        logger.info(f"ChatMember update from private chat, new status: {new_status}")
+        logger.info(f"MyChatMember update from private chat, new status: {new_status}")
         if new_status == ChatMember.BANNED:
             user.set_stopped()
         elif new_status == ChatMember.MEMBER:
             user.set_restarted()
         else:
             logger.warning(f"unhandled new status from MyChatMember update: {new_status}")
-        return
-
-    logger.info("saving new chat_member object...")
-    save_chat_member(session, update)
-
-    if update.my_chat_member:
-        logger.info(f"MyChatMember update, new status: {update.my_chat_member.new_chat_member.status}")
+    else:
+        logger.info(f"MyChatMember update in a group chat, new status: {update.my_chat_member.new_chat_member.status}")
         if isinstance(update.my_chat_member.new_chat_member, ChatMemberAdministrator):
             chat.set_as_administrator(update.my_chat_member.new_chat_member.can_delete_messages)
         elif isinstance(update.my_chat_member.new_chat_member, (ChatMemberMember, ChatMemberRestricted)):
@@ -91,7 +98,11 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Optio
         elif isinstance(update.my_chat_member.new_chat_member, (ChatMemberLeft, ChatMemberBanned)):
             chat.set_left()
 
+        logger.info("saving new chat_member object...")
+        save_chat_member(session, update)
+
 
 HANDLERS = (
-    (ChatMemberHandler(on_chat_member_update, ChatMemberHandler.ANY_CHAT_MEMBER), Group.NORMAL),
+    (ChatMemberHandler(on_chat_member_update, ChatMemberHandler.CHAT_MEMBER), Group.NORMAL),
+    (ChatMemberHandler(on_my_chat_member_update, ChatMemberHandler.MY_CHAT_MEMBER), Group.NORMAL),
 )
