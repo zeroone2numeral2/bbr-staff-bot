@@ -101,7 +101,7 @@ def pass_session(
                     chat = session.query(Chat).filter(Chat.chat_id == update.effective_chat.id).one_or_none()
 
                     if not chat and create_if_not_existing:
-                        chat = Chat(chat_id=update.effective_chat.id, title=update.effective_chat.title)
+                        chat = Chat(update.effective_chat)
                         session.add(chat)
                         session.commit()
 

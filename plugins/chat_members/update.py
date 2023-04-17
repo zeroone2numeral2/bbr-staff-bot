@@ -8,7 +8,7 @@ from telegram.ext import ChatMemberHandler
 
 from constants import Group
 from database.models import User, Chat, ChatMember as DbChatMember
-from database.queries import users
+from database.queries import users, chats
 import decorators
 import utilities
 
@@ -36,6 +36,23 @@ def save_or_update_users_from_chat_member_update(session: Session, update: Updat
         session.commit()
 
     return user_records
+
+
+def save_or_update_chat_from_chat_member_update(session: Session, update: Update, commit=False) -> List[Chat]:
+    if update.effective_chat.id > 0:
+        raise ValueError("couldn't save chat_id > 0")
+
+    chat = chats.get_or_create(session, update.effective_chat.id, create_if_missing=False)
+    if not chat:
+        chat = Chat(update.effective_chat)
+        session.add(chat)
+    else:
+        chat.update_metadata(update.effective_chat)
+
+    if commit:
+        session.commit()
+
+    return [chat]
 
 
 def save_chat_member(session: Session, update: Update, commit=False):
@@ -66,6 +83,9 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Optio
 
     logger.info("saving or updating User objects...")
     save_or_update_users_from_chat_member_update(session, update, commit=True)
+    if update.effective_chat.id < 0:
+        logger.info("saving or updating Chat object...")
+        save_or_update_chat_from_chat_member_update(session, update, commit=True)
 
     logger.info("saving new chat_member object...")
     save_chat_member(session, update)

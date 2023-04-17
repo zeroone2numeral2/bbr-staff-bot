@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 from sqlalchemy import true, select
 from sqlalchemy.orm import Session
 from telegram import ChatMember
+from telegram import Chat as TelegramChat
 
 from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict, User
 
@@ -29,6 +30,16 @@ def get_staff_chat_administrators(session: Session):
         Chat.is_staff_chat == true()
     )
     return session.scalars(statement)
+
+
+def get_or_create(session: Session, chat_id: int, create_if_missing=True, telegram_chat: Optional[TelegramChat] = None):
+    chat: Chat = session.query(Chat).filter(Chat.user_id == chat_id).one_or_none()
+
+    if not chat and create_if_missing:
+        chat = Chat(telegram_chat)
+        session.add(chat)
+
+    return chat
 
 
 """

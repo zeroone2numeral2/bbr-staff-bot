@@ -5,7 +5,7 @@ from typing import List, Optional, Union, Tuple, Iterable
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, ChatMemberOwner, ChatMemberRestricted, \
+from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, ChatMemberOwner, ChatMemberRestricted, \
     ChatMemberLeft, ChatMemberBanned, ChatMemberMember
 
 import utilities
@@ -108,6 +108,10 @@ class Chat(Base):
 
     chat_id = Column(Integer, primary_key=True)
     title = Column(String, default=None)
+    username = Column(String, default=None)
+    type = Column(String, default=None)
+    is_forum = Column(Boolean, default=None)
+
     default = Column(Boolean, default=False)  # deprecated
     is_staff_chat = Column(Boolean, default=False)
     is_users_chat = Column(Boolean, default=False)
@@ -121,9 +125,18 @@ class Chat(Base):
     chat_members = relationship("ChatMember", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
     admin_messages = relationship("AdminMessage", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
 
-    def __init__(self, chat_id, title):
-        self.chat_id = chat_id
-        self.title = title
+    def __init__(self, telegram_chat: TelegramChat):
+        self.update_metadata(telegram_chat)
+
+    def update_metadata(self, telegram_chat: TelegramChat):
+        if self.chat_id is None:
+            # on record creation, this field is None
+            self.chat_id = telegram_chat.id
+
+        self.title = telegram_chat.title
+        self.username = telegram_chat.username
+        self.type = telegram_chat.type
+        self.is_forum = telegram_chat.is_forum
 
     def is_staff_chat_backward(self):
         # for backward compatibility

@@ -12,6 +12,6 @@ def get_or_create(session: Session, user_id: int, create_if_missing=True, telegr
 
     if not user and create_if_missing:
         user = User(telegram_user)
-        user.add(user)
+        session.add(user)
 
     return user
