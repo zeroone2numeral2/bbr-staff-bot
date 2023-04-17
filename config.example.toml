@@ -4,6 +4,7 @@ admins = [
     23646077, # riccardo
     1159605359 # flytek mod
 ]
+errors_log = 0
 chat_invite_link = ""
 
 [database]
@@ -14,6 +15,4 @@ sent_to_staff_message = true
 broadcast_message_edits = true
 
 [handlers]
-import = [
-    ""
-]
+manifest = "manifest_feedback"

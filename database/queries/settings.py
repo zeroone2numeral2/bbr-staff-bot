@@ -1,10 +1,7 @@
-from typing import Optional
-
 from sqlalchemy.orm import Session
-from sqlalchemy import true, false, select, null
+from sqlalchemy import select
 
-from database.models import BotSetting, Chat
-from constants import Language
+from database.models import BotSetting
 
 
 def get_settings(session: Session):

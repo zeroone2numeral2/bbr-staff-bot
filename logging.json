@@ -51,6 +51,9 @@
         },
         "httpx": {
             "level": "INFO"
+        },
+        "loader": {
+            "level": "INFO"
         }
     },
     "formatters": {

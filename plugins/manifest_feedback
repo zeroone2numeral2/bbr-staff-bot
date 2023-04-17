@@ -1,0 +1,30 @@
+# edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
+staff.chat.edits
+
+# user messages cannot be edited because they are forwarded
+# users.edits
+
+staff.private.placeholders
+staff.private.settings_manual
+staff.private.settings
+staff.private.ltexts
+
+help
+users.start
+users.lang
+users.revoke
+users.message
+
+staff.chat.setstaff
+staff.chat.reloadadmins
+staff.chat.ban
+staff.chat.info
+staff.chat.revoke
+staff.chat.reply # must be after all the other commands
+
+chat_members.newchat
+chat_members.update
+
+# debug.callback_query
+# debug.chat_member
+# debug.chatid

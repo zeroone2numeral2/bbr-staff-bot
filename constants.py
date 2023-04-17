@@ -167,3 +167,9 @@ when they send new messages. The reason is optional
 class State:
     WAITING_NEW_LOCALIZED_TEXT = 10
     WAITING_NEW_SETTING_VALUE = 20
+
+
+class Group:
+    DEBUG = 1
+    PREPROCESS = 3
+    NORMAL = 5

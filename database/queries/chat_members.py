@@ -1,12 +1,10 @@
-from typing import Optional, List, Tuple, Union, Iterable
+from typing import Optional, Union, Iterable
 
-from sqlalchemy import true, false, select
+from sqlalchemy import true
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
 from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
 
 from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
-from constants import Language
 
 
 CHAT_MEMBER_STATUS_ADMIN = [ChatMember.ADMINISTRATOR, ChatMember.OWNER]
@@ -23,6 +21,7 @@ def save_administrators(session: Session, chat_id: int, administrators: Iterable
 
 
 def is_staff_chat_admin(session: Session, user_id: int) -> Optional[DbChatMember]:
+    # noinspection PyUnresolvedReferences
     chat_member = session.query(DbChatMember).join(Chat).where(
         DbChatMember.user_id == user_id,
         DbChatMember.status.in_(CHAT_MEMBER_STATUS_ADMIN),
@@ -33,6 +32,7 @@ def is_staff_chat_admin(session: Session, user_id: int) -> Optional[DbChatMember
 
 
 def is_users_chat_member(session: Session, user_id: int) -> Optional[DbChatMember]:
+    # noinspection PyUnresolvedReferences
     chat_member = session.query(DbChatMember).join(Chat).where(
         DbChatMember.user_id == user_id,
         DbChatMember.status.in_(CHAT_MEMBER_STATUS_MEMBER),
