@@ -6,6 +6,7 @@ from telegram.ext import MessageHandler, filters, ContextTypes
 
 import decorators
 import utilities
+from constants import Group
 from database.models import User, UserMessage
 from config import config
 
@@ -37,5 +38,5 @@ async def on_edited_message_user(update: Update, context: ContextTypes.DEFAULT_T
 
 
 HANDLERS = (
-    (MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.PRIVATE, on_edited_message_user), 1)
+    (MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.PRIVATE, on_edited_message_user), Group.NORMAL)
 )

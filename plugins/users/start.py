@@ -13,7 +13,7 @@ from database.queries import settings, texts
 import decorators
 import utilities
 from replacements import replace_placeholders
-from constants import LANGUAGES, BotSettingKey, LocalizedTextKey
+from constants import LANGUAGES, BotSettingKey, LocalizedTextKey, Group
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,6 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (CommandHandler('start', on_start_command, filters.ChatType.PRIVATE), 1),
-    (CallbackQueryHandler(on_set_language_button_start, pattern="^setlangstart:(..)$"), 1),
+    (CommandHandler('start', on_start_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    (CallbackQueryHandler(on_set_language_button_start, pattern="^setlangstart:(..)$"), Group.NORMAL),
 )

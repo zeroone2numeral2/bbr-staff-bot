@@ -10,7 +10,7 @@ from database.models import User, UserMessage, Chat
 from database.queries import settings, chats, texts
 import decorators
 import utilities
-from constants import BotSettingKey, LocalizedTextKey
+from constants import BotSettingKey, LocalizedTextKey, Group
 from emojis import Emoji
 
 logger = logging.getLogger(__name__)
@@ -68,5 +68,5 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (MessageHandler(filters.ChatType.PRIVATE, on_user_message), 1),
+    (MessageHandler(filters.ChatType.PRIVATE, on_user_message), Group.NORMAL),
 )

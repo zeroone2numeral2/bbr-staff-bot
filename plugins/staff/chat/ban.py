@@ -9,7 +9,7 @@ from database.models import Chat, UserMessage
 from database.queries import user_messages
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES
+from constants import COMMAND_PREFIXES, Group
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,6 @@ async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     await update.effective_message.reply_text(f"User unbanned")
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filters.REPLY), 1),
-    (PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filters.REPLY), 1),
+    (PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filters.REPLY), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filters.REPLY), Group.NORMAL),
 )

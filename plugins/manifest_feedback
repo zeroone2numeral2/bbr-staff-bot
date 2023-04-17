@@ -1,5 +1,6 @@
 # edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
 staff.chat.edits
+
 # user messages cannot be edited because they are forwarded
 # users.edits
 

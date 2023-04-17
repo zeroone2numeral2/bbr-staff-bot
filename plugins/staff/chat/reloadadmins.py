@@ -9,7 +9,7 @@ from database.models import Chat
 from database.queries import chats
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES
+from constants import COMMAND_PREFIXES, Group
 
 logger = logging.getLogger(__name__)
 
@@ -28,5 +28,5 @@ async def on_reloadadmins_command(update: Update, _, session: Session, chat: Cha
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS), 1),
+    (PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, filters.ChatType.GROUPS), Group.NORMAL),
 )

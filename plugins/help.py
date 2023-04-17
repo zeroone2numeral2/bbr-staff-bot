@@ -11,7 +11,7 @@ from database.queries import chat_members
 import decorators
 import utilities
 from plugins.users.start import on_start_command
-from constants import ADMIN_HELP, COMMAND_PREFIXES
+from constants import ADMIN_HELP, COMMAND_PREFIXES, Group
 
 logger = logging.getLogger(__name__)
 
@@ -29,5 +29,5 @@ async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE), 1),
+    (PrefixHandler(COMMAND_PREFIXES, 'help', on_help_command, filters.ChatType.PRIVATE), Group.NORMAL),
 )

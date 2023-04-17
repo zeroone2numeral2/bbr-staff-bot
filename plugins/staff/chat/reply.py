@@ -7,6 +7,7 @@ from telegram.constants import ChatAction
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import filters, ContextTypes, MessageHandler
 
+from constants import Group
 from database.models import UserMessage, AdminMessage, User
 from database.queries import user_messages, admin_messages
 import decorators
@@ -110,6 +111,6 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 HANDLERS = (
-    (MessageHandler(filters.ChatType.GROUPS & filters.REPLY & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), 1),
-    (MessageHandler(filters.ChatType.GROUPS & filters.REPLY, on_bot_message_reply), 1),
+    (MessageHandler(filters.ChatType.GROUPS & filters.REPLY & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
+    (MessageHandler(filters.ChatType.GROUPS & filters.REPLY, on_bot_message_reply), Group.NORMAL),
 )

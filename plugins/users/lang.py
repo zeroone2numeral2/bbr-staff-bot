@@ -11,7 +11,7 @@ from telegram.ext import filters
 from database.models import User
 import decorators
 import utilities
-from constants import LANGUAGES
+from constants import LANGUAGES, Group
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,6 @@ async def on_lang_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (CommandHandler('lang', on_lang_command, filters.ChatType.PRIVATE), 1),
-    (CallbackQueryHandler(on_set_language_button, pattern="^setlang:(..)$"), 1)
+    (CommandHandler('lang', on_lang_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    (CallbackQueryHandler(on_set_language_button, pattern="^setlang:(..)$"), Group.NORMAL),
 )

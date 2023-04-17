@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes, filters, PrefixHandler
 
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES
+from constants import COMMAND_PREFIXES, Group
 from replacements import PLACEHOLDER_REPLACEMENTS_TELEGRAM_USER, PLACEHOLDER_REPLACEMENTS_DATABASE
 
 logger = logging.getLogger(__name__)
@@ -28,5 +28,5 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE), 1),
+    (PrefixHandler(COMMAND_PREFIXES, ['placeholders', 'ph'], on_placeholders_command, filters.ChatType.PRIVATE), Group.NORMAL),
 )

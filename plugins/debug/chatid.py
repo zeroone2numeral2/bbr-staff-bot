@@ -7,5 +7,5 @@ async def on_chatid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 HANDLERS = (
-    (CommandHandler('chatid', on_chatid_command, filters.ChatType.PRIVATE), 1),
+    (CommandHandler('chatid', on_chatid_command, filters.ChatType.PRIVATE), Group.DEBUG),
 )

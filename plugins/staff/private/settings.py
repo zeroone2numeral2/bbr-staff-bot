@@ -14,7 +14,7 @@ from database.queries import settings
 import decorators
 import utilities
 from emojis import Emoji
-from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT
+from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group
 
 logger = logging.getLogger(__name__)
 
@@ -230,10 +230,10 @@ edit_nonbool_setting_conversation_handler = ConversationHandler(
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_config_command, filters.ChatType.PRIVATE), 1),
-    (CallbackQueryHandler(on_settings_list_button, rf"bs:list$"), 1),
-    (CallbackQueryHandler(on_bot_setting_show_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"), 1),
-    (CallbackQueryHandler(on_bot_setting_switch_bool_button, rf"bs:setbool:(?P<value>\w+):(?P<key>\w+)$"), 1),
-    (CallbackQueryHandler(on_bot_setting_nullify_button, rf"bs:null:(?P<key>\w+)$"), 1),
-    (edit_nonbool_setting_conversation_handler, 1),
+    (PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_config_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    (CallbackQueryHandler(on_settings_list_button, rf"bs:list$"), Group.NORMAL),
+    (CallbackQueryHandler(on_bot_setting_show_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_bot_setting_switch_bool_button, rf"bs:setbool:(?P<value>\w+):(?P<key>\w+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_bot_setting_nullify_button, rf"bs:null:(?P<key>\w+)$"), Group.NORMAL),
+    (edit_nonbool_setting_conversation_handler, Group.NORMAL),
 )

@@ -8,7 +8,7 @@ from database.models import UserMessage, ChatMember as DbChatMember
 from database.queries import chats, user_messages, chat_members
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES
+from constants import COMMAND_PREFIXES, Group
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,6 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filters.REPLY), 1),
+    (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filters.REPLY), Group.NORMAL),
 )
 

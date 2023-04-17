@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes, PrefixHandler, filters
 
 import decorators
 import utilities
-from constants import BOT_SETTINGS_DEFAULTS, COMMAND_PREFIXES
+from constants import BOT_SETTINGS_DEFAULTS, COMMAND_PREFIXES, Group
 from database.models import BotSetting, ValueType
 from database.queries import settings
 
@@ -104,7 +104,7 @@ async def on_enable_disable_command(update: Update, context: ContextTypes.DEFAUL
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['oldsettings', 'os'], on_oldsettings_command, filters.ChatType.PRIVATE), 1),
-    (PrefixHandler(COMMAND_PREFIXES, ['set'], on_set_command, filters.ChatType.PRIVATE), 1),
-    (PrefixHandler(COMMAND_PREFIXES, ['enable', 'disable'], on_enable_disable_command, filters.ChatType.PRIVATE), 1),
+    (PrefixHandler(COMMAND_PREFIXES, ['oldsettings', 'os'], on_oldsettings_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ['set'], on_set_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ['enable', 'disable'], on_enable_disable_command, filters.ChatType.PRIVATE), Group.NORMAL),
 )

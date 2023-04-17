@@ -6,6 +6,7 @@ from telegram import Update
 from telegram import ChatMember, ChatMemberMember, ChatMemberRestricted, ChatMemberLeft, ChatMemberBanned, ChatMemberAdministrator
 from telegram.ext import ChatMemberHandler
 
+from constants import Group
 from database.models import User, Chat, ChatMember as DbChatMember
 from database.queries import users
 import decorators
@@ -92,5 +93,5 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Optio
 
 
 HANDLERS = (
-    (ChatMemberHandler(on_chat_member_update, ChatMemberHandler.ANY_CHAT_MEMBER), 1),
+    (ChatMemberHandler(on_chat_member_update, ChatMemberHandler.ANY_CHAT_MEMBER), Group.NORMAL),
 )

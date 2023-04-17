@@ -13,7 +13,7 @@ from database.queries import texts
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, State, TempDataKey, CONVERSATION_TIMEOUT, Action, \
-    LOCALIZED_TEXTS_DESCRIPTORS, LANGUAGES, ACTION_DESCRIPTORS
+    LOCALIZED_TEXTS_DESCRIPTORS, LANGUAGES, ACTION_DESCRIPTORS, Group
 
 logger = logging.getLogger(__name__)
 
@@ -296,11 +296,11 @@ edit_ltext_conversation_handler = ConversationHandler(
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['texts', 't'], on_ltexts_list_command, filters.ChatType.PRIVATE), 1),
-    (CallbackQueryHandler(on_ltexts_list_button, rf"lt:list$"), 1),
-    (CallbackQueryHandler(on_localized_text_actions_button, rf"lt:actions:(?P<key>\w+)$"), 1),
-    (CallbackQueryHandler(on_localized_text_action_button, rf"lt:(?P<key>\w+):(?P<action>\w+)$"), 1),
-    (CallbackQueryHandler(on_localized_text_read_button, rf"lt:langselected:(?P<action>{Action.READ}):(?P<key>\w+):(?P<lang>\w+)$"), 1),
-    (CallbackQueryHandler(on_localized_text_delete_button, rf"lt:langselected:(?P<action>{Action.DELETE}):(?P<key>\w+):(?P<lang>\w+)$"), 1),
-    (edit_ltext_conversation_handler, 1)
+    (PrefixHandler(COMMAND_PREFIXES, ['texts', 't'], on_ltexts_list_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    (CallbackQueryHandler(on_ltexts_list_button, rf"lt:list$"), Group.NORMAL),
+    (CallbackQueryHandler(on_localized_text_actions_button, rf"lt:actions:(?P<key>\w+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_localized_text_action_button, rf"lt:(?P<key>\w+):(?P<action>\w+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_localized_text_read_button, rf"lt:langselected:(?P<action>{Action.READ}):(?P<key>\w+):(?P<lang>\w+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_localized_text_delete_button, rf"lt:langselected:(?P<action>{Action.DELETE}):(?P<key>\w+):(?P<lang>\w+)$"), Group.NORMAL),
+    (edit_ltext_conversation_handler, Group.NORMAL)
 )

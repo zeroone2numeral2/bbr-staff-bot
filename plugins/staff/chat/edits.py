@@ -8,7 +8,7 @@ from database.models import Chat, AdminMessage
 from database.queries import settings
 import decorators
 import utilities
-from constants import BotSettingKey
+from constants import BotSettingKey, Group
 
 logger = logging.getLogger(__name__)
 
@@ -42,5 +42,5 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff), 1),
+    (MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff), Group.NORMAL),
 )

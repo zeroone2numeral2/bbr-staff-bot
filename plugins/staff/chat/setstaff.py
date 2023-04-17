@@ -10,7 +10,7 @@ from database.models import Chat
 from database.queries import chats
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES
+from constants import COMMAND_PREFIXES, Group
 
 logger = logging.getLogger(__name__)
 
@@ -47,5 +47,5 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['setstaff', 'ssilent'], on_setstaff_command, filters.ChatType.GROUPS), 1),
+    (PrefixHandler(COMMAND_PREFIXES, ['setstaff', 'ssilent'], on_setstaff_command, filters.ChatType.GROUPS), Group.NORMAL),
 )

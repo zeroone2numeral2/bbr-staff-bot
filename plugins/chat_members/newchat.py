@@ -9,6 +9,7 @@ from telegram.ext import CallbackContext
 from telegram.ext import filters
 from telegram.ext import MessageHandler
 
+from constants import Group
 from database.models import User, Chat
 from database.queries import chat_members
 import decorators
@@ -64,5 +65,5 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
 
 
 HANDLERS = (
-    (MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS | filters.StatusUpdate.CHAT_CREATED, on_new_group_chat), 1),
+    (MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS | filters.StatusUpdate.CHAT_CREATED, on_new_group_chat), Group.NORMAL),
 )

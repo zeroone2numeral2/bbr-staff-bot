@@ -9,7 +9,7 @@ from database.models import User, UserMessage
 from database.queries import settings, user_messages
 import decorators
 import utilities
-from constants import BotSettingKey, COMMAND_PREFIXES
+from constants import BotSettingKey, COMMAND_PREFIXES, Group
 
 logger = logging.getLogger(__name__)
 
@@ -52,5 +52,5 @@ async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_T
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['revoke', 'del'], on_revoke_user_command, filters.ChatType.PRIVATE), 1),
+    (PrefixHandler(COMMAND_PREFIXES, ['revoke', 'del'], on_revoke_user_command, filters.ChatType.PRIVATE), Group.NORMAL),
 )
