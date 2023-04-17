@@ -23,6 +23,7 @@ from telegram.ext import ExtBot
 from telegram.ext.filters import MessageFilter
 from telegram import helpers
 
+from loader import load_modules
 from database import engine
 from database.base import get_session
 from database.models import User, UserMessage, Chat, ChatMember as DbChatMember, AdminMessage
@@ -1386,6 +1387,8 @@ def main():
 
     new_group = NewGroup()
     filter_reply_to_bot = FilterReplyToBot()
+
+    load_modules(app, "plugins")
 
     # app.add_handler(CallbackQueryHandler(on_ltexts_list_button, rf".*"), -1)
 
