@@ -79,7 +79,6 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     await update.message.reply_text(text, reply_markup=reply_markup)
 
     user.set_started()
-    user.update_metadata(update.effective_user)
 
 
 HANDLERS = (
