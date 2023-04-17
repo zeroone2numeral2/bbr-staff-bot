@@ -1,12 +1,10 @@
-from typing import Optional, List, Tuple, Union
+from typing import Optional, Tuple
 
-from sqlalchemy import true, false, select
+from sqlalchemy import true, select
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
-from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
+from telegram import ChatMember
 
 from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict, User
-from constants import Language
 
 
 def get_staff_chat(session: Session) -> Optional[Chat]:
@@ -25,6 +23,7 @@ def get_all_chats(session: Session):
 
 
 def get_staff_chat_administrators(session: Session):
+    # noinspection PyUnresolvedReferences
     statement = session.query(DbChatMember).join(Chat).join(User).where(
         DbChatMember.status.in_([ChatMember.ADMINISTRATOR, ChatMember.OWNER]),
         Chat.is_staff_chat == true()

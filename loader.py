@@ -1,13 +1,10 @@
 import logging
-import os
 import importlib
 import re
 from pathlib import Path
 
 # noinspection PyPackageRequirements
 from telegram.ext import Application, BaseHandler, ConversationHandler
-
-from config import config
 
 logger = logging.getLogger(__name__)
 

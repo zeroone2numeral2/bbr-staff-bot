@@ -1,12 +1,9 @@
-from typing import Optional, List, Tuple, Union
+from typing import Optional
 
-from sqlalchemy import true, false
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
-from telegram import ChatMemberAdministrator, ChatMemberOwner, Message, Update
+from telegram import Update
 
-from database.models import UserMessage, Chat, AdminMessage
-from constants import Language
+from database.models import AdminMessage
 
 
 def get_admin_message(session: Session, update: Update) -> Optional[AdminMessage]:

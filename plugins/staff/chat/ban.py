@@ -1,11 +1,12 @@
 import logging
+import re
 
 from sqlalchemy.orm import Session
-from telegram import Update, ChatMember
+from telegram import Update
 from telegram.ext import filters, PrefixHandler, ContextTypes
 
 from database.models import Chat, UserMessage
-from database.queries import chats, user_messages
+from database.queries import user_messages
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES

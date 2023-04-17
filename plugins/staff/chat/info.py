@@ -1,7 +1,7 @@
 import logging
 
 from sqlalchemy.orm import Session
-from telegram import Update, ChatMember, helpers
+from telegram import Update, helpers
 from telegram.ext import filters, PrefixHandler, ContextTypes
 
 from database.models import UserMessage, ChatMember as DbChatMember

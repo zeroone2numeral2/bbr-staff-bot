@@ -1,22 +1,17 @@
 import logging
 from typing import Optional
 
-import pytz
 from sqlalchemy.orm import Session
 from telegram import Update
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ContextTypes, CallbackContext
-from telegram.ext import CommandHandler
-from telegram.ext import Defaults
+from telegram.ext import ContextTypes
 from telegram.ext import filters
 from telegram.ext import MessageHandler, CallbackQueryHandler, PrefixHandler, ConversationHandler
 
 from database.models import User, LocalizedText
-from database.models import BotSetting, ValueType
-from database.queries import settings, texts
+from database.queries import texts
 import decorators
 import utilities
-from emojis import Emoji
 from constants import COMMAND_PREFIXES, State, TempDataKey, CONVERSATION_TIMEOUT, Action, \
     LOCALIZED_TEXTS_DESCRIPTORS, LANGUAGES, ACTION_DESCRIPTORS
 
