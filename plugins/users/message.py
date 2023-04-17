@@ -21,8 +21,6 @@ logger = logging.getLogger(__name__)
 async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
     logger.info(f"new user message {utilities.log(update)}")
 
-    user.update_metadata(update.effective_user)
-
     if user.banned:
         logger.info(f"ignoring user message because the user was banned (shadowban: {user.shadowban})")
         if not user.shadowban:
