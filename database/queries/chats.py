@@ -33,7 +33,7 @@ def get_staff_chat_administrators(session: Session):
 
 
 def get_or_create(session: Session, chat_id: int, create_if_missing=True, telegram_chat: Optional[TelegramChat] = None):
-    chat: Chat = session.query(Chat).filter(Chat.user_id == chat_id).one_or_none()
+    chat: Chat = session.query(Chat).filter(Chat.chat_id == chat_id).one_or_none()
 
     if not chat and create_if_missing:
         chat = Chat(telegram_chat)
