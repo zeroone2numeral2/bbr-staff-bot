@@ -46,7 +46,7 @@ class User(Base):
     application_status = Column(Boolean, default=None)
     application_received_on = Column(DateTime, default=None)
     application_evaluated_on = Column(DateTime, default=None)
-    application_evaluated_by = Column(Integer, default=None)
+    application_evaluated_by_user_id = Column(Integer, default=None)
 
     # application (admin)
     can_evaluate_applications = Column(Boolean, default=False)
