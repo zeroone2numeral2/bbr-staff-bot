@@ -40,3 +40,13 @@ def is_users_chat_member(session: Session, user_id: int) -> Optional[DbChatMembe
     ).one_or_none()
 
     return chat_member
+
+
+def get_users_chat_chat_member(session: Session, user_id: int) -> Optional[DbChatMember]:
+    # noinspection PyUnresolvedReferences
+    chat_member = session.query(DbChatMember).join(Chat).where(
+        DbChatMember.user_id == user_id,
+        Chat.is_users_chat == true()
+    ).one_or_none()
+
+    return chat_member

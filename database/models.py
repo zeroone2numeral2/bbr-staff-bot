@@ -5,7 +5,7 @@ from typing import List, Optional, Union, Tuple, Iterable
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
 from sqlalchemy.orm import relationship, mapped_column
 from sqlalchemy.sql import func
-from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, ChatMemberOwner, ChatMemberRestricted, \
+from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, ChatMemberOwner, ChatMemberRestricted, \
     ChatMemberLeft, ChatMemberBanned, ChatMemberMember
 
 import utilities
@@ -199,7 +199,7 @@ class Chat(Base):
 
 
 chat_member_union_type = Union[
-    ChatMember,
+    TgChatMember,
     ChatMemberOwner,
     ChatMemberAdministrator,
     ChatMemberMember,
@@ -332,23 +332,23 @@ class ChatMember(Base):
         return cls(**chat_member_dict)
 
     def is_administrator(self):
-        return self.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER)
+        return self.status in (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER)
 
     def is_member(self):
-        return self.status in (ChatMember.ADMINISTRATOR, ChatMember.OWNER, ChatMember.RESTRICTED, ChatMember.MEMBER)
+        return self.status in (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER, TgChatMember.RESTRICTED, TgChatMember.MEMBER)
 
     def status_pretty(self):
-        if self.status == ChatMember.OWNER:
+        if self.status == TgChatMember.OWNER:
             return "member (owner)"
-        elif self.status == ChatMember.ADMINISTRATOR:
+        elif self.status == TgChatMember.ADMINISTRATOR:
             return "member (admin)"
-        elif self.status == ChatMember.MEMBER:
+        elif self.status == TgChatMember.MEMBER:
             return "member"
-        elif self.status == ChatMember.RESTRICTED:
+        elif self.status == TgChatMember.RESTRICTED:
             return "member (restricted)"
-        elif self.status == ChatMember.LEFT:
+        elif self.status == TgChatMember.LEFT:
             return "not a member (never joined/left/removed but not banned)"
-        elif self.status == ChatMember.BANNED:
+        elif self.status == TgChatMember.BANNED:
             return "not a member (banned)"
         else:
             return self.status
