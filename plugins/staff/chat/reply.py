@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.constants import ChatAction
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import filters, ContextTypes, MessageHandler
+from telegram.ext.filters import MessageFilter
 
 from constants import Group
 from database.models import UserMessage, AdminMessage, User
@@ -15,6 +16,17 @@ import utilities
 from emojis import Emoji
 
 logger = logging.getLogger(__name__)
+
+
+class FilterReplyTopicsAware(MessageFilter):
+    def filter(self, message):
+        if message.reply_to_message and message.reply_to_message.forum_topic_created:
+            return False
+
+        return bool(message.reply_to_message)
+
+
+reply_topics_aware = FilterReplyTopicsAware()
 
 
 @decorators.catch_exception()
@@ -112,6 +124,6 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 HANDLERS = (
-    (MessageHandler(filters.ChatType.GROUPS & filters.REPLY & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
-    (MessageHandler(filters.ChatType.GROUPS & filters.REPLY, on_bot_message_reply), Group.NORMAL),
+    (MessageHandler(filters.ChatType.GROUPS & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
+    (MessageHandler(filters.ChatType.GROUPS & reply_topics_aware, on_bot_message_reply), Group.NORMAL),
 )
