@@ -31,7 +31,7 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
         except:
             pass
 
-    session.execute(sqlalchemy_update(Chat).values(default=False, is_staff_chat=False))
+    session.execute(sqlalchemy_update(Chat).values(is_staff_chat=False))
     session.commit()
 
     chat.is_staff_chat = True
