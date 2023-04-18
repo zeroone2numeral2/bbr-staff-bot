@@ -9,7 +9,7 @@ from telegram.ext import filters, ContextTypes, MessageHandler
 from telegram.ext.filters import MessageFilter
 
 from constants import Group
-from database.models import UserMessage, AdminMessage, User
+from database.models import UserMessage, AdminMessage, User, Chat
 from database.queries import user_messages, admin_messages
 import decorators
 import utilities
@@ -30,9 +30,13 @@ reply_topics_aware = FilterReplyTopicsAware()
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"reply to an admin message starting by ++ {utilities.log(update)}")
+@decorators.pass_session(pass_user=True, pass_chat=True)
+async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+    logger.info(f"reply to a message starting by ++ {utilities.log(update)}")
+
+    if not chat.is_staff_chat:
+        logger.debug("ignoring reply in non-staff chat")
+        return
 
     if update.message.reply_to_message.from_user.id == context.bot.id:
         await update.message.reply_text("⚠️ <i>please reply to the admin message you want "
@@ -74,12 +78,16 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session(pass_user=True, pass_chat=True)
+async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
     logger.info(f"reply to a message {utilities.log(update)}")
 
-    if not update.message.reply_to_message.from_user and update.message.reply_to_message.from_user.id == context.bot.id:
-        await update.effective_message.reply_text("<i>Reply to an user's message</i>")
+    if not chat.is_staff_chat:
+        logger.debug("reply in non-staff chat: ignoring")
+        return
+
+    if update.message.reply_to_message.from_user and update.message.reply_to_message.from_user.id != context.bot.id:
+        logger.debug("reply to a non-bot message: ignoring")
         return
 
     user_message: UserMessage = user_messages.get_user_message(session, update)
@@ -125,5 +133,5 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 
 HANDLERS = (
     (MessageHandler(filters.ChatType.GROUPS & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
-    (MessageHandler(filters.ChatType.GROUPS & reply_topics_aware, on_bot_message_reply), Group.NORMAL),
+    (MessageHandler(filters.ChatType.GROUPS & reply_topics_aware, on_message_reply), Group.NORMAL),
 )
