@@ -21,7 +21,7 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
         logger.info("message edits are disabled")
         return
 
-    if not chat.is_staff_chat_backward():
+    if not chat.is_staff_chat:
         logger.info(f"ignoring edited message update: chat is not the current staff chat")
         return
 

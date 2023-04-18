@@ -112,7 +112,6 @@ class Chat(Base):
     type = Column(String, default=None)
     is_forum = Column(Boolean, default=None)
 
-    default = Column(Boolean, default=False)  # deprecated
     is_staff_chat = Column(Boolean, default=False)
     is_users_chat = Column(Boolean, default=False)
     enabled = Column(Boolean, default=True)
@@ -137,10 +136,6 @@ class Chat(Base):
         self.username = telegram_chat.username
         self.type = telegram_chat.type
         self.is_forum = telegram_chat.is_forum
-
-    def is_staff_chat_backward(self):
-        # for backward compatibility
-        return self.default or self.is_staff_chat
 
     def is_user_admin(self, user_id: int, permissions: Optional[List] = None, any_permission: bool = True, all_permissions: bool = False) -> bool:
         if any_permission == all_permissions:
