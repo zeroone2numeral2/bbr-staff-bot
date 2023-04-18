@@ -12,7 +12,7 @@ from telegram.ext import Defaults
 from telegram.ext import ExtBot
 
 from loader import load_modules
-from database.base import get_session
+from database.base import get_session, Base, engine
 from database.models import ChatMember as DbChatMember
 from database.models import BotSetting
 from database.queries import chats, chat_members
@@ -28,6 +28,8 @@ defaults = Defaults(
     tzinfo=pytz.timezone('Europe/Rome'),
     quote=False
 )
+
+Base.metadata.create_all(engine)
 
 
 async def post_init(application: Application) -> None:

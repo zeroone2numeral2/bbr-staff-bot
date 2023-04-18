@@ -20,7 +20,7 @@ def upgrade() -> None:
     op.add_column('users', sa.Column('application_status', sa.Boolean))
     op.add_column('users', sa.Column('application_received_on', sa.DateTime))
     op.add_column('users', sa.Column('application_evaluated_on', sa.DateTime))
-    op.add_column('users', sa.Column('application_evaluated_by', sa.Integer))
+    op.add_column('users', sa.Column('application_evaluated_by_user_id', sa.Integer))
     op.add_column('users', sa.Column('can_evaluate_applications', sa.Boolean))
 
 

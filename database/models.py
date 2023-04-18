@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional, Union, Tuple, Iterable
 
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, mapped_column
 from sqlalchemy.sql import func
 from telegram import ChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, ChatMemberOwner, ChatMemberRestricted, \
     ChatMemberLeft, ChatMemberBanned, ChatMemberMember
@@ -46,7 +46,7 @@ class User(Base):
     application_status = Column(Boolean, default=None)
     application_received_on = Column(DateTime, default=None)
     application_evaluated_on = Column(DateTime, default=None)
-    application_evaluated_by_user_id = Column(Integer, default=None)
+    application_evaluated_by_user_id = mapped_column(Integer, default=None)
 
     # application (admin)
     can_evaluate_applications = Column(Boolean, default=False)
@@ -58,6 +58,14 @@ class User(Base):
     chat_members = relationship("ChatMember", back_populates="user")
     user_messages = relationship("UserMessage", back_populates="user")
     admin_messages = relationship("AdminMessage", back_populates="user")
+
+    # no foreign key for columns added after the table creation (https://stackoverflow.com/q/30378233),
+    # we need to specify the 'primaryjoin' condition
+    application_evaluated_by = relationship(
+        "User",
+        foreign_keys=[application_evaluated_by_user_id],
+        primaryjoin="User.user_id == User.application_evaluated_by_user_id"
+    )
 
     def __init__(self, telegram_user: TelegramUser, started: Optional[bool] = None):
         self.update_metadata(telegram_user)
