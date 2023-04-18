@@ -42,6 +42,15 @@ class User(Base):
     banned_reason = Column(String, default=None)
     banned_on = Column(DateTime, default=None)
 
+    # application (user)
+    application_status = Column(Boolean, default=None)
+    application_received_on = Column(DateTime, default=None)
+    application_evaluated_on = Column(DateTime, default=None)
+    application_evaluated_by = Column(Integer, default=None)
+
+    # application (admin)
+    can_evaluate_applications = Column(Boolean, default=False)
+
     last_message = Column(DateTime, default=None)  # to the staff's chat
     first_seen = Column(DateTime, default=utilities.now())  # private chat message/ChatMember update
 
