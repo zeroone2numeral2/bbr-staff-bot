@@ -33,21 +33,39 @@ LANGUAGES = {
 }
 
 
+class BotSettingKey:
+    SENT_TO_STAFF = "sent_to_staff_message"
+    BROADCAST_EDITS = "broadcast_edits"
+    ALLOW_USER_REVOKE = "allow_user_revoke"
+    FALLBACK_LANGAUGE = "fallback_language"
+    CHAT_INVITE_LINK = "chat_invite_link"
+    APPROVAL_MODE = "approval_mode"
+
+
 class LocalizedTextKey:
     WELCOME = "welcome"
     SENT_TO_STAFF = "sent_to_staff"
+    TEST_LTEXT = "test_ltext"
 
 
 LOCALIZED_TEXTS_DESCRIPTORS = {
     LocalizedTextKey.WELCOME: dict(
         label="welcome message",
         explanation="This is the message that will be sent to users when they start the bot",
-        emoji="👋"
+        emoji=Emoji.HELLO,
+        show_if_true_bot_setting_key=None
     ),
     LocalizedTextKey.SENT_TO_STAFF: dict(
         label="\"sent to staff\" message",
         explanation="This is the reply message that will be sent to user when they send a message to the staff",
-        emoji="👥"
+        emoji=Emoji.PEOPLE,
+        show_if_true_bot_setting_key=None
+    ),
+    LocalizedTextKey.TEST_LTEXT: dict(
+        label="test ltext",
+        explanation="this is a test ltext",
+        emoji=Emoji.WARNING,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
     ),
 }
 
@@ -71,15 +89,6 @@ LOCALIZED_TEXTS_TRIGGERS = {
     "senttostaff": LocalizedTextKey.SENT_TO_STAFF,
     "sts": LocalizedTextKey.SENT_TO_STAFF,
 }
-
-
-class BotSettingKey:
-    SENT_TO_STAFF = "sent_to_staff_message"
-    BROADCAST_EDITS = "broadcast_edits"
-    ALLOW_USER_REVOKE = "allow_user_revoke"
-    FALLBACK_LANGAUGE = "fallback_language"
-    CHAT_INVITE_LINK = "chat_invite_link"
-    APPROVAL_MODE = "approval_mode"
 
 
 BOT_SETTINGS_DEFAULTS = {

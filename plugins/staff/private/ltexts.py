@@ -9,7 +9,7 @@ from telegram.ext import filters
 from telegram.ext import MessageHandler, CallbackQueryHandler, PrefixHandler, ConversationHandler
 
 from database.models import User, LocalizedText
-from database.queries import texts
+from database.queries import texts, settings
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, State, TempDataKey, CONVERSATION_TIMEOUT, Action, \
@@ -18,10 +18,20 @@ from constants import COMMAND_PREFIXES, State, TempDataKey, CONVERSATION_TIMEOUT
 logger = logging.getLogger(__name__)
 
 
-def get_localized_texts_list_reply_markup() -> InlineKeyboardMarkup:
+def get_localized_texts_list_reply_markup(session: Session) -> InlineKeyboardMarkup:
     keyboard = []
     for ltext_key, ltext_descriptions in LOCALIZED_TEXTS_DESCRIPTORS.items():
-        button = InlineKeyboardButton(f"{ltext_descriptions['emoji']} {ltext_descriptions['label']}", callback_data=f"lt:actions:{ltext_key}")
+        show = True
+        setting_key = ltext_descriptions["show_if_true_bot_setting_key"]
+        if setting_key:
+            show = settings.get_or_create(session, setting_key).value_bool
+
+        if not show:
+            continue
+
+        emoji = ltext_descriptions['emoji']
+        label = ltext_descriptions['label']
+        button = InlineKeyboardButton(f"{emoji} {label}", callback_data=f"lt:actions:{ltext_key}")
         keyboard.append([button])
 
     return InlineKeyboardMarkup(keyboard)
@@ -89,7 +99,7 @@ def get_localized_texts_main_text(ltexts_resume, ltext_key, ltext_description):
 async def on_ltexts_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"localized texts list button {utilities.log(update)}")
 
-    reply_markup = get_localized_texts_list_reply_markup()
+    reply_markup = get_localized_texts_list_reply_markup(session)
     text = f"Select the text to read/edit/delete it:"
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
@@ -176,7 +186,7 @@ async def on_localized_text_delete_button(update: Update, context: ContextTypes.
 async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/texts {utilities.log(update)}")
 
-    reply_markup = get_localized_texts_list_reply_markup()
+    reply_markup = get_localized_texts_list_reply_markup(session)
     text = f"Select the text to read/edit/delete it:"
     sent_message = await update.message.reply_text(text, reply_markup=reply_markup)
 
@@ -214,13 +224,15 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
     ltext_language = ltext_data["lang"]
 
     ltext_description = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["label"]
+    ltext_show_if_true_bot_setting_key = LOCALIZED_TEXTS_DESCRIPTORS[ltext_key]["show_if_true_bot_setting_key"]
     lang_emoji = LANGUAGES[ltext_language]['emoji']
 
     ltext = texts.get_localized_text(
         session,
         key=ltext_key,
         language=ltext_language,
-        create_if_missing=True
+        create_if_missing=True,
+        show_if_true_bot_setting_key=ltext_show_if_true_bot_setting_key
     )
     ltext.value = update.effective_message.text_html
     ltext.save_updated_by(update.effective_user)

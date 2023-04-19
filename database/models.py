@@ -444,18 +444,35 @@ class LocalizedText(Base):
     key = Column(String, primary_key=True)
     language = Column(String, primary_key=True, default=Language.EN)
     value = Column(String, default=None)
+
+    show_if_true_bot_setting_key = mapped_column(String, default=None)  # only show this setting if the parent setting is true
+
     updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
-    def __init__(self, key, language: str, value: Optional[str] = None, updated_by: Optional[int] = None):
+    show_if_true = relationship(
+        "BotSetting",
+        foreign_keys=show_if_true_bot_setting_key,
+        primaryjoin="LocalizedText.show_if_true_bot_setting_key == BotSetting.key",
+        remote_side="BotSetting.key",  # very important!!!
+        uselist=False
+    )
+
+    def __init__(self, key, language: str, value: Optional[str] = None, updated_by: Optional[int] = None, show_if_true_bot_setting_key: Optional[str] = None):
         self.key = key.lower()
         self.language = language
         self.value = value
         self.updated_by = updated_by
+        self.show_if_true_bot_setting_key = show_if_true_bot_setting_key
 
     def save_updated_by(self, telegram_user: TelegramUser):
         self.updated_by = telegram_user.id
         self.updated_on = utilities.now()
+
+    def show(self):
+        if not self.show_if_true:
+            return True
+        return self.show_if_true.value_bool
 
 
 class ValueType:

@@ -8,3 +8,5 @@ class Emoji:
     TRASH = "🚮"
     EARTH = "🌍"
     LINK = "🔗"
+    PEOPLE = "👥"
+    HELLO = "👋"
