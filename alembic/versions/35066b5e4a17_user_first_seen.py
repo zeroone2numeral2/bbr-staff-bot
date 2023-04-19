@@ -21,4 +21,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column('chats', 'first_seen')
+    op.drop_column('users', 'first_seen')
