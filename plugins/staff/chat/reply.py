@@ -114,7 +114,8 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     sent_message = await update.message.copy(
         chat_id=user_message.user_id,
-        reply_to_message_id=user_message.message_id
+        reply_to_message_id=user_message.message_id,
+        allow_sending_without_reply=True  # in case the user deleted their own message in the bot's chat
     )
 
     user_message.add_reply()
