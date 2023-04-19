@@ -40,11 +40,20 @@ def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> I
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_bot_settings_list_reply_markup() -> InlineKeyboardMarkup:
+def get_bot_settings_list_reply_markup(session: Session) -> InlineKeyboardMarkup:
     keyboard = []
-    for setting_key, sdata in BOT_SETTINGS_DEFAULTS.items():
-        button = InlineKeyboardButton(f"{sdata['emoji']} {sdata['label']}", callback_data=f"bs:actions:{setting_key}")
-        keyboard.append([button])
+    settings_dict = settings.get_settings_as_dict(session)
+    for setting_key, setting in settings_dict.items():
+        if setting_key not in BOT_SETTINGS_DEFAULTS:
+            logger.debug(f"ignoring setting <{setting_key}>")
+            continue
+
+        # print(setting.key, setting.show_if_true)
+        if setting.show():
+            emoji = BOT_SETTINGS_DEFAULTS[setting_key]["emoji"]
+            label = BOT_SETTINGS_DEFAULTS[setting_key]["label"]
+            button = InlineKeyboardButton(f"{emoji} {label}", callback_data=f"bs:actions:{setting_key}")
+            keyboard.append([button])
 
     return InlineKeyboardMarkup(keyboard)
 
@@ -62,7 +71,7 @@ def get_setting_text(setting: BotSetting):
 async def on_settings_config_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/settings {utilities.log(update)}")
 
-    reply_markup = get_bot_settings_list_reply_markup()
+    reply_markup = get_bot_settings_list_reply_markup(session)
     text = f"Select the setting to edit:"
     sent_message = await update.message.reply_text(text, reply_markup=reply_markup)
 
@@ -78,7 +87,7 @@ async def on_settings_config_command(update: Update, context: ContextTypes.DEFAU
 async def on_settings_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"settings list button {utilities.log(update)}")
 
-    reply_markup = get_bot_settings_list_reply_markup()
+    reply_markup = get_bot_settings_list_reply_markup(session)
     text = f"Select the setting to edit:"
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 

@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional, Union, Tuple, Iterable
 
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
-from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy.orm import relationship, mapped_column, backref
 from sqlalchemy.sql import func
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, ChatMemberOwner, ChatMemberRestricted, \
     ChatMemberLeft, ChatMemberBanned, ChatMemberMember
@@ -468,12 +468,24 @@ class BotSetting(Base):
 
     value_type = Column(String, default=None)
 
+    show_if_true_key = mapped_column(String, default=None)  # only show this setting if the parent setting is true
+
     updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
-    def __init__(self, key, value=None):
+    # figure out from this: https://docs.sqlalchemy.org/en/20/orm/join_conditions.html#creating-custom-foreign-conditions
+    show_if_true = relationship(
+        "BotSetting",
+        foreign_keys=show_if_true_key,
+        primaryjoin="BotSetting.show_if_true_key == BotSetting.key",
+        remote_side=key,  # very important!!!
+        uselist=False
+    )
+
+    def __init__(self, key, value=None, show_if_true_key=None):
         self.key = key.lower()
         self.update_value(value, raise_on_unknown_type=True)
+        self.show_if_true_key = show_if_true_key
 
     def update_value(self, value, raise_on_unknown_type=True):
         # auto-detect the setting type
@@ -534,6 +546,11 @@ class BotSetting(Base):
             return "null"
         else:
             return raw_value
+
+    def show(self):
+        if not self.show_if_true:
+            return True
+        return self.show_if_true.value_bool
 
     def __repr__(self):
         return f"BotSetting(key=\"{self.key}\", value_type=\"{self.value_type}\", value={self.value()})"

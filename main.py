@@ -66,7 +66,10 @@ async def post_init(application: Application) -> None:
     for bot_setting_key, bot_setting_data in BOT_SETTINGS_DEFAULTS.items():
         setting = session.query(BotSetting).filter(BotSetting.key == bot_setting_key).one_or_none()
         if not setting:
-            setting = BotSetting(bot_setting_key, bot_setting_data["default"])
+            setting = BotSetting(
+                bot_setting_key, bot_setting_data["default"],
+                show_if_true_key=bot_setting_data["show_if_true_key"]
+            )
             session.add(setting)
 
     session.commit()

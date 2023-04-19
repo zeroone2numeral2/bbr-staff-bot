@@ -87,37 +87,43 @@ BOT_SETTINGS_DEFAULTS = {
         default=True,
         label="\"sent to staff\" message",
         emoji=Emoji.ENVELOPE,
-        description="when an user sends a message, tell them it has been sent to the staff"
+        description="when an user sends a message, tell them it has been sent to the staff",
+        show_if_true_key=None
     ),
     BotSettingKey.BROADCAST_EDITS: dict(
         default=True,
         label="broadcast edits",
         emoji=Emoji.PENCIL,
-        description="edit staff messages sent to users when the original message in the staff chat is edited"
+        description="edit staff messages sent to users when the original message in the staff chat is edited",
+        show_if_true_key=None
     ),
     BotSettingKey.ALLOW_USER_REVOKE: dict(
         default=True,
         label="user messages revoke",
         emoji=Emoji.TRASH,
-        description="allow users to revoke the messages forwarded in the staff chat"
+        description="allow users to revoke the messages forwarded in the staff chat",
+        show_if_true_key=None
     ),
     BotSettingKey.CHAT_INVITE_LINK: dict(
         default=config.telegram.chat_invite_link,
         label="chat invite link",
         emoji=Emoji.LINK,
-        description="the chat's invite link"
+        description="the chat's invite link",
+        show_if_true_key=None
     ),
     BotSettingKey.FALLBACK_LANGAUGE: dict(
         default=Language.EN,
         label="fallback language",
         emoji=Emoji.EARTH,
-        description="the language that should be used if the user language's version of a text is not available"
+        description="the language that should be used if the user language's version of a text is not available",
+        show_if_true_key=None
     ),
     BotSettingKey.APPROVAL_MODE: dict(
         default=False,
         label="approval mode",
         emoji=Emoji.LENS,
-        description="approve/refuse users who are not in the users' group chat"
+        description="approve/refuse users who are not in the users' group chat",
+        show_if_true_key=None
     )
 }
 
