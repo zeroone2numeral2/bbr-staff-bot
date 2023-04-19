@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class User(Base):
     __tablename__ = 'users'
 
-    user_id = Column(Integer, primary_key=True)
+    user_id = mapped_column(Integer, primary_key=True)
     name = Column(String, default=None)
     first_name = Column(String, default=None)
     last_name = Column(String, default=None)
@@ -63,8 +63,10 @@ class User(Base):
     # we need to specify the 'primaryjoin' condition
     application_evaluated_by = relationship(
         "User",
-        foreign_keys=[application_evaluated_by_user_id],
-        primaryjoin="User.user_id == User.application_evaluated_by_user_id"
+        foreign_keys=application_evaluated_by_user_id,
+        primaryjoin="User.user_id == User.application_evaluated_by_user_id",
+        remote_side=user_id,
+        uselist=False
     )
 
     def __init__(self, telegram_user: TelegramUser, started: Optional[bool] = None):
