@@ -51,6 +51,10 @@ class User(Base):
     # application (admin)
     can_evaluate_applications = Column(Boolean, default=False)
 
+    # invited by
+    invited_by_user_id = mapped_column(Integer, default=None)
+    invited_on = Column(DateTime, default=None)
+
     last_message = Column(DateTime, default=None)  # to the staff's chat
     first_seen = Column(DateTime, default=utilities.now())  # private chat message/ChatMember update
 
@@ -65,6 +69,13 @@ class User(Base):
         "User",
         foreign_keys=application_evaluated_by_user_id,
         primaryjoin="User.user_id == User.application_evaluated_by_user_id",
+        remote_side=user_id,
+        uselist=False
+    )
+    invited_by = relationship(
+        "User",
+        foreign_keys=invited_by_user_id,
+        primaryjoin="User.user_id == User.invited_by_user_id",
         remote_side=user_id,
         uselist=False
     )
