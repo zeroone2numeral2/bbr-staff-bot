@@ -60,7 +60,8 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
     sent_message = await context.bot.send_message(
         chat_id=admin_message.user_message.user_id,
         text=re.sub(r"^\+\+\s*", "", update.effective_message.text_html),
-        reply_to_message_id=admin_message.reply_message_id  # reply to the admin message we previously sent in the chat
+        reply_to_message_id=admin_message.reply_message_id,  # reply to the admin message we previously sent in the chat
+        allow_sending_without_reply=True
     )
 
     admin_message = AdminMessage(
