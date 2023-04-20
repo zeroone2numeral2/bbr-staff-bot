@@ -2,13 +2,14 @@ import datetime
 import json
 import logging
 import logging.config
+import math
 import re
 from html import escape
 from re import Match
 from typing import Union
 from typing import List
 
-from telegram import User, Update, Chat
+from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton
 from telegram.error import BadRequest
 
 from config import config
@@ -90,6 +91,32 @@ def user_log(user: User):
 
 def chat_log(chat: Chat):
     return f"{chat.id} ({chat.title})"
+
+
+def list_to_keyboard(
+        keyboard: List[Union[InlineKeyboardButton, KeyboardButton]],
+        max_rows: int
+) -> List[List[Union[InlineKeyboardButton, KeyboardButton]]]:
+    num_rows = len(keyboard)
+    if num_rows <= max_rows:
+        return [[button] for button in keyboard]
+
+    if num_rows % max_rows == 0:
+        num_columns = int(num_rows / max_rows)
+    else:
+        num_columns = math.floor(num_rows / max_rows) + 1
+
+    # print(f"{num_rows} -> {num_columns}x{max_rows}")
+
+    new_keyboard = []
+    for row_num in range(max_rows):
+        start_index = row_num * num_columns
+        new_row = keyboard[start_index:start_index+num_columns]
+        new_keyboard.append(new_row)
+        # print(f"[{start_index}:{start_index + num_columns}] -> {new_row}")
+
+    # print(new_keyboard)
+    return new_keyboard
 
 
 def log_old(obj: Union[User, Chat]):
@@ -196,5 +223,7 @@ def convert_string_to_value(value):
 
 
 if __name__ == "__main__":
-    print(convert_string_to_value("29/02/32 10:59"))
+    # print(convert_string_to_value("29/02/32 10:59"))
+    test_keyboard = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
+    list_to_keyboard(test_keyboard, max_rows=4)
 
