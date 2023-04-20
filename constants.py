@@ -45,9 +45,13 @@ class BotSettingKey:
 class LocalizedTextKey:
     WELCOME = "welcome"
     SENT_TO_STAFF = "sent_to_staff"
-    USERNAME_NEEDED = "username_needed"
+    USERNAME_REQUIRED = "username_required"
     WELCOME_MEMBER = "welcome_member"
     WELCOME_NOT_MEMBER = "welcome_not_member"
+    SEND_OTHER_MEMBERS = "send_other_members"
+    SEND_SOCIAL = "send_social"
+    DESCRIBE_SELF = "describe_self"
+    APPLICATION_CANCELED = "application_canceled"
 
 
 LOCALIZED_TEXTS_DESCRIPTORS = {
@@ -63,7 +67,7 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         emoji=Emoji.PEOPLE,
         show_if_true_bot_setting_key=None
     ),
-    LocalizedTextKey.USERNAME_NEEDED: dict(
+    LocalizedTextKey.USERNAME_REQUIRED: dict(
         label="username necessario",
         explanation="Il messaggio che verrà inviato agli utenti se non hanno impostato uno username",
         emoji=Emoji.SIGN,
@@ -80,7 +84,31 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         explanation="Il messaggio che verrà inviato agli utenti quando avviano il bot, se fanno già parte del gruppo",
         emoji=Emoji.PEACE,
         show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
-    )
+    ),
+    LocalizedTextKey.SEND_OTHER_MEMBERS: dict(
+        label="richiesta altri membri",
+        explanation="Il messaggio con cui il bot chiederà di inviare i nomi/username degli utenti già nel gruppo",
+        emoji=Emoji.BELL,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.SEND_SOCIAL: dict(
+        label="richiesta social",
+        explanation="Il messaggio con cui il bot chiederà di inviare i link ai social",
+        emoji=Emoji.CAMERA,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.DESCRIBE_SELF: dict(
+        label="presentazione",
+        explanation="Il messaggio con cui il bot chiederà all'utente di presentarsi",
+        emoji=Emoji.ALIEN,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.APPLICATION_CANCELED: dict(
+        label="richiesta annullata",
+        explanation="Il messaggio che verrà inviato all'utente se annulla la procedura di richiesta",
+        emoji=Emoji.CANCEL,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
 }
 
 
@@ -155,6 +183,7 @@ class TempDataKey:
     FALLBACK_LANGUAGE = "default_language"
     LOCALIZED_TEXTS = "tmp_localized_text_data"
     BOT_SETTINGS = "tmp_bot_setting_data"
+    APPLICATION_DATA = "application_data"
     LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
     BOT_SETTINGS_LAST_MESSAGE_ID = "bot_settings_last_message_id"
 
@@ -164,6 +193,16 @@ COMMAND_PREFIXES = ["/", "!", "."]
 CACHE_TIME = 10
 
 CONVERSATION_TIMEOUT = 30 * 60
+
+
+class Timeout:
+    ONE_HOUR = 60 * 60
+    MINUTES_30 = 60 * 30
+    MINUTES_20 = 60 * 20
+    MINUTE_1 = 60
+    SECONDS_30 = 30
+    SECONDS_10 = 10
+
 
 ADMIN_HELP = """••• <b><u>Admin commands (private)</u></b>:
 •• Only the staff chat's administrators are allowed to use these commands
