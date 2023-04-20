@@ -45,7 +45,9 @@ class BotSettingKey:
 class LocalizedTextKey:
     WELCOME = "welcome"
     SENT_TO_STAFF = "sent_to_staff"
-    TEST_LTEXT = "test_ltext"
+    USERNAME_NEEDED = "username_needed"
+    WELCOME_MEMBER = "welcome_member"
+    WELCOME_NOT_MEMBER = "welcome_not_member"
 
 
 LOCALIZED_TEXTS_DESCRIPTORS = {
@@ -61,12 +63,24 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         emoji=Emoji.PEOPLE,
         show_if_true_bot_setting_key=None
     ),
-    LocalizedTextKey.TEST_LTEXT: dict(
-        label="test ltext",
-        explanation="this is a test ltext",
-        emoji=Emoji.WARNING,
+    LocalizedTextKey.USERNAME_NEEDED: dict(
+        label="username necessario",
+        explanation="Il messaggio che verrà inviato agli utenti se non hanno impostato uno username",
+        emoji=Emoji.SIGN,
         show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
     ),
+    LocalizedTextKey.WELCOME_MEMBER: dict(
+        label="benvenuto (membri)",
+        explanation="Il messaggio che verrà inviato agli utenti quando avviano il bot, se non fanno parte del gruppo",
+        emoji=Emoji.HANDSHAKE,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.WELCOME_NOT_MEMBER: dict(
+        label="benvenuto (non membri)",
+        explanation="Il messaggio che verrà inviato agli utenti quando avviano il bot, se fanno già parte del gruppo",
+        emoji=Emoji.PEACE,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    )
 }
 
 

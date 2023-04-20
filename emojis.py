@@ -10,3 +10,6 @@ class Emoji:
     LINK = "🔗"
     PEOPLE = "👥"
     HELLO = "👋"
+    SIGN = "✍️"
+    HANDSHAKE = "🤝"
+    PEACE = "🖖"
