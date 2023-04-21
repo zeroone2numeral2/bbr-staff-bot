@@ -45,23 +45,37 @@ class Re:
     BUTTONS = fr"^(?:{ButtonText.CANCEL}|{ButtonText.SKIP})$"
 
 
+class Command:
+    SEND = r"^/invia$"
+
+
 DESCRIBE_SELF_ALLOWED_MESSAGES_FILTER = (filters.TEXT & ~filters.Regex(Re.BUTTONS)) | filters.VOICE | filters.VIDEO_NOTE | filters.PHOTO | filters.VIDEO | filters.AUDIO
 
 
-def get_cancel_keyboard():
+def get_cancel_keyboard(input_field_placeholder: Optional[str] = None):
     keyboard = [
         [KeyboardButton(f"{ButtonText.SKIP}")],
         [KeyboardButton(f"{ButtonText.CANCEL}")]
     ]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    return ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True,
+        input_field_placeholder=input_field_placeholder,
+        is_persistent=True
+    )
 
 
-def get_done_keyboard():
+def get_done_keyboard(input_field_placeholder: Optional[str] = None):
     keyboard = [
         [KeyboardButton(f"{ButtonText.DONE}")],
         [KeyboardButton(f"{ButtonText.CANCEL}")]
     ]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    return ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True,
+        input_field_placeholder=input_field_placeholder,
+        is_persistent=True
+    )
 
 
 @decorators.catch_exception()
@@ -289,6 +303,15 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
 
     # mark as completed as soon as we receive one message
     context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.COMPLETED] = True
+
+    # this is *not needed* if ReplyKeyboardMarkup.is_persistent is True (see #29)
+    """
+    sent_message = await update.message.reply_text(
+        "Salvato! Se vuoi puoi inviare altri messaggi, oppure invia la tua richiesta quando sei convint*",
+        reply_markup=get_done_keyboard()
+    )
+    private_chat_messages.save(session, sent_message)
+    """
 
     return State.WAITING_DESCRIBE_SELF
 

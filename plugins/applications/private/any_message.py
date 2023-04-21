@@ -39,8 +39,19 @@ async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await context.bot.delete_message(update.effective_user.id, message.message_id)
         message.set_revoked(reason="/delhistory command")
 
+    await update.message.reply_photo("AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ")
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_fileid_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/fileid {utilities.log(update)}")
+
+    print(update.message.reply_to_message.photo[-1].file_id)
+
 
 HANDLERS = (
     (MessageHandler(filters.ChatType.PRIVATE & filters.UpdateType.MESSAGE, on_private_chat_message), Group.PREPROCESS),
     (CommandHandler(["delhistory"], on_test_delhistory), Group.NORMAL),
+    (CommandHandler(["fileid"], on_fileid_command), Group.NORMAL),
 )
