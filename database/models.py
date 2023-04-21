@@ -497,6 +497,11 @@ class BotSetting(Base):
     value_datetime = Column(DateTime, default=None)
     value_date = Column(Date, default=None)
 
+    # telegram medias
+    # value_media_file_id = Column(String, default=None)
+    # value_media_file_unique_id = Column(String, default=None)
+    # value_media_type = Column(String, default=None)
+
     value_type = Column(String, default=None)
 
     show_if_true_key = mapped_column(String, default=None)  # only show this setting if the parent setting is true
