@@ -529,7 +529,7 @@ class BotSetting(Base):
 
         # auto-detect the setting type
         if telegram_media:
-            self.value_bool = value
+            self.value_media_file_id = value
             self.value_type = ValueType.MEDIA
         elif isinstance(value, bool):
             self.value_bool = value

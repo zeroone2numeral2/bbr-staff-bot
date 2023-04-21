@@ -185,9 +185,9 @@ BOT_SETTINGS_DEFAULTS = {
     ),
     BotSettingKey.RABBIT_FILE: dict(
         default=None,
-        label="\"follow the rabbit\" file",
+        label="\"follow the rabbit\"",
         emoji=Emoji.RABBIT,
-        description="file da amndare agli utenti rifiutati",
+        description="file da mandare agli utenti rifiutati",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=True
     )
