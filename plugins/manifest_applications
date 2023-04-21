@@ -1,3 +1,5 @@
+applications.private.any_message
+
 # edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
 staff.chat.edits
 

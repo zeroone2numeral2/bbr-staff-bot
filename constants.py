@@ -186,6 +186,7 @@ class TempDataKey:
     APPLICATION_DATA = "application_data"
     LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
     BOT_SETTINGS_LAST_MESSAGE_ID = "bot_settings_last_message_id"
+    DB_INSTANCES = "_database_instances"
 
 
 COMMAND_PREFIXES = ["/", "!", "."]

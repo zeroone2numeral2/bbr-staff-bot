@@ -1,7 +1,7 @@
 import datetime
 import logging
 from functools import wraps
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func as sql_func
@@ -12,6 +12,7 @@ from telegram.error import TimedOut, BadRequest
 # noinspection PyPackageRequirements
 from telegram.ext import CallbackContext
 
+from constants import TempDataKey
 from database.base import get_session
 from database.models import User, Chat
 from database.queries import chats, chat_members, users
@@ -19,6 +20,12 @@ import utilities
 from config import config
 
 logger = logging.getLogger(__name__)
+
+
+class DatabaseInstanceKey:
+    USER = "db_user"
+    CHAT = "db_chat"
+    SESSION = "session"
 
 
 def action(chat_action):
@@ -64,7 +71,8 @@ def pass_session(
         pass_user=False,
         pass_chat=False,
         rollback_on_exception=False,
-        commit_on_exception=False
+        commit_on_exception=False,
+        pass_down_db_instances=False
 ):
     # 'rollback_on_exception' should be false by default because we might want to commit
     # what has been added (session.add()) to the session until the exception has been raised anyway.
@@ -76,14 +84,37 @@ def pass_session(
     def real_decorator(func):
         @wraps(func)
         async def wrapped(update: Update, context: CallbackContext, *args, **kwargs):
-            # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
-            session: Session = get_session()
+            session: Optional[Session] = None
+            user: Optional[User] = None
+            chat: Optional[Chat] = None
 
-            # user: [User, None] = None
-            # chat: [Chat, None] = None
+            if TempDataKey.DB_INSTANCES in context.chat_data:
+                logger.debug(f"chat_data contains {TempDataKey.DB_INSTANCES} (session will be recycled)")
+                if DatabaseInstanceKey.SESSION not in context.chat_data[TempDataKey.DB_INSTANCES]:
+                    raise ValueError("session object was not passed in chat_data")
+                session = context.chat_data[TempDataKey.DB_INSTANCES][DatabaseInstanceKey.SESSION]
+
+                if DatabaseInstanceKey.USER in context.chat_data[TempDataKey.DB_INSTANCES]:
+                    # user might be None
+                    user = context.chat_data[TempDataKey.DB_INSTANCES][DatabaseInstanceKey.USER]
+                if DatabaseInstanceKey.CHAT in context.chat_data[TempDataKey.DB_INSTANCES]:
+                    # chat might be None
+                    chat = context.chat_data[TempDataKey.DB_INSTANCES][DatabaseInstanceKey.CHAT]
+
+            # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
+            if not session:
+                logger.debug("fetching a new session")
+                session: Session = get_session()
+
+            if not pass_down_db_instances:
+                # if not asked to pass them down, we can just pop them
+                context.chat_data.pop(TempDataKey.DB_INSTANCES, None)
 
             if pass_user and update.effective_user:
-                user = users.get_safe(session, update.effective_user, commit=True)
+                if not user:
+                    # fetch it only if not passed in chat_data
+                    logger.debug("fetching User object")
+                    user = users.get_safe(session, update.effective_user, commit=True)
                 kwargs['user'] = user
 
             if pass_chat and update.effective_chat:
@@ -91,7 +122,10 @@ def pass_session(
                     # raise ValueError("'pass_chat' cannot be True for updates that come from private chats")
                     logger.warning("'pass_chat' shouldn't be True for updates that come from private chats")
                 else:
-                    chat = chats.get_safe(session, update.effective_chat, commit=True)
+                    if not chat:
+                        # fetch it only if not passed in chat_data
+                        logger.debug("fetching Chat object")
+                        chat = chats.get_safe(session, update.effective_chat, commit=True)
                     kwargs['chat'] = chat
 
             # noinspection PyBroadException
@@ -106,8 +140,20 @@ def pass_session(
                     logger.warning("exception while running an handler callback: committing")
                     session.commit()
 
+                # if an exception happens, we DO NOT pass session/db instances down
+                if not pass_down_db_instances:
+                    context.chat_data.pop(TempDataKey.DB_INSTANCES, None)
+
                 # raise the exception anyway, so outher decorators can catch it
                 raise
+
+            if pass_down_db_instances:
+                logger.debug(f"storing db instances in chat_data")
+                context.chat_data[TempDataKey.DB_INSTANCES] = {
+                    DatabaseInstanceKey.SESSION: session,
+                    DatabaseInstanceKey.USER: user,
+                    DatabaseInstanceKey.CHAT: chat
+                }
 
             logger.debug("committing session...")
             session.commit()

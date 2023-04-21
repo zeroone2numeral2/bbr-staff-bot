@@ -62,6 +62,7 @@ class User(Base):
     chat_members = relationship("ChatMember", back_populates="user")
     user_messages = relationship("UserMessage", back_populates="user")
     admin_messages = relationship("AdminMessage", back_populates="user")
+    private_chat_messages = relationship("PrivateChatMessage", back_populates="user")
 
     # no foreign key for columns added after the table creation (https://stackoverflow.com/q/30378233),
     # we need to specify the 'primaryjoin' condition
@@ -604,4 +605,29 @@ class CustomCommand(Base):
         self.trigger = trigger
         self.text = text
         self.updated_by = updated_by
+
+
+class PrivateChatMessage(Base):
+    __tablename__ = 'private_chat_messages'
+    __allow_unmapped__ = True
+
+    message_id = Column(Integer, primary_key=True)  # we receive this just in private chats and it's incremental, so we can use it as primary key
+    user_id = Column(Integer, ForeignKey('users.user_id'))
+    saved_on = Column(DateTime, default=utilities.now())
+    revoked = Column(Boolean, default=False)
+    revoked_on = Column(DateTime, default=None)
+    revoked_reason = Column(String, default=None)
+    message_json = Column(String, default=None)
+
+    user: User = relationship("User", back_populates="private_chat_messages")
+
+    def __init__(self, message_id: int, user_id: int, message_json: Optional[str] = None):
+        self.message_id = message_id
+        self.user_id = user_id
+        self.message_json = message_json
+
+    def revoke(self, reason=None):
+        self.revoked = True
+        self.revoked_on = utilities.now()
+        self.revoked_reason = reason
 
