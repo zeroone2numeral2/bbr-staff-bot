@@ -483,6 +483,7 @@ class ValueType:
     FLOAT = "float"
     DATETIME = "datetime"
     DATE = "date"
+    MEDIA = "media"
 
 
 class BotSetting(Base):
@@ -524,6 +525,8 @@ class BotSetting(Base):
         self.show_if_true_key = show_if_true_key
 
     def update_value(self, value, raise_on_unknown_type=True):
+        self.update_null()
+
         # auto-detect the setting type
         if isinstance(value, bool):
             self.value_bool = value
@@ -546,6 +549,15 @@ class BotSetting(Base):
         else:
             if raise_on_unknown_type:
                 raise ValueError(f"provided value of unrecognized type: {type(value)}")
+
+        self.updated_on = utilities.now()
+
+    def update_value_telegram_media(self, file_id: str, file_unique_id: str, media_type: str):
+        self.update_null()
+
+        self.value_media_file_id = file_id
+        self.value_media_file_unique_id = file_unique_id
+        self.value_media_type = media_type
 
         self.updated_on = utilities.now()
 
@@ -576,7 +588,9 @@ class BotSetting(Base):
 
     def value_pretty(self):
         raw_value = self.value()
-        if self.value_type == ValueType.BOOL:
+        if self.value_type == ValueType.MEDIA:
+            return f"media: {self.value_media_type}"
+        elif self.value_type == ValueType.BOOL:
             return str(raw_value).lower()
         elif raw_value is None:
             return "null"
