@@ -34,7 +34,8 @@ async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE,
     logger.info(f"/delhistory {utilities.log(update)}")
 
     # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
-    sent_message = await update.message.reply_photo("AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ")
+    rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
+    sent_message = await update.message.reply_photo(rabbit_file_id)
 
     messages: List[PrivateChatMessage] = private_chat_messages.get_messages(session, update.effective_user.id)
     for message in messages:
