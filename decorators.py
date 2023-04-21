@@ -101,7 +101,8 @@ def pass_session(
                     # chat might be None
                     chat = context.chat_data[TempDataKey.DB_INSTANCES][DatabaseInstanceKey.CHAT]
 
-            # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
+            # we fetch the session once per message at max, because the decorator is run only if a message passes filters
+            # if we are using different handlers groups, the session will be fetched once per  group unless passed down
             if not session:
                 logger.debug("fetching a new session")
                 session: Session = get_session()
