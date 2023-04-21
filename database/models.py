@@ -519,16 +519,19 @@ class BotSetting(Base):
         uselist=False
     )
 
-    def __init__(self, key, value=None, show_if_true_key=None):
+    def __init__(self, key, value=None, telegram_media=False, show_if_true_key=None):
         self.key = key.lower()
-        self.update_value(value, raise_on_unknown_type=True)
+        self.update_value(value, telegram_media=telegram_media, raise_on_unknown_type=True)
         self.show_if_true_key = show_if_true_key
 
-    def update_value(self, value, raise_on_unknown_type=True):
+    def update_value(self, value, telegram_media=False, raise_on_unknown_type=True):
         self.update_null()
 
         # auto-detect the setting type
-        if isinstance(value, bool):
+        if telegram_media:
+            self.value_bool = value
+            self.value_type = ValueType.MEDIA
+        elif isinstance(value, bool):
             self.value_bool = value
             self.value_type = ValueType.BOOL
         elif isinstance(value, int):
@@ -589,7 +592,10 @@ class BotSetting(Base):
     def value_pretty(self):
         raw_value = self.value()
         if self.value_type == ValueType.MEDIA:
-            return f"media: {self.value_media_type}"
+            if self.value_media_file_id:
+                return f"{self.value_media_type}: {self.value_media_file_id}"
+            else:
+                return f"{self.value_media_type}: null"
         elif self.value_type == ValueType.BOOL:
             return str(raw_value).lower()
         elif raw_value is None:

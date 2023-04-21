@@ -19,3 +19,4 @@ class Emoji:
     CANCEL = "❌"
     DONE = "✅"
     FORWARD = "⏩"
+    RABBIT = "🐰"

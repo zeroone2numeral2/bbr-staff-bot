@@ -40,6 +40,7 @@ class BotSettingKey:
     FALLBACK_LANGAUGE = "fallback_language"
     CHAT_INVITE_LINK = "chat_invite_link"
     APPROVAL_MODE = "approval_mode"
+    RABBIT_FILE = "rabbit_file"
 
 
 class LocalizedTextKey:
@@ -181,6 +182,14 @@ BOT_SETTINGS_DEFAULTS = {
         description="approve/refuse users who are not in the users' group chat",
         show_if_true_key=None,
         telegram_media=False
+    ),
+    BotSettingKey.RABBIT_FILE: dict(
+        default=None,
+        label="\"follow the rabbit\" file",
+        emoji=Emoji.RABBIT,
+        description="file da amndare agli utenti rifiutati",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=True
     )
 }
 

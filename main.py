@@ -68,6 +68,7 @@ async def post_init(application: Application) -> None:
         if not setting:
             setting = BotSetting(
                 bot_setting_key, bot_setting_data["default"],
+                telegram_media=bot_setting_data["telegram_media"],
                 show_if_true_key=bot_setting_data["show_if_true_key"]
             )
             session.add(setting)
