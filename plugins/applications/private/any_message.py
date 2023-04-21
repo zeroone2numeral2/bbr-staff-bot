@@ -33,13 +33,16 @@ async def on_private_chat_message(update: Update, context: ContextTypes.DEFAULT_
 async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/delhistory {utilities.log(update)}")
 
+    # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
+    sent_message = await update.message.reply_photo("AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ")
+
     messages: List[PrivateChatMessage] = private_chat_messages.get_messages(session, update.effective_user.id)
     for message in messages:
         logger.debug(f"deleting message {message.message_id} from chat {update.effective_user.id}")
         await context.bot.delete_message(update.effective_user.id, message.message_id)
         message.set_revoked(reason="/delhistory command")
 
-    await update.message.reply_photo("AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ")
+    private_chat_messages.save(session, sent_message)
 
 
 @decorators.catch_exception()
