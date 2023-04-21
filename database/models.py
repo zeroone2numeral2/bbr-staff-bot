@@ -613,6 +613,7 @@ class PrivateChatMessage(Base):
 
     message_id = Column(Integer, primary_key=True)  # we receive this just in private chats and it's incremental, so we can use it as primary key
     user_id = Column(Integer, ForeignKey('users.user_id'))
+    from_self = Column(Boolean, default=False)
     saved_on = Column(DateTime, default=utilities.now())
     revoked = Column(Boolean, default=False)
     revoked_on = Column(DateTime, default=None)
@@ -621,9 +622,10 @@ class PrivateChatMessage(Base):
 
     user: User = relationship("User", back_populates="private_chat_messages")
 
-    def __init__(self, message_id: int, user_id: int, message_json: Optional[str] = None):
+    def __init__(self, message_id: int, user_id: int, from_self: Optional[bool] = False, message_json: Optional[str] = None):
         self.message_id = message_id
         self.user_id = user_id
+        self.from_self = from_self
         self.message_json = message_json
 
     def revoke(self, reason=None):

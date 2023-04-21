@@ -15,7 +15,7 @@ from telegram.ext import CallbackContext
 from constants import TempDataKey
 from database.base import get_session
 from database.models import User, Chat
-from database.queries import chats, chat_members, users
+from database.queries import chats, chat_members, users, private_chat_messages
 import utilities
 from config import config
 
@@ -55,9 +55,14 @@ def catch_exception(silent=False, skip_not_modified_exception=False):
                 if not silent:
                     text = 'An error occurred while processing the message: <code>{}</code>'.format(utilities.escape_html(str(e)))
                     if update.callback_query:
-                        await update.callback_query.message.reply_html(text, disable_web_page_preview=True)
+                        sent_message = await update.callback_query.message.reply_html(text)
                     else:
-                        await update.effective_message.reply_html(text, disable_web_page_preview=True)
+                        sent_message = await update.effective_message.reply_html(text)
+
+                    try:
+                        private_chat_messages.save(get_session(), sent_message, commit=True)
+                    except Exception as e:
+                        logger.warning(f"error while saving \"an error occurred\" message: {e}")
 
                 # return ConversationHandler.END
                 return

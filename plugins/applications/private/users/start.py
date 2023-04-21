@@ -9,7 +9,7 @@ from telegram.ext import CommandHandler
 from telegram.ext import filters
 
 from database.models import User, ChatMember as DbChatMember
-from database.queries import settings, texts, chat_members, chats
+from database.queries import settings, texts, chat_members, chats, private_chat_messages
 import decorators
 import utilities
 from emojis import Emoji
@@ -89,7 +89,8 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
             fallback_language=fallback_language
         )
         text = replace_placeholders(welcome_text_member.value, update.effective_user, session)
-        await update.message.reply_text(text)
+        sent_message = await update.message.reply_text(text)
+        private_chat_messages.save(session, sent_message)
         user.set_started()
         return ConversationHandler.END
 
@@ -110,7 +111,8 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     )
 
     text = replace_placeholders(welcome_text_not_member.value, update.effective_user, session)
-    await update.message.reply_text(text)
+    sent_message = await update.message.reply_text(text)
+    private_chat_messages.save(session, sent_message)
 
     send_other_members_text = texts.get_localized_text_with_fallback(
         session,
@@ -119,7 +121,8 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         fallback_language=fallback_language
     )
     text = replace_placeholders(send_other_members_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     user.set_started()
 
@@ -140,7 +143,8 @@ async def on_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, session:
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(cancel_text.value, update.effective_user, session)
-    await update.effective_message.reply_text(text, reply_markup=ReplyKeyboardRemove())
+    sent_message = await update.effective_message.reply_text(text, reply_markup=ReplyKeyboardRemove())
+    private_chat_messages.save(session, sent_message)
 
     return ConversationHandler.END
 
@@ -157,7 +161,8 @@ async def on_waiting_other_members_unexpected_message_received(update: Update, c
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(send_other_members_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     return State.WAITING_OTHER_MEMBERS
 
@@ -174,7 +179,8 @@ async def on_waiting_social_unexpected_message_received(update: Update, context:
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
 
@@ -191,7 +197,8 @@ async def on_waiting_description_unexpected_message_received(update: Update, con
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
 
@@ -210,7 +217,8 @@ async def on_waiting_other_members_received(update: Update, context: ContextType
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
 
@@ -227,7 +235,8 @@ async def on_waiting_other_members_skip(update: Update, context: ContextTypes.DE
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
 
@@ -244,7 +253,8 @@ async def on_waiting_socials_skip(update: Update, context: ContextTypes.DEFAULT_
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(describe_self_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_done_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
 
@@ -263,7 +273,8 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
         fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     )
     text = replace_placeholders(send_description_text.value, update.effective_user, session)
-    await update.message.reply_text(text, reply_markup=get_done_keyboard())
+    sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
+    private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
 
@@ -307,9 +318,11 @@ async def on_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session
 
     if application_data[ApplicationDataKey.COMPLETED]:
         # send to staff
-        await update.message.reply_text("timeout: sent staff", reply_markup=ReplyKeyboardRemove())
+        sent_message = await update.message.reply_text("timeout: sent staff", reply_markup=ReplyKeyboardRemove())
     else:
-        await update.message.reply_text("timeout: canceled", reply_markup=ReplyKeyboardRemove())
+        sent_message = await update.message.reply_text("timeout: canceled", reply_markup=ReplyKeyboardRemove())
+
+    private_chat_messages.save(session, sent_message)
 
     return ConversationHandler.END
 

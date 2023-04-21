@@ -25,7 +25,12 @@ def save(session: Session, message: Union[Message, Update], commit: Optional[boo
     if message.chat.id < 0:
         raise ValueError("cannot save PrivateChatMessage for non-private chat")
 
-    private_chat_message = PrivateChatMessage(message.message_id, message.chat.id, message.to_json())
+    private_chat_message = PrivateChatMessage(
+        message_id=message.message_id,
+        user_id=message.chat.id,
+        from_self=message.from_user.is_bot,
+        message_json=message.to_json()
+    )
     session.add(private_chat_message)
     if commit:
         session.commit()
