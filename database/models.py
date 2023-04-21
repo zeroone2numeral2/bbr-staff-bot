@@ -498,9 +498,9 @@ class BotSetting(Base):
     value_date = Column(Date, default=None)
 
     # telegram medias
-    # value_media_file_id = Column(String, default=None)
-    # value_media_file_unique_id = Column(String, default=None)
-    # value_media_type = Column(String, default=None)
+    value_media_file_id = Column(String, default=None)
+    value_media_file_unique_id = Column(String, default=None)
+    value_media_type = Column(String, default=None)
 
     value_type = Column(String, default=None)
 
