@@ -628,7 +628,7 @@ class PrivateChatMessage(Base):
         self.from_self = from_self
         self.message_json = message_json
 
-    def revoke(self, reason=None):
+    def set_revoked(self, reason=None):
         self.revoked = True
         self.revoked_on = utilities.now()
         self.revoked_reason = reason

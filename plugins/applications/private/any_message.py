@@ -37,7 +37,7 @@ async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE,
     for message in messages:
         logger.debug(f"deleting message {message.message_id} from chat {update.effective_user.id}")
         await context.bot.delete_message(update.effective_user.id, message.message_id)
-        message.revoke("/delhistory command")
+        message.set_revoked(reason="/delhistory command")
 
 
 HANDLERS = (
