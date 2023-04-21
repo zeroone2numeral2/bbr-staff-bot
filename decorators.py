@@ -59,10 +59,12 @@ def catch_exception(silent=False, skip_not_modified_exception=False):
                     else:
                         sent_message = await update.effective_message.reply_html(text)
 
-                    try:
-                        private_chat_messages.save(get_session(), sent_message, commit=True)
-                    except Exception as e:
-                        logger.warning(f"error while saving \"an error occurred\" message: {e}")
+                    if sent_message.chat.id > 0:
+                        # only save if we sent the message in a private chat
+                        try:
+                            private_chat_messages.save(get_session(), sent_message, commit=True)
+                        except Exception as e:
+                            logger.warning(f"error while saving \"an error occurred\" message: {e}")
 
                 # return ConversationHandler.END
                 return
