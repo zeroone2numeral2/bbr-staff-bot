@@ -13,7 +13,7 @@ def get_messages(session: Session, user_id: int):
     statement = select(PrivateChatMessage).where(
         PrivateChatMessage.user_id == user_id,
         PrivateChatMessage.revoked == false()
-    )
+    ).order_by(PrivateChatMessage.message_id)
 
     return session.scalars(statement)
 
