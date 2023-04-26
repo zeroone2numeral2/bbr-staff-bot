@@ -16,3 +16,12 @@ broadcast_message_edits = true
 
 [handlers]
 manifest = "manifest_feedback"
+
+[events]
+chat_id = 0
+
+[webcal]
+api_key = ""
+legal_subcal_name = ""
+free_subcal_name = ""
+other_subcal_name = ""
