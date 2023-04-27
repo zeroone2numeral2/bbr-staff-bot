@@ -1,6 +1,8 @@
 # this is executed in its own pre-process handlers group so technically could be placed anywhere
 applications.private.any_message
 
+events.message
+
 # edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
 staff.chat.edits
 
@@ -30,4 +32,4 @@ chat_members.update
 
 # debug.callback_query
 # debug.chat_member
-# debug.chatid
+debug.chatid

@@ -123,7 +123,7 @@ def main():
     logger.info(f"polling for updates...")
     app.run_polling(
         drop_pending_updates=False,
-        allowed_updates=[Update.MESSAGE, Update.EDITED_MESSAGE, Update.CALLBACK_QUERY, Update.CHAT_MEMBER, Update.MY_CHAT_MEMBER]
+        allowed_updates=[Update.MESSAGE, Update.CHANNEL_POST, Update.EDITED_CHANNEL_POST, Update.EDITED_MESSAGE, Update.CALLBACK_QUERY, Update.CHAT_MEMBER, Update.MY_CHAT_MEMBER]
     )
 
 

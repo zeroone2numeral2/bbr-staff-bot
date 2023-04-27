@@ -668,11 +668,16 @@ class Event(Base):
 
     event_id = Column(Integer, default=None)
     event_title = Column(String, default=None)
-    start_date = Column(Date, default=None)
-    end_date = Column(Date, default=None)
+    start_day = Column(Integer, default=None)
+    start_month = Column(Integer, default=None)
+    start_year = Column(Integer, default=None)
+    end_day = Column(Integer, default=None)
+    end_month = Column(Integer, default=None)
+    end_year = Column(Integer, default=None)
     region = Column(String, default=None)
     event_type = Column(String, default=None)
     canceled = Column(Boolean, default=False)
+    parsing_errors = Column(String, default=None)
 
     message_text = Column(String, default=None)
     message_date = Column(DateTime, default=None)
@@ -690,7 +695,23 @@ class Event(Base):
         self.message_id = message_id
         self.chat_id = chat_id
 
+    def updated(self):
+        self.updated_on = utilities.now()
+
     def message_link(self):
         chat_id_link = str(self.chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id_link}/{self.message_id}"
+
+    def dates_str(self):
+        start_date = None
+        if self.start_month and self.start_year:
+            start_day = f"{self.start_day:02}" if self.start_day else "??"
+            start_date = f"{start_day}.{self.start_month:02}.{self.start_year}"
+
+        end_date = None
+        if self.end_month and self.end_year:
+            end_day = f"{self.end_day:02}" if self.end_day else "??"
+            end_date = f"{end_day}.{self.end_month:02}.{self.end_year}"
+
+        return start_date, end_date
 

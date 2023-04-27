@@ -13,7 +13,7 @@ from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton
 from telegram.error import BadRequest
 
 from config import config
-from constants import COMMAND_PREFIXES, Language
+from constants import COMMAND_PREFIXES, Language, Regex
 
 logger = logging.getLogger(__name__)
 
@@ -206,15 +206,13 @@ def convert_string_to_value(value):
         # https://stackoverflow.com/a/736050
         return float(value)
 
-    datetime_regex = r"(?P<date>(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?)\s+((?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2}))?)"
-    match = re.match(datetime_regex, value, re.I)
+    match = re.match(Regex.DATETIME, value, re.I)
     if match:
         day, month, year = date_from_match(match)
         second, minute, hour = time_from_match(match)
         return datetime.datetime(day=day, month=month, year=year, hour=hour, minute=minute, second=second)
 
-    date_regex = r"(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?"
-    match = re.match(date_regex, value, re.I)
+    match = re.match(Regex.DATE, value, re.I)
     if match:
         day, month, year = date_from_match(match)
         return datetime.date(day=day, month=month, year=year)
