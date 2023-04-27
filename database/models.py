@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 from typing import List, Optional, Union, Tuple, Iterable
 
@@ -10,6 +11,7 @@ from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User a
 
 import utilities
 from constants import Language
+from emojis import Emoji
 from .base import Base, engine
 
 logger = logging.getLogger(__name__)
@@ -659,6 +661,30 @@ class PrivateChatMessage(Base):
         self.revoked_reason = reason
 
 
+# https://t.me/c/1289562489/569
+class EventTypeHashtag:
+    FREE = "#freeparty"
+    LEGAL = "#legalparty"
+    MANIFESTAZIONE = "#manifestazione"
+    STREET_PARADE = "#streetparade"
+    PRIVATE_PARTY = "#privateparty"
+
+
+class EventType:
+    FREE = "free"
+    LEGAL = "legal"
+    OTHER = "other"
+
+
+EVENT_TYPE = {
+    EventTypeHashtag.FREE: EventType.FREE,
+    EventTypeHashtag.LEGAL: EventType.LEGAL,
+    EventTypeHashtag.MANIFESTAZIONE: EventType.OTHER,
+    EventTypeHashtag.STREET_PARADE: EventType.OTHER,
+    EventTypeHashtag.PRIVATE_PARTY: EventType.OTHER,
+}
+
+
 class Event(Base):
     __tablename__ = 'events'
     __allow_unmapped__ = True
@@ -687,31 +713,101 @@ class Event(Base):
     media_file_id = Column(String, default=None)
     media_file_unique_id = Column(String, default=None)
 
+    hashtags = Column(String, default=None)  # hashtag entities as json string
+
     created_on = Column(DateTime, default=utilities.now())
     updated_on = Column(DateTime, default=utilities.now())
     message_json = Column(String, default=None)
 
-    def __init__(self, message_id: int, chat_id: int):
+    def __init__(self, chat_id: int, message_id: int):
         self.message_id = message_id
         self.chat_id = chat_id
 
     def updated(self):
         self.updated_on = utilities.now()
 
+    def is_valid(self):
+        # we basically save any channel post that has a text/caption as an Event
+        # an event is valid only if it has a title, a start month/year, and at least one hashtag
+        return self.event_title and self.start_month and self.start_year and self.get_hashtags()
+
     def message_link(self):
         chat_id_link = str(self.chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id_link}/{self.message_id}"
 
-    def dates_str(self):
+    def icon(self):
+        if not self.event_type:
+            return Emoji.QUESTION
+        if self.event_type == EventType.FREE:
+            return Emoji.PIRATE
+        if self.event_type == EventType.LEGAL:
+            return Emoji.DISCO
+        if self.event_type == EventType.OTHER:
+            return Emoji.PIN_2
+
+    def start_date_as_str(self):
         start_date = None
         if self.start_month and self.start_year:
             start_day = f"{self.start_day:02}" if self.start_day else "??"
             start_date = f"{start_day}.{self.start_month:02}.{self.start_year}"
 
+        return start_date
+
+    def start_date_as_date(self, fill_missing_day: int = 0):
+        if not self.start_month or not self.start_year:
+            return
+        if not self.start_day and not fill_missing_day:
+            return
+
+        start_day = self.start_day if self.start_day else fill_missing_day
+        start_date = datetime.date(self.start_year, self.start_month, start_day)
+
+        return start_date
+
+    def end_date_as_date(self, fill_missing_day: int = 0):
+        if not self.end_month or not self.end_year:
+            return
+        if not self.end_day and not fill_missing_day:
+            return
+
+        end_day = self.end_ay if self.end_day else fill_missing_day
+        end_date = datetime.date(self.end_year, self.end_month, end_day)
+
+        return end_date
+
+    def end_date_as_str(self):
         end_date = None
         if self.end_month and self.end_year:
             end_day = f"{self.end_day:02}" if self.end_day else "??"
             end_date = f"{end_day}.{self.end_month:02}.{self.end_year}"
 
-        return start_date, end_date
+        return end_date
+
+    def dates_as_str(self):
+        return self.start_date_as_str(), self.end_date_as_str()
+
+    def dates_as_date(self, fill_missing_day: int = 0):
+        return self.start_date_as_date(fill_missing_day), self.end_date_as_date(fill_missing_day)
+
+    def pretty_date(self) -> str:
+        if not self.start_month or not self.start_year:
+            return "??.??.????"
+
+        start_day = self.start_day or "??"
+        if self.end_month and self.end_year:
+            end_day = self.end_day or "??"
+            return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}"
+
+        return f"{start_day:02}.{self.start_month:02}.{self.start_year}"
+
+    def save_hashtags(self, hashtags_list: List):
+        self.hashtags = json.dumps(hashtags_list)
+
+    def get_hashtags(self) -> List:
+        if not self.hashtags:
+            return []
+        return json.loads(self.hashtags)
+
+    def __repr__(self):
+        return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
 

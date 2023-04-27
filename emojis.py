@@ -20,3 +20,12 @@ class Emoji:
     DONE = "✅"
     FORWARD = "⏩"
     RABBIT = "🐰"
+    QUESTION = "❓"
+    PIRATE = "🏴‍☠️"
+    DISCO = "🪩"
+    PIN_2 = "📌"
+
+
+class Flag:
+    ITALY = "🇮🇹"
+    FRANCE = "🇫🇷"

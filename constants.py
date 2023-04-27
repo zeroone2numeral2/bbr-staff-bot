@@ -1,4 +1,4 @@
-from emojis import Emoji
+from emojis import Emoji, Flag
 from config import config
 
 
@@ -260,7 +260,75 @@ class Group:
 
 
 class Regex:
+    FIRST_LINE = r"^(.+)$"
     DATETIME = r"(?P<date>(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?)\s+((?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2}))?)"
     DATE = r"(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?"
     # https://regex101.com/r/MnrWDz/6
     EVENT_DATE = r"(?P<start_day>\d{1,2}|\?+)(?:-(?P<end_day>\d{1,2}|\?+))?[/.](?P<month>\d{1,2})(?:[/.](?P<year>\d{2,4}))?"
+
+
+class RegionHashtag:
+    NORD_ITALY = "#norditaly"
+    CENTER_ITALY = "#centeritaly"
+    SUD_ITALY = "#suditaly"
+    SARDEGNA = "#sardegna"
+    SICILIA = "#sicilia"
+    FRANCE = "#france"
+    GERMANY = "#germany"
+    SWISS = "#swiss"
+    BELGIUM = "#belgium"
+    SPAIN = "#spain"
+    NETHERLANDS = "#netherlands"
+    PORTUGAL = "#portugal"
+    AUSTRIA = "#austria"
+    ENGLAND = "#england"
+    UK = "#uk"
+    SCOTLAND = "#scotland"
+    CZECHIA = "#czechia"
+    CZ = "#czechia"
+    POLAND = "#poland"
+    SLOVENIA = "#slovenia"
+    SLOVAKIA = "#slovakia"
+    ROMANIA = "#romania"
+    CROATIA = "#croatia"
+    ALBANIA = "#albania"
+    HUNGARY = "#hungary"
+    UNGARIA = "#ungaria"
+    BULGARIA = "#bulgaria"
+    GREECE = "#greece"
+    GRECIA = "#grecia"
+    DENMARK = "#denmark"
+    MOROCCO = "#morocco"
+    MAROCCO = "#marocco"
+    SWEDEN = "#sweden"
+    SVEZIA = "#svezia"
+    NORWAY = "#norway"
+    COLOMBIA = "#colombia"
+    FINLAND = "#finland"
+    CHILE = "#chile"
+    CILE = "#cile"
+
+    ITALIA = "#italia"
+    ITALY = "#italy"
+    EUROPE = "#europe"
+    EUROPA = "#europa"
+    AROUND_THE_WORLD = "#aroundtheworld"
+
+
+class RegionName:
+    NORD_ITALIA = "Nord Italia"
+    CENTRO_ITALIA = "Centro Italia"
+    SUD_ITALIA = "Sud Italia"
+    SARDEGNA = "Sardegna"
+    SICILIA = "Sicilia"
+    FRANCIA = "Francia"
+
+
+REGIONS_DATA = {
+    RegionName.NORD_ITALIA: dict(hashtags=[RegionHashtag.NORD_ITALY], emoji=Flag.ITALY),
+    RegionName.CENTRO_ITALIA: dict(hashtags=[RegionHashtag.CENTER_ITALY], emoji=Flag.ITALY),
+    RegionName.SUD_ITALIA: dict(hashtags=[RegionHashtag.SUD_ITALY], emoji=Flag.ITALY),
+    RegionName.SARDEGNA: dict(hashtags=[RegionHashtag.SARDEGNA], emoji=Flag.ITALY),
+    RegionName.SICILIA: dict(hashtags=[RegionHashtag.SICILIA], emoji=Flag.ITALY),
+    RegionName.FRANCIA: dict(hashtags=[RegionHashtag.FRANCE], emoji=Flag.FRANCE),
+}

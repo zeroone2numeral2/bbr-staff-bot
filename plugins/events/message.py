@@ -2,25 +2,23 @@ import datetime
 import logging
 import re
 from re import Match
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from sqlalchemy.orm import Session
-from telegram import Update, Message
-from telegram.ext import ContextTypes, filters, MessageHandler
+from telegram import Update, Message, MessageEntity
+from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler
 
-from database.models import Chat, Event
+from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User
 from database.queries import settings, events
 import decorators
 import utilities
-from constants import BotSettingKey, Group, Regex
+from constants import BotSettingKey, Group, Regex, REGIONS_DATA
 from config import config
 
 logger = logging.getLogger(__name__)
 
 
 events_chat_filter = filters.Chat(config.events.chat_id) & (filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST)
-
-FIRST_LINE_REGEX = r"^(.+)$"
 
 
 def check_day(day: int, month: int, year: int):
@@ -89,9 +87,8 @@ def add_event_message_metadata(message: Message, event: Event):
     event.message_json = message.to_json()
 
     event.media_group_id = message.media_group_id
-    if message.effective_attachment and (
-            message.effective_attachment.file_unique_id or isinstance(message.effective_attachment, list)):
-        if isinstance(message.effective_attachment, list):
+    if message.effective_attachment and (isinstance(message.effective_attachment, tuple) or message.effective_attachment.file_unique_id):
+        if isinstance(message.effective_attachment, tuple):
             event.media_file_id = message.effective_attachment[-1].file_id
             event.media_file_unique_id = message.effective_attachment[-1].file_unique_id
         else:
@@ -106,7 +103,24 @@ def parse_event(message: Message, event: Event):
         logger.info("message does not contain any text")
         return
 
-    title_match = re.search(FIRST_LINE_REGEX, message_text, re.M)
+    hashtags_dict = message.parse_entities(MessageEntity.HASHTAG) if message.text else message.parse_caption_entities(MessageEntity.HASHTAG)
+    hashtags_list = [v.lower() for v in hashtags_dict.values()]
+    event.save_hashtags(hashtags_list)
+    for hashtag, event_type in EVENT_TYPE.items():
+        if hashtag in hashtags_list:
+            event.event_type = event_type
+
+    if "#annullata" in hashtags_list or "#annullato" in hashtags_list:
+        event.canceled = True
+
+    for region_name, region_data in REGIONS_DATA.items():
+        for region_hashtag in region_data["hashtags"]:
+            if region_hashtag in hashtags_list:
+                event.region = region_name
+                # return after the first match
+                break
+
+    title_match = re.search(Regex.FIRST_LINE, message_text, re.M)
     if title_match:
         event.event_title = title_match.group(1)
     else:
@@ -140,11 +154,39 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     add_event_message_metadata(update.effective_message, event)
     parse_event(update.effective_message, event)
 
+    logger.info(f"parsed event: {event}")
+
     session.commit()
 
-    await update.effective_message.reply_text(f"{event.dates_str()}")
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/events {utilities.log(update)}")
+
+    events_list: List[Event] = events.get_events(session, config.events.chat_id)
+    text_lines = []
+    for i, event in enumerate(events_list):
+        if not event.is_valid():
+            logger.info(f"skipping invalid event: {event}")
+            continue
+
+        region_icon = ""
+        if event.region and event.region in REGIONS_DATA:
+            region_icon = REGIONS_DATA[event.region]["emoji"]
+
+        title_escaped = utilities.escape_html(event.event_title)
+        text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) <a href=\"{event.message_link()}\">--fly/info</a>"
+        text_lines.append(text_line)
+
+        if i > 49:
+            # max 100 entities per message
+            break
+
+    await update.message.reply_text("\n".join(text_lines))
 
 
 HANDLERS = (
     (MessageHandler(events_chat_filter, on_event_message), Group.PREPROCESS),
+    (CommandHandler("events", on_events_command), Group.NORMAL),
 )
