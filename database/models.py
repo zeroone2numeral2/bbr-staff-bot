@@ -658,3 +658,39 @@ class PrivateChatMessage(Base):
         self.revoked_on = utilities.now()
         self.revoked_reason = reason
 
+
+class Event(Base):
+    __tablename__ = 'events'
+    __allow_unmapped__ = True
+
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    message_id = Column(Integer, primary_key=True)
+
+    event_id = Column(Integer, default=None)
+    event_title = Column(String, default=None)
+    start_date = Column(Date, default=None)
+    end_date = Column(Date, default=None)
+    region = Column(String, default=None)
+    event_type = Column(String, default=None)
+    canceled = Column(Boolean, default=False)
+
+    message_text = Column(String, default=None)
+    message_date = Column(DateTime, default=None)
+    message_edit_date = Column(DateTime, default=None)
+
+    media_group_id = Column(Integer, default=None)
+    media_file_id = Column(String, default=None)
+    media_file_unique_id = Column(String, default=None)
+
+    created_on = Column(DateTime, default=utilities.now())
+    updated_on = Column(DateTime, default=utilities.now())
+    message_json = Column(String, default=None)
+
+    def __init__(self, message_id: int, chat_id: int):
+        self.message_id = message_id
+        self.chat_id = chat_id
+
+    def message_link(self):
+        chat_id_link = str(self.chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id_link}/{self.message_id}"
+
