@@ -268,6 +268,9 @@ class Regex:
 
 
 class RegionHashtag:
+    ALBANIA = "#albania"
+    ALBANY = "#albany"
+    ARGENTINA = "#argentina"
     NORD_ITALY = "#norditaly"
     CENTER_ITALY = "#centeritaly"
     SUD_ITALY = "#suditaly"
@@ -275,39 +278,47 @@ class RegionHashtag:
     SICILIA = "#sicilia"
     FRANCE = "#france"
     GERMANY = "#germany"
+    GERMANIA = "#germania"
     SWISS = "#swiss"
     BELGIUM = "#belgium"
+    BELGIO = "#belgio"
     SPAIN = "#spain"
+    SPAGNA = "#spagna"
     NETHERLANDS = "#netherlands"
     PORTUGAL = "#portugal"
+    PORTOGALLO = "#portogallo"
     AUSTRIA = "#austria"
     ENGLAND = "#england"
     UK = "#uk"
     SCOTLAND = "#scotland"
+    SCOZIA = "#scozia"
     CZECHIA = "#czechia"
     CZ = "#czechia"
     POLAND = "#poland"
+    POLONIA = "#polonia"
     SLOVENIA = "#slovenia"
     SLOVAKIA = "#slovakia"
     ROMANIA = "#romania"
     CROATIA = "#croatia"
-    ALBANIA = "#albania"
+    CROAZIA = "#croazia"
     HUNGARY = "#hungary"
     UNGARIA = "#ungaria"
     BULGARIA = "#bulgaria"
     GREECE = "#greece"
     GRECIA = "#grecia"
     DENMARK = "#denmark"
+    DANIMARCA= "#danimarca"
     MOROCCO = "#morocco"
     MAROCCO = "#marocco"
     SWEDEN = "#sweden"
     SVEZIA = "#svezia"
     NORWAY = "#norway"
+    NORVEGIA = "#norvegia"
     COLOMBIA = "#colombia"
     FINLAND = "#finland"
+    FINLANDIA = "#finlandia"
     CHILE = "#chile"
     CILE = "#cile"
-
     ITALIA = "#italia"
     ITALY = "#italy"
     EUROPE = "#europe"
@@ -316,19 +327,80 @@ class RegionHashtag:
 
 
 class RegionName:
-    NORD_ITALIA = "Nord Italia"
+    ALBANIA = "Albania"
+    ARGENTINA = "Argentina"
+    AUSTRIA = "Austria"
+    BELGIO = "Belgio"
+    BULGARIA = "Bulgaria"
     CENTRO_ITALIA = "Centro Italia"
-    SUD_ITALIA = "Sud Italia"
-    SARDEGNA = "Sardegna"
-    SICILIA = "Sicilia"
+    CILE = "Cile"
+    COLOMBIA = "Colombia"
+    CROAZIA = "Croazia"
+    DANIMARCA = "Danimarca"
+    EUROPA = "Europa"
+    FINLANDIA = "Finlandia"
     FRANCIA = "Francia"
+    GERMANIA = "Germania"
+    GRECIA = "Grecia"
+    INGHILTERRA = "Inghilterra"
+    ITALIA = "Italia"
+    MAROCCO = "Marocco"
+    NORD_ITALIA = "Nord Italia"
+    NORVEGIA = "Norvegia"
+    PAESI_BASSI = "Paesi Bassi"
+    POLONIA = "Polonia"
+    PORTOGALLO = "Portogallo"
+    REPUBBLICA_CECA = "Repubblica Ceca"
+    RESTO_DEL_MONDO = "Resto del Mondo"
+    ROMANIA = "Romania"
+    SARDEGNA = "Sardegna"
+    SCOZIA = "Scozia"
+    SICILIA = "Sicilia"
+    SLOVACCHIA = "Slovacchia"
+    SLOVENIA = "Slovenia"
+    SPAGNA = "Spagna"
+    SUD_ITALIA = "Sud Italia"
+    SVEZIA = "Svezia"
+    SVIZZERA = "Svizzera"
+    UNGARIA = "Ungaria"
 
 
 REGIONS_DATA = {
-    RegionName.NORD_ITALIA: dict(hashtags=[RegionHashtag.NORD_ITALY], emoji=Flag.ITALY),
+    RegionName.ALBANIA: dict(hashtags=[RegionHashtag.ALBANIA, RegionHashtag.ALBANY], emoji=Flag.ALBANY),
+    RegionName.ARGENTINA: dict(hashtags=[RegionHashtag.ARGENTINA], emoji=Flag.ARGENTINA),
+    RegionName.AUSTRIA: dict(hashtags=[RegionHashtag.AUSTRIA], emoji=Flag.AUSTRIA),
+    RegionName.BELGIO: dict(hashtags=[RegionHashtag.BELGIUM, RegionHashtag.BELGIO], emoji=Flag.BELGIUM),
+    RegionName.BULGARIA: dict(hashtags=[RegionHashtag.BULGARIA], emoji=Flag.BULGARIA),
     RegionName.CENTRO_ITALIA: dict(hashtags=[RegionHashtag.CENTER_ITALY], emoji=Flag.ITALY),
-    RegionName.SUD_ITALIA: dict(hashtags=[RegionHashtag.SUD_ITALY], emoji=Flag.ITALY),
-    RegionName.SARDEGNA: dict(hashtags=[RegionHashtag.SARDEGNA], emoji=Flag.ITALY),
-    RegionName.SICILIA: dict(hashtags=[RegionHashtag.SICILIA], emoji=Flag.ITALY),
+    RegionName.CILE: dict(hashtags=[RegionHashtag.CILE, RegionHashtag.CHILE], emoji=Flag.CHILE),
+    RegionName.COLOMBIA: dict(hashtags=[RegionHashtag.COLOMBIA], emoji=Flag.COLOMBIA),
+    RegionName.CROAZIA: dict(hashtags=[RegionHashtag.CROATIA, RegionHashtag.CROAZIA], emoji=Flag.CROATIA),
+    RegionName.DANIMARCA: dict(hashtags=[RegionHashtag.DENMARK, RegionHashtag.DANIMARCA], emoji=Flag.DENMARK),
+    RegionName.FINLANDIA: dict(hashtags=[RegionHashtag.FINLAND, RegionHashtag.FINLANDIA], emoji=Flag.FINLAND),
     RegionName.FRANCIA: dict(hashtags=[RegionHashtag.FRANCE], emoji=Flag.FRANCE),
+    RegionName.GERMANIA: dict(hashtags=[RegionHashtag.GERMANY, RegionHashtag.GERMANIA], emoji=Flag.GERMANY),
+    RegionName.GRECIA: dict(hashtags=[RegionHashtag.GRECIA, RegionHashtag.GREECE], emoji=Flag.GREECE),
+    RegionName.INGHILTERRA: dict(hashtags=[RegionHashtag.UK, RegionHashtag.ENGLAND], emoji=Flag.ENGLAND),
+    RegionName.MAROCCO: dict(hashtags=[RegionHashtag.MAROCCO, RegionHashtag.MOROCCO], emoji=Flag.MOROCCO),
+    RegionName.NORD_ITALIA: dict(hashtags=[RegionHashtag.NORD_ITALY], emoji=Flag.ITALY),
+    RegionName.NORVEGIA: dict(hashtags=[RegionHashtag.NORWAY, RegionHashtag.NORVEGIA], emoji=Flag.NORWAY),
+    RegionName.PAESI_BASSI: dict(hashtags=[RegionHashtag.NETHERLANDS], emoji=Flag.NETHERLANDS),
+    RegionName.POLONIA: dict(hashtags=[RegionHashtag.POLAND, RegionHashtag.POLONIA], emoji=Flag.POLAND),
+    RegionName.PORTOGALLO: dict(hashtags=[RegionHashtag.PORTUGAL, RegionHashtag.PORTOGALLO], emoji=Flag.PORTUGAL),
+    RegionName.REPUBBLICA_CECA: dict(hashtags=[RegionHashtag.CZ, RegionHashtag.CZECHIA], emoji=Flag.CZECH_REPUBLIC),
+    RegionName.ROMANIA: dict(hashtags=[RegionHashtag.ROMANIA], emoji=Flag.ROMANIA),
+    RegionName.SARDEGNA: dict(hashtags=[RegionHashtag.SARDEGNA], emoji=Flag.ITALY),
+    RegionName.SCOZIA: dict(hashtags=[RegionHashtag.SCOTLAND, RegionHashtag.SCOZIA], emoji=Flag.SCOTLAND),
+    RegionName.SICILIA: dict(hashtags=[RegionHashtag.SICILIA], emoji=Flag.ITALY),
+    RegionName.SLOVACCHIA: dict(hashtags=[RegionHashtag.SLOVAKIA], emoji=Flag.SLOVAKIA),
+    RegionName.SLOVENIA: dict(hashtags=[RegionHashtag.SLOVENIA], emoji=Flag.SLOVENIA),
+    RegionName.SPAGNA: dict(hashtags=[RegionHashtag.SPAIN, RegionHashtag.SPAGNA], emoji=Flag.SPAIN),
+    RegionName.SVIZZERA: dict(hashtags=[RegionHashtag.SWISS], emoji=Flag.SWISS),
+    RegionName.SUD_ITALIA: dict(hashtags=[RegionHashtag.SUD_ITALY], emoji=Flag.ITALY),
+    RegionName.SVEZIA: dict(hashtags=[RegionHashtag.SVEZIA, RegionHashtag.SWEDEN], emoji=Flag.SWEDEN),
+    RegionName.UNGARIA: dict(hashtags=[RegionHashtag.UNGARIA, RegionHashtag.HUNGARY], emoji=Flag.HUNGARY),
+    # these needs to be placed *below* their sub-regions
+    RegionName.EUROPA: dict(hashtags=[RegionHashtag.EUROPA, RegionHashtag.EUROPE], emoji=Flag.EUROPE),
+    RegionName.ITALIA: dict(hashtags=[RegionHashtag.ITALY, RegionHashtag.ITALIA], emoji=Flag.ITALY),
+    RegionName.RESTO_DEL_MONDO: dict(hashtags=[RegionHashtag.AROUND_THE_WORLD], emoji=Flag.AROUND_THE_WORLD),
 }
