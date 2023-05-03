@@ -297,7 +297,46 @@ async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAU
     await update.effective_message.reply_text(f"this chat has been set as the events chat (<code>{update.effective_chat.id}</code>)")
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/events {utilities.log(update)}")
+
+    events_list: List[Event] = events.get_events(session)
+    text_lines = []
+    for i, event in enumerate(events_list):
+        if not event.is_valid():
+            logger.info(f"skipping invalid event: {event}")
+            continue
+
+        region_icon = ""
+        if event.region and event.region in REGIONS_DATA:
+            region_icon = REGIONS_DATA[event.region]["emoji"]
+
+        title_escaped = utilities.escape_html(event.event_title)
+        text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
+        text_lines.append(text_line)
+
+        if i > 49:
+            # max 100 entities per message
+            break
+
+    await update.message.reply_text("\n".join(text_lines))
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/parseevents {utilities.log(update)}")
+
+    events_list: List[Event] = events.get_all_events(session)
+    for i, event in enumerate(events_list):
+        pass
+
+
 HANDLERS = (
     (MessageHandler(chat_id_filter & update_type_filter & message_type_filter, on_event_message), Group.PREPROCESS),
     (CommandHandler("seteventschat", on_set_events_chat_command, filters=filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST), Group.NORMAL),
+    (CommandHandler("events", on_events_command), Group.NORMAL),
+    (CommandHandler("parseevents", on_parse_events_command), Group.NORMAL),
 )

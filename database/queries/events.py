@@ -35,3 +35,14 @@ def get_events(session: Session, chat_id: Optional[int] = None):
     )
 
     return session.scalars(statement)
+
+
+def get_all_events(session: Session):
+    statement = select(Event).where().order_by(
+        Event.start_year,
+        Event.start_month,
+        Event.start_day,
+        Event.message_id
+    )
+
+    return session.scalars(statement)
