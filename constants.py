@@ -41,6 +41,7 @@ class BotSettingKey:
     CHAT_INVITE_LINK = "chat_invite_link"
     APPROVAL_MODE = "approval_mode"
     RABBIT_FILE = "rabbit_file"
+    EVENTS_CHAT_ID = "events_chat_id"
 
 
 class LocalizedTextKey:
@@ -190,7 +191,15 @@ BOT_SETTINGS_DEFAULTS = {
         description="file da mandare agli utenti rifiutati",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=True
-    )
+    ),
+    BotSettingKey.EVENTS_CHAT_ID: dict(
+        default=None,
+        label="events chat id",
+        emoji=Emoji.ANNOUNCEMENT,
+        description="chat in cui vengono postati fly ed eventi",
+        show_if_true_key=None,
+        telegram_media=None
+    ),
 }
 
 
@@ -263,8 +272,6 @@ class Regex:
     FIRST_LINE = r"^(.+)$"
     DATETIME = r"(?P<date>(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?)\s+((?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2}))?)"
     DATE = r"(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?"
-    # https://regex101.com/r/MnrWDz/6
-    EVENT_DATE = r"(?P<start_day>\d{1,2}|\?+)(?:-(?P<end_day>\d{1,2}|\?+))?[/.](?P<month>\d{1,2})(?:[/.](?P<year>\d{2,4}))?"
 
 
 class RegionHashtag:

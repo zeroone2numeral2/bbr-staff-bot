@@ -19,10 +19,10 @@ def get_or_create(session: Session, chat_id: int, message_id: int, create_if_mis
     return event
 
 
-def get_events(session: Session, chat_id: int):
+def get_events(session: Session, chat_id: Optional[int] = None):
     now = utilities.now()
     statement = select(Event).where(
-        Event.chat_id == chat_id,
+        # Event.chat_id == chat_id,
         Event.canceled == false(),
         Event.start_year >= now.year,
         Event.start_month >= now.month,

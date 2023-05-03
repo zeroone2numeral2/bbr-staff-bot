@@ -1,7 +1,4 @@
-# this is executed in its own pre-process handlers group so technically could be placed anywhere
-applications.private.any_message
-
-events.message
+applications.private.any_message # PREPROCESS
 
 # edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
 staff.chat.edits
@@ -13,6 +10,9 @@ staff.private.placeholders
 staff.private.settings_manual
 staff.private.settings
 staff.private.ltexts
+
+events.message # PREPROCESS
+events.list
 
 help
 users.start

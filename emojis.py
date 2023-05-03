@@ -24,6 +24,7 @@ class Emoji:
     PIRATE = "🏴‍☠️"
     DISCO = "🪩"
     PIN_2 = "📌"
+    ANNOUNCEMENT = "📣"
 
 
 class Flag:

@@ -199,7 +199,7 @@ def convert_string_to_value(value):
     if value.lower() in ("none", "null"):
         return None
 
-    if re.search(r"^\d+$", value):
+    if re.search(r"^-?\d+$", value):
         return int(value)
 
     if re.match(r'^-?\d+(?:[\.,]\d+)$', value):

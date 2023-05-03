@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from telegram import Update, Message, MessageEntity
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler
 
-from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User
+from database.base import session_scope
+from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting
 from database.queries import settings, events
 import decorators
 import utilities
@@ -17,8 +18,18 @@ from config import config
 
 logger = logging.getLogger(__name__)
 
+with session_scope() as session:
+    setting: BotSetting = settings.get_or_create(session, BotSettingKey.EVENTS_CHAT_ID)
+    if not setting.value():
+        logger.debug(f"setting events chat id: {config.events.chat_id}")
+        setting.update_value(config.events.chat_id)
+        session.commit()
 
-events_chat_filter = filters.Chat(config.events.chat_id) & (filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST)
+    chat_id_filter = filters.Chat(setting.value())
+
+update_type_filter = filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST
+
+message_type_filter = filters.TEXT | filters.CAPTION
 
 
 def check_day(day: int, month: int, year: int):
@@ -33,15 +44,12 @@ def check_day(day: int, month: int, year: int):
             raise ValueError("provided day must be in 1..28")
 
 
-def date_from_match(match: Match):
-    start_day_str = match.group("start_day")
-    if "?" in start_day_str:
-        start_day = None
-    else:
-        start_day = int(start_day_str)
+def check_month(month: int):
+    if not (1 <= month <= 12):
+        raise ValueError("provided month must be in 1..12")
 
-    month = int(match.group("month"))
-    year = match.group("year")
+
+def format_year(year: Optional[str] = None) -> int:
     if year:
         if len(year) == 2:
             year = f"20{year}"
@@ -50,32 +58,129 @@ def date_from_match(match: Match):
 
     year = int(year)
 
-    # check month
-    if not (1 <= month <= 12):
-        raise ValueError("provided month must be in 1..12")
+    return year
 
-    # check day
-    if start_day is not None:
-        check_day(start_day, month, year)
 
-    dates_dict = dict(start_date=(start_day, month, year), end_date=None)
+class EventDate:
+    SEP = "/"
 
-    end_day_str = match.group("end_day")
-    if end_day_str:
-        if "?" not in end_day_str:
-            end_day = int(end_day_str)
-            check_day(end_day, month, year)
+    def __init__(self, year: int, month: int, day: Optional[int] = None):
+        self.day: int = day
+        self.month: int = month
+        self.year: int = year
 
-            end_month = month
-            if end_day < start_day:
-                # end day is next month: add one month to date_end
-                end_month += 1
+    @property
+    def day_str(self):
+        return f"{self.day:02}" if self.day else '??'
 
-            dates_dict["end_date"] = (end_day, end_month, year)
+    @property
+    def month_str(self):
+        return f"{self.month:02}" if self.month else '??'
+
+    @property
+    def year_str(self):
+        return str(self.year)
+
+    def is_valid(self):
+        return self.month and self.year
+
+    def validate(self):
+        check_month(self.month)
+        if self.day:
+            check_day(self.day, self.month, self.year)
+
+    def fix_months_overlap(self, start_day: Optional[int] = None) -> bool:
+        # convenience method needed if the parsed date string overlaps two months
+        # for example: 30-02/05/2023
+
+        # start_day migth be None
+        if start_day and self.day < start_day:
+            self.month += 1
+            return True
+
+        return False
+
+    def __str__(self):
+        return f"{self.day_str}{self.SEP}{self.month_str}{self.SEP}{self.year}"
+
+    def to_str(self):
+        return str(self)
+
+
+class DateMatchNormal:
+    NAME = "DateMatchNormal"
+    # https://regex101.com/r/MnrWDz/6
+    PATTERN = (
+        r"(?P<start_day>\d{1,2}|\?+)(?:-(?P<end_day>\d{1,2}|\?+))?[/.](?P<month>\d{1,2})(?:[/.](?P<year>\d{2,4}))?",
+    )
+
+    @staticmethod
+    def extract(match: Match):
+        start_day_str = match.group("start_day")
+        if "?" in start_day_str:
+            start_day = None
         else:
-            dates_dict["end_date"] = (None, month, year)
+            start_day = int(start_day_str)
 
-    return dates_dict
+        month = int(match.group("month"))
+        year: str = match.group("year")
+        year: int = format_year(year)
+
+        start_date = EventDate(year, month, start_day)
+        start_date.validate()
+
+        end_day_str = match.group("end_day")
+        if not end_day_str:
+            end_date = EventDate(year, month, start_day)
+        else:
+            if "?" in end_day_str:
+                end_date = EventDate(year, month)
+            else:
+                end_day = int(end_day_str)
+
+                end_date = EventDate(year, month, end_day)
+                end_date.fix_months_overlap(start_date.day)
+
+            end_date.validate()
+
+        logger.debug(f"parsed dates: {start_date}; {end_date}")
+        return start_date, end_date
+
+
+class DateMatchDaysList:
+    NAME = "DateMatchDaysList"
+    PATTERN = (
+        r"(?P<days>(?:\d{1,2}[\.-]?)+)/(?P<month>\d{1,2})/(?P<year>\d{2,4})(?![\.-])",  # https://regex101.com/r/f9vJkw/6
+        r"(?P<days>(?:\d{1,2}[/-]?)+)\.(?P<month>\d{1,2})\.(?P<year>\d{2,4})(?![/-])",  # https://regex101.com/r/QkzVSg/3
+        r"(?P<days>(?:\d{1,2}[/\.]?)+)-(?P<month>\d{1,2})-(?P<year>\d{2,4})(?![/\.])",  # https://regex101.com/r/wKMaKI/3
+    )
+
+    @staticmethod
+    def extract(match: Match):
+        days_str = match.group("days")
+        days_list = []
+        separators = (".", "-")
+        for sep in separators:
+            if sep in days_str:
+                days_list = days_str.split(sep)
+                break
+
+        if not days_list:
+            raise ValueError(f"string \"{days_str}\" couldn't be split by any of {separators}")
+
+        month = int(match.group("month"))
+        year: str = match.group("year")
+        year: int = format_year(year)
+
+        start_date = EventDate(year, month, int(days_list[0]))
+        start_date.validate()
+
+        end_date = EventDate(year, month, int(days_list[-1]))
+        end_date.fix_months_overlap(start_date.day)
+        end_date.validate()
+
+        logger.debug(f"parsed dates: {start_date}; {end_date}")
+        return start_date, end_date
 
 
 def add_event_message_metadata(message: Message, event: Event):
@@ -103,6 +208,7 @@ def parse_event(message: Message, event: Event):
         logger.info("message does not contain any text")
         return
 
+    # HASHTAGS
     hashtags_dict = message.parse_entities(MessageEntity.HASHTAG) if message.text else message.parse_caption_entities(MessageEntity.HASHTAG)
     hashtags_list = [v.lower() for v in hashtags_dict.values()]
     event.save_hashtags(hashtags_list)
@@ -110,9 +216,11 @@ def parse_event(message: Message, event: Event):
         if hashtag in hashtags_list:
             event.event_type = event_type
 
+    # CANCELED
     if "#annullata" in hashtags_list or "#annullato" in hashtags_list:
         event.canceled = True
 
+    # REGION
     for region_name, region_data in REGIONS_DATA.items():
         for region_hashtag in region_data["hashtags"]:
             if region_hashtag in hashtags_list:
@@ -120,27 +228,43 @@ def parse_event(message: Message, event: Event):
                 # return after the first match
                 break
 
+    # TITLE
     title_match = re.search(Regex.FIRST_LINE, message_text, re.M)
     if title_match:
         event.event_title = title_match.group(1)
     else:
         logger.info("couldn't parse any title")
 
-    date_match = re.search(Regex.EVENT_DATE, message_text, re.M)
-    if not date_match:
-        logger.info("couldn't parse any date with regex")
-    else:
+    # DATES
+    parsing_success = False
+    date_tests = [DateMatchDaysList, DateMatchNormal]
+    for date_test in date_tests:
+        date_match = None
+        for pattern in date_test.PATTERN:
+            date_match = re.search(pattern, message_text, re.M)
+            break
+
+        if not date_match:
+            continue
+
+        logger.info(f"pattern match successfull: {date_test.NAME}")
+
         try:
-            dates_dict = date_from_match(date_match)
-            event.start_day = dates_dict["start_date"][0]
-            event.start_month = dates_dict["start_date"][1]
-            event.start_year = dates_dict["start_date"][2]
-            if dates_dict["end_date"] is not None:
-                event.end_day = dates_dict["end_date"][0]
-                event.end_month = dates_dict["end_date"][1]
-                event.end_year = dates_dict["end_date"][2]
+            start_date, end_date = date_test.extract(date_match)
+            parsing_success = True
+            break
         except ValueError as e:
-            logger.info(f"error while parsing date: {e}")
+            logger.info(f"error while parsing date with test '{date_test.NAME}': {e}")
+
+    if not parsing_success:
+        logger.info("couldn't parse any date with any regex")
+    else:
+        event.start_day = start_date.day
+        event.start_month = start_date.month
+        event.start_year = start_date.year
+        event.end_day = end_date.day
+        event.end_month = end_date.month
+        event.end_year = end_date.year
 
 
 @decorators.catch_exception()
@@ -160,33 +284,20 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/events {utilities.log(update)}")
+@decorators.pass_session(pass_chat=True)
+async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"/seteventschat {utilities.log(update)}")
 
-    events_list: List[Event] = events.get_events(session, config.events.chat_id)
-    text_lines = []
-    for i, event in enumerate(events_list):
-        if not event.is_valid():
-            logger.info(f"skipping invalid event: {event}")
-            continue
+    events_chat_setting: BotSetting = settings.get_or_create(session, BotSettingKey.EVENTS_CHAT_ID)
 
-        region_icon = ""
-        if event.region and event.region in REGIONS_DATA:
-            region_icon = REGIONS_DATA[event.region]["emoji"]
+    chat_id_filter.chat_ids = {update.effective_chat.id}
 
-        title_escaped = utilities.escape_html(event.event_title)
-        text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) <a href=\"{event.message_link()}\">--fly/info</a>"
-        text_lines.append(text_line)
+    events_chat_setting.update_value(update.effective_chat.id)
 
-        if i > 49:
-            # max 100 entities per message
-            break
-
-    await update.message.reply_text("\n".join(text_lines))
+    await update.effective_message.reply_text(f"this chat has been set as the events chat (<code>{update.effective_chat.id}</code>)")
 
 
 HANDLERS = (
-    (MessageHandler(events_chat_filter, on_event_message), Group.PREPROCESS),
-    (CommandHandler("events", on_events_command), Group.NORMAL),
+    (MessageHandler(chat_id_filter & update_type_filter & message_type_filter, on_event_message), Group.PREPROCESS),
+    (CommandHandler("seteventschat", on_set_events_chat_command, filters=filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST), Group.NORMAL),
 )

@@ -523,7 +523,7 @@ class BotSetting(Base):
 
     def __init__(self, key, value=None, telegram_media=False, show_if_true_key=None):
         self.key = key.lower()
-        self.update_value(value, telegram_media=telegram_media, raise_on_unknown_type=True)
+        self.update_value(value, telegram_media=telegram_media, raise_on_unknown_type=False)
         self.show_if_true_key = show_if_true_key
 
     def update_value(self, value, telegram_media=False, raise_on_unknown_type=True):
@@ -789,16 +789,24 @@ class Event(Base):
     def dates_as_date(self, fill_missing_day: int = 0):
         return self.start_date_as_date(fill_missing_day), self.end_date_as_date(fill_missing_day)
 
+    def single_day(self):
+        # avoid "int == None" comparision
+        start_day = self.start_day or 0
+        end_day = self.end_day or 0
+
+        return start_day == end_day and self.start_month == self.end_month and self.start_year == self.end_year
+
     def pretty_date(self) -> str:
         if not self.start_month or not self.start_year:
             return "??.??.????"
 
-        start_day = self.start_day or "??"
-        if self.end_month and self.end_year:
-            end_day = self.end_day or "??"
+        start_day = f"{self.start_day:02}" if self.start_day else "??"
+
+        if not self.single_day():
+            end_day = f"{self.end_day:02}" if self.end_day else "??"
             return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}"
 
-        return f"{start_day:02}.{self.start_month:02}.{self.start_year}"
+        return f"{start_day}.{self.start_month:02}.{self.start_year}"
 
     def save_hashtags(self, hashtags_list: List):
         self.hashtags = json.dumps(hashtags_list)
