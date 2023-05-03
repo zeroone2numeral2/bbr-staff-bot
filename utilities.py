@@ -4,9 +4,10 @@ import logging
 import logging.config
 import math
 import re
+import sys
 from html import escape
 from re import Match
-from typing import Union
+from typing import Union, Optional
 from typing import List
 
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton
@@ -128,13 +129,13 @@ def log_old(obj: Union[User, Chat]):
 
 def log(update: Update):
     try:
-        if update.message:
-            if update.effective_chat.id != update.effective_user.id:
-                # group chat
+        if update.effective_message:
+            if update.effective_chat.type in (Chat.SUPERGROUP, Chat.GROUP):
                 return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})" \
                        f" in {update.effective_chat.id} ({update.effective_chat.title})"
-            else:
-                # private chat
+            elif update.effective_chat.type == Chat.CHANNEL:
+                return f"in {update.effective_chat.id} ({update.effective_chat.title})"
+            elif update.effective_chat.type == Chat.PRIVATE:
                 return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})"
         elif update.callback_query:
             return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code}), cbdata: {update.callback_query.data}"
@@ -150,10 +151,7 @@ def is_leap_year(year):
     return ((year % 400 == 0) and (year % 100 == 0)) or ((year % 4 == 0) and (year % 100 != 0))
 
 
-def date_from_match(match: Match):
-    day = int(match.group("day"))
-    month = int(match.group("month"))
-    year = match.group("year")
+def format_year(year: Optional[str] = None) -> int:
     if year:
         if len(year) == 2:
             year = f"20{year}"
@@ -162,8 +160,10 @@ def date_from_match(match: Match):
 
     year = int(year)
 
-    if not (1 <= month <= 12):
-        raise ValueError("provided month must be in 1..12")
+    return year
+
+
+def check_day(day: int, month: int, year: int):
     if month in (1, 3, 5, 7, 8, 10, 12) and not (1 <= day <= 31):
         raise ValueError("provided day must be in 1..31")
     if month in (4, 6, 9, 11) and not (1 <= day <= 30):
@@ -173,6 +173,20 @@ def date_from_match(match: Match):
             raise ValueError("provided day must be in 1..29")
         elif not is_leap_year(year) and not (1 <= day <= 28):
             raise ValueError("provided day must be in 1..28")
+
+
+def check_month(month: int):
+    if not (1 <= month <= 12):
+        raise ValueError("provided month must be in 1..12")
+
+
+def date_from_match(match: Match):
+    day = int(match.group("day"))
+    month = int(match.group("month"))
+    year = match.group("year")
+    year = format_year(year)
+
+    check_day(day, month, year)
 
     return int(day), int(month), int(year)
 
@@ -218,6 +232,16 @@ def convert_string_to_value(value):
         return datetime.date(day=day, month=month, year=year)
 
     return value
+
+
+def extract_entity(text: str, offset: int, length: int) -> str:
+    # Is it a narrow build, if so we don't need to convert
+    if sys.maxunicode == 0xFFFF:
+        return text[offset: offset + length]
+
+    entity_text = text.encode("utf-16-le")
+    entity_text = entity_text[offset * 2: (offset + length) * 2]
+    return entity_text.decode("utf-16-le")
 
 
 if __name__ == "__main__":

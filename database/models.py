@@ -664,24 +664,32 @@ class PrivateChatMessage(Base):
 # https://t.me/c/1289562489/569
 class EventTypeHashtag:
     FREE = "#freeparty"
-    LEGAL = "#legalparty"
+    TEKNIVAL = "#teknival"
+    LEGAL_PARTY = "#legalparty"
+    LEGAL_PLACE = "#legalplace"
     MANIFESTAZIONE = "#manifestazione"
     STREET_PARADE = "#streetparade"
     PRIVATE_PARTY = "#privateparty"
+    FESTIVAL = "#festival"
 
 
 class EventType:
     FREE = "free"
     LEGAL = "legal"
+    STREET_PARADE = "street_parade"
     OTHER = "other"
 
 
 EVENT_TYPE = {
+    # if a message has more the one hashtag in this dict, the first one will be used
     EventTypeHashtag.FREE: EventType.FREE,
-    EventTypeHashtag.LEGAL: EventType.LEGAL,
+    EventTypeHashtag.TEKNIVAL: EventType.FREE,
+    EventTypeHashtag.LEGAL_PARTY: EventType.LEGAL,
+    EventTypeHashtag.LEGAL_PLACE: EventType.LEGAL,
+    EventTypeHashtag.STREET_PARADE: EventType.STREET_PARADE,
     EventTypeHashtag.MANIFESTAZIONE: EventType.OTHER,
-    EventTypeHashtag.STREET_PARADE: EventType.OTHER,
     EventTypeHashtag.PRIVATE_PARTY: EventType.OTHER,
+    EventTypeHashtag.FESTIVAL: EventType.LEGAL,
 }
 
 
@@ -740,6 +748,8 @@ class Event(Base):
             return Emoji.QUESTION
         if self.event_type == EventType.FREE:
             return Emoji.PIRATE
+        if self.event_type == EventType.STREET_PARADE:
+            return Emoji.TRUCK
         if self.event_type == EventType.LEGAL:
             return Emoji.DISCO
         if self.event_type == EventType.OTHER:

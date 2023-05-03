@@ -12,7 +12,6 @@ staff.private.settings
 staff.private.ltexts
 
 events.message # PREPROCESS
-events.list
 
 help
 users.start

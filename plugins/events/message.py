@@ -1,12 +1,15 @@
 import datetime
+import json
 import logging
 import re
 from re import Match
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
+import telegram.constants
 from sqlalchemy.orm import Session
 from telegram import Update, Message, MessageEntity
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler
+from telegram.constants import MessageLimit
 
 from database.base import session_scope
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting
@@ -27,47 +30,24 @@ with session_scope() as session:
 
     chat_id_filter = filters.Chat(setting.value())
 
-update_type_filter = filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST
 
-message_type_filter = filters.TEXT | filters.CAPTION
-
-
-def check_day(day: int, month: int, year: int):
-    if month in (1, 3, 5, 7, 8, 10, 12) and not (1 <= day <= 31):
-        raise ValueError("provided day must be in 1..31")
-    if month in (4, 6, 9, 11) and not (1 <= day <= 30):
-        raise ValueError("provided day must be in 1..30")
-    if month == 2:
-        if utilities.is_leap_year(year) and not (1 <= day <= 29):
-            raise ValueError("provided day must be in 1..29")
-        elif not utilities.is_leap_year(year) and not (1 <= day <= 28):
-            raise ValueError("provided day must be in 1..28")
-
-
-def check_month(month: int):
-    if not (1 <= month <= 12):
-        raise ValueError("provided month must be in 1..12")
-
-
-def format_year(year: Optional[str] = None) -> int:
-    if year:
-        if len(year) == 2:
-            year = f"20{year}"
-    else:
-        year = datetime.datetime.now().year
-
-    year = int(year)
-
-    return year
+class Filter:
+    UPDATE_TYPE = filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST
+    UPDATE_TYPE_NEW_MESSAGE = filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST
+    MESSAGE_TYPE = filters.TEXT | filters.CAPTION
 
 
 class EventDate:
     SEP = "/"
 
-    def __init__(self, year: int, month: int, day: Optional[int] = None):
-        self.day: int = day
+    def __init__(self, year: int, month: int, day: Optional[Union[int, str]] = None):
         self.month: int = month
         self.year: int = year
+
+        if (isinstance(day, str) and "?" in day) or day is None:
+            self.day = None
+        else:
+            self.day = int(day)
 
     @property
     def day_str(self):
@@ -85,9 +65,9 @@ class EventDate:
         return self.month and self.year
 
     def validate(self):
-        check_month(self.month)
+        utilities.check_month(self.month)
         if self.day:
-            check_day(self.day, self.month, self.year)
+            utilities.check_day(self.day, self.month, self.year)
 
     def fix_months_overlap(self, start_day: Optional[int] = None) -> bool:
         # convenience method needed if the parsed date string overlaps two months
@@ -124,7 +104,7 @@ class DateMatchNormal:
 
         month = int(match.group("month"))
         year: str = match.group("year")
-        year: int = format_year(year)
+        year: int = utilities.format_year(year)
 
         start_date = EventDate(year, month, start_day)
         start_date.validate()
@@ -170,7 +150,7 @@ class DateMatchDaysList:
 
         month = int(match.group("month"))
         year: str = match.group("year")
-        year: int = format_year(year)
+        year: int = utilities.format_year(year)
 
         start_date = EventDate(year, month, int(days_list[0]))
         start_date.validate()
@@ -201,33 +181,70 @@ def add_event_message_metadata(message: Message, event: Event):
             event.media_file_unique_id = message.effective_attachment.file_unique_id
 
 
-def parse_event(message: Message, event: Event):
-    message_text = message.text or message.caption
-
-    if not message_text:
-        logger.info("message does not contain any text")
-        return
-
-    # HASHTAGS
-    hashtags_dict = message.parse_entities(MessageEntity.HASHTAG) if message.text else message.parse_caption_entities(MessageEntity.HASHTAG)
-    hashtags_list = [v.lower() for v in hashtags_dict.values()]
+def parse_message_entities_list(hashtags_list: List[str], event: Event):
     event.save_hashtags(hashtags_list)
     for hashtag, event_type in EVENT_TYPE.items():
         if hashtag in hashtags_list:
             event.event_type = event_type
+            break
 
     # CANCELED
     if "#annullata" in hashtags_list or "#annullato" in hashtags_list:
         event.canceled = True
+    else:
+        # un-cancel events that do not have these hashtags
+        event.canceled = False
 
     # REGION
+    region_found = False
     for region_name, region_data in REGIONS_DATA.items():
         for region_hashtag in region_data["hashtags"]:
-            if region_hashtag in hashtags_list:
+            if region_hashtag.lower() in hashtags_list:
+                # logger.debug(f"found {region_hashtag}")
                 event.region = region_name
                 # return after the first match
+                region_found = True
                 break
 
+        if region_found:
+            break
+
+
+def parse_message_entities(message: Message, event: Event):
+    # HASHTAGS
+    hashtags_dict = message.parse_entities(MessageEntity.HASHTAG) if message.text else message.parse_caption_entities(MessageEntity.HASHTAG)
+    hashtags_list = [v.lower() for v in hashtags_dict.values()]
+    parse_message_entities_list(hashtags_list, event)
+
+
+def parse_message_entities_dict(message_dict: dict, event: Event):
+    text = None
+    if "text" in message_dict and message_dict["text"]:
+        text = message_dict["text"]
+    if "caption" in message_dict and message_dict["caption"]:
+        text = message_dict["caption"]
+
+    entities = None
+    if "entities" in message_dict and message_dict["entities"]:
+        entities = message_dict["entities"]
+    if "caption_entities" in message_dict and message_dict["caption_entities"]:
+        entities = message_dict["caption_entities"]
+
+    if not text or not entities:
+        return
+
+    hashtags_list = []
+    for entity in entities:
+        if entity["type"] != MessageEntity.HASHTAG:
+            continue
+
+        hashtag = utilities.extract_entity(text, entity["offset"], entity["length"])
+        hashtags_list.append(hashtag.lower())
+
+    parse_message_entities_list(hashtags_list, event)
+
+
+def parse_message_text(message_text: str, event: Event):
     # TITLE
     title_match = re.search(Regex.FIRST_LINE, message_text, re.M)
     if title_match:
@@ -242,7 +259,8 @@ def parse_event(message: Message, event: Event):
         date_match = None
         for pattern in date_test.PATTERN:
             date_match = re.search(pattern, message_text, re.M)
-            break
+            if date_match:
+                break
 
         if not date_match:
             continue
@@ -276,7 +294,8 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     event = events.get_or_create(session, chat_id, message_id)
     add_event_message_metadata(update.effective_message, event)
-    parse_event(update.effective_message, event)
+    parse_message_entities(update.effective_message, event)
+    parse_message_text(update.effective_message.text or update.effective_message.caption, event)
 
     logger.info(f"parsed event: {event}")
 
@@ -297,12 +316,25 @@ async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAU
     await update.effective_message.reply_text(f"this chat has been set as the events chat (<code>{update.effective_chat.id}</code>)")
 
 
+def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
+    message_length = 0
+    for line in text_lines:
+        message_length += len(line)
+
+    if message_length >= MessageLimit.MAX_TEXT_LENGTH:
+        return True
+
+    if len(text_lines) * entities_per_line >= MessageLimit.MESSAGE_ENTITIES:
+        return True
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/events {utilities.log(update)}")
 
     events_list: List[Event] = events.get_events(session)
+    messages_to_send = []
     text_lines = []
     for i, event in enumerate(events_list):
         if not event.is_valid():
@@ -314,12 +346,41 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
             region_icon = REGIONS_DATA[event.region]["emoji"]
 
         title_escaped = utilities.escape_html(event.event_title)
-        text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
-        text_lines.append(text_line)
+        if event.canceled:
+            title_escaped = f"<s>{title_escaped}</s>"
 
-        if i > 49:
-            # max 100 entities per message
-            break
+        text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
+
+        if time_to_split(text_lines, entities_per_line=2):
+            new_message_to_send = "\n".join(text_lines)
+            messages_to_send.append(new_message_to_send)
+            text_lines = [text_line]
+        else:
+            text_lines.append(text_line)
+
+    if text_lines:
+        new_message_to_send = "\n".join(text_lines)
+        messages_to_send.append(new_message_to_send)
+
+    total_messages = len(messages_to_send)
+    for i, text_to_send in enumerate(messages_to_send):
+        logger.debug(f"sending message {i+1}/{total_messages}")
+        await update.message.reply_text(text_to_send)
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/invalidevents {utilities.log(update)}")
+
+    events_list: List[Event] = events.get_events(session)
+    text_lines = []
+    for i, event in enumerate(events_list):
+        if event.is_valid():
+            # logger.info(f"skipping valid event: {event}")
+            continue
+
+        text_lines.append(f"{event.message_link()}")
 
     await update.message.reply_text("\n".join(text_lines))
 
@@ -330,13 +391,44 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
     logger.info(f"/parseevents {utilities.log(update)}")
 
     events_list: List[Event] = events.get_all_events(session)
+    events_count = 0
     for i, event in enumerate(events_list):
-        pass
+        events_count = i + 1
+        logger.debug(f"{events_count}. {event}")
+        parse_message_text(event.message_text, event)
+
+        if not event.message_json:
+            continue
+
+        message_dict = json.loads(event.message_json)
+        message = Message.de_json(message_dict, context.bot)
+        parse_message_entities(message, event)
+
+    await update.message.reply_text(f"parsed {events_count} db entries")
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_chat=True)
+async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"/delevent {utilities.log(update)}")
+
+    reply_to_message_id = update.effective_message.reply_to_message.message_id
+
+    event: Event = events.get_or_create(session, update.effective_chat.id, reply_to_message_id, create_if_missing=False)
+    if not event:
+        await update.effective_message.reply_text("No event saved for this message", reply_to_message_id=reply_to_message_id)
+        return
+
+    session.delete(event)
+
+    await update.effective_message.reply_text(f"Event deleted", reply_to_message_id=reply_to_message_id)
 
 
 HANDLERS = (
-    (MessageHandler(chat_id_filter & update_type_filter & message_type_filter, on_event_message), Group.PREPROCESS),
-    (CommandHandler("seteventschat", on_set_events_chat_command, filters=filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST), Group.NORMAL),
+    (MessageHandler(chat_id_filter & Filter.UPDATE_TYPE & Filter.MESSAGE_TYPE, on_event_message), Group.PREPROCESS),
+    (CommandHandler("seteventschat", on_set_events_chat_command, filters=Filter.UPDATE_TYPE_NEW_MESSAGE), Group.NORMAL),
     (CommandHandler("events", on_events_command), Group.NORMAL),
+    (CommandHandler("invalidevents", on_invalid_events_command), Group.NORMAL),
     (CommandHandler("parseevents", on_parse_events_command), Group.NORMAL),
+    (CommandHandler("delevent", on_delete_event_command, filters=Filter.UPDATE_TYPE_NEW_MESSAGE & filters.REPLY), Group.NORMAL),
 )
