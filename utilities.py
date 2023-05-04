@@ -7,7 +7,7 @@ import re
 import sys
 from html import escape
 from re import Match
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 from typing import List
 
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton
@@ -242,6 +242,25 @@ def extract_entity(text: str, offset: int, length: int) -> str:
     entity_text = text.encode("utf-16-le")
     entity_text = entity_text[offset * 2: (offset + length) * 2]
     return entity_text.decode("utf-16-le")
+
+
+def unpack_message_link(message_link: str) -> Tuple[Optional[Union[int, str]], Optional[int]]:
+    match = re.search(
+        Regex.MESSAGE_LINK,
+        message_link,
+        re.I
+    )
+    if not match:
+        return None, None
+
+    message_id = int(match.group("message_id"))
+    chat_id = match.group("chat_id")
+    if not chat_id:
+        chat_id = f"@{match.group('username')}"
+    else:
+        chat_id = int(f"-100{chat_id}")
+
+    return chat_id, message_id
 
 
 if __name__ == "__main__":

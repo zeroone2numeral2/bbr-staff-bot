@@ -21,12 +21,12 @@ from config import config
 
 logger = logging.getLogger(__name__)
 
-with session_scope() as session:
-    setting: BotSetting = settings.get_or_create(session, BotSettingKey.EVENTS_CHAT_ID)
+with session_scope() as tmp_session:
+    setting: BotSetting = settings.get_or_create(tmp_session, BotSettingKey.EVENTS_CHAT_ID)
     if not setting.value():
         logger.debug(f"setting events chat id: {config.events.chat_id}")
         setting.update_value(config.events.chat_id)
-        session.commit()
+        tmp_session.commit()
 
     chat_id_filter = filters.Chat(setting.value())
 
@@ -35,6 +35,7 @@ class Filter:
     UPDATE_TYPE = filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST
     UPDATE_TYPE_NEW_MESSAGE = filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST
     MESSAGE_TYPE = filters.TEXT | filters.CAPTION
+    ADMIN_PRIVATE = filters.ChatType.PRIVATE & filters.User(config.telegram.admins)
 
 
 class EventDate:
@@ -303,17 +304,29 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_chat=True)
-async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+@decorators.pass_session(pass_user=True)
+async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/seteventschat {utilities.log(update)}")
+
+    if not update.message.reply_to_message:
+        await update.message.reply_text("Use this command in reply to a forwarded message from the channel")
+        return
+
+    if not update.message.reply_to_message.forward_from_chat:
+        await update.message.reply_text("Use this command in reply to a forwarded message from the channel")
+        return
+
+    events_chat_id = update.message.reply_to_message.forward_from_chat.id
+    events_chat_title = update.message.reply_to_message.forward_from_chat.title
 
     events_chat_setting: BotSetting = settings.get_or_create(session, BotSettingKey.EVENTS_CHAT_ID)
 
-    chat_id_filter.chat_ids = {update.effective_chat.id}
+    chat_id_filter.chat_ids = {events_chat_id}
 
-    events_chat_setting.update_value(update.effective_chat.id)
+    events_chat_setting.update_value(events_chat_id)
 
-    await update.effective_message.reply_text(f"this chat has been set as the events chat (<code>{update.effective_chat.id}</code>)")
+    await update.effective_message.reply_text(f"{utilities.escape_html(events_chat_title)} chat has been set "
+                                              f"as the events chat (<code>{events_chat_id}</code>)")
 
 
 def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
@@ -408,27 +421,37 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_chat=True)
-async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+@decorators.pass_session(pass_user=True)
+async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/delevent {utilities.log(update)}")
 
-    reply_to_message_id = update.effective_message.reply_to_message.message_id
+    message_link = context.args[0]
+    chat_id, message_id = utilities.unpack_message_link(message_link)
+    if not chat_id:
+        await update.message.reply_text("cannot detect the message link pointing to the event to delete")
+        return
 
-    event: Event = events.get_or_create(session, update.effective_chat.id, reply_to_message_id, create_if_missing=False)
+    if isinstance(chat_id, str):
+        await update.message.reply_text("this command doesn't work with public chats")
+        return
+
+    event_ids_str = f"chat id: <code>{chat_id}</code>; message id: <code>{message_id}</code>"
+
+    event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
     if not event:
-        await update.effective_message.reply_text("No event saved for this message", reply_to_message_id=reply_to_message_id)
+        await update.effective_message.reply_text(f"No event saved for this message ({event_ids_str})")
         return
 
     session.delete(event)
 
-    await update.effective_message.reply_text(f"Event deleted", reply_to_message_id=reply_to_message_id)
+    await update.effective_message.reply_text(f"Event deleted ({event_ids_str})")
 
 
 HANDLERS = (
     (MessageHandler(chat_id_filter & Filter.UPDATE_TYPE & Filter.MESSAGE_TYPE, on_event_message), Group.PREPROCESS),
-    (CommandHandler("seteventschat", on_set_events_chat_command, filters=Filter.UPDATE_TYPE_NEW_MESSAGE), Group.NORMAL),
-    (CommandHandler("events", on_events_command), Group.NORMAL),
-    (CommandHandler("invalidevents", on_invalid_events_command), Group.NORMAL),
-    (CommandHandler("parseevents", on_parse_events_command), Group.NORMAL),
-    (CommandHandler("delevent", on_delete_event_command, filters=Filter.UPDATE_TYPE_NEW_MESSAGE & filters.REPLY), Group.NORMAL),
+    (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["events"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
 )

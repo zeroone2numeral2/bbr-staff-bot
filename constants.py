@@ -272,6 +272,8 @@ class Regex:
     FIRST_LINE = r"^(.+)$"
     DATETIME = r"(?P<date>(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?)\s+((?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2}))?)"
     DATE = r"(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?"
+    # https://regex101.com/r/Exr6Km/3
+    MESSAGE_LINK = r"^(?:https?://)?(?:www\.)?t(?:elegram)?\.(?:org|me|dog)/(?:c/(?P<chat_id>\d+)|(?P<username>[a-zA-Z](?:_(?!_)|[a-zA-Z0-9]){2,30}[a-zA-Z0-9]))(?:/(?P<topic_id>\d+))?(?:/(?P<message_id>\d+))"
 
 
 class RegionHashtag:
