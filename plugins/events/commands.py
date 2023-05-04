@@ -13,7 +13,7 @@ from telegram.constants import MessageLimit
 
 from .common import chat_id_filter, Filter, parse_message_entities, parse_message_text
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting
-from database.queries import settings, events
+from database.queries import settings, events, chats
 import decorators
 import utilities
 from constants import BotSettingKey, Group, Regex, REGIONS_DATA
@@ -34,6 +34,8 @@ async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAU
     if not update.message.reply_to_message.forward_from_chat:
         await update.message.reply_text("Use this command in reply to a forwarded message from the channel")
         return
+
+    chats.get_safe(session, update.message.reply_to_message.forward_from_chat)
 
     events_chat_id = update.message.reply_to_message.forward_from_chat.id
     events_chat_title = update.message.reply_to_message.forward_from_chat.title
