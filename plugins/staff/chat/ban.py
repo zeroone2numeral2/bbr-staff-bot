@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import filters, PrefixHandler, ContextTypes
 
+from ext.filters import ChatFilter
 from database.models import Chat, UserMessage
 from database.queries import user_messages
 import decorators
@@ -61,7 +62,8 @@ async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     user_message.user.unban()
     await update.effective_message.reply_text(f"User unbanned")
 
+
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, filters.ChatType.GROUPS & filters.REPLY), Group.NORMAL),
-    (PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, filters.ChatType.GROUPS & filters.REPLY), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
 )

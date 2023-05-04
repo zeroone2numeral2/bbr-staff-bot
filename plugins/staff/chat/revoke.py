@@ -9,6 +9,7 @@ from database.queries import admin_messages
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
+from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
 
@@ -49,5 +50,5 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ["revoke"], on_revoke_admin_command, filters.ChatType.GROUPS & filters.REPLY), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ["revoke"], on_revoke_admin_command, ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
 )

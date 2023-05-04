@@ -5,6 +5,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, filters, MessageHandler
 
 from .common import chat_id_filter, Filter, add_event_message_metadata, parse_message_text, parse_message_entities
+from ext.filters import ChatFilter
 from database.models import Chat
 from database.queries import events
 import decorators
@@ -36,5 +37,5 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (MessageHandler(chat_id_filter & Filter.UPDATE_TYPE & Filter.MESSAGE_TYPE, on_event_message), Group.PREPROCESS),
+    (MessageHandler(ChatFilter.EVENTS & Filter.UPDATE_TYPE & Filter.MESSAGE_TYPE, on_event_message), Group.PREPROCESS),
 )

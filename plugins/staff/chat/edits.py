@@ -9,6 +9,7 @@ from database.queries import settings
 import decorators
 import utilities
 from constants import BotSettingKey, Group
+from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +20,6 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
     logger.info(f"message edit in a group {utilities.log(update)}")
     if not settings.get_or_create(session, BotSettingKey.BROADCAST_EDITS).value():
         logger.info("message edits are disabled")
-        return
-
-    if not chat.is_staff_chat:
-        logger.info(f"ignoring edited message update: chat is not the current staff chat")
         return
 
     admin_message: AdminMessage = session.query(AdminMessage).filter(
@@ -42,5 +39,5 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff), Group.PREPROCESS),
+    (MessageHandler(ChatFilter.STAFF & filters.UpdateType.EDITED_MESSAGE & filters.TEXT, on_edited_message_staff), Group.PREPROCESS),
 )

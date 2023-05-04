@@ -2,7 +2,6 @@ import logging
 from typing import Tuple
 
 from sqlalchemy.orm import Session
-from sqlalchemy import update as sqlalchemy_update
 from telegram import Update, ChatMember
 from telegram.ext import filters, PrefixHandler
 
@@ -11,6 +10,7 @@ from database.queries import chats, users
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
+from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,8 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
     chat.set_as_staff_chat()
     if "ssilent" not in update.message.text.lower():
         await update.message.reply_text("This group has been set as staff chat")
+
+    ChatFilter.STAFF.chat_ids = {chat.chat_id}
 
     session.commit()  # make sure to commit now, just in case something unexpected happens while saving admins
 

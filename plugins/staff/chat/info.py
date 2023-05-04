@@ -9,6 +9,7 @@ from database.queries import chats, user_messages, chat_members
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
+from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,6 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, filters.ChatType.GROUPS & filters.REPLY), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
 )
 
