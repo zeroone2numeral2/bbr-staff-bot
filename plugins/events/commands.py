@@ -167,10 +167,24 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     await update.effective_message.reply_text(f"Event deleted ({event_ids_str})")
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_fwd_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/fwd {utilities.log(update)}")
+
+    if "origin_fwd" in context.bot_data:
+        context.bot_data.pop("origin_fwd")
+        await update.message.reply_text("disabled")
+    else:
+        context.bot_data["origin_fwd"] = True
+        await update.message.reply_text("enabled")
+
+
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["events"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["fwd"], on_fwd_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
 )

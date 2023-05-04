@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes, filters, MessageHandler
 from .common import chat_id_filter, Filter, add_event_message_metadata, parse_message_text, parse_message_entities
 from ext.filters import ChatFilter
 from database.models import Chat
-from database.queries import events
+from database.queries import events, chats
 import decorators
 import utilities
 from constants import Group
@@ -19,8 +19,17 @@ logger = logging.getLogger(__name__)
 @decorators.pass_session(pass_chat=True)
 async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"events chat message update {utilities.log(update)}")
-    chat_id = update.effective_chat.id
-    message_id = update.effective_message.message_id
+
+    if "origin_fwd" in context.bot_data and update.effective_message.forward_from_chat:
+        logger.debug("saved forwarded message data")
+        chat_id = update.effective_message.forward_from_chat.id
+        message_id = update.effective_message.forward_from_message_id
+
+        # save origin chat
+        chats.get_safe(session, update.effective_message.forward_from_chat)
+    else:
+        chat_id = update.effective_chat.id
+        message_id = update.effective_message.message_id
 
     event = events.get_or_create(session, chat_id, message_id)
     if event.deleted:
