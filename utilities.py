@@ -127,22 +127,28 @@ def log_old(obj: Union[User, Chat]):
         return chat_log(obj)
 
 
+def log_string_chat(chat: Chat) -> str:
+    return f"{chat.type} {chat.id} ({chat.title})"
+
+
+def log_string_user(user: User) -> str:
+    return f"{user.id} ({user.full_name}; lang: {user.language_code})"
+
+
 def log(update: Update):
     try:
         if update.effective_message:
             if update.effective_chat.type in (Chat.SUPERGROUP, Chat.GROUP):
-                return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})" \
-                       f" in {update.effective_chat.id} ({update.effective_chat.title})"
+                return f"from {log_string_user(update.effective_user)} in {log_string_chat(update.effective_chat)}"
             elif update.effective_chat.type == Chat.CHANNEL:
-                return f"in {update.effective_chat.id} ({update.effective_chat.title})"
+                return f"in {log_string_chat(update.effective_chat)}"
             elif update.effective_chat.type == Chat.PRIVATE:
-                return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code})"
+                return f"from {log_string_user(update.effective_user)}"
         elif update.callback_query:
-            return f"from {update.effective_user.id} ({update.effective_user.full_name}; lang: {update.effective_user.language_code}), cbdata: {update.callback_query.data}"
+            return f"from {log_string_user(update.effective_user)}, cbdata: {update.callback_query.data}"
         elif update.chat_member or update.my_chat_member:
             chat_member = update.chat_member or update.my_chat_member
-            return f"from {chat_member.from_user.id} ({chat_member.from_user.full_name}) " \
-                   f"in {chat_member.chat.id} ({chat_member.chat.title})"
+            return f"from {log_string_user(chat_member.from_user)} in {log_string_chat(chat_member.chat)}"
     except Exception as e:
         logger.error(f"error while logging update: {e}")
 

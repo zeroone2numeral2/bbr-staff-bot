@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
-    logger.info(f"events chat message update in {utilities.log(update)}")
+    logger.info(f"events chat message update {utilities.log(update)}")
     chat_id = update.effective_chat.id
     message_id = update.effective_message.message_id
 
