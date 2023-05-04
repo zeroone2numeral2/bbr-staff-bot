@@ -21,7 +21,7 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
     logger.info(f"/setstaff {utilities.log(update)}")
 
     if not utilities.is_admin(update.effective_user):
-        logger.warning(f"user {update.effective_user.id} ({update.effective_user.full_name}) tried to use /setstaff")
+        logger.warning(f"user {utilities.log_string_user(update.effective_user)}) tried to use /setstaff")
         return
 
     if "ssilent" in update.message.text.lower():
