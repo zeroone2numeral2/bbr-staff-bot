@@ -46,7 +46,7 @@ async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAU
 
     events_chat_setting.update_value(events_chat_id)
 
-    await update.effective_message.reply_text(f"{utilities.escape_html(events_chat_title)} chat has been set "
+    await update.effective_message.reply_text(f"\"{utilities.escape_html(events_chat_title)}\" has been set "
                                               f"as the events chat (<code>{events_chat_id}</code>)")
 
 
