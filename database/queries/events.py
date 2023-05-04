@@ -27,6 +27,7 @@ def get_events(session: Session, chat_id: Optional[int] = None):
         Event.start_year >= now.year,
         Event.start_month >= now.month,
         # select any event in the current month
+        Event.deleted == false(),
     ).order_by(
         Event.start_year,
         Event.start_month,

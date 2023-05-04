@@ -727,6 +727,8 @@ class Event(Base):
     updated_on = Column(DateTime, default=utilities.now())
     message_json = Column(String, default=None)
 
+    deleted = Column(Boolean, default=False)  # != Event.canceled
+
     def __init__(self, chat_id: int, message_id: int):
         self.message_id = message_id
         self.chat_id = chat_id

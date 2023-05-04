@@ -294,6 +294,10 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     message_id = update.effective_message.message_id
 
     event = events.get_or_create(session, chat_id, message_id)
+    if event.deleted:
+        logger.debug(f"event ({event.chat_id}; {event.message_id}) was deleted: skipping update")
+        return
+
     add_event_message_metadata(update.effective_message, event)
     parse_message_entities(update.effective_message, event)
     parse_message_text(update.effective_message.text or update.effective_message.caption, event)
@@ -442,7 +446,8 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
         await update.effective_message.reply_text(f"No event saved for this message ({event_ids_str})")
         return
 
-    session.delete(event)
+    # session.delete(event)
+    event.deleted = True
 
     await update.effective_message.reply_text(f"Event deleted ({event_ids_str})")
 
