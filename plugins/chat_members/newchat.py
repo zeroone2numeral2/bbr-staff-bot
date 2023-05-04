@@ -11,7 +11,7 @@ from telegram.ext import MessageHandler
 
 from constants import Group
 from database.models import User, Chat
-from database.queries import chat_members
+from database.queries import chat_members, users
 import decorators
 import utilities
 
@@ -49,7 +49,7 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
         chat.set_left()
         return
 
-    chat.left = False  # override, it might be True if the chat was previously set
+    chat.left = False  # override, it might be True if the chat was previously left
 
     session.commit()  # make sure to commit now, just in case something unexpected happens while saving admins
 
@@ -60,6 +60,7 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
 
     administrator: ChatMemberAdministrator
     for administrator in administrators:
+        users.get_safe(session, administrator.user)
         if administrator.user.id == context.bot.id:
             chat.set_as_administrator(administrator.can_delete_messages)
 
