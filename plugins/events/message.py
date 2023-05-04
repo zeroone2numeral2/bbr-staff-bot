@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import ContextTypes, filters, MessageHandler
 
-from .common import chat_id_filter, Filter, add_event_message_metadata, parse_message_text, parse_message_entities
+from .common import Filter, add_event_message_metadata, parse_message_text, parse_message_entities
 from ext.filters import ChatFilter
 from database.models import Chat
 from database.queries import events, chats

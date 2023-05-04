@@ -11,7 +11,8 @@ from telegram import Update, Message, MessageEntity
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler
 from telegram.constants import MessageLimit
 
-from .common import chat_id_filter, Filter, parse_message_entities, parse_message_text
+from ext.filters import ChatFilter
+from .common import Filter, parse_message_entities, parse_message_text
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting
 from database.queries import settings, events, chats
 import decorators
@@ -42,7 +43,7 @@ async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAU
 
     events_chat_setting: BotSetting = settings.get_or_create(session, BotSettingKey.EVENTS_CHAT_ID)
 
-    chat_id_filter.chat_ids = {events_chat_id}
+    ChatFilter.EVENTS.chat_ids = {events_chat_id}
 
     events_chat_setting.update_value(events_chat_id)
 

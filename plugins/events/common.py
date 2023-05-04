@@ -7,23 +7,11 @@ from telegram import Message, MessageEntity
 from telegram.ext import filters
 
 from config import config
-from database.base import session_scope
-from database.models import Event, EVENT_TYPE, BotSetting
+from database.models import Event, EVENT_TYPE
 import utilities
-from constants import Regex, REGIONS_DATA, BotSettingKey
-from database.queries import settings
+from constants import Regex, REGIONS_DATA
 
 logger = logging.getLogger(__name__)
-
-
-with session_scope() as tmp_session:
-    setting: BotSetting = settings.get_or_create(tmp_session, BotSettingKey.EVENTS_CHAT_ID)
-    if not setting.value():
-        logger.debug(f"setting events chat id: {config.events.chat_id}")
-        setting.update_value(config.events.chat_id)
-        tmp_session.commit()
-
-    chat_id_filter = filters.Chat(setting.value())
 
 
 class Filter:
