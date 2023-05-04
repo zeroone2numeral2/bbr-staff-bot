@@ -30,4 +30,4 @@ chat_members.update
 
 # debug.callback_query
 # debug.chat_member
-debug.chatid
+# debug.chatid
