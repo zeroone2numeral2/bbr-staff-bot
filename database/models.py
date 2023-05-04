@@ -213,6 +213,10 @@ class Chat(Base):
         self.left = True
         self.unset_as_administrator()
 
+    def set_as_staff_chat(self):
+        self.is_staff_chat = True
+        self.is_users_chat = False
+
 
 chat_member_union_type = Union[
     TgChatMember,
