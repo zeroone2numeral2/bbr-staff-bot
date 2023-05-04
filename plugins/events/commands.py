@@ -11,7 +11,7 @@ from telegram import Update, Message, MessageEntity
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler
 from telegram.constants import MessageLimit
 
-from common import chat_id_filter, Filter, parse_message_entities, parse_message_text
+from .common import chat_id_filter, Filter, parse_message_entities, parse_message_text
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting
 from database.queries import settings, events
 import decorators

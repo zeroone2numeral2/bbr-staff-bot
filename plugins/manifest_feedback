@@ -1,6 +1,6 @@
-applications.private.any_message # PREPROCESS
-
-# edited messages NEED to be catched before anything else, otherwise they will be processed by other MessageHandlers
+# PREPROCESS
+applications.private.any_message
+events.message
 staff.chat.edits
 
 # user messages cannot be edited because they are forwarded
@@ -10,8 +10,7 @@ staff.private.placeholders
 staff.private.settings_manual
 staff.private.settings
 staff.private.ltexts
-
-events.message # PREPROCESS
+events.commands
 
 help
 users.start
