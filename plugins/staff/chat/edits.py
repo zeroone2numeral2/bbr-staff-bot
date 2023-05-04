@@ -42,5 +42,5 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff), Group.NORMAL),
+    (MessageHandler(filters.UpdateType.EDITED_MESSAGE & filters.TEXT & filters.ChatType.GROUPS, on_edited_message_staff), Group.PREPROCESS),
 )
