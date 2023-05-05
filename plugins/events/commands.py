@@ -136,7 +136,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
                 query_filters.append(Event.region.in_(it_regions))
             else:
                 query_filters.append(Event.region.not_in(it_regions))
-    elif not context.args or "week" not in context.args:
+    if not context.args or "week" not in context.args:
         # no temporal filters -> extract all events > this month
         now = utilities.now()
         query_filters.extend([
