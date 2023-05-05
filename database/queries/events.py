@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy import select, false, and_
 from sqlalchemy.orm import Session
@@ -19,7 +19,13 @@ def get_or_create(session: Session, chat_id: int, message_id: int, create_if_mis
     return event
 
 
-def get_events(session: Session, chat_id: Optional[int] = None, skip_canceled: bool = False):
+def get_events(
+        session: Session,
+        chat_id: Optional[int] = None,
+        skip_canceled: bool = False,
+        event_type: Optional[str] = None,
+        additional_filters: Optional[List] = None
+):
     now = utilities.now()
 
     filters = [
@@ -32,6 +38,8 @@ def get_events(session: Session, chat_id: Optional[int] = None, skip_canceled: b
         filters.append(Event.chat_id == chat_id)
     if skip_canceled:
         filters.append(Event.canceled == false())
+    if additional_filters:
+        filters.extend(additional_filters)
 
     query = select(Event).filter(*filters).order_by(
         Event.start_year,

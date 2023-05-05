@@ -13,11 +13,11 @@ from telegram.constants import MessageLimit
 
 from ext.filters import ChatFilter
 from .common import Filter, parse_message_entities, parse_message_text
-from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting
+from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
 from database.queries import settings, events, chats
 import decorators
 import utilities
-from constants import BotSettingKey, Group, Regex, REGIONS_DATA
+from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,24 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
     all_events = "eventsall" in update.message.text.lower()
 
-    events_list: List[Event] = events.get_events(session)
+    query_filters = []
+    if context.args:
+        args = [arg.lower() for arg in context.args]
+        if "legal" in args:
+            query_filters.append(Event.event_type == EventType.LEGAL)
+        if "free" in args:
+            query_filters.append(Event.event_type == EventType.FREE)
+        if "other" in args:
+            other_types = [EventType.OTHER, EventType.STREET_PARADE]
+            query_filters.append(Event.event_type.in_(other_types))
+        if "it" in args or "noit" in args:
+            it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
+            if "it" in args:
+                query_filters.append(Event.region.in_(it_regions))
+            else:
+                query_filters.append(Event.region.not_in(it_regions))
+
+    events_list: List[Event] = events.get_events(session, additional_filters=query_filters)
     messages_to_send = []
     message_events = []
     for i, event in enumerate(events_list):
