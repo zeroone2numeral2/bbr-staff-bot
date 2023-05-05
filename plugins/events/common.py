@@ -82,7 +82,7 @@ class DateMatchNormal:
     NAME = "DateMatchNormal"
     # https://regex101.com/r/MnrWDz/6
     PATTERN = (
-        r"(?P<start_day>\d{1,2}|[\?x]+)(?:-(?P<end_day>\d{1,2}|[\?x]+))?[/.](?P<month>\d{1,2})(?:[/.](?P<year>\d{2,4}))?",
+        r"(?P<start_day>\d{1,2}|[\?x]+)(?:-(?P<end_day>\d{1,2}|[\?x]+))?[/.](?P<month>\d{1,2})(?:[/.](?P<year>(?:20)?2\d))",
     )
 
     @staticmethod
