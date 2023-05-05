@@ -15,7 +15,7 @@ from constants import Group
 logger = logging.getLogger(__name__)
 
 
-@decorators.catch_exception()
+@decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"events chat message update {utilities.log(update)}")
