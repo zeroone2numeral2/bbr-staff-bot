@@ -174,6 +174,22 @@ def add_event_message_metadata(message: Message, event: Event):
             event.media_file_unique_id = message.effective_attachment.file_unique_id
 
 
+MONTHS = (
+    "#gennaio",
+    "#febbraio",
+    "#marzo",
+    "#aprile",
+    "#maggio",
+    "#giugno",
+    "#luglio",
+    "#agosto",
+    "#settembre",
+    "#ottobre",
+    "#novembre",
+    "#dicembre"
+)
+
+
 def parse_message_entities_list(hashtags_list: List[str], event: Event):
     event.save_hashtags(hashtags_list)
     for hashtag, event_type in EVENT_TYPE.items():
@@ -201,6 +217,25 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
 
         if region_found:
             break
+
+    # DATES
+    # enter this only if dates are not already filled
+    # they will be overwritten when the text is parsed
+    if not event.start_month and not event.start_year:
+        for i, month_hashtag in enumerate(MONTHS):
+            if month_hashtag not in hashtags_list:
+                continue
+
+            month = i + 1
+            year = utilities.now().year
+            if month < utilities.now().month:
+                year += 1
+
+            event.start_month = month
+            event.start_year = year
+
+            event.end_month = month
+            event.end_year = year
 
 
 def parse_message_entities(message: Message, event: Event):
