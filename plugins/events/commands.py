@@ -69,10 +69,13 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     logger.info(f"/events or /eventsall {utilities.log(update)}")
 
     all_events = "eventsall" in update.message.text.lower()
+    order_by_type = False
 
     query_filters = []
     if context.args:
         args = [arg.lower() for arg in context.args]
+        if "bytype" in args:
+            order_by_type = True
         if "legal" in args:
             query_filters.append(Event.event_type == EventType.LEGAL)
         if "free" in args:
@@ -80,14 +83,25 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         if "other" in args:
             other_types = [EventType.OTHER, EventType.STREET_PARADE]
             query_filters.append(Event.event_type.in_(other_types))
+        if "week" in args:
+            last_monday = utilities.previous_weekday(weekday=0)
+            next_monday = utilities.next_weekday(weekday=0)
+            query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
         if "it" in args or "noit" in args:
             it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
             if "it" in args:
                 query_filters.append(Event.region.in_(it_regions))
             else:
                 query_filters.append(Event.region.not_in(it_regions))
+    elif not context.args or "week" not in context.args:
+        # no temporal filters -> extract all events > this month
+        now = utilities.now()
+        query_filters.extend([
+            Event.start_year >= now.year,
+            Event.start_month >= now.month,
+        ])
 
-    events_list: List[Event] = events.get_events(session, additional_filters=query_filters)
+    events_list: List[Event] = events.get_events(session, filters=query_filters, order_by_type=order_by_type)
     messages_to_send = []
     message_events = []
     for i, event in enumerate(events_list):
@@ -126,6 +140,10 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         new_message_to_send = "\n".join(message_events)
         messages_to_send.append(new_message_to_send)
 
+    if not messages_to_send:
+        await update.message.reply_text("empty :(")
+        return
+
     total_messages = len(messages_to_send)
     for i, text_to_send in enumerate(messages_to_send):
         logger.debug(f"sending message {i+1}/{total_messages}")
@@ -144,7 +162,7 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
             # logger.info(f"skipping valid event: {event}")
             continue
 
-        text_lines.append(f"{event.message_link()}")
+        text_lines.append(f"{event.event_title} {event.message_link()}")
 
     await update.message.reply_text("\n".join(text_lines))
 

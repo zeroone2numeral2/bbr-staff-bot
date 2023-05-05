@@ -1,3 +1,4 @@
+import datetime
 import logging
 import re
 from re import Match
@@ -70,12 +71,18 @@ class EventDate:
     def to_str(self):
         return str(self)
 
+    def to_date(self) -> datetime.date:
+        if not self.day:
+            raise ValueError("cannot return a date if day is missing")
+
+        return datetime.date(year=self.year, month=self.month, day=self.day)
+
 
 class DateMatchNormal:
     NAME = "DateMatchNormal"
     # https://regex101.com/r/MnrWDz/6
     PATTERN = (
-        r"(?P<start_day>\d{1,2}|\?+)(?:-(?P<end_day>\d{1,2}|\?+))?[/.](?P<month>\d{1,2})(?:[/.](?P<year>\d{2,4}))?",
+        r"(?P<start_day>\d{1,2}|[\?x]+)(?:-(?P<end_day>\d{1,2}|[\?x]+))?[/.](?P<month>\d{1,2})(?:[/.](?P<year>\d{2,4}))?",
     )
 
     @staticmethod
@@ -267,3 +274,5 @@ def parse_message_text(message_text: str, event: Event):
         event.end_day = end_date.day
         event.end_month = end_date.month
         event.end_year = end_date.year
+        if start_date.day:
+            event.start_date = start_date.to_date()

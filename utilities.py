@@ -34,6 +34,28 @@ def now():
     return datetime.datetime.utcnow()
 
 
+def next_weekday(today: Optional[datetime.date] = None, weekday=0):
+    if not today:
+        today = datetime.date.today()
+
+    days_ahead = weekday - today.weekday()
+    if days_ahead <= 0:  # target day already happened this week
+        days_ahead += 7
+
+    return today + datetime.timedelta(days_ahead)
+
+
+def previous_weekday(today: Optional[datetime.date] = None, weekday=0):
+    if not today:
+        today = datetime.date.today()
+
+    days_behind = today.weekday() - weekday
+    if days_behind < 0:  # target day already happened this week
+        days_behind += 7
+
+    return today - datetime.timedelta(days_behind)
+
+
 def is_admin(user: User) -> bool:
     return user.id in config.telegram.admins
 
@@ -271,6 +293,8 @@ def unpack_message_link(message_link: str) -> Tuple[Optional[Union[int, str]], O
 
 if __name__ == "__main__":
     # print(convert_string_to_value("29/02/32 10:59"))
-    test_keyboard = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
-    list_to_keyboard(test_keyboard, max_rows=4)
+    # test_keyboard = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
+    # list_to_keyboard(test_keyboard, max_rows=4)
+    today_date = datetime.date(2023, 4, 30)
+    print(previous_weekday(today_date), next_weekday(today_date))
 

@@ -706,6 +706,7 @@ class Event(Base):
 
     event_id = Column(Integer, default=None)
     event_title = Column(String, default=None)
+    start_date = Column(Date, default=None)  # just a convenience Date column that should be used for queries
     start_day = Column(Integer, default=None)
     start_month = Column(Integer, default=None)
     start_year = Column(Integer, default=None)

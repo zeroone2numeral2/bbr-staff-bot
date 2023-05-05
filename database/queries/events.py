@@ -23,30 +23,33 @@ def get_events(
         session: Session,
         chat_id: Optional[int] = None,
         skip_canceled: bool = False,
-        event_type: Optional[str] = None,
-        additional_filters: Optional[List] = None
+        filters: Optional[List] = None,
+        order_by_type=False
 ):
-    now = utilities.now()
+    if not filters:
+        filters = []
 
-    filters = [
-        Event.start_year >= now.year,
-        Event.start_month >= now.month,
-        # ignore deleted events (not canceled)
-        Event.deleted == false(),
-    ]
+    filters.append(Event.deleted == false())
+
     if chat_id:
         filters.append(Event.chat_id == chat_id)
     if skip_canceled:
         filters.append(Event.canceled == false())
-    if additional_filters:
-        filters.extend(additional_filters)
 
-    query = select(Event).filter(*filters).order_by(
+    order_by_default = [
         Event.start_year,
         Event.start_month,
         Event.start_day,
         Event.message_id
-    )
+    ]
+
+    if order_by_type:
+        order_by = [Event.event_type, Event.region]
+        order_by.extend(order_by_default)
+    else:
+        order_by = order_by_default
+
+    query = select(Event).filter(*filters).order_by(*order_by)
 
     return session.scalars(query)
 
