@@ -46,5 +46,5 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (MessageHandler(ChatFilter.EVENTS & Filter.UPDATE_TYPE & Filter.MESSAGE_TYPE, on_event_message), Group.PREPROCESS),
+    (MessageHandler(ChatFilter.EVENTS & Filter.UPDATE_TYPE & Filter.WITH_TEXT, on_event_message), Group.PREPROCESS),
 )

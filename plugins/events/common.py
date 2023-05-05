@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class Filter:
     UPDATE_TYPE = filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST
     UPDATE_TYPE_NEW_MESSAGE = filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST
-    MESSAGE_TYPE = filters.TEXT | filters.CAPTION
+    WITH_TEXT = filters.TEXT | filters.CAPTION
     ADMIN_PRIVATE = filters.ChatType.PRIVATE & filters.User(config.telegram.admins)
 
 
