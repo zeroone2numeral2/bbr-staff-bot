@@ -121,9 +121,10 @@ class DateMatchNormal:
 class DateMatchDaysList:
     NAME = "DateMatchDaysList"
     PATTERN = (
-        r"(?P<days>(?:\d{1,2}[\.-]?)+)/(?P<month>\d{1,2})/(?P<year>\d{2,4})(?![\.-])",  # https://regex101.com/r/f9vJkw/6
-        r"(?P<days>(?:\d{1,2}[/-]?)+)\.(?P<month>\d{1,2})\.(?P<year>\d{2,4})(?![/-])",  # https://regex101.com/r/QkzVSg/3
-        r"(?P<days>(?:\d{1,2}[/\.]?)+)-(?P<month>\d{1,2})-(?P<year>\d{2,4})(?![/\.])",  # https://regex101.com/r/wKMaKI/3
+        # "." inside a "[]" matches the character "." literally
+        r"(?P<days>(?:\d{1,2}[.-]?)+)/(?P<month>\d{1,2})/(?P<year>(?:20)?2[3-9])(?![.-])",  # https://regex101.com/r/f9vJkw
+        r"(?P<days>(?:\d{1,2}[/-]?)+)\.(?P<month>\d{1,2})\.(?P<year>(?:20)?2[3-9])(?![/-])",  # https://regex101.com/r/QkzVSg
+        r"(?P<days>(?:\d{1,2}[/.]?)+)-(?P<month>\d{1,2})-(?P<year>(?:20)?2[3-9])(?![/.])",  # https://regex101.com/r/wKMaKI
     )
 
     @staticmethod
