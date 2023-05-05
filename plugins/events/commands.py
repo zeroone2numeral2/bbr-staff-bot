@@ -63,6 +63,49 @@ def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
         return True
 
 
+def format_event_string(event: Event) -> str:
+    region_icon = ""
+    if event.region and event.region in REGIONS_DATA:
+        region_icon = REGIONS_DATA[event.region]["emoji"]
+
+    if event.event_title:
+        title_escaped = utilities.escape_html(event.event_title)
+    else:
+        title_escaped = "unnamed party"
+
+    if event.canceled:
+        title_escaped = f"<s>{title_escaped}</s>"
+
+    # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
+    text = f"{event.icon()}{region_icon} <b><a href=\"{event.message_link()}\">{title_escaped}</a></b> • {event.pretty_date()}"
+
+    return text
+
+
+def split_messages(all_events: List[str], return_after_first_message=False) -> List[str]:
+    messages_to_send = []
+    next_message_events = []
+    for events_string in all_events:
+        if time_to_split(next_message_events, entities_per_line=2):
+            new_message_to_send = "\n".join(next_message_events)
+            messages_to_send.append(new_message_to_send)
+
+            # logger.debug(f"time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
+            if return_after_first_message:
+                return messages_to_send
+
+            next_message_events = [events_string]
+        else:
+            # logger.debug(f"no time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
+            next_message_events.append(events_string)
+
+    if next_message_events:
+        last_message_text = "\n".join(next_message_events)
+        messages_to_send.append(last_message_text)
+
+    return messages_to_send
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
@@ -102,43 +145,19 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         ])
 
     events_list: List[Event] = events.get_events(session, filters=query_filters, order_by_type=order_by_type)
-    messages_to_send = []
-    message_events = []
+
+    all_events_strings = []
     for i, event in enumerate(events_list):
         if not event.is_valid():
             logger.info(f"skipping invalid event: {event}")
             continue
 
-        region_icon = ""
-        if event.region and event.region in REGIONS_DATA:
-            region_icon = REGIONS_DATA[event.region]["emoji"]
-
-        title_escaped = utilities.escape_html(event.event_title)
-        if event.canceled:
-            title_escaped = f"<s>{title_escaped}</s>"
-
-        # text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
-        text_line = f"{event.icon()}{region_icon} <b><a href=\"{event.message_link()}\">{title_escaped}</a></b> • {event.pretty_date()}"
-
-        if time_to_split(message_events, entities_per_line=2):
-            new_message_to_send = "\n".join(message_events)
-            messages_to_send.append(new_message_to_send)
-
-            # logger.debug(f"time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
-            if not all_events:
-                message_events = []  # make sure to empty the list so the last message is not sent
-                break
-
-            message_events = [text_line]
-        else:
-            # logger.debug(f"no time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
-            message_events.append(text_line)
+        text_line = format_event_string(event)
+        all_events_strings.append(text_line)
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
-    if message_events:
-        new_message_to_send = "\n".join(message_events)
-        messages_to_send.append(new_message_to_send)
+    messages_to_send = split_messages(all_events_strings, return_after_first_message=not all_events)
 
     if not messages_to_send:
         await update.message.reply_text("empty :(")
@@ -156,15 +175,24 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
     logger.info(f"/invalidevents {utilities.log(update)}")
 
     events_list: List[Event] = events.get_events(session)
-    text_lines = []
+    all_events_strings = []
     for i, event in enumerate(events_list):
         if event.is_valid():
-            # logger.info(f"skipping valid event: {event}")
             continue
 
-        text_lines.append(f"{event.event_title} {event.message_link()}")
+        text_line = format_event_string(event)
+        all_events_strings.append(text_line)
 
-    await update.message.reply_text("\n".join(text_lines))
+    messages_to_send = split_messages(all_events_strings)
+
+    if not messages_to_send:
+        await update.message.reply_text("none")
+        return
+
+    total_messages = len(messages_to_send)
+    for i, text_to_send in enumerate(messages_to_send):
+        logger.debug(f"sending message {i + 1}/{total_messages}")
+        await update.message.reply_text(text_to_send)
 
 
 @decorators.catch_exception()
@@ -194,6 +222,9 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
 async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/delevent {utilities.log(update)}")
 
+    if not context.args:
+        return
+
     message_link = context.args[0]
     chat_id, message_id = utilities.unpack_message_link(message_link)
     if not chat_id:
@@ -214,7 +245,8 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     # session.delete(event)
     event.deleted = True
 
-    await update.effective_message.reply_text(f"Event deleted ({event_ids_str})")
+    event_str = format_event_string(event)
+    await update.effective_message.reply_text(f"{event_str}\n\n^event deleted ({event_ids_str})")
 
 
 @decorators.catch_exception()
@@ -233,7 +265,7 @@ async def on_fwd_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["events", "eventsall"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
-    (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["invalidevents", "ie", "soon"], on_invalid_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["fwd"], on_fwd_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
