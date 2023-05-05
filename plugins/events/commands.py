@@ -166,6 +166,9 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     total_messages = len(messages_to_send)
     for i, text_to_send in enumerate(messages_to_send):
         logger.debug(f"sending message {i+1}/{total_messages}")
+        if i + 1 == total_messages:
+            text_to_send += f"\n\nUse /soon for a list of events without a date"
+
         await update.message.reply_text(text_to_send)
 
 
