@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import select, false
+from sqlalchemy import select, false, and_
 from sqlalchemy.orm import Session
 
 import utilities
@@ -19,23 +19,28 @@ def get_or_create(session: Session, chat_id: int, message_id: int, create_if_mis
     return event
 
 
-def get_events(session: Session, chat_id: Optional[int] = None):
+def get_events(session: Session, chat_id: Optional[int] = None, skip_canceled: bool = False):
     now = utilities.now()
-    statement = select(Event).where(
-        # Event.chat_id == chat_id,
-        # Event.canceled == false(),
+
+    filters = [
         Event.start_year >= now.year,
         Event.start_month >= now.month,
-        # select any event in the current month
+        # ignore deleted events (not canceled)
         Event.deleted == false(),
-    ).order_by(
+    ]
+    if chat_id:
+        filters.append(Event.chat_id == chat_id)
+    if skip_canceled:
+        filters.append(Event.canceled == false())
+
+    query = select(Event).filter(*filters).order_by(
         Event.start_year,
         Event.start_month,
         Event.start_day,
         Event.message_id
     )
 
-    return session.scalars(statement)
+    return session.scalars(query)
 
 
 def get_all_events(session: Session):

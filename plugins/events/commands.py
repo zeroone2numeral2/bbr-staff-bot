@@ -52,7 +52,7 @@ async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAU
 
 
 def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
-    message_length = 0
+    message_length = len("\n\naggiornato al xx/xx/xxxx xx:xx")
     for line in text_lines:
         message_length += len(line)
 
@@ -66,11 +66,13 @@ def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/events {utilities.log(update)}")
+    logger.info(f"/events or /eventsall {utilities.log(update)}")
+
+    all_events = "eventsall" in update.message.text.lower()
 
     events_list: List[Event] = events.get_events(session)
     messages_to_send = []
-    text_lines = []
+    message_events = []
     for i, event in enumerate(events_list):
         if not event.is_valid():
             logger.info(f"skipping invalid event: {event}")
@@ -84,17 +86,27 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         if event.canceled:
             title_escaped = f"<s>{title_escaped}</s>"
 
-        text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
+        # text_line = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
+        text_line = f"{event.icon()}{region_icon} <b><a href=\"{event.message_link()}\">{title_escaped}</a></b> • {event.pretty_date()}"
 
-        if time_to_split(text_lines, entities_per_line=2):
-            new_message_to_send = "\n".join(text_lines)
+        if time_to_split(message_events, entities_per_line=2):
+            new_message_to_send = "\n".join(message_events)
             messages_to_send.append(new_message_to_send)
-            text_lines = [text_line]
-        else:
-            text_lines.append(text_line)
 
-    if text_lines:
-        new_message_to_send = "\n".join(text_lines)
+            # logger.debug(f"time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
+            if not all_events:
+                message_events = []  # make sure to empty the list so the last message is not sent
+                break
+
+            message_events = [text_line]
+        else:
+            # logger.debug(f"no time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
+            message_events.append(text_line)
+
+    # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
+
+    if message_events:
+        new_message_to_send = "\n".join(message_events)
         messages_to_send.append(new_message_to_send)
 
     total_messages = len(messages_to_send)
@@ -185,7 +197,7 @@ async def on_fwd_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["events"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CommandHandler(["events", "eventsall"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
