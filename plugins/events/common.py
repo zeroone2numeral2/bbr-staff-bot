@@ -29,7 +29,7 @@ class EventDate:
         self.month: int = month
         self.year: int = year
 
-        if (isinstance(day, str) and "?" in day) or day is None:
+        if (isinstance(day, str) and ("?" in day or "x" in day.lower())) or day is None:
             self.day = None
         else:
             self.day = int(day)
@@ -87,8 +87,8 @@ class DateMatchNormal:
 
     @staticmethod
     def extract(match: Match):
-        start_day_str = match.group("start_day")
-        if "?" in start_day_str:
+        start_day_str = match.group("start_day").lower()
+        if "?" in start_day_str or "x" in start_day_str:
             start_day = None
         else:
             start_day = int(start_day_str)
@@ -104,7 +104,7 @@ class DateMatchNormal:
         if not end_day_str:
             end_date = EventDate(year, month, start_day)
         else:
-            if "?" in end_day_str:
+            if "?" in end_day_str or "x" in end_day_str.lower():
                 end_date = EventDate(year, month)
             else:
                 end_day = int(end_day_str)
@@ -130,7 +130,7 @@ class DateMatchDaysList:
     def extract(match: Match):
         days_str = match.group("days")
         days_list = []
-        separators = (".", "-")
+        separators = (".", "-", "/")
         for sep in separators:
             if sep in days_str:
                 days_list = days_str.split(sep)
