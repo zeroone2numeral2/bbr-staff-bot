@@ -725,6 +725,7 @@ class Event(Base):
     media_group_id = Column(Integer, default=None)
     media_file_id = Column(String, default=None)
     media_file_unique_id = Column(String, default=None)
+    media_type = Column(String, default=None)
 
     hashtags = Column(String, default=None)  # hashtag entities as json string
 
