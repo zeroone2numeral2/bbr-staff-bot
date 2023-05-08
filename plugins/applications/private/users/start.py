@@ -3,7 +3,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
 from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler, PrefixHandler, MessageHandler
 from telegram.ext import CommandHandler
 from telegram.ext import filters
@@ -78,6 +78,18 @@ def get_done_keyboard(input_field_placeholder: Optional[str] = None):
     )
 
 
+def get_text(session: Session, ltext_key: str, user: TelegramUser) -> str:
+    fallback_language = settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
+    ltext = texts.get_localized_text_with_fallback(
+        session,
+        ltext_key,
+        Language.IT,
+        fallback_language=fallback_language
+    )
+    text = replace_placeholders(ltext.value, user, session)
+    return text
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
@@ -86,7 +98,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     chat_member = chat_members.get_users_chat_chat_member(session, update.effective_user.id)
     if not chat_member:
         users_chat = chats.get_users_chat(session)
-        logger.info(f"no record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
+        logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
         tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
         chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
         session.add(chat_member)
@@ -339,12 +351,16 @@ async def on_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session
     if not application_data:
         raise ValueError("no application data")
 
-    if application_data[ApplicationDataKey.COMPLETED]:
-        # send to staff
-        sent_message = await update.message.reply_text("timeout: sent staff", reply_markup=ReplyKeyboardRemove())
-    else:
-        sent_message = await update.message.reply_text("timeout: canceled", reply_markup=ReplyKeyboardRemove())
+    if not application_data[ApplicationDataKey.COMPLETED]:
+        logger.info("user didn't complete the conversation: cancel")
+        text = get_text(session, LocalizedTextKey.APPLICATION_TIMEOUT, update.effective_user)
+        sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
+        private_chat_messages.save(session, sent_message)
+        return ConversationHandler.END
 
+    logger.info("all requested data has been submitted: send to staff")
+    text = get_text(session, LocalizedTextKey.APPLICATION_SENT_TO_STAFF, update.effective_user)
+    sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
     private_chat_messages.save(session, sent_message)
 
     return ConversationHandler.END
@@ -370,7 +386,7 @@ approval_mode_conversation_handler = ConversationHandler(
             MessageHandler(~filters.TEXT, on_waiting_description_unexpected_message_received),
         ],
         ConversationHandler.TIMEOUT: [
-            # on timeout, the *last update* is broadcasted to all users. it might be a callback query or a text
+            # on timeout, the *last update* is broadcasted to all handlers. it might be a callback query or a text
             MessageHandler(filters.ALL, on_timeout),
         ]
     },

@@ -3,7 +3,6 @@ applications.private.any_message
 events.message
 staff.chat.edits
 
-
 # user messages cannot be edited because they are forwarded
 # users.edits
 

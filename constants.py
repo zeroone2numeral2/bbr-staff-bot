@@ -33,6 +33,17 @@ LANGUAGES = {
 }
 
 
+class MediaType:
+    PHOTO = "photo"
+    VIDEO = "video"
+    DOCUMENT = "document"
+    STICKER = "sticker"
+    ANIMATION = "animation"
+    VIDEO_NOTE = "video_note"
+    VOICE = "voice"
+    AUDIO = "audio"
+
+
 class BotSettingKey:
     SENT_TO_STAFF = "sent_to_staff_message"
     BROADCAST_EDITS = "broadcast_edits"
@@ -54,17 +65,8 @@ class LocalizedTextKey:
     SEND_SOCIAL = "send_social"
     DESCRIBE_SELF = "describe_self"
     APPLICATION_CANCELED = "application_canceled"
-
-
-class MediaType:
-    PHOTO = "photo"
-    VIDEO = "video"
-    DOCUMENT = "document"
-    STICKER = "sticker"
-    ANIMATION = "animation"
-    VIDEO_NOTE = "video_note"
-    VOICE = "voice"
-    AUDIO = "audio"
+    APPLICATION_TIMEOUT = "application_timeout"
+    APPLICATION_SENT_TO_STAFF = "application_sent_to_staff"
 
 
 LOCALIZED_TEXTS_DESCRIPTORS = {
@@ -120,6 +122,18 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         label="richiesta annullata",
         explanation="Il messaggio che verrà inviato all'utente se annulla la procedura di richiesta",
         emoji=Emoji.CANCEL,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.APPLICATION_TIMEOUT: dict(
+        label="timeout richiesta",
+        explanation="Il messaggio che verrà inviato all'utente se non completa la richiesta nel tempo prestabilito",
+        emoji=Emoji.ALARM,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.APPLICATION_SENT_TO_STAFF: dict(
+        label="richiesta inviata",
+        explanation="Il messaggio che verrà inviato all'utente dopo che invia la richiesta",
+        emoji=Emoji.ENVELOPE,
         show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
     ),
 }

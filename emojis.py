@@ -1,4 +1,5 @@
 class Emoji:
+    ALARM = "⏰"
     BANNED = "🚫"
     BOT = "🤖"
     SLEEPING = "😪"

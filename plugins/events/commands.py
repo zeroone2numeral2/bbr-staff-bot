@@ -220,7 +220,7 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
     await update.message.reply_text(f"parsed {events_count} db entries")
 
 
-def event_from_link(update: Update, context: CallbackContext, session: Session) -> Optional[Event]:
+async def event_from_link(update: Update, context: CallbackContext, session: Session) -> Optional[Event]:
     if not context.args:
         return
 
@@ -249,7 +249,7 @@ def event_from_link(update: Update, context: CallbackContext, session: Session) 
 async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/delevent {utilities.log(update)}")
 
-    event: Event = event_from_link(update, context, session)
+    event: Event = await event_from_link(update, context, session)
     if not event:
         return
 
@@ -265,7 +265,7 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
 async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/getfly {utilities.log(update)}")
 
-    event: Event = event_from_link(update, context, session)
+    event: Event = await event_from_link(update, context, session)
     if not event:
         return
 
