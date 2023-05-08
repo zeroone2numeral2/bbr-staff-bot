@@ -1,5 +1,6 @@
 class Emoji:
     BANNED = "🚫"
+    BOT = "🤖"
     SLEEPING = "😪"
     WARNING = "⚠️"
     LENS = "🔎"

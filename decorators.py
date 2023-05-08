@@ -18,6 +18,7 @@ from database.models import User, Chat
 from database.queries import chats, chat_members, users, private_chat_messages
 import utilities
 from config import config
+from emojis import Emoji
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def catch_exception(silent=False, skip_not_modified_exception=False):
                 logger.error('error while running handler callback: %s', str(e), exc_info=True)
 
                 if not silent:
-                    text = 'An error occurred while processing the message: <code>{}</code>'.format(utilities.escape_html(str(e)))
+                    text = f'{Emoji.BOT} Oops, something went wrong: <code>{utilities.escape_html(str(e))}</code>'
                     if update.callback_query:
                         sent_message = await update.callback_query.message.reply_html(text)
                     else:
