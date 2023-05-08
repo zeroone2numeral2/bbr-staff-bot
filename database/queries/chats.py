@@ -17,6 +17,10 @@ def reset_staff_chat(session: Session):
     session.execute(update(Chat).values(is_staff_chat=False))
 
 
+def reset_users_chat(session: Session):
+    session.execute(update(Chat).values(is_users_chat=False))
+
+
 def get_users_chat(session: Session) -> Optional[Chat]:
     chat: Chat = session.query(Chat).filter(Chat.is_users_chat == true()).one_or_none()
     return chat

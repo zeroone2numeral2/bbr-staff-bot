@@ -1,9 +1,10 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy.orm import Session
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message, InputMediaPhoto
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
+from telegram.constants import MessageLimit
 from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler, PrefixHandler, MessageHandler
 from telegram.ext import CommandHandler
 from telegram.ext import filters
@@ -342,10 +343,101 @@ async def on_done_button(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
     return State.WAITING_DESCRIBE_SELF
 
 
+async def send_application_to_staff(bot: Bot, chat_id: int, application_data, user: TelegramUser):
+    # there must be at least one message
+    description_messages: List[Message] = application_data.pop(ApplicationDataKey.DESCRIPTION)
+
+    text_messages: List[Message] = []
+    photo_or_video_messages: List[Message] = []
+    voice_or_video_note_messages: List[Message] = []
+
+    # we will link them later
+    sent_attachment_messages: List[Message] = []
+
+    for message in description_messages:
+        if message.photo or message.video:
+            photo_or_video_messages.append(message)
+        elif message.voice or message.video_note:
+            voice_or_video_note_messages.append(message)
+        elif message.text:
+            text_messages.append(message)
+        else:
+            logger.warning(f"unexpected description message: {message}")
+
+    # first: send text messages
+    if text_messages:
+        text = f"{Emoji.LINE} <b>descrizione</b>"
+
+        for message in text_messages:
+            if len(text) + len(message.text_html) > MessageLimit.MAX_TEXT_LENGTH:
+                sent_message = await bot.send_message(chat_id, text)
+                sent_attachment_messages.append(sent_message)
+                text = ""
+            else:
+                text += f"\n{message.text_html}"
+
+        if text:
+            # send what's left
+            sent_message = await bot.send_message(chat_id, text)
+            sent_attachment_messages.append(sent_message)
+
+    # then: send photos/videos as albums
+    input_medias = []
+    for i, message in enumerate(photo_or_video_messages):
+        if message.photo:
+            input_media = InputMediaPhoto(message.photo[-1].file_id, caption=message.caption)
+        elif message.video:
+            input_media = InputMediaPhoto(message.video.file_id, caption=message.caption)
+        else:
+            logger.warning(f"unexpected video/photo message: {message}")
+            continue
+
+        input_medias.append(input_media)
+
+        if len(input_medias) == 10:
+            logger.debug("album limit reached: sending media group...")
+            sent_messages = await bot.send_media_group(chat_id, media=input_medias)
+            # save only the first one to link
+            sent_attachment_messages.append(sent_messages[0])
+            input_medias = []
+
+    if input_medias:
+        # send what's left
+        sent_messages = await bot.send_media_group(chat_id, media=input_medias)
+        # save only the first one to link
+        sent_attachment_messages.append(sent_messages[0])
+
+    # then: send voice or video messages
+    for message in voice_or_video_note_messages:
+        if message.voice:
+            sent_message = await bot.send_voice(chat_id, message.voice.file_id)
+        elif message.video_note:
+            sent_message = await bot.send_video_note(chat_id, message.video_note.file_id)
+        else:
+            logger.warning(f"unexpected voice/video note message: {message}")
+            continue
+
+        sent_attachment_messages.append(sent_message)
+
+    user_mention = user.mention_html(name=utilities.escape_html(user.full_name))
+    user_username = f"@{user.username}" if user.username else "non impostato"
+    staff_chat_application_message = f"#RICHIESTA\n\n{Emoji.USER_ICON} {user_mention}\n{Emoji.SPIRAL} {user_username}\n{Emoji.HASHTAG} #user{user.id}"
+
+    other_members_text = utilities.escape_html(application_data[ApplicationDataKey.OTHER_MEMBERS] or "non forniti")
+    staff_chat_application_message += f"\n\n{Emoji.LINE} <b>utenti garanti</b>\n{other_members_text}"
+
+    social_text = utilities.escape_html(application_data[ApplicationDataKey.SOCIAL] or "non forniti")
+    staff_chat_application_message += f"\n\n{Emoji.LINE} <b>social</b>\n{social_text}"
+
+    # staff_chat_application_message += f"\n\n{Emoji.LINE} <b>descrizione</b>\nda messaggio in risposta in poi"
+
+    await sent_attachment_messages[0].reply_html(staff_chat_application_message, quote=True)
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-async def on_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"conversation timed out")
+async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"conversation timed out or user is done")
 
     application_data = context.user_data.pop(TempDataKey.APPLICATION_DATA, None)
     if not application_data:
@@ -358,10 +450,19 @@ async def on_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session
         private_chat_messages.save(session, sent_message)
         return ConversationHandler.END
 
-    logger.info("all requested data has been submitted: send to staff")
+    logger.info("all requested data has been submitted: sending to staff")
+
     text = get_text(session, LocalizedTextKey.APPLICATION_SENT_TO_STAFF, update.effective_user)
     sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
     private_chat_messages.save(session, sent_message)
+
+    staff_chat = chats.get_staff_chat(session)
+    await send_application_to_staff(
+        bot=context.bot,
+        chat_id=staff_chat.chat_id,
+        application_data=application_data,
+        user=update.effective_user
+    )
 
     return ConversationHandler.END
 
@@ -381,19 +482,19 @@ approval_mode_conversation_handler = ConversationHandler(
             MessageHandler(filters.TEXT & ~filters.Regex(Re.CANCEL), on_waiting_social_received),
         ],
         State.WAITING_DESCRIBE_SELF: [
-            MessageHandler(filters.TEXT & filters.Regex(rf"^{ButtonText.DONE}$"), on_timeout),
+            MessageHandler(filters.TEXT & filters.Regex(rf"^{ButtonText.DONE}$"), on_timeout_or_done),
             MessageHandler(DESCRIBE_SELF_ALLOWED_MESSAGES_FILTER, on_describe_self_received),
             MessageHandler(~filters.TEXT, on_waiting_description_unexpected_message_received),
         ],
         ConversationHandler.TIMEOUT: [
             # on timeout, the *last update* is broadcasted to all handlers. it might be a callback query or a text
-            MessageHandler(filters.ALL, on_timeout),
+            MessageHandler(filters.ALL, on_timeout_or_done),
         ]
     },
     fallbacks=[
         MessageHandler(filters.TEXT & filters.Regex(Re.CANCEL), on_cancel),
     ],
-    conversation_timeout=Timeout.SECONDS_30
+    conversation_timeout=Timeout.MINUTES_20
 )
 
 HANDLERS = (

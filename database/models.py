@@ -217,6 +217,10 @@ class Chat(Base):
         self.is_staff_chat = True
         self.is_users_chat = False
 
+    def set_as_users_chat(self):
+        self.is_staff_chat = False
+        self.is_users_chat = True
+
 
 chat_member_union_type = Union[
     TgChatMember,

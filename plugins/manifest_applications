@@ -17,6 +17,8 @@ applications.private.users.start
 users.revoke
 users.message
 
+applications.group.users_chat
+
 staff.chat.setstaff
 staff.chat.reloadadmins
 staff.chat.ban
