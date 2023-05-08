@@ -34,6 +34,10 @@ def now():
     return datetime.datetime.utcnow()
 
 
+def is_test_bot():
+    return "is_test_bot" in config.telegram and config.telegram.is_test_bot
+
+
 def next_weekday(today: Optional[datetime.date] = None, weekday=0):
     if not today:
         today = datetime.date.today()

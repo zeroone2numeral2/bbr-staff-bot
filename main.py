@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import Union, Iterable
 
 import pytz
@@ -7,7 +8,8 @@ from telegram import Update, BotCommandScopeChat, ChatMemberOwner
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMember, ChatMemberAdministrator
 from telegram.constants import ParseMode
-from telegram.ext import ApplicationBuilder, Application
+from telegram.error import BadRequest, TelegramError
+from telegram.ext import ApplicationBuilder, Application, ContextTypes
 from telegram.ext import Defaults
 from telegram.ext import ExtBot
 
@@ -109,6 +111,18 @@ async def post_init(application: Application) -> None:
         await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
 
 
+async def change_my_name(context: ContextTypes.DEFAULT_TYPE):
+    if not utilities.is_test_bot():
+        return
+
+    name = f"[TEST] bbr bot {random.randint(0, 1000000)}"
+    logger.debug(f"changing name to \"{name}\"")
+    try:
+        await context.bot.set_my_name(name=name)
+    except (TelegramError, BadRequest) as e:
+        logger.debug(f"error while changing name: {e.message}")
+
+
 def main():
     utilities.load_logging_config('logging.json')
 
@@ -119,6 +133,8 @@ def main():
         .build()
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
+
+    app.job_queue.run_repeating(change_my_name, interval=60*10, first=10)
 
     logger.info(f"polling for updates...")
     app.run_polling(
