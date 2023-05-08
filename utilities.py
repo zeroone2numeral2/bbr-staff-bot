@@ -10,11 +10,11 @@ from re import Match
 from typing import Union, Optional, Tuple
 from typing import List
 
-from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton
+from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, Bot
 from telegram.error import BadRequest
 
 from config import config
-from constants import COMMAND_PREFIXES, Language, Regex
+from constants import COMMAND_PREFIXES, Language, Regex, MediaType
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,10 @@ def escape_html(string):
 
 def now():
     return datetime.datetime.utcnow()
+
+
+def now_str():
+    return now().strftime("%d/%m/%Y %H:%M")
 
 
 def is_test_bot():
@@ -67,6 +71,65 @@ def is_admin(user: User) -> bool:
 def is_normal_group(chat: Chat) -> bool:
     # return str(chat.id).startswith("-100")
     return chat.type == Chat.GROUP
+
+
+def detect_media_type(message: Message) -> str:
+    if message.photo:
+        return MediaType.PHOTO
+    elif message.video:
+        return MediaType.VIDEO
+    elif message.document:
+        return MediaType.DOCUMENT
+    elif message.voice:
+        return MediaType.VOICE
+    elif message.video_note:
+        return MediaType.VIDEO_NOTE
+    elif message.audio:
+        return MediaType.AUDIO
+    elif message.sticker:
+        return MediaType.STICKER
+    elif message.animation:
+        return MediaType.ANIMATION
+
+    raise ValueError("message contains unknown media type or doesn't contain a media")
+
+
+async def reply_media(message: Message, media_type: str, file_id: str, caption: Optional[str] = None, quote: Optional[bool] = None) -> Message:
+    if media_type == MediaType.PHOTO:
+        return await message.reply_photo(file_id, caption=caption, quote=quote)
+    elif media_type == MediaType.VIDEO:
+        return await message.reply_video(file_id, caption=caption, quote=quote)
+    elif media_type == MediaType.DOCUMENT:
+        return await message.reply_document(file_id, caption=caption, quote=quote)
+    elif media_type == MediaType.VOICE:
+        return await message.reply_voice(file_id, caption=caption, quote=quote)
+    elif media_type == MediaType.VIDEO_NOTE:
+        return await message.reply_video_note(file_id, quote=quote)
+    elif media_type == MediaType.AUDIO:
+        return await message.reply_audio(file_id, caption=caption, quote=quote)
+    elif media_type == MediaType.ANIMATION:
+        return await message.reply_animation(file_id, caption=caption, quote=quote)
+    elif media_type == MediaType.STICKER:
+        return await message.reply_sticker(file_id, quote=quote)
+
+
+def contains_media_with_file_id(message: Message):
+    return message.effective_attachment and (isinstance(message.effective_attachment, tuple) or message.effective_attachment.file_unique_id)
+
+
+def get_media_ids(message: Message):
+    media_file_id = None
+    media_file_unique_id = None
+    media_group_id = message.media_group_id
+
+    if isinstance(message.effective_attachment, tuple):
+        media_file_id = message.effective_attachment[-1].file_id
+        media_file_unique_id = message.effective_attachment[-1].file_unique_id
+    else:
+        media_file_id = message.effective_attachment.file_id
+        media_file_unique_id = message.effective_attachment.file_unique_id
+
+    return media_file_id, media_file_unique_id, media_group_id
 
 
 def get_argument(commands: Union[List, str], text: str) -> str:

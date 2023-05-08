@@ -165,13 +165,9 @@ def add_event_message_metadata(message: Message, event: Event):
     event.message_json = message.to_json()
 
     event.media_group_id = message.media_group_id
-    if message.effective_attachment and (isinstance(message.effective_attachment, tuple) or message.effective_attachment.file_unique_id):
-        if isinstance(message.effective_attachment, tuple):
-            event.media_file_id = message.effective_attachment[-1].file_id
-            event.media_file_unique_id = message.effective_attachment[-1].file_unique_id
-        else:
-            event.media_file_id = message.effective_attachment.file_id
-            event.media_file_unique_id = message.effective_attachment.file_unique_id
+    if utilities.contains_media_with_file_id(message):
+        event.media_file_id, event.media_file_unique_id, event.media_group_id = utilities.get_media_ids(message)
+        event.media_type = utilities.detect_media_type(message)
 
 
 MONTHS = (

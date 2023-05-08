@@ -8,7 +8,7 @@ from typing import Optional, Tuple, List, Union
 import telegram.constants
 from sqlalchemy.orm import Session
 from telegram import Update, Message, MessageEntity
-from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler
+from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext
 from telegram.constants import MessageLimit
 
 from ext.filters import ChatFilter
@@ -17,7 +17,7 @@ from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, Bot
 from database.queries import settings, events, chats
 import decorators
 import utilities
-from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName
+from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -220,11 +220,7 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
     await update.message.reply_text(f"parsed {events_count} db entries")
 
 
-@decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/delevent {utilities.log(update)}")
-
+def event_from_link(update: Update, context: CallbackContext, session: Session) -> Optional[Event]:
     if not context.args:
         return
 
@@ -245,11 +241,45 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
         await update.effective_message.reply_text(f"No event saved for this message ({event_ids_str})")
         return
 
+    return event
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/delevent {utilities.log(update)}")
+
+    event: Event = event_from_link(update, context, session)
+    if not event:
+        return
+
     # session.delete(event)
     event.deleted = True
 
     event_str = format_event_string(event)
-    await update.effective_message.reply_text(f"{event_str}\n\n^event deleted ({event_ids_str})")
+    await update.effective_message.reply_text(f"{event_str}\n\n^event deleted")
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/getfly {utilities.log(update)}")
+
+    event: Event = event_from_link(update, context, session)
+    if not event:
+        return
+
+    event_str = format_event_string(event)
+
+    if not event.media_file_id:
+        await update.effective_message.reply_text(f"No file id for {event_str}")
+        return
+
+    await update.effective_message.reply_text(f"fly for {event_str}")
+
+    # if no media_type, assume photo
+    media_type = event.media_type or MediaType.PHOTO
+    await utilities.reply_media(message=update.message, media_type=media_type, file_id=event.media_file_id)
 
 
 @decorators.catch_exception()
@@ -271,5 +301,6 @@ HANDLERS = (
     (CommandHandler(["invalidevents", "ie", "soon"], on_invalid_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["fwd"], on_fwd_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
 )

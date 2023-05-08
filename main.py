@@ -115,7 +115,7 @@ async def change_my_name(context: ContextTypes.DEFAULT_TYPE):
     if not utilities.is_test_bot():
         return
 
-    name = f"[TEST] bbr bot {random.randint(0, 1000000)}"
+    name = f"[TEST] bbr bot {utilities.now_str()}"
     logger.debug(f"changing name to \"{name}\"")
     try:
         await context.bot.set_my_name(name=name)
@@ -134,7 +134,7 @@ def main():
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
-    app.job_queue.run_repeating(change_my_name, interval=60*10, first=10)
+    # app.job_queue.run_repeating(change_my_name, interval=60*10, first=10)
 
     logger.info(f"polling for updates...")
     app.run_polling(

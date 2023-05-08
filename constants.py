@@ -56,6 +56,17 @@ class LocalizedTextKey:
     APPLICATION_CANCELED = "application_canceled"
 
 
+class MediaType:
+    PHOTO = "photo"
+    VIDEO = "video"
+    DOCUMENT = "document"
+    STICKER = "sticker"
+    ANIMATION = "animation"
+    VIDEO_NOTE = "video_note"
+    VOICE = "voice"
+    AUDIO = "audio"
+
+
 LOCALIZED_TEXTS_DESCRIPTORS = {
     LocalizedTextKey.WELCOME: dict(
         label="welcome message",
