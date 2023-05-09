@@ -849,7 +849,7 @@ class ApplicationRequest(Base):
     __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_id = mapped_column(Integer, ForeignKey('users.user_id'))
     ready = Column(Boolean, default=False)  # ready to be sent to staff
     status = Column(Boolean, default=None)
     status_notes = Column(String, default=None)
@@ -863,17 +863,17 @@ class ApplicationRequest(Base):
     social_message_id = Column(Integer, default=None)
     social_received_on = Column(DateTime, default=None)
 
-    log_message_chat_id = Column(Integer, ForeignKey('chats.chat_id'), default=None)
+    log_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     log_message_message_id = Column(Integer, default=None)
     log_message_posted_on = Column(DateTime, default=None)
     log_message_json = Column(String, default=None)
 
-    staff_message_chat_id = Column(Integer, ForeignKey('chats.chat_id'), default=None)
+    staff_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     staff_message_message_id = Column(Integer, default=None)
     staff_message_posted_on = Column(DateTime, default=None)
     staff_message_json = Column(String, default=None)
 
-    handled_by_user_id = Column(Integer, ForeignKey('users.user_id'), default=None)  # admin that changed the status
+    handled_by_user_id = mapped_column(Integer, ForeignKey('users.user_id'), default=None)  # admin that changed the status
 
     created_on = Column(DateTime, default=utilities.now())
     updated_on = Column(DateTime, default=utilities.now())
@@ -950,8 +950,8 @@ class DescriptionMessage(Base):
     __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True)
-    application_request_id = Column(Integer, ForeignKey('application_requests.id'))
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    application_request_id = mapped_column(Integer, ForeignKey('application_requests.id'))
+    user_id = mapped_column(Integer, ForeignKey('users.user_id'))
     message_id = Column(Integer, nullable=False)
     reply_to_message_id = Column(Integer, default=None)
 
@@ -972,7 +972,7 @@ class DescriptionMessage(Base):
 
     message_json = Column(String, default=None)
 
-    log_message_chat_id = Column(Integer, ForeignKey('chats.chat_id'), default=None)
+    log_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     log_message_message_id = Column(Integer, default=None)
     log_message_json = Column(String, default=None)
 
