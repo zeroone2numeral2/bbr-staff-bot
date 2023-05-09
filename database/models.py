@@ -6,8 +6,9 @@ from typing import List, Optional, Union, Tuple, Iterable
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
 from sqlalchemy.orm import relationship, mapped_column, backref
 from sqlalchemy.sql import func
-from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, ChatMemberOwner, ChatMemberRestricted, \
-    ChatMemberLeft, ChatMemberBanned, ChatMemberMember
+from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
+    ChatMemberOwner, ChatMemberRestricted, \
+    ChatMemberLeft, ChatMemberBanned, ChatMemberMember, Message, InputMediaPhoto, InputMediaVideo
 
 import utilities
 from constants import Language
@@ -65,6 +66,7 @@ class User(Base):
     user_messages = relationship("UserMessage", back_populates="user")
     admin_messages = relationship("AdminMessage", back_populates="user")
     private_chat_messages = relationship("PrivateChatMessage", back_populates="user")
+    application_requests = relationship("ApplicationRequest", back_populates="user")
 
     # no foreign key for columns added after the table creation (https://stackoverflow.com/q/30378233),
     # we need to specify the 'primaryjoin' condition
@@ -831,7 +833,7 @@ class Event(Base):
         return f"{start_day}.{self.start_month:02}.{self.start_year}"
 
     def save_hashtags(self, hashtags_list: List):
-        self.hashtags = json.dumps(hashtags_list)
+        self.hashtags = json.dumps(hashtags_list, indent=2)
 
     def get_hashtags(self) -> List:
         if not self.hashtags:
@@ -841,3 +843,213 @@ class Event(Base):
     def __repr__(self):
         return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
 
+
+class ApplicationRequest(Base):
+    __tablename__ = 'application_requests'
+    __allow_unmapped__ = True
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'))
+    ready = Column(Boolean, default=False)  # ready to be sent to staff
+    status = Column(Boolean, default=None)
+    status_notes = Column(String, default=None)
+    status_changed_on = Column(DateTime, default=None)
+
+    other_members_text = Column(String, default=None)
+    other_members_message_id = Column(Integer, default=None)
+    other_members_received_on = Column(DateTime, default=None)
+
+    social_text = Column(String, default=None)
+    social_message_id = Column(Integer, default=None)
+    social_received_on = Column(DateTime, default=None)
+
+    log_message_chat_id = Column(Integer, ForeignKey('chats.chat_id'), default=None)
+    log_message_message_id = Column(Integer, default=None)
+    log_message_posted_on = Column(DateTime, default=None)
+    log_message_json = Column(String, default=None)
+
+    staff_message_chat_id = Column(Integer, ForeignKey('chats.chat_id'), default=None)
+    staff_message_message_id = Column(Integer, default=None)
+    staff_message_posted_on = Column(DateTime, default=None)
+    staff_message_json = Column(String, default=None)
+
+    handled_by_user_id = Column(Integer, ForeignKey('users.user_id'), default=None)  # admin that changed the status
+
+    created_on = Column(DateTime, default=utilities.now())
+    updated_on = Column(DateTime, default=utilities.now())
+
+    user: User = relationship("User", back_populates="application_requests", foreign_keys=[user_id])
+    handled_by: User = relationship("User", foreign_keys=[handled_by_user_id])
+    log_message_chat: Chat = relationship("Chat")
+    description_messages = relationship("DescriptionMessage", back_populates="application_request")
+
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+
+    def save_other_members(self, message: Message):
+        self.other_members_text = message.text_html
+        self.other_members_message_id = message.message_id
+        self.other_members_received_on = utilities.now()
+        self.updated()
+
+    def save_social(self, message: Message):
+        self.social_text = message.text_html
+        self.social_message_id = message.message_id
+        self.social_received_on = utilities.now()
+        self.updated()
+
+    def set_log_message(self, message: Message):
+        self.log_message_chat_id = message.chat.id
+        self.log_message_message_id = message.message_id
+        self.log_message_posted_on = utilities.now()
+        self.log_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def set_staff_message(self, message: Message):
+        self.staff_message_chat_id = message.chat.id
+        self.staff_message_message_id = message.message_id
+        self.staff_message_posted_on = utilities.now()
+        self.staff_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def log_message_link(self):
+        chat_id = str(self.log_message_chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
+
+    def staff_message_link(self):
+        chat_id = str(self.staff_message_chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id}/{self.staff_message_message_id}"
+
+    def accepted(self, by_user_id: int, notes: Optional[str] = None):
+        self.status = True
+        self.handled_by_user_id = by_user_id
+        self.status_changed_on = utilities.now()
+        self.status_notes = notes
+
+    def rejected(self, by_user_id: int, notes: Optional[str] = None):
+        self.status = False
+        self.handled_by_user_id = by_user_id
+        self.status_changed_on = utilities.now()
+        self.status_notes = notes
+
+    def updated(self):
+        self.updated_on = utilities.now()
+
+
+class DescriptionMessageType:
+    OTHER_MEMBERS = "other_members"
+    SOCIAL = "social"
+    # types of description message
+    TEXT = "text"
+    VOICE = "voice"
+    PHOTO = "photo"
+    VIDEO = "video"
+    VIDEO_MESSAGE = "video_message"
+
+
+class DescriptionMessage(Base):
+    __tablename__ = 'description_messages'
+    __allow_unmapped__ = True
+
+    id = Column(Integer, primary_key=True)
+    application_request_id = Column(Integer, ForeignKey('application_requests.id'))
+    user_id = Column(Integer, ForeignKey('users.user_id'))
+    message_id = Column(Integer, nullable=False)
+    reply_to_message_id = Column(Integer, default=None)
+
+    # right now, OTHER_MEMBERS and SOCIAL are actually saved in ApplicationRequest
+    type = Column(String, nullable=False)
+
+    datetime = Column(DateTime, default=None)
+    edited_on = Column(DateTime, default=None)
+
+    text = Column(String, default=None)
+    text_html = Column(String, default=None)
+    caption = Column(String, default=None)
+    caption_html = Column(String, default=None)
+    media_type = Column(String, default=None)
+    media_file_id = Column(String, default=None)
+    media_unique_id = Column(String, default=None)
+    media_group_id = Column(String, default=None)
+
+    message_json = Column(String, default=None)
+
+    log_message_chat_id = Column(Integer, ForeignKey('chats.chat_id'), default=None)
+    log_message_message_id = Column(Integer, default=None)
+    log_message_json = Column(String, default=None)
+
+    # relationships
+    application_request: ApplicationRequest = relationship("ApplicationRequest", back_populates="description_messages")
+    user: User = relationship("User")
+
+    def __init__(self, application_request_id: int, message: Message, message_type: Optional[str] = None):
+        self.application_request_id = application_request_id
+        self.user_id = message.from_user.id
+        self.message_id = message.message_id
+
+        self.text = message.text
+        self.text_html = message.text_html
+        self.caption = message.caption
+        self.caption_html = message.caption_html
+        self.media_group_id = message.media_group_id
+        self.datetime = message.date
+
+        if message.reply_to_message:
+            self.reply_to_message_id = message.reply_to_message.message_id
+
+        if message_type:
+            # "social" or "other_members"
+            self.type = message_type
+        else:
+            if message.text:
+                self.type = DescriptionMessageType.TEXT
+            else:
+                if message.photo:
+                    self.type = DescriptionMessageType.PHOTO
+                    self.media_file_id = message.photo[-1].file_id
+                    self.media_unique_id = message.photo[-1].file_unique_id
+                elif message.video:
+                    self.type = DescriptionMessageType.VIDEO
+                    self.media_file_id = message.video.file_id
+                    self.media_unique_id = message.video.file_unique_id
+                elif message.voice:
+                    self.type = DescriptionMessageType.VOICE
+                    self.media_file_id = message.voice.file_id
+                    self.media_unique_id = message.voice.file_unique_id
+                elif message.video_note:
+                    self.type = DescriptionMessageType.VIDEO_MESSAGE
+                    self.media_file_id = message.video_note.file_id
+                    self.media_unique_id = message.video_note.file_unique_id
+
+        self.message_json = json.dumps(message.to_dict(), indent=2)
+
+    def is_other_members_message(self):
+        return self.type == DescriptionMessageType.OTHER_MEMBERS
+
+    def is_social_message(self):
+        return self.type == DescriptionMessageType.SOCIAL
+
+    def is_description_message(self):
+        return self.type in (
+            DescriptionMessageType.TEXT,
+            DescriptionMessageType.PHOTO,
+            DescriptionMessageType.VOICE,
+            DescriptionMessageType.VIDEO,
+            DescriptionMessageType.VIDEO_MESSAGE,
+        )
+
+    def can_be_grouped(self):
+        return self.type in (DescriptionMessageType.PHOTO, DescriptionMessageType.VIDEO)
+
+    def get_input_media(self):
+        if self.type == DescriptionMessageType.PHOTO:
+            return InputMediaPhoto(self.media_file_id, caption=self.caption_html)
+        elif self.type == DescriptionMessageType.VIDEO:
+            return InputMediaVideo(self.media_file_id, caption=self.caption_html)
+
+    def set_log_message(self, message: Message):
+        self.log_message_chat_id = message.chat.id
+        self.log_message_message_id = message.message_id
+        self.log_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def log_message_link(self):
+        chat_id = str(self.log_message_chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"

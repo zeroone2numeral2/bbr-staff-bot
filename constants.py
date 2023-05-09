@@ -233,6 +233,7 @@ class TempDataKey:
     LOCALIZED_TEXTS = "tmp_localized_text_data"
     BOT_SETTINGS = "tmp_bot_setting_data"
     APPLICATION_DATA = "application_data"
+    APPLICATION_ID = "application_request_id"
     LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
     BOT_SETTINGS_LAST_MESSAGE_ID = "bot_settings_last_message_id"
     DB_INSTANCES = "_database_instances"

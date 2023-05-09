@@ -9,8 +9,9 @@ from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler
 from telegram.ext import CommandHandler
 from telegram.ext import filters
 
-from database.models import User, ChatMember as DbChatMember
-from database.queries import settings, texts, chat_members, chats, private_chat_messages
+from database.models import User, ChatMember as DbChatMember, ApplicationRequest, DescriptionMessage, \
+    DescriptionMessageType
+from database.queries import settings, texts, chat_members, chats, private_chat_messages, application_requests
 import decorators
 import utilities
 from emojis import Emoji
@@ -130,6 +131,10 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         ApplicationDataKey.COMPLETED: False
     }
 
+    request = ApplicationRequest(update.effective_user.id)
+    session.add(request)
+    context.user_data[TempDataKey.APPLICATION_ID] = request.id
+
     welcome_text_not_member = texts.get_localized_text_with_fallback(
         session,
         LocalizedTextKey.WELCOME_NOT_MEMBER,
@@ -235,7 +240,16 @@ async def on_waiting_description_unexpected_message_received(update: Update, con
 async def on_waiting_other_members_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received other members {utilities.log(update)}")
 
-    context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.OTHER_MEMBERS] = update.message.text_html
+    # context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.OTHER_MEMBERS] = update.message.text_html
+
+    request_id = context.user_data[TempDataKey.APPLICATION_ID]
+    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
+    request.save_other_members(update.message)
+
+    # we don't actually need this but we save it anyway
+    description_message = DescriptionMessage(request.id, update.effective_message, DescriptionMessageType.OTHER_MEMBERS)
+    session.add(description_message)
+    request.updated()
 
     send_social_text = texts.get_localized_text_with_fallback(
         session,
@@ -291,7 +305,15 @@ async def on_waiting_socials_skip(update: Update, context: ContextTypes.DEFAULT_
 async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received social {utilities.log(update)}")
 
-    context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.SOCIAL] = update.message.text_html
+    # context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.SOCIAL] = update.message.text_html
+    request_id = context.user_data[TempDataKey.APPLICATION_ID]
+    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
+    request.save_social(update.message)
+
+    # we don't actually need this but we save it anyway
+    description_message = DescriptionMessage(request.id, update.effective_message, DescriptionMessageType.SOCIAL)
+    session.add(description_message)
+    request.updated()
 
     send_description_text = texts.get_localized_text_with_fallback(
         session,
@@ -311,13 +333,18 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
 async def on_describe_self_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received describe self message {utilities.log(update)}")
 
-    context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.DESCRIPTION].append(update.message)
+    # context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.DESCRIPTION].append(update.message)
+
+    request_id = context.user_data[TempDataKey.APPLICATION_ID]
+    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
+    description_message = DescriptionMessage(request.id, update.effective_message)
+    session.add(description_message)
+    request.ready = True
+    request.updated()
+
     logger.info(f"saved messages: {len(context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.DESCRIPTION])}")
 
-    # mark as completed as soon as we receive one message
-    context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.COMPLETED] = True
-
-    # this is *not needed* if ReplyKeyboardMarkup.is_persistent is True (see #29)
+    # this is actually needed if we want the "done" keyboard to appear after the user sends the message
     """
     sent_message = await update.message.reply_text(
         "Salvato! Se vuoi puoi inviare altri messaggi, oppure invia la tua richiesta quando sei convint*",
@@ -343,95 +370,73 @@ async def on_done_button(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
     return State.WAITING_DESCRIBE_SELF
 
 
-async def send_application_to_staff(bot: Bot, chat_id: int, application_data, user: TelegramUser):
-    # there must be at least one message
-    description_messages: List[Message] = application_data.pop(ApplicationDataKey.DESCRIPTION)
-
-    text_messages: List[Message] = []
-    photo_or_video_messages: List[Message] = []
-    voice_or_video_note_messages: List[Message] = []
-
-    # we will link them later
+async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
+    # we will save the whole list just in case we will need to link them, but we actually need just the first one
+    # because it's the message we reply to
     sent_attachment_messages: List[Message] = []
 
-    for message in description_messages:
-        if message.photo or message.video:
-            photo_or_video_messages.append(message)
-        elif message.voice or message.video_note:
-            voice_or_video_note_messages.append(message)
-        elif message.text:
-            text_messages.append(message)
-        else:
-            logger.warning(f"unexpected description message: {message}")
-
-    # first: send text messages
-    if text_messages:
-        text = f"{Emoji.LINE} <b>descrizione</b>"
-
-        for message in text_messages:
-            if len(text) + len(message.text_html) > MessageLimit.MAX_TEXT_LENGTH:
-                sent_message = await bot.send_message(chat_id, text)
-                sent_attachment_messages.append(sent_message)
-                text = ""
-            else:
-                text += f"\n{message.text_html}"
-
-        if text:
-            # send what's left
-            sent_message = await bot.send_message(chat_id, text)
-            sent_attachment_messages.append(sent_message)
-
-    # then: send photos/videos as albums
-    input_medias = []
-    for i, message in enumerate(photo_or_video_messages):
-        if message.photo:
-            input_media = InputMediaPhoto(message.photo[-1].file_id, caption=message.caption)
-        elif message.video:
-            input_media = InputMediaPhoto(message.video.file_id, caption=message.caption)
-        else:
-            logger.warning(f"unexpected video/photo message: {message}")
+    messages_to_send_as_album: List[DescriptionMessage] = []
+    description_message: DescriptionMessage
+    for description_message in request.description_messages:
+        if description_message.can_be_grouped():
+            messages_to_send_as_album.append(description_message)
             continue
 
-        input_medias.append(input_media)
-
-        if len(input_medias) == 10:
-            logger.debug("album limit reached: sending media group...")
-            sent_messages = await bot.send_media_group(chat_id, media=input_medias)
-            # save only the first one to link
-            sent_attachment_messages.append(sent_messages[0])
-            input_medias = []
-
-    if input_medias:
-        # send what's left
-        sent_messages = await bot.send_media_group(chat_id, media=input_medias)
-        # save only the first one to link
-        sent_attachment_messages.append(sent_messages[0])
-
-    # then: send voice or video messages
-    for message in voice_or_video_note_messages:
-        if message.voice:
-            sent_message = await bot.send_voice(chat_id, message.voice.file_id)
-        elif message.video_note:
-            sent_message = await bot.send_video_note(chat_id, message.video_note.file_id)
+        if description_message.text:
+            sent_message = await bot.send_message(log_chat_id, description_message.text_html)
+        elif description_message.type == DescriptionMessageType.VOICE:
+            sent_message = await bot.send_voice(log_chat_id, description_message.media_file_id, caption=description_message.caption_html)
+        elif description_message.type == DescriptionMessageType.VIDEO_MESSAGE:
+            sent_message = await bot.send_video_note(log_chat_id, description_message.media_file_id)
         else:
-            logger.warning(f"unexpected voice/video note message: {message}")
+            logger.warning(f"unexpected description message: {description_message}")
             continue
 
         sent_attachment_messages.append(sent_message)
+        description_message.set_log_message(sent_message)
+
+    input_medias = []
+    for i, description_message in enumerate(messages_to_send_as_album):
+        input_medias.append(description_message.get_input_media())
+
+        if len(input_medias) == 10:
+            logger.debug("album limit reached: sending media group...")
+            sent_messages = await bot.send_media_group(log_chat_id, media=input_medias)
+            sent_attachment_messages.append(sent_messages[0])  # we will link just the first one
+            # save sent log message
+            for j, sent_message in enumerate(sent_messages):
+                index = i + j
+                logger.debug(f"saving log message with index {index}...")
+                messages_to_send_as_album[index].set_log_message(sent_message)
+
+            input_medias = []
+
+    medias_count = len(input_medias)
+    if input_medias:
+        # send what's left
+        sent_messages = await bot.send_media_group(staff_chat_id, media=input_medias)
+        sent_attachment_messages.append(sent_messages[0])  # we will link just the first one
+        for i, sent_message in enumerate(sent_messages):
+            index = (medias_count - i) * -1  # go through the list from the last item
+            logger.debug(f"saving log message with index {index}...")
+            messages_to_send_as_album[index].set_log_message(sent_message)
 
     user_mention = user.mention_html(name=utilities.escape_html(user.full_name))
     user_username = f"@{user.username}" if user.username else "non impostato"
-    staff_chat_application_message = f"#RICHIESTA\n\n{Emoji.USER_ICON} {user_mention}\n{Emoji.SPIRAL} {user_username}\n{Emoji.HASHTAG} #user{user.id}"
+    base_text = f"#RICHIESTA\n\n{Emoji.USER_ICON} {user_mention}\n{Emoji.SPIRAL} {user_username}\n{Emoji.HASHTAG} #user{user.id}"
 
-    other_members_text = utilities.escape_html(application_data[ApplicationDataKey.OTHER_MEMBERS] or "non forniti")
-    staff_chat_application_message += f"\n\n{Emoji.LINE} <b>utenti garanti</b>\n{other_members_text}"
+    other_members_text = utilities.escape_html(request.other_members_text or "non forniti")
+    base_text += f"\n\n{Emoji.LINE} <b>utenti garanti</b>\n{other_members_text}"
 
-    social_text = utilities.escape_html(application_data[ApplicationDataKey.SOCIAL] or "non forniti")
-    staff_chat_application_message += f"\n\n{Emoji.LINE} <b>social</b>\n{social_text}"
+    social_text = utilities.escape_html(request.social_text or "non forniti")
+    base_text += f"\n\n{Emoji.LINE} <b>social</b>\n{social_text}"
 
-    # staff_chat_application_message += f"\n\n{Emoji.LINE} <b>descrizione</b>\nda messaggio in risposta in poi"
+    log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True)
+    request.set_log_message(log_message)
 
-    await sent_attachment_messages[0].reply_html(staff_chat_application_message, quote=True)
+    staff_message_text = f"{base_text}\n\n{Emoji.LINE} <b>allegati</b>\n<a href=\"{log_message.link}\">vai al log</a>"
+    staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text)
+    request.set_staff_message(staff_message)
 
 
 @decorators.catch_exception()
@@ -439,11 +444,14 @@ async def send_application_to_staff(bot: Bot, chat_id: int, application_data, us
 async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"conversation timed out or user is done")
 
-    application_data = context.user_data.pop(TempDataKey.APPLICATION_DATA, None)
-    if not application_data:
-        raise ValueError("no application data")
+    request_id = context.user_data.get(TempDataKey.APPLICATION_ID, None)
+    if not request_id:
+        raise ValueError("no request id")
 
-    if not application_data[ApplicationDataKey.COMPLETED]:
+    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
+    if not request.ready:
+        # await update.message.reply_text("Per favore invia almeno un messaggio")
+        # return
         logger.info("user didn't complete the conversation: cancel")
         text = get_text(session, LocalizedTextKey.APPLICATION_TIMEOUT, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
@@ -459,8 +467,9 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     staff_chat = chats.get_staff_chat(session)
     await send_application_to_staff(
         bot=context.bot,
-        chat_id=staff_chat.chat_id,
-        application_data=application_data,
+        log_chat_id=staff_chat.chat_id,
+        staff_chat_id=staff_chat.chat_id,
+        request=request,
         user=update.effective_user
     )
 
