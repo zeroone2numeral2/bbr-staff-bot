@@ -79,7 +79,7 @@ def pass_session(
         pass_user=False,
         pass_chat=False,
         rollback_on_exception=False,
-        commit_on_exception=False,
+        commit_on_exception=True,
         pass_down_db_instances=False
 ):
     # 'rollback_on_exception' should be false by default because we might want to commit
@@ -140,13 +140,13 @@ def pass_session(
             # noinspection PyBroadException
             try:
                 result = await func(update, context, session=session, *args, **kwargs)
-            except Exception:
+            except Exception as e:
                 if rollback_on_exception:
-                    logger.warning("exception while running an handler callback: rolling back")
+                    logger.warning(f"exception while running an handler callback ({e}): rolling back")
                     session.rollback()
 
                 if commit_on_exception:
-                    logger.warning("exception while running an handler callback: committing")
+                    logger.warning(f"exception while running an handler callback ({e}): committing")
                     session.commit()
 
                 # if an exception happens, we DO NOT pass session/db instances down

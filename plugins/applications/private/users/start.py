@@ -124,15 +124,9 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     logger.info("user is not a member of the users chat")
 
-    context.user_data[TempDataKey.APPLICATION_DATA] = {
-        ApplicationDataKey.OTHER_MEMBERS: None,
-        ApplicationDataKey.SOCIAL: None,
-        ApplicationDataKey.DESCRIPTION: [],
-        ApplicationDataKey.COMPLETED: False
-    }
-
     request = ApplicationRequest(update.effective_user.id)
     session.add(request)
+    session.commit()
     context.user_data[TempDataKey.APPLICATION_ID] = request.id
 
     welcome_text_not_member = texts.get_localized_text_with_fallback(
@@ -342,7 +336,7 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
     request.ready = True
     request.updated()
 
-    logger.info(f"saved messages: {len(context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.DESCRIPTION])}")
+    logger.info(f"saved description message")
 
     # this is actually needed if we want the "done" keyboard to appear after the user sends the message
     """
@@ -378,6 +372,9 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     messages_to_send_as_album: List[DescriptionMessage] = []
     description_message: DescriptionMessage
     for description_message in request.description_messages:
+        if description_message.is_social_message() or description_message.is_other_members_message():
+            continue
+
         if description_message.can_be_grouped():
             messages_to_send_as_album.append(description_message)
             continue
@@ -431,12 +428,17 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     social_text = utilities.escape_html(request.social_text or "non forniti")
     base_text += f"\n\n{Emoji.LINE} <b>social</b>\n{social_text}"
 
-    log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True)
+    logger.debug("sending log message...")
+    log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True, connect_timeout=300)
     request.set_log_message(log_message)
 
-    staff_message_text = f"{base_text}\n\n{Emoji.LINE} <b>allegati</b>\n<a href=\"{log_message.link}\">vai al log</a>"
-    staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text)
-    request.set_staff_message(staff_message)
+    if staff_chat_id != log_chat_id:
+        logger.debug("sending staff message...")
+        staff_message_text = f"{base_text}\n\n{Emoji.LINE} <b>allegati</b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
+        staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text, connect_timeout=300)
+        request.set_staff_message(staff_message)
+    else:
+        request.set_staff_message(log_message)
 
 
 @decorators.catch_exception()
@@ -467,7 +469,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     staff_chat = chats.get_staff_chat(session)
     await send_application_to_staff(
         bot=context.bot,
-        log_chat_id=staff_chat.chat_id,
+        log_chat_id=-1001922853416,
         staff_chat_id=staff_chat.chat_id,
         request=request,
         user=update.effective_user

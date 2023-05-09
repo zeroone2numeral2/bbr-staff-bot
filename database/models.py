@@ -66,7 +66,7 @@ class User(Base):
     user_messages = relationship("UserMessage", back_populates="user")
     admin_messages = relationship("AdminMessage", back_populates="user")
     private_chat_messages = relationship("PrivateChatMessage", back_populates="user")
-    application_requests = relationship("ApplicationRequest", back_populates="user")
+    # application_requests = relationship("ApplicationRequest", back_populates="user")
 
     # no foreign key for columns added after the table creation (https://stackoverflow.com/q/30378233),
     # we need to specify the 'primaryjoin' condition
@@ -878,9 +878,10 @@ class ApplicationRequest(Base):
     created_on = Column(DateTime, default=utilities.now())
     updated_on = Column(DateTime, default=utilities.now())
 
-    user: User = relationship("User", back_populates="application_requests", foreign_keys=[user_id])
-    handled_by: User = relationship("User", foreign_keys=[handled_by_user_id])
-    log_message_chat: Chat = relationship("Chat")
+    user: User = relationship("User", foreign_keys=user_id)
+    handled_by: User = relationship("User", foreign_keys=handled_by_user_id)
+    log_message_chat: Chat = relationship("Chat", foreign_keys=log_message_chat_id)
+    staff_message_chat: Chat = relationship("Chat", foreign_keys=staff_message_chat_id)
     description_messages = relationship("DescriptionMessage", back_populates="application_request")
 
     def __init__(self, user_id: int):
