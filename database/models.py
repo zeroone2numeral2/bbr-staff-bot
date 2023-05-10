@@ -170,6 +170,7 @@ class Chat(Base):
     first_seen = Column(DateTime, default=utilities.now())
     is_admin = Column(Boolean, default=False)  # whether the bot is admin or not
     can_delete_messages = Column(Boolean, default=False)  # whether the bot is allowed to delete messages or not
+    can_invite_users = Column(Boolean, default=False)  # whether the bot can manage invite links
     last_administrators_fetch = Column(DateTime, default=None, nullable=True)
 
     chat_members = relationship("ChatMember", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
@@ -188,40 +189,12 @@ class Chat(Base):
         self.type = telegram_chat.type
         self.is_forum = telegram_chat.is_forum
 
-    def is_user_admin(self, user_id: int, permissions: Optional[List] = None, any_permission: bool = True, all_permissions: bool = False) -> bool:
-        if any_permission == all_permissions:
-            raise ValueError("only one between any_permission and all_permissions can be True or False")
-
-        for chat_administrator in self.chat_administrators:
-            if chat_administrator.user_id != user_id:
-                continue
-
-            if not permissions:
-                return True
-
-            for permission in permissions:
-                if getattr(chat_administrator, permission):
-                    if any_permission:
-                        return True
-                else:
-                    return False
-
-            if all_permissions:
-                return True
-            else:
-                return False
-
-        return False
-
-    def get_administrator(self, user_id):
-        for administrator in self.chat_administrators:
-            if administrator.user_id == user_id:
-                return administrator
-
-    def set_as_administrator(self, can_delete_messages: bool = None):
+    def set_as_administrator(self, can_delete_messages: bool = None, can_invite_users: bool = None):
         self.is_admin = True
         if can_delete_messages is not None:
             self.can_delete_messages = can_delete_messages
+        if can_invite_users is not None:
+            self.can_invite_users = can_invite_users
 
     def unset_as_administrator(self):
         self.is_admin = False
@@ -892,6 +865,9 @@ class ApplicationRequest(Base):
     status = Column(Boolean, default=None)
     status_notes = Column(String, default=None)
     status_changed_on = Column(DateTime, default=None)
+    invite_link = Column(String, default=None)  # the invite link we sent to the user
+    invite_link_can_be_revoked_after_join = Column(Boolean, default=False)  # wether it is safe to revoke the invite link after the user joined
+    invite_link_revoked = Column(Boolean, default=False)
 
     other_members_text = Column(String, default=None)
     other_members_message_id = Column(Integer, default=None)
@@ -903,11 +879,13 @@ class ApplicationRequest(Base):
 
     log_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     log_message_message_id = Column(Integer, default=None)
+    log_message_text_html = Column(String, default=None)
     log_message_posted_on = Column(DateTime, default=None)
     log_message_json = Column(String, default=None)
 
     staff_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     staff_message_message_id = Column(Integer, default=None)
+    staff_message_text_html = Column(String, default=None)
     staff_message_posted_on = Column(DateTime, default=None)
     staff_message_json = Column(String, default=None)
 
@@ -951,12 +929,14 @@ class ApplicationRequest(Base):
     def set_log_message(self, message: Message):
         self.log_message_chat_id = message.chat.id
         self.log_message_message_id = message.message_id
+        self.log_message_text_html = message.text_html
         self.log_message_posted_on = utilities.now()
         self.log_message_json = json.dumps(message.to_dict(), indent=2)
 
     def set_staff_message(self, message: Message):
         self.staff_message_chat_id = message.chat.id
         self.staff_message_message_id = message.message_id
+        self.staff_message_text_html = message.text_html
         self.staff_message_posted_on = utilities.now()
         self.staff_message_json = json.dumps(message.to_dict(), indent=2)
 
@@ -979,6 +959,10 @@ class ApplicationRequest(Base):
         self.handled_by_user_id = by_user_id
         self.status_changed_on = utilities.now()
         self.status_notes = notes
+
+    def set_invite_link(self, invite_link: str, can_be_revoked: bool):
+        self.invite_link = invite_link
+        self.invite_link_can_be_revoked_after_join = can_be_revoked
 
     def updated(self):
         self.updated_on = utilities.now()

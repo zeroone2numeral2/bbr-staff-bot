@@ -88,7 +88,10 @@ async def post_init(application: Application) -> None:
         staff_chat.unset_as_administrator()
     else:
         logger.info(f"admin in the staff chat {staff_chat.chat_id}, can_delete_messages: {staff_chat_chat_member.can_delete_messages}")
-        staff_chat.set_as_administrator(staff_chat_chat_member.can_delete_messages)
+        staff_chat.set_as_administrator(
+            can_delete_messages=staff_chat_chat_member.can_delete_messages,
+            can_invite_users=staff_chat_chat_member.can_invite_users
+        )
 
     session.add(staff_chat)
     session.commit()

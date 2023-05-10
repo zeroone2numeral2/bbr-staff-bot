@@ -112,7 +112,10 @@ async def on_my_chat_member_update(update: Update, _, session: Session, chat: Op
     else:
         logger.info(f"MyChatMember update in a group chat, new status: {update.my_chat_member.new_chat_member.status}")
         if isinstance(update.my_chat_member.new_chat_member, ChatMemberAdministrator):
-            chat.set_as_administrator(update.my_chat_member.new_chat_member.can_delete_messages)
+            chat.set_as_administrator(
+                can_delete_messages=update.my_chat_member.new_chat_member.can_delete_messages,
+                can_invite_users=update.my_chat_member.new_chat_member.can_invite_users
+            )
         elif isinstance(update.my_chat_member.new_chat_member, (ChatMemberMember, ChatMemberRestricted)):
             chat.unset_as_administrator()
         elif isinstance(update.my_chat_member.new_chat_member, (ChatMemberLeft, ChatMemberBanned)):

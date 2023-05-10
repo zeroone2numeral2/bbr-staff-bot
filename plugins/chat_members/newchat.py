@@ -62,7 +62,10 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
     for administrator in administrators:
         users.get_safe(session, administrator.user)
         if administrator.user.id == context.bot.id:
-            chat.set_as_administrator(administrator.can_delete_messages)
+            chat.set_as_administrator(
+                can_delete_messages=administrator.can_delete_messages,
+                can_invite_users=administrator.can_invite_users
+            )
 
 
 HANDLERS = (
