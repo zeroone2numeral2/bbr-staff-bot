@@ -10,7 +10,7 @@ from database.queries import chats, users
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
-from ext.filters import ChatFilter
+from ext.filters import ChatFilter, Filter
 
 logger = logging.getLogger(__name__)
 
@@ -43,5 +43,5 @@ async def on_setuserschat_command(update: Update, _, session: Session, chat: Cha
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ["setuserschat", "suc"], on_setuserschat_command, filters.ChatType.GROUPS), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ["setuserschat", "suc"], on_setuserschat_command, Filter.SUPERADMIN_AND_GROUP), Group.NORMAL),
 )

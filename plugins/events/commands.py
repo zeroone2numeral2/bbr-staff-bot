@@ -296,11 +296,11 @@ async def on_fwd_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 
 HANDLERS = (
-    (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
     (CommandHandler(["events", "eventsall"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
-    (CommandHandler(["invalidevents", "ie", "soon"], on_invalid_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["fwd"], on_fwd_command, filters=Filter.ADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["invalidevents", "ie", "soon"], on_invalid_events_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["fwd"], on_fwd_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
 )

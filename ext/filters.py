@@ -12,6 +12,10 @@ from database.queries import settings, chats
 logger = logging.getLogger(__name__)
 
 
+class Filter:
+    SUPERADMIN_AND_GROUP = filters.User(config.telegram.admins) & filters.ChatType.GROUPS
+
+
 class ChatFilter:
     STAFF = filters.Chat([])
     USERS = filters.Chat([])

@@ -19,7 +19,7 @@ class Filter:
     MESSAGE_OR_EDIT = filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST
     NEW_MESSAGE = filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST
     WITH_TEXT = filters.TEXT | filters.CAPTION
-    ADMIN_PRIVATE = filters.ChatType.PRIVATE & filters.User(config.telegram.admins)
+    SUPERADMIN_PRIVATE = filters.ChatType.PRIVATE & filters.User(config.telegram.admins)
 
 
 class EventDate:
