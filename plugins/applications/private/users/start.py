@@ -432,7 +432,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     request: ApplicationRequest = application_requests.get_by_id(session, request_id)
     if not request.ready and done_button_pressed:
-        logger.info("user didn't complete the conversation: warning user")
+        logger.info("user didn't complete the conversation: warning user, but waiting for more")
         text = get_text(session, LocalizedTextKey.APPLICATION_NOT_READY, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
         private_chat_messages.save(session, sent_message)
@@ -469,6 +469,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 approval_mode_conversation_handler = ConversationHandler(
     name="approval_conversation",
+    allow_reentry=False,  # if inside the conversation, it will not be restarted if an entry point is triggered
     entry_points=[CommandHandler(["start"], on_start_command, filters=filters.ChatType.PRIVATE)],
     states={
         State.WAITING_OTHER_MEMBERS: [
