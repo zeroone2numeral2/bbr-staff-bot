@@ -7,10 +7,10 @@ from telegram.ext import ContextTypes, MessageHandler
 from telegram.ext import filters
 
 from database.models import User, UserMessage, Chat
-from database.queries import settings, chats, texts
+from database.queries import settings, chats, texts, private_chat_messages
 import decorators
 import utilities
-from constants import BotSettingKey, LocalizedTextKey, Group
+from constants import BotSettingKey, LocalizedTextKey, Group, Language
 from emojis import Emoji
 
 logger = logging.getLogger(__name__)
@@ -25,12 +25,28 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         logger.info(f"ignoring user message because the user was banned (shadowban: {user.shadowban})")
         if not user.shadowban:
             reason = user.banned_reason or "not provided"
-            await update.message.reply_text(f"{Emoji.BANNED} You were banned from using this bot. Reason: {utilities.escape_html(reason)}")
+            sent_message = await update.message.reply_text(f"{Emoji.BANNED} You were banned from using this bot. Reason: {utilities.escape_html(reason)}")
+            private_chat_messages.save(session, sent_message)
         return
 
     chat: Chat = chats.get_staff_chat(session)
     if not chat:
         logger.warning("there is no staff chat set as default")
+        return
+
+    approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
+    if approval_mode and user.last_request and user.last_request.status is False:
+        logger.info(f"ignoring user message because they were rejected")
+        ltext = texts.get_localized_text_with_fallback(
+            session,
+            LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
+            Language.IT,
+            fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
+            raise_if_no_fallback=False
+        )
+        if ltext:
+            sent_message = await update.message.reply_html(ltext.value)
+            private_chat_messages.save(session, sent_message)
         return
 
     forwarded_message = await update.message.forward(chat.chat_id)
@@ -59,7 +75,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             logger.error(f"{e}")
             text = "<i>delivered</i>"
 
-        await update.message.reply_text(text, quote=True)
+        sent_message = await update.message.reply_text(text, quote=True)
+        private_chat_messages.save(session, sent_message)
 
     user.set_started()
     user.update_last_message()

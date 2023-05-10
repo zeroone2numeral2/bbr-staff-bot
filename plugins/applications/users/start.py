@@ -86,22 +86,24 @@ def get_done_keyboard(input_field_placeholder: Optional[str] = None):
 
 def get_evaluation_keyboard(user_id: int, application_id: int):
     keyboard = [[
-        InlineKeyboardButton(f"accetta", callback_data=f"accept:{user_id}:{application_id}"),
-        InlineKeyboardButton(f"rifiuta", callback_data=f"reject:{user_id}:{application_id}")
+        InlineKeyboardButton(f"{Emoji.GREEN} accetta", callback_data=f"accept:{user_id}:{application_id}"),
+        InlineKeyboardButton(f"{Emoji.RED} rifiuta", callback_data=f"reject:{user_id}:{application_id}")
     ]]
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_text(session: Session, ltext_key: str, user: TelegramUser) -> str:
+def get_text(session: Session, ltext_key: str, user: TelegramUser, raise_if_no_fallback: Optional[bool] = True) -> Optional[str]:
     fallback_language = settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     ltext = texts.get_localized_text_with_fallback(
         session,
         ltext_key,
         Language.IT,
-        fallback_language=fallback_language
+        fallback_language=fallback_language,
+        raise_if_no_fallback=raise_if_no_fallback
     )
-    text = replace_placeholders(ltext.value, user, session)
-    return text
+    if ltext:
+        text = replace_placeholders(ltext.value, user, session)
+        return text
 
 
 @decorators.catch_exception()
@@ -132,6 +134,15 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         sent_message = await update.message.reply_text("Una tua richiesta è già in fase di valutazione. "
                                                        "Attendi che lo staff la esamini")
         private_chat_messages.save(session, sent_message)
+
+        return ConversationHandler.END
+
+    if user.last_request and user.last_request.status is False:
+        logger.info("ignoring: user already went through the application process, but was rejected")
+        text = get_text(session, LocalizedTextKey.APPLICATION_REJECTED_ANSWER, update.effective_user, raise_if_no_fallback=False)
+        if text:
+            sent_message = await update.message.reply_text(text)
+            private_chat_messages.save(session, sent_message)
 
         return ConversationHandler.END
 

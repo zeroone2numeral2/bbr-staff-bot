@@ -1,32 +1,31 @@
 import logging
-from typing import Optional
+import re
+from typing import Optional, List
 
 from sqlalchemy.orm import Session
 from telegram import Update, User as TelegramUser, ChatInviteLink, Bot
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import TelegramError, BadRequest
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, CommandHandler
 from telegram.ext import filters
 from telegram.ext import MessageHandler, CallbackQueryHandler, PrefixHandler, ConversationHandler
 
-from database.models import User, LocalizedText
-from database.queries import texts, settings, users, chats
+from database.models import User, LocalizedText, PrivateChatMessage, Chat
+from database.queries import texts, settings, users, chats, private_chat_messages
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES, State, TempDataKey, CONVERSATION_TIMEOUT, Action, \
-    LOCALIZED_TEXTS_DESCRIPTORS, LANGUAGES, ACTION_DESCRIPTORS, Group, BotSettingKey, Language, LocalizedTextKey
+from constants import Group, BotSettingKey, Language, LocalizedTextKey
 from emojis import Emoji
-from replacements import replace_placeholders
 
 logger = logging.getLogger(__name__)
 
 
-def approved_or_rejected_text(request_id: int, approved: bool, user: TelegramUser):
-    result = "#APPROVATA" if approved else "#RIFIUTATA"
+def accepted_or_rejected_text(request_id: int, approved: bool, user: TelegramUser):
+    result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     return f"Richiesta #id{request_id} {result} da {user.mention_html()} (#admin{user.id})"
 
 
-def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
+async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
     logger.info("generating invite link...")
     users_chat = chats.get_users_chat(session)
 
@@ -66,24 +65,7 @@ def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional
     return reply_markup
 
 
-@decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-@decorators.staff_admin()
-async def on_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"accept user button {utilities.log(update)}")
-
-    user_id = int(context.matches[0].group("user_id"))
-    # application_id = int(context.matches[0].group("request_id"))
-
-    user: User = users.get_or_create(session, user_id)
-    if not user.pending_request_id:
-        await update.callback_query.answer(f"Questo utente non ha alcuna richiesta di ingresso pendente", show_alert=True)
-        await update.callback_query.edit_message_reply_markup(reply_markup=None)
-        return
-
-    user.accepted(update.effective_user.id)
-    session.commit()
-
+async def send_message_to_user(session: Session, bot: Bot, user: User):
     fallback_language = settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     ltext = texts.get_localized_text_with_fallback(
         session,
@@ -91,15 +73,60 @@ async def on_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         Language.IT,
         fallback_language=fallback_language
     )
-    text = replace_placeholders(ltext.value, update.effective_user, session)
+    text = ltext.value
 
-    reply_markup = invite_link_reply_markup(session, context.bot, user)
+    reply_markup = await invite_link_reply_markup(session, bot, user)
 
     logger.info("sending message to user...")
-    await context.bot.send_message(user_id, text, reply_markup=reply_markup)
+    sent_message = await bot.send_message(user.user_id, text, reply_markup=reply_markup)
+    private_chat_messages.save(session, sent_message)
+
+    return sent_message
+
+
+async def delete_history(session: Session, bot: Bot, user: User):
+    # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
+    rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
+    sent_message = await bot.send_photo(user.user_id, rabbit_file_id)
+
+    now = utilities.now()
+
+    messages: List[PrivateChatMessage] = private_chat_messages.get_messages(session, user.user_id)
+    for message in messages:
+        if not message.can_be_deleted(now):
+            continue
+
+        logger.debug(f"deleting message {message.message_id} from chat {user.user_id}")
+        await bot.delete_message(user.user_id, message.message_id)
+        message.set_revoked(reason="/delhistory command")
+
+    # we need to save it here otherwise it would be deleted with all the other messages
+    private_chat_messages.save(session, sent_message)
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True, pass_chat=True)
+async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+    logger.info(f"reject/accept user button {utilities.log(update)}")
+
+    user_id = int(context.matches[0].group("user_id"))
+    # application_id = int(context.matches[0].group("request_id"))
+    accepted = context.matches[0].group("action") == "accept"
+
+    user: User = users.get_or_create(session, user_id)
+    if not user.pending_request_id:
+        await update.callback_query.answer(f"Questo utente non ha alcuna richiesta di ingresso pendente", show_alert=True)
+        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        return
+
+    if accepted:
+        user.accepted(by_user_id=update.effective_user.id)
+    else:
+        user.rejected(by_user_id=update.effective_user.id)
+    session.commit()
 
     logger.info("editing staff chat message...")
-    evaluation_text = approved_or_rejected_text(user.last_request.id, True, update.effective_user)
+    evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, update.effective_user)
     await context.bot.edit_message_text(
         chat_id=user.last_request.staff_message_chat_id,
         message_id=user.last_request.staff_message_message_id,
@@ -115,7 +142,12 @@ async def on_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         allow_sending_without_reply=True
     )
 
+    if accepted:
+        await send_message_to_user(session, context.bot, user)
+    else:
+        await delete_history(session, context.bot, user)
+
 
 HANDLERS = (
-    (CallbackQueryHandler(on_accept_button, rf"accept:(?P<user_id>\d+):(?P<request_id>\d+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_reject_or_accept_button, rf"(?P<action>accept|reject):(?P<user_id>\d+):(?P<request_id>\d+)$"), Group.NORMAL),
 )

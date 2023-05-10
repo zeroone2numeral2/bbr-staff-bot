@@ -153,6 +153,12 @@ class User(Base):
         self.last_request_id = self.pending_request_id
         self.pending_request_id = None
 
+    def reset_evaluation(self, keep_pending=False):
+        if not keep_pending:
+            self.pending_request_id = None
+        self.last_request_id = None
+        self.last_request_status = None
+
 
 class Chat(Base):
     __tablename__ = 'chats'

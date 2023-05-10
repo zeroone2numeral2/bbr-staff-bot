@@ -70,6 +70,7 @@ class LocalizedTextKey:
     APPLICATION_NOT_READY = "application_not_ready"
     APPLICATION_SENT_TO_STAFF = "application_sent_to_staff"
     APPLICATION_ACCEPTED = "application_accepted"
+    APPLICATION_REJECTED_ANSWER = "application_rejected_answer"
 
 
 LOCALIZED_TEXTS_DESCRIPTORS = {
@@ -156,6 +157,12 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         label="richiesta accettata",
         explanation="Il messaggio che verrà inviato all'utente quando la sua richiesta viene accettata da un admin",
         emoji=Emoji.DONE,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.APPLICATION_REJECTED_ANSWER: dict(
+        label="risposta ai rifiutati",
+        explanation="Il messaggio che verrà inviato come risposta a tutti i messaggi degli utenti rifiutati",
+        emoji=Emoji.EVIL,
         show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
     ),
 }
