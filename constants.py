@@ -66,6 +66,7 @@ class LocalizedTextKey:
     DESCRIBE_SELF = "describe_self"
     APPLICATION_CANCELED = "application_canceled"
     APPLICATION_TIMEOUT = "application_timeout"
+    APPLICATION_NOT_READY = "application_not_ready"
     APPLICATION_SENT_TO_STAFF = "application_sent_to_staff"
 
 
@@ -134,6 +135,13 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         label="richiesta inviata",
         explanation="Il messaggio che verrà inviato all'utente dopo che invia la richiesta",
         emoji=Emoji.ENVELOPE,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.APPLICATION_NOT_READY: dict(
+        label="richiesta incompleta",
+        explanation="Il messaggio che verrà inviato all'utente se cerca di inviare una richiesta incompleta "
+                    "(tipo senza alcun messaggio di testo)",
+        emoji=Emoji.QUESTION,
         show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
     ),
 }

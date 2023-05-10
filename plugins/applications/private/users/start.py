@@ -1,10 +1,12 @@
 import logging
+import re
 from typing import Optional, List
 
+import telegram.constants
 from sqlalchemy.orm import Session
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message, InputMediaPhoto
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
-from telegram.constants import MessageLimit
+from telegram.constants import MessageLimit, MediaGroupLimit
 from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler, PrefixHandler, MessageHandler
 from telegram.ext import CommandHandler
 from telegram.ext import filters
@@ -264,7 +266,9 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
     request: ApplicationRequest = application_requests.get_by_id(session, request_id)
     description_message = DescriptionMessage(request.id, update.effective_message)
     session.add(description_message)
-    request.ready = True
+    if description_message.text:
+        # mark as ready only when we receive at least a text
+        request.ready = True
     request.updated()
 
     logger.info(f"saved description message")
@@ -301,9 +305,13 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     sent_attachment_messages: List[Message] = []
 
     messages_to_send_as_album: List[DescriptionMessage] = []
+    text_messages_to_merge: List[DescriptionMessage] = []
+    single_media_messages: List[DescriptionMessage] = []
+
     description_message: DescriptionMessage
     for description_message in request.description_messages:
         if description_message.is_social_message() or description_message.is_other_members_message():
+            # we include them in the log/staff message with the user's details
             continue
 
         if description_message.can_be_grouped():
@@ -311,29 +319,54 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
             continue
 
         if description_message.text:
-            sent_message = await bot.send_message(log_chat_id, description_message.text_html)
-        elif description_message.type == DescriptionMessageType.VOICE:
-            sent_message = await bot.send_voice(log_chat_id, description_message.media_file_id, caption=description_message.caption_html)
-        elif description_message.type == DescriptionMessageType.VIDEO_MESSAGE:
-            sent_message = await bot.send_video_note(log_chat_id, description_message.media_file_id)
-        else:
-            logger.warning(f"unexpected description message: {description_message}")
+            # sent_message = await bot.send_message(log_chat_id, description_message.text_html)
+            text_messages_to_merge.append(description_message)
             continue
 
+        if description_message.type in (DescriptionMessageType.VOICE, DescriptionMessageType.VIDEO_MESSAGE):
+            single_media_messages.append(description_message)
+            continue
+
+        logger.warning(f"unexpected description message: {description_message}")
+
+    # no idea why but we *need* large timeouts
+    timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
+
+    merged_text = f"{Emoji.LINE} <b>descrizione</b>"
+    merged_text_includes = []  # list of indexes of the DescriptionMessage that have been merged into the current merged_text
+    for i, description_message in enumerate(text_messages_to_merge):
+        if len(merged_text) + len(description_message.text_html) > MessageLimit.MAX_TEXT_LENGTH:
+            sent_message = await bot.send_message(log_chat_id, merged_text, **timeouts)
+            sent_attachment_messages.append(sent_message)
+            for j in merged_text_includes:
+                # save the message we just sent as the log message for each one of the DescriptionMessage that were merged into it
+                text_messages_to_merge[j].set_log_message(sent_message)
+
+            merged_text = ""
+            merged_text_includes = []
+        else:
+            merged_text += f"\n\n{description_message.text_html}"
+            merged_text_includes.append(i)
+
+    if merged_text:
+        # send what's left
+        sent_message = await bot.send_message(log_chat_id, merged_text, **timeouts)
         sent_attachment_messages.append(sent_message)
-        description_message.set_log_message(sent_message)
+        for i in merged_text_includes:
+            # save the message we just sent as the log message for each one of the DescriptionMessage that were merged into it
+            text_messages_to_merge[i].set_log_message(sent_message)
 
     input_medias = []
     for i, description_message in enumerate(messages_to_send_as_album):
         input_medias.append(description_message.get_input_media())
 
-        if len(input_medias) == 10:
+        if len(input_medias) == MediaGroupLimit.MAX_MEDIA_LENGTH:
             logger.debug("album limit reached: sending media group...")
-            sent_messages = await bot.send_media_group(log_chat_id, media=input_medias)
+            sent_messages = await bot.send_media_group(log_chat_id, media=input_medias, **timeouts)
             sent_attachment_messages.append(sent_messages[0])  # we will link just the first one
             # save sent log message
             for j, sent_message in enumerate(sent_messages):
-                index = i + j
+                index = int(i / MediaGroupLimit.MAX_MEDIA_LENGTH) + j
                 logger.debug(f"saving log message with index {index}...")
                 messages_to_send_as_album[index].set_log_message(sent_message)
 
@@ -342,16 +375,30 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     medias_count = len(input_medias)
     if input_medias:
         # send what's left
-        sent_messages = await bot.send_media_group(staff_chat_id, media=input_medias)
+        sent_messages = await bot.send_media_group(log_chat_id, media=input_medias, **timeouts)
         sent_attachment_messages.append(sent_messages[0])  # we will link just the first one
         for i, sent_message in enumerate(sent_messages):
             index = (medias_count - i) * -1  # go through the list from the last item
             logger.debug(f"saving log message with index {index}...")
             messages_to_send_as_album[index].set_log_message(sent_message)
 
+    for description_message in single_media_messages:
+        if description_message.type == DescriptionMessageType.VOICE:
+            sent_message = await bot.send_voice(description_message.media_file_id, caption=description_message.caption_html)
+        elif description_message.type == DescriptionMessageType.VIDEO_MESSAGE:
+            sent_message = await bot.send_video_note(description_message.media_file_id, caption=description_message.caption_html)
+        else:
+            continue
+
+        description_message.set_log_message(sent_message)
+        sent_attachment_messages.append(sent_message)
+
     user_mention = user.mention_html(name=utilities.escape_html(user.full_name))
     user_username = f"@{user.username}" if user.username else "non impostato"
-    base_text = f"#RICHIESTA\n\n{Emoji.USER_ICON} {user_mention}\n{Emoji.SPIRAL} {user_username}\n{Emoji.HASHTAG} #user{user.id}"
+    base_text = f"#RICHIESTA #id{request.id}\n\n" \
+                f"{Emoji.USER_ICON} {user_mention}\n" \
+                f"{Emoji.SPIRAL} {user_username}\n" \
+                f"{Emoji.HASHTAG} #user{user.id}"
 
     other_members_text = utilities.escape_html(request.other_members_text or "non forniti")
     base_text += f"\n\n{Emoji.LINE} <b>utenti garanti</b>\n{other_members_text}"
@@ -360,13 +407,13 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     base_text += f"\n\n{Emoji.LINE} <b>social</b>\n{social_text}"
 
     logger.debug("sending log message...")
-    log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True, connect_timeout=300)
+    log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True, **timeouts)
     request.set_log_message(log_message)
 
     if staff_chat_id != log_chat_id:
         logger.debug("sending staff message...")
         staff_message_text = f"{base_text}\n\n{Emoji.LINE} <b>allegati</b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
-        staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text, connect_timeout=300)
+        staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text, **timeouts)
         request.set_staff_message(staff_message)
     else:
         request.set_staff_message(log_message)
@@ -377,18 +424,28 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
 async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"conversation timed out or user is done")
 
-    request_id = context.user_data.pop(TempDataKey.APPLICATION_ID, None)
+    done_button_pressed = update.message.text and re.search(rf"^{ButtonText.DONE}$", update.message.text, re.I)
+
+    request_id = context.user_data.get(TempDataKey.APPLICATION_ID, None)
     if not request_id:
         raise ValueError("no request id")
 
     request: ApplicationRequest = application_requests.get_by_id(session, request_id)
-    if not request.ready:
+    if not request.ready and done_button_pressed:
+        logger.info("user didn't complete the conversation: warning user")
+        text = get_text(session, LocalizedTextKey.APPLICATION_NOT_READY, update.effective_user)
+        sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
+        private_chat_messages.save(session, sent_message)
+        return State.WAITING_DESCRIBE_SELF
+    elif not request.ready and not done_button_pressed:
         # await update.message.reply_text("Per favore invia almeno un messaggio")
         # return
         logger.info("user didn't complete the conversation: canceling operation")
         text = get_text(session, LocalizedTextKey.APPLICATION_TIMEOUT, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
         private_chat_messages.save(session, sent_message)
+
+        context.user_data.pop(TempDataKey.APPLICATION_ID, None)
         return ConversationHandler.END
 
     logger.info("all requested data has been submitted: sending to staff")
@@ -406,12 +463,13 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
         user=update.effective_user
     )
 
+    context.user_data.pop(TempDataKey.APPLICATION_ID, None)
     return ConversationHandler.END
 
 
 approval_mode_conversation_handler = ConversationHandler(
     name="approval_conversation",
-    entry_points=[CommandHandler(["start"], on_start_command)],
+    entry_points=[CommandHandler(["start"], on_start_command, filters=filters.ChatType.PRIVATE)],
     states={
         State.WAITING_OTHER_MEMBERS: [
             MessageHandler(~filters.TEXT, on_waiting_other_members_unexpected_message_received),
