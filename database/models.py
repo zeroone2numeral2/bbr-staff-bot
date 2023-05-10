@@ -4,7 +4,7 @@ import logging
 from typing import List, Optional, Union, Tuple, Iterable
 
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
-from sqlalchemy.orm import relationship, mapped_column, backref
+from sqlalchemy.orm import relationship, mapped_column, backref, Mapped
 from sqlalchemy.sql import func
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
@@ -46,10 +46,9 @@ class User(Base):
     banned_on = Column(DateTime, default=None)
 
     # application (user)
-    application_status = Column(Boolean, default=None)
-    application_received_on = Column(DateTime, default=None)
-    application_evaluated_on = Column(DateTime, default=None)
-    application_evaluated_by_user_id = mapped_column(Integer, default=None)
+    pending_request_id = mapped_column(Integer, default=None)  # pending ApplicationRequest
+    last_request_id = mapped_column(Integer, default=None)  # status of the last application processed
+    last_request_status = Column(Boolean, default=None)  # SHOULDN'T BE USED
 
     # application (admin)
     can_evaluate_applications = Column(Boolean, default=False)
@@ -70,18 +69,25 @@ class User(Base):
 
     # no foreign key for columns added after the table creation (https://stackoverflow.com/q/30378233),
     # we need to specify the 'primaryjoin' condition
-    application_evaluated_by = relationship(
-        "User",
-        foreign_keys=application_evaluated_by_user_id,
-        primaryjoin="User.user_id == User.application_evaluated_by_user_id",
-        remote_side=user_id,
-        uselist=False
-    )
-    invited_by = relationship(
+    invited_by: Mapped['User'] = relationship(
         "User",
         foreign_keys=invited_by_user_id,
         primaryjoin="User.user_id == User.invited_by_user_id",
         remote_side=user_id,
+        uselist=False
+    )
+    pending_request: Mapped['ApplicationRequest'] = relationship(
+        "ApplicationRequest",
+        foreign_keys=pending_request_id,
+        primaryjoin="User.pending_request_id == ApplicationRequest.id",
+        # remote_side=user_id,  # breaks the relationship for some reason
+        uselist=False
+    )
+    last_request: Mapped['ApplicationRequest'] = relationship(
+        "ApplicationRequest",
+        foreign_keys=last_request_id,
+        primaryjoin="User.last_request_id == ApplicationRequest.id",
+        # remote_side=user_id,  # breaks the relationship for some reason
         uselist=False
     )
 
@@ -136,6 +142,16 @@ class User(Base):
         self.shadowban = False
         self.banned_reason = None
         self.banned_on = None
+
+    def accepted(self, by_user_id: int, notes: Optional[str] = None):
+        self.pending_request.accepted(by_user_id, notes)
+        self.last_request_id = self.pending_request_id
+        self.pending_request_id = None
+
+    def rejected(self, by_user_id: int, notes: Optional[str] = None):
+        self.pending_request.rejected(by_user_id, notes)
+        self.last_request_id = self.pending_request_id
+        self.pending_request_id = None
 
 
 class Chat(Base):
@@ -904,7 +920,7 @@ class ApplicationRequest(Base):
     handled_by: User = relationship("User", foreign_keys=handled_by_user_id)
     log_message_chat: Chat = relationship("Chat", foreign_keys=log_message_chat_id)
     staff_message_chat: Chat = relationship("Chat", foreign_keys=staff_message_chat_id)
-    description_messages = relationship("DescriptionMessage", back_populates="application_request")
+    description_messages: List[Mapped['DescriptionMessage']] = relationship("DescriptionMessage", back_populates="application_request")
 
     def __init__(self, user_id: int):
         self.user_id = user_id

@@ -123,7 +123,8 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     request = ApplicationRequest(update.effective_user.id)
     session.add(request)
     session.commit()
-    context.user_data[TempDataKey.APPLICATION_ID] = request.id
+
+    user.pending_request_id = request.id
 
     welcome_text_not_member = get_text(session, LocalizedTextKey.WELCOME_NOT_MEMBER, update.effective_user)
     sent_message = await update.message.reply_text(welcome_text_not_member)
@@ -193,16 +194,12 @@ async def on_waiting_description_unexpected_message_received(update: Update, con
 async def on_waiting_other_members_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received other members {utilities.log(update)}")
 
-    # context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.OTHER_MEMBERS] = update.message.text_html
-
-    request_id = context.user_data[TempDataKey.APPLICATION_ID]
-    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
-    request.save_other_members(update.message)
+    user.pending_request.save_other_members(update.message)
 
     # we don't actually need this but we save it anyway
-    description_message = DescriptionMessage(request.id, update.effective_message, DescriptionMessageType.OTHER_MEMBERS)
+    description_message = DescriptionMessage(user.pending_request.id, update.effective_message, DescriptionMessageType.OTHER_MEMBERS)
     session.add(description_message)
-    request.updated()
+    user.pending_request.updated()
 
     send_social_text = get_text(session, LocalizedTextKey.SEND_SOCIAL, update.effective_user)
     sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
@@ -240,15 +237,12 @@ async def on_waiting_socials_skip(update: Update, context: ContextTypes.DEFAULT_
 async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received social {utilities.log(update)}")
 
-    # context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.SOCIAL] = update.message.text_html
-    request_id = context.user_data[TempDataKey.APPLICATION_ID]
-    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
-    request.save_social(update.message)
+    user.pending_request.save_social(update.message)
 
     # we don't actually need this because they are also saved toApplicationRequest  but we save it anyway
-    description_message = DescriptionMessage(request.id, update.effective_message, DescriptionMessageType.SOCIAL)
+    description_message = DescriptionMessage(user.pending_request.id, update.effective_message, DescriptionMessageType.SOCIAL)
     session.add(description_message)
-    request.updated()
+    user.pending_request.updated()
 
     send_description_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
     sent_message = await update.message.reply_text(send_description_text, reply_markup=get_done_keyboard())
@@ -268,22 +262,18 @@ async def send_waiting_for_more_message(context: CallbackContext):
 async def on_describe_self_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received describe self message {utilities.log(update)}")
 
-    # context.user_data[TempDataKey.APPLICATION_DATA][ApplicationDataKey.DESCRIPTION].append(update.message)
-
-    request_id = context.user_data[TempDataKey.APPLICATION_ID]
-    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
-    description_message = DescriptionMessage(request.id, update.effective_message)
+    description_message = DescriptionMessage(user.pending_request.id, update.effective_message)
     session.add(description_message)
 
     if description_message.text:
         # mark as ready only when we receive at least a text
-        request.ready = True
-    request.updated()
+        user.pending_request.ready = True
+    user.pending_request.updated()
 
     # we commit now so request.description_messages will be updated with also the message we just received (not tested)
     session.commit()
 
-    logger.info(f"saved description message")
+    logger.info(f"saved description message, total messages: {len(user.pending_request.description_messages)}")
 
     text = get_text(session, LocalizedTextKey.DESCRIBE_SELF_SEND_MORE, update.effective_user)
 
@@ -444,19 +434,14 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     # so if the last update is not the "done" button, then it means the conversation timeout-out
     done_button_pressed = update.message.text and re.search(rf"^{ButtonText.DONE}$", update.message.text, re.I)
 
-    request_id = context.user_data.get(TempDataKey.APPLICATION_ID, None)
-    if not request_id:
-        raise ValueError("no request id")
-
-    request: ApplicationRequest = application_requests.get_by_id(session, request_id)
-    if not request.ready and done_button_pressed:
+    if not user.pending_request.ready and done_button_pressed:
         logger.info("user didn't complete the conversation: warning user, but waiting for more")
         text = get_text(session, LocalizedTextKey.APPLICATION_NOT_READY, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
         private_chat_messages.save(session, sent_message)
 
         return State.WAITING_DESCRIBE_SELF
-    elif not request.ready and not done_button_pressed:
+    elif not user.pending_request.ready and not done_button_pressed:
         # await update.message.reply_text("Per favore invia almeno un messaggio")
         # return
         logger.info("user didn't complete the conversation: canceling operation")
@@ -464,7 +449,6 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
         sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
         private_chat_messages.save(session, sent_message)
 
-        context.user_data.pop(TempDataKey.APPLICATION_ID, None)
         return ConversationHandler.END
 
     logger.info("all requested data has been submitted: sending to staff")
@@ -478,11 +462,10 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
         bot=context.bot,
         log_chat_id=-1001922853416,
         staff_chat_id=staff_chat.chat_id,
-        request=request,
+        request=user.pending_request,
         user=update.effective_user
     )
 
-    context.user_data.pop(TempDataKey.APPLICATION_ID, None)
     return ConversationHandler.END
 
 
