@@ -651,6 +651,7 @@ class PrivateChatMessage(Base):
     message_id = Column(Integer, primary_key=True)  # we receive this just in private chats and it's incremental, so we can use it as primary key
     user_id = Column(Integer, ForeignKey('users.user_id'))
     from_self = Column(Boolean, default=False)
+    date = Column(DateTime, default=None)
     saved_on = Column(DateTime, default=utilities.now())
     revoked = Column(Boolean, default=False)
     revoked_on = Column(DateTime, default=None)
@@ -659,16 +660,37 @@ class PrivateChatMessage(Base):
 
     user: User = relationship("User", back_populates="private_chat_messages")
 
-    def __init__(self, message_id: int, user_id: int, from_self: Optional[bool] = False, message_json: Optional[str] = None):
+    def __init__(
+            self,
+            message_id: int,
+            user_id: int,
+            from_self: Optional[bool] = False,
+            date: Optional[datetime.datetime] = None,
+            message_json: Optional[str] = None
+    ):
         self.message_id = message_id
         self.user_id = user_id
         self.from_self = from_self
+        self.date = date
         self.message_json = message_json
 
     def set_revoked(self, reason=None):
         self.revoked = True
         self.revoked_on = utilities.now()
         self.revoked_reason = reason
+
+    def can_be_deleted(self, now_dt: Optional[datetime.datetime] = None) -> bool:
+        if not now_dt:
+            now_dt = utilities.now()
+
+        timedelta_48_hours_ago = datetime.timedelta(hours=48)
+
+        if self.date:
+            return self.date > now_dt - timedelta_48_hours_ago
+        elif self.saved_on:
+            return self.saved_on > now_dt - timedelta_48_hours_ago
+
+        return False
 
 
 # https://t.me/c/1289562489/569
@@ -886,6 +908,17 @@ class ApplicationRequest(Base):
 
     def __init__(self, user_id: int):
         self.user_id = user_id
+
+    def media_messages_count(self):
+        return len([m for m in self.description_messages if m.can_be_grouped()])
+
+    def total_text_length(self):
+        total_length = 0
+        for message in self.description_messages:
+            if message.text_html:
+                total_length += len(message.text_html)
+
+        return total_length
 
     def save_other_members(self, message: Message):
         self.other_members_text = message.text_html

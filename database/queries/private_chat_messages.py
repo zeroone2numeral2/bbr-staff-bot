@@ -29,6 +29,7 @@ def save(session: Session, message: Union[Message, Update], commit: Optional[boo
         message_id=message.message_id,
         user_id=message.chat.id,
         from_self=message.from_user.is_bot,
+        date=message.date,
         message_json=message.to_json()
     )
     session.add(private_chat_message)
