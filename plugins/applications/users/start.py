@@ -84,6 +84,14 @@ def get_done_keyboard(input_field_placeholder: Optional[str] = None):
     )
 
 
+def get_evaluation_keyboard(user_id: int, application_id: int):
+    keyboard = [[
+        InlineKeyboardButton(f"accetta", callback_data=f"accept:{user_id}:{application_id}"),
+        InlineKeyboardButton(f"rifiuta", callback_data=f"reject:{user_id}:{application_id}")
+    ]]
+    return InlineKeyboardMarkup(keyboard)
+
+
 def get_text(session: Session, ltext_key: str, user: TelegramUser) -> str:
     fallback_language = settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
     ltext = texts.get_localized_text_with_fallback(
@@ -116,15 +124,25 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         sent_message = await update.message.reply_text(welcome_text_member)
         private_chat_messages.save(session, sent_message)
         user.set_started()
+
         return ConversationHandler.END
 
-    logger.info("user is not a member of the users chat")
+    if user.pending_request_id:
+        logger.info("user already has a pending request")
+        sent_message = await update.message.reply_text("Una tua richiesta è già in fase di valutazione. "
+                                                       "Attendi che lo staff la esamini")
+        private_chat_messages.save(session, sent_message)
+
+        return ConversationHandler.END
+
+    logger.info("user is not a member of the users chat and doesn't have any pending request")
 
     request = ApplicationRequest(update.effective_user.id)
     session.add(request)
     session.commit()
 
     user.pending_request_id = request.id
+    session.commit()
 
     welcome_text_not_member = get_text(session, LocalizedTextKey.WELCOME_NOT_MEMBER, update.effective_user)
     sent_message = await update.message.reply_text(welcome_text_not_member)
@@ -416,13 +434,11 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True, **timeouts)
     request.set_log_message(log_message)
 
-    if staff_chat_id != log_chat_id:
-        logger.debug("sending staff message...")
-        staff_message_text = f"{base_text}\n\n{Emoji.LINE} <b>allegati</b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
-        staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text, **timeouts)
-        request.set_staff_message(staff_message)
-    else:
-        request.set_staff_message(log_message)
+    logger.debug("sending staff message...")
+    staff_message_text = f"{base_text}\n\n{Emoji.LINE} <b>allegati</b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
+    staff_message_reply_markup = get_evaluation_keyboard(request.user_id, request.id)
+    staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text, reply_markup=staff_message_reply_markup, **timeouts)
+    request.set_staff_message(staff_message)
 
 
 @decorators.catch_exception()

@@ -1,7 +1,7 @@
 import datetime
 import json
 import logging
-from typing import List, Optional, Union, Tuple, Iterable
+from typing import List, Optional, Union, Tuple, Iterable, ClassVar
 
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
 from sqlalchemy.orm import relationship, mapped_column, backref, Mapped

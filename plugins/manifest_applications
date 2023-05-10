@@ -1,5 +1,5 @@
 # PREPROCESS
-applications.private.any_message
+applications.users.any_message
 events.message
 staff.chat.edits
 
@@ -13,11 +13,11 @@ staff.private.ltexts
 events.commands
 
 help
-applications.private.users.start
+applications.users.start
 users.revoke
 users.message
 
-applications.group.users_chat
+applications.staff.users_chat
 
 staff.chat.setstaff
 staff.chat.reloadadmins

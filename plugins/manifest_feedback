@@ -1,5 +1,5 @@
 # PREPROCESS
-applications.private.any_message
+applications.users.any_message
 events.message
 staff.chat.edits
 
