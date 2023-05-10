@@ -106,18 +106,10 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         session.add(chat_member)
         session.commit()
 
-    fallback_language = settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-
     if chat_member.is_member() and False:
         logger.info("user is already a member of the users chat")
-        welcome_text_member = texts.get_localized_text_with_fallback(
-            session,
-            LocalizedTextKey.WELCOME_MEMBER,
-            Language.IT,
-            fallback_language=fallback_language
-        )
-        text = replace_placeholders(welcome_text_member.value, update.effective_user, session)
-        sent_message = await update.message.reply_text(text)
+        welcome_text_member = get_text(session, LocalizedTextKey.WELCOME_MEMBER, update.effective_user)
+        sent_message = await update.message.reply_text(welcome_text_member)
         private_chat_messages.save(session, sent_message)
         user.set_started()
         return ConversationHandler.END
@@ -129,25 +121,12 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     session.commit()
     context.user_data[TempDataKey.APPLICATION_ID] = request.id
 
-    welcome_text_not_member = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.WELCOME_NOT_MEMBER,
-        Language.IT,
-        fallback_language=fallback_language
-    )
-
-    text = replace_placeholders(welcome_text_not_member.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text)
+    welcome_text_not_member = get_text(session, LocalizedTextKey.WELCOME_NOT_MEMBER, update.effective_user)
+    sent_message = await update.message.reply_text(welcome_text_not_member)
     private_chat_messages.save(session, sent_message)
 
-    send_other_members_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.SEND_OTHER_MEMBERS,
-        Language.IT,
-        fallback_language=fallback_language
-    )
-    text = replace_placeholders(send_other_members_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
+    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard())
     private_chat_messages.save(session, sent_message)
 
     user.set_started()
@@ -162,14 +141,8 @@ async def on_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, session:
 
     context.user_data.pop(TempDataKey.APPLICATION_DATA, None)
 
-    cancel_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.APPLICATION_CANCELED,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(cancel_text.value, update.effective_user, session)
-    sent_message = await update.effective_message.reply_text(text, reply_markup=ReplyKeyboardRemove())
+    cancel_text = get_text(session, LocalizedTextKey.APPLICATION_CANCELED, update.effective_user)
+    sent_message = await update.effective_message.reply_text(cancel_text, reply_markup=ReplyKeyboardRemove())
     private_chat_messages.save(session, sent_message)
 
     return ConversationHandler.END
@@ -180,14 +153,8 @@ async def on_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, session:
 async def on_waiting_other_members_unexpected_message_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"(unexpected) received non-text message while waiting for other members {utilities.log(update)}")
 
-    send_other_members_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.SEND_OTHER_MEMBERS,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(send_other_members_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
+    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard())
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_OTHER_MEMBERS
@@ -198,14 +165,8 @@ async def on_waiting_other_members_unexpected_message_received(update: Update, c
 async def on_waiting_social_unexpected_message_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"(unexpected) received non-text message while waiting for social {utilities.log(update)}")
 
-    send_social_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.SEND_SOCIAL,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    send_social_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
@@ -216,14 +177,8 @@ async def on_waiting_social_unexpected_message_received(update: Update, context:
 async def on_waiting_description_unexpected_message_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"(unexpected) received message while waiting for social {utilities.log(update)}")
 
-    send_social_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.DESCRIBE_SELF,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    send_social_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
@@ -245,14 +200,8 @@ async def on_waiting_other_members_received(update: Update, context: ContextType
     session.add(description_message)
     request.updated()
 
-    send_social_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.SEND_SOCIAL,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    send_social_text = get_text(session, LocalizedTextKey.SEND_SOCIAL, update.effective_user)
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
@@ -263,14 +212,8 @@ async def on_waiting_other_members_received(update: Update, context: ContextType
 async def on_waiting_other_members_skip(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"waiting other members: skip {utilities.log(update)}")
 
-    send_social_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.SEND_SOCIAL,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(send_social_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_cancel_keyboard())
+    send_social_text = get_text(session, LocalizedTextKey.SEND_SOCIAL, update.effective_user)
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
@@ -281,14 +224,8 @@ async def on_waiting_other_members_skip(update: Update, context: ContextTypes.DE
 async def on_waiting_socials_skip(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"waiting socials: skip {utilities.log(update)}")
 
-    describe_self_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.DESCRIBE_SELF,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(describe_self_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
+    describe_self_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
+    sent_message = await update.message.reply_text(describe_self_text, reply_markup=get_done_keyboard())
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
@@ -304,19 +241,13 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
     request: ApplicationRequest = application_requests.get_by_id(session, request_id)
     request.save_social(update.message)
 
-    # we don't actually need this but we save it anyway
+    # we don't actually need this because they are also saved toApplicationRequest  but we save it anyway
     description_message = DescriptionMessage(request.id, update.effective_message, DescriptionMessageType.SOCIAL)
     session.add(description_message)
     request.updated()
 
-    send_description_text = texts.get_localized_text_with_fallback(
-        session,
-        LocalizedTextKey.DESCRIBE_SELF,
-        Language.IT,
-        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value()
-    )
-    text = replace_placeholders(send_description_text.value, update.effective_user, session)
-    sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
+    send_description_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
+    sent_message = await update.message.reply_text(send_description_text, reply_markup=get_done_keyboard())
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
@@ -446,7 +377,7 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
 async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"conversation timed out or user is done")
 
-    request_id = context.user_data.get(TempDataKey.APPLICATION_ID, None)
+    request_id = context.user_data.pop(TempDataKey.APPLICATION_ID, None)
     if not request_id:
         raise ValueError("no request id")
 
@@ -454,7 +385,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     if not request.ready:
         # await update.message.reply_text("Per favore invia almeno un messaggio")
         # return
-        logger.info("user didn't complete the conversation: cancel")
+        logger.info("user didn't complete the conversation: canceling operation")
         text = get_text(session, LocalizedTextKey.APPLICATION_TIMEOUT, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
         private_chat_messages.save(session, sent_message)
@@ -493,13 +424,15 @@ approval_mode_conversation_handler = ConversationHandler(
             MessageHandler(filters.TEXT & ~filters.Regex(Re.CANCEL), on_waiting_social_received),
         ],
         State.WAITING_DESCRIBE_SELF: [
-            MessageHandler(filters.TEXT & filters.Regex(rf"^{ButtonText.DONE}$"), on_timeout_or_done),
+            # make this handler blocking: forwarding many messages to a chat may require some time
+            MessageHandler(filters.TEXT & filters.Regex(rf"^{ButtonText.DONE}$"), on_timeout_or_done, block=True),
             MessageHandler(DESCRIBE_SELF_ALLOWED_MESSAGES_FILTER, on_describe_self_received),
             MessageHandler(~filters.TEXT, on_waiting_description_unexpected_message_received),
         ],
         ConversationHandler.TIMEOUT: [
             # on timeout, the *last update* is broadcasted to all handlers. it might be a callback query or a text
-            MessageHandler(filters.ALL, on_timeout_or_done),
+            # make this handler blocking: forwarding many messages to a chat may require some time
+            MessageHandler(filters.ALL, on_timeout_or_done, block=True),
         ]
     },
     fallbacks=[

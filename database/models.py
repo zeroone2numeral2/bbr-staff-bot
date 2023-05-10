@@ -987,9 +987,9 @@ class DescriptionMessage(Base):
         self.message_id = message.message_id
 
         self.text = message.text
-        self.text_html = message.text_html
+        self.text_html: str = message.text_html
         self.caption = message.caption
-        self.caption_html = message.caption_html
+        self.caption_html: str = message.caption_html
         self.media_group_id = message.media_group_id
         self.datetime = message.date
 
