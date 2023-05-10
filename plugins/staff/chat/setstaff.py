@@ -51,5 +51,5 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['setstaff', 'ssilent'], on_setstaff_command, filters.ChatType.GROUPS), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ['setstaff', 'ssc', 'ssilent'], on_setstaff_command, filters.ChatType.GROUPS), Group.NORMAL),
 )
