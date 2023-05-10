@@ -4,6 +4,7 @@ class Emoji:
     BOT = "🤖"
     HASHTAG = "#️⃣"
     LINE = "➖"
+    PLUS = "➕"
     SLEEPING = "😪"
     SPIRAL = "🌀"
     USER_ICON = "🚹"

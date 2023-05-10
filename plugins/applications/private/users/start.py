@@ -7,10 +7,12 @@ from sqlalchemy.orm import Session
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message, InputMediaPhoto
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
 from telegram.constants import MessageLimit, MediaGroupLimit
-from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler, PrefixHandler, MessageHandler
+from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler, PrefixHandler, MessageHandler, \
+    CallbackContext
 from telegram.ext import CommandHandler
 from telegram.ext import filters
 
+from database.base import session_scope
 from database.models import User, ChatMember as DbChatMember, ApplicationRequest, DescriptionMessage, \
     DescriptionMessageType
 from database.queries import settings, texts, chat_members, chats, private_chat_messages, application_requests
@@ -255,6 +257,12 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
     return State.WAITING_DESCRIBE_SELF
 
 
+async def send_waiting_for_more_message(context: CallbackContext):
+    sent_message = await context.bot.send_message(context.job.data["user_id"], context.job.data["text"], reply_markup=get_done_keyboard())
+    with session_scope() as session:
+        private_chat_messages.save(session, sent_message)
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_describe_self_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
@@ -266,21 +274,29 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
     request: ApplicationRequest = application_requests.get_by_id(session, request_id)
     description_message = DescriptionMessage(request.id, update.effective_message)
     session.add(description_message)
+
     if description_message.text:
         # mark as ready only when we receive at least a text
         request.ready = True
     request.updated()
 
+    # we commit now so request.description_messages will be updated with also the message we just received (not tested)
+    session.commit()
+
     logger.info(f"saved description message")
 
-    # this is actually needed if we want the "done" keyboard to appear after the user sends the message
-    """
-    sent_message = await update.message.reply_text(
-        "Salvato! Se vuoi puoi inviare altri messaggi, oppure invia la tua richiesta quando sei convint*",
-        reply_markup=get_done_keyboard()
-    )
-    private_chat_messages.save(session, sent_message)
-    """
+    text = get_text(session, LocalizedTextKey.DESCRIBE_SELF_SEND_MORE, update.effective_user)
+
+    if update.message.media_group_id:
+        job_name = f"media_group_{update.message.media_group_id}"
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if not jobs:
+            data = dict(text=text, user_id=update.effective_user.id)
+            context.job_queue.run_once(callback=send_waiting_for_more_message, when=3, name=job_name, data=data)
+    else:
+        # this is actually needed if we want the "done" keyboard to appear after the user sends the message
+        sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard(), quote=True)
+        private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
 

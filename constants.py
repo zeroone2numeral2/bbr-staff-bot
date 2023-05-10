@@ -64,6 +64,7 @@ class LocalizedTextKey:
     SEND_OTHER_MEMBERS = "send_other_members"
     SEND_SOCIAL = "send_social"
     DESCRIBE_SELF = "describe_self"
+    DESCRIBE_SELF_SEND_MORE = "describe_self_send_more"
     APPLICATION_CANCELED = "application_canceled"
     APPLICATION_TIMEOUT = "application_timeout"
     APPLICATION_NOT_READY = "application_not_ready"
@@ -117,6 +118,12 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         label="presentazione",
         explanation="Il messaggio con cui il bot chiederà all'utente di presentarsi",
         emoji=Emoji.ALIEN,
+        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    ),
+    LocalizedTextKey.DESCRIBE_SELF_SEND_MORE: dict(
+        label="presentazione (invia altro)",
+        explanation="Il messaggio con cui il bot dirà all'utente che può inviare altri messaggi per presentarsi",
+        emoji=Emoji.PLUS,
         show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
     ),
     LocalizedTextKey.APPLICATION_CANCELED: dict(
