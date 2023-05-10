@@ -18,6 +18,7 @@ users.revoke
 users.message
 
 applications.staff.users_chat
+applications.staff.approvers
 applications.staff.evaluation
 
 staff.chat.setstaff

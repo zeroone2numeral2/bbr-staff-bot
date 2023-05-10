@@ -109,6 +109,12 @@ async def delete_history(session: Session, bot: Bot, user: User):
 async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
     logger.info(f"reject/accept user button {utilities.log(update)}")
 
+    if not user.can_evaluate_applications:
+        logger.info("user is not allowed to accept/reject requests")
+        await update.callback_query.answer(f"Non sei abilitato all'approvazione delle richieste degli utenti",
+                                           show_alert=True)
+        return
+
     user_id = int(context.matches[0].group("user_id"))
     # application_id = int(context.matches[0].group("request_id"))
     accepted = context.matches[0].group("action") == "accept"
