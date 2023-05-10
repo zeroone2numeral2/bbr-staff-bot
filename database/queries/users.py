@@ -21,8 +21,8 @@ def get_safe(session: Session, telegram_user: TelegramUser, create_if_missing=Tr
     user: User = session.query(User).filter(User.user_id == telegram_user.id).one_or_none()
 
     if not user and create_if_missing:
-        chat = User(telegram_user)
-        session.add(chat)
+        user = User(telegram_user)
+        session.add(user)
     elif user and update_metadata_if_existing:
         user.update_metadata(telegram_user)
 

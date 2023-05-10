@@ -19,6 +19,7 @@ users.message
 
 applications.staff.users_chat
 applications.staff.approvers
+applications.staff.reset
 applications.staff.evaluation
 
 staff.chat.setstaff

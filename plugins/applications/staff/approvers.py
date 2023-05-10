@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 async def on_app_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/app {utilities.log(update)}")
 
-    if not update.message.reply_to_message.from_user:
+    if not update.message.reply_to_message.from_user or update.message.reply_to_message.from_user.is_bot:
         await update.message.reply_text("rispondi ad un utente non bot e non anonimo")
         return
 
