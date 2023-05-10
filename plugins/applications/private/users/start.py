@@ -424,6 +424,8 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
 async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"conversation timed out or user is done")
 
+    # on timeout, the last received update is passed to the handler
+    # so if the last update is not the "done" button, then it means the conversation timeout-out
     done_button_pressed = update.message.text and re.search(rf"^{ButtonText.DONE}$", update.message.text, re.I)
 
     request_id = context.user_data.get(TempDataKey.APPLICATION_ID, None)
@@ -436,6 +438,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
         text = get_text(session, LocalizedTextKey.APPLICATION_NOT_READY, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard())
         private_chat_messages.save(session, sent_message)
+
         return State.WAITING_DESCRIBE_SELF
     elif not request.ready and not done_button_pressed:
         # await update.message.reply_text("Per favore invia almeno un messaggio")
