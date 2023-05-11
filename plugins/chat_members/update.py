@@ -100,6 +100,7 @@ async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_
         logger.info(f"revoking invite link {user.last_request.invite_link}...")
         try:
             await bot.revoke_chat_invite_link(chat.chat_id, user.last_request.invite_link)
+            user.last_request.invite_link_revoked = True
         except (BadRequest, TelegramError) as e:
             logger.error(f"error while revoking invite link: {e}")
 
