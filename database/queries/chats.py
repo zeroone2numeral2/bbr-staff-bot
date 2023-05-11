@@ -6,10 +6,16 @@ from telegram import ChatMember
 from telegram import Chat as TelegramChat
 
 from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict, User
+from database.queries import users
 
 
 def get_staff_chat(session: Session) -> Optional[Chat]:
     chat: Chat = session.query(Chat).filter(Chat.is_staff_chat == true()).one_or_none()
+    return chat
+
+
+def get_users_chat(session: Session) -> Optional[Chat]:
+    chat: Chat = session.query(Chat).filter(Chat.is_users_chat == true()).one_or_none()
     return chat
 
 
@@ -19,11 +25,6 @@ def reset_staff_chat(session: Session):
 
 def reset_users_chat(session: Session):
     session.execute(update(Chat).values(is_users_chat=False))
-
-
-def get_users_chat(session: Session) -> Optional[Chat]:
-    chat: Chat = session.query(Chat).filter(Chat.is_users_chat == true()).one_or_none()
-    return chat
 
 
 def get_all_chats(session: Session):
@@ -82,10 +83,15 @@ def update_administrators_old(session: Session, chat: Chat, administrators: Tupl
 """
 
 
-def update_administrators(session: Session, chat: Chat, administrators: Tuple[ChatMember]):
-    current_chat_administrators_dict = chat_members_to_dict(chat.chat_id, administrators)
+def update_administrators(session: Session, chat: Chat, administrators: Tuple[ChatMember], save_users=True):
+    if save_users:
+        for administrator in administrators:
+            # mae sure we have the User model for that user
+            users.get_safe(session, administrator.user)
 
-    for _, chat_member_dict in current_chat_administrators_dict.items():
+    chat_administrators_dict = chat_members_to_dict(chat.chat_id, administrators)
+
+    for _, chat_member_dict in chat_administrators_dict.items():
         chat_administrator = DbChatMember(**chat_member_dict)
         session.merge(chat_administrator)
 

@@ -36,9 +36,6 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
     logger.info("saving administrators...")
     administrators: Tuple[ChatMember] = await update.effective_chat.get_administrators()
     chats.update_administrators(session, chat, administrators)
-    session.commit()
-    for administrator in administrators:
-        users.get_safe(session, administrator.user)
 
 
 HANDLERS = (
