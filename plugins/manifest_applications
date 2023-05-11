@@ -6,6 +6,7 @@ staff.chat.edits
 # user messages cannot be edited because they are forwarded
 # users.edits
 
+superadmins.chats
 staff.private.placeholders
 staff.private.settings_manual
 staff.private.settings

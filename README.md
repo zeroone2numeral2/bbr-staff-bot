@@ -27,6 +27,9 @@ comandi per impostare queste chat:
 - `/ssc` (in un gruppo): imposta il gruppo come chat dello staff
 - `/sec` (in privato, in risposta ad un messaggio inoltrato da un canale): imposta quel canale come canale in cui vengono postati gli eventi
 
+altri comandi:
+- `/chats` (solo superadmin, in privato o in un gruppo): restituisce l'elenco delle chat rilevanti
+
 ## comandi approvatori
 
 Gli approvatori sono gli utenti abilitati alla gestione delle richieste degli utenti.  

@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-from sqlalchemy import true, select, update
+from sqlalchemy import true, select, update, or_
 from sqlalchemy.orm import Session
 from telegram import ChatMember
 from telegram import Chat as TelegramChat
@@ -17,6 +17,17 @@ def get_staff_chat(session: Session) -> Optional[Chat]:
 def get_users_chat(session: Session) -> Optional[Chat]:
     chat: Chat = session.query(Chat).filter(Chat.is_users_chat == true()).one_or_none()
     return chat
+
+
+def get_core_chats(session: Session):
+    query = session.query(Chat).filter(or_(
+        Chat.is_staff_chat == true(),
+        Chat.is_users_chat == true(),
+        Chat.is_log_chat == true(),
+        Chat.is_events_chat == true(),
+    ))
+
+    return session.scalars(query)
 
 
 def reset_staff_chat(session: Session):

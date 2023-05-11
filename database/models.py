@@ -206,6 +206,18 @@ class Chat(Base):
         self.type = telegram_chat.type
         self.is_forum = telegram_chat.is_forum
 
+    def type_pretty(self):
+        if self.is_staff_chat:
+            return "staff chat"
+        if self.is_users_chat:
+            return "users chat"
+        if self.is_events_chat:
+            return "events chat"
+        if self.is_log_chat:
+            return "log chat"
+        else:
+            return "chat"
+
     def set_as_administrator(self, can_delete_messages: bool = None, can_invite_users: bool = None):
         self.is_admin = True
         if can_delete_messages is not None:
@@ -216,6 +228,7 @@ class Chat(Base):
     def unset_as_administrator(self):
         self.is_admin = False
         self.can_delete_messages = False
+        self.can_invite_users = False
 
     def set_left(self):
         self.left = True
