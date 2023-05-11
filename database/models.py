@@ -179,6 +179,9 @@ class Chat(Base):
 
     is_staff_chat = Column(Boolean, default=False)
     is_users_chat = Column(Boolean, default=False)
+    is_events_chat = Column(Boolean, default=False)
+    is_log_chat = Column(Boolean, default=False)
+
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
     first_seen = Column(DateTime, default=utilities.now())
