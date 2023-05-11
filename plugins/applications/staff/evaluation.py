@@ -21,10 +21,12 @@ from emojis import Emoji
 logger = logging.getLogger(__name__)
 
 
-def accepted_or_rejected_text(request_id: int, approved: bool, user: TelegramUser):
+def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUser, user: User):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
-    mention = utilities.mention_escaped(user)
-    return f"Richiesta #id{request_id} {result} da {mention} (#admin{user.id})"
+    admin_mention = utilities.mention_escaped(admin)
+    return f"Richiesta #id{request_id} {result}\n" \
+           f"• admin: {admin_mention} [#admin{admin.id}]\n" \
+           f"• utente: {user.mention()} [#user{user.user_id}]"
 
 
 async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
@@ -137,7 +139,7 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
     session.commit()
 
     logger.info("editing staff chat message...")
-    evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, update.effective_user)
+    evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, update.effective_user, user)
     edited_staff_message = await context.bot.edit_message_text(
         chat_id=user.last_request.staff_message_chat_id,
         message_id=user.last_request.staff_message_message_id,

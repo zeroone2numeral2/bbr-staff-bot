@@ -367,7 +367,7 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     # no idea why but we *need* large timeouts
     timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
 
-    merged_text = f"{Emoji.LINE} <b>descrizione</b>"
+    merged_text = f"••• <b><u>descrizione</u></b>"
     merged_text_includes = []  # list of indexes of the DescriptionMessage that have been merged into the current merged_text
     for i, description_message in enumerate(text_messages_to_merge):
         if len(merged_text) + len(description_message.text_html) > MessageLimit.MAX_TEXT_LENGTH:
@@ -430,23 +430,23 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
 
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "non impostato"
-    base_text = f"#RICHIESTA #id{request.id}\n\n" \
+    base_text = f"{Emoji.SPARKLE_SQUARE} #RICHIESTA #id{request.id}\n\n" \
                 f"{Emoji.USER_ICON} {user_mention}\n" \
-                f"{Emoji.SPIRAL} {user_username}\n" \
-                f"{Emoji.HASHTAG} #user{user.id}"
+                f"{Emoji.HASHTAG} {user_username}\n" \
+                f"{Emoji.NUMBERS} #user{user.id}"
 
     other_members_text = utilities.escape_html(request.other_members_text or "non forniti")
-    base_text += f"\n\n{Emoji.LINE} <b>utenti garanti</b>\n{other_members_text}"
+    base_text += f"\n\n••• <b><u>utenti garanti</u></b>\n{other_members_text}"
 
     social_text = utilities.escape_html(request.social_text or "non forniti")
-    base_text += f"\n\n{Emoji.LINE} <b>social</b>\n{social_text}"
+    base_text += f"\n\n••• <b><u>social</u></b>\n{social_text}"
 
     logger.debug("sending log message...")
     log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True, **timeouts)
     request.set_log_message(log_message)
 
     logger.debug("sending staff message...")
-    staff_message_text = f"{base_text}\n\n{Emoji.LINE} <b>allegati</b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
+    staff_message_text = f"{base_text}\n\n••• <b><u>allegati</u></b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
     staff_message_reply_markup = get_evaluation_keyboard(request.user_id, request.id)
     staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text, reply_markup=staff_message_reply_markup, **timeouts)
     request.set_staff_message(staff_message)

@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/reset {utilities.log(update)}")
 
-    if not user.can_evaluate_applications:
+    if not user.can_evaluate_applications and not utilities.is_admin(update.effective_user):
         return
 
     user_id_match = re.search(r"(?:#user)?(?P<user_id>\d+)", update.message.text, re.I)
@@ -36,7 +36,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return
 
     user.reset_evaluation()
-    await update.message.reply_text(f"L'utente ora potrà richiedere nuovamente di essere ammesso al gruppo")
+    await update.message.reply_text(f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo")
 
 
 HANDLERS = (
