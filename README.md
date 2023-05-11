@@ -25,7 +25,7 @@ Il bot funziona gestendo una serie di chat diverse:
 comandi per impostare queste chat:
 - `/suc` (in un gruppo): imposta il gruppo come chat degli utenti (gruppo flytek). Il bot dovrà obbligatoriamente essere admin (per sapere chi fa parte del gruppo) ed avere il permesso di invitare utenti (per generare i link di invito)
 - `/ssc` (in un gruppo): imposta il gruppo come chat dello staff
-- `/sec` (in privato, in risposta ad un messaggio inoltrato da un canale): imposta quel canale come canale degli eventi, in cui vengono postati gli eventi
+- `/sec` (in privato, in risposta ad un messaggio inoltrato da un canale): imposta quel canale come canale in cui vengono postati gli eventi
 
 ## comandi approvatori
 
