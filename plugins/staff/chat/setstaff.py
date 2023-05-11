@@ -24,19 +24,10 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
         logger.warning(f"user {utilities.log_string_user(update.effective_user)}) tried to use /setstaff")
         return
 
-    if "ssilent" in update.message.text.lower():
-        # noinspection PyBroadException
-        try:
-            await update.message.delete()
-        except:
-            pass
-
     chats.reset_staff_chat(session)
     session.commit()
 
     chat.set_as_staff_chat()
-    if "ssilent" not in update.message.text.lower():
-        await update.message.reply_text("This group has been set as staff chat")
 
     ChatFilter.STAFF.chat_ids = {chat.chat_id}
 
@@ -51,5 +42,5 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['setstaff', 'ssc', 'ssilent'], on_setstaff_command, filters.ChatType.GROUPS), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ['setstaff', 'ssc'], on_setstaff_command, filters.ChatType.GROUPS), Group.NORMAL),
 )
