@@ -113,7 +113,7 @@ async def delete_history(session: Session, bot: Bot, user: User):
 async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
     logger.info(f"reject/accept user button {utilities.log(update)}")
 
-    if not user.can_evaluate_applications and not utilities.is_admin(update.effective_user):
+    if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
         logger.info("user is not allowed to accept/reject requests")
         await update.callback_query.answer(
             f"Non sei abilitato all'approvazione delle richieste degli utenti",

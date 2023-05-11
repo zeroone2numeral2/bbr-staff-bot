@@ -69,7 +69,7 @@ def previous_weekday(today: Optional[datetime.date] = None, weekday=0):
     return today - datetime.timedelta(days_behind)
 
 
-def is_admin(user: User) -> bool:
+def is_superadmin(user: User) -> bool:
     return user.id in config.telegram.admins
 
 

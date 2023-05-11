@@ -43,7 +43,7 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
         chat.set_left()
         return
 
-    if not utilities.is_admin(update.effective_user):
+    if not utilities.is_superadmin(update.effective_user):
         logger.info("unauthorized: leaving...")
         await update.effective_chat.leave()
         chat.set_left()

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
     logger.info(f"/setstaff {utilities.log(update)}")
 
-    if not utilities.is_admin(update.effective_user):
+    if not utilities.is_superadmin(update.effective_user):
         logger.warning(f"user {utilities.log_string_user(update.effective_user)}) tried to use /setstaff")
         return
 
