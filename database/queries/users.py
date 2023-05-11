@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy import true, false, select, null
+from sqlalchemy import true, false, select, null, update
 from telegram import User as TelegramUser
 
 from database.models import User
@@ -30,3 +30,13 @@ def get_safe(session: Session, telegram_user: TelegramUser, create_if_missing=Tr
         session.commit()
 
     return user
+
+
+def get_approvers(session: Session):
+    query = session.query(User).filter(User.can_evaluate_applications == true())
+
+    return session.scalars(query)
+
+
+def reset_approvers(session: Session):
+    session.execute(update(User).values(can_evaluate_applications=False))

@@ -20,6 +20,38 @@ logger = logging.getLogger(__name__)
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+async def on_approverslist_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/approverslist {utilities.log(update)}")
+
+    approvers = users.get_approvers(session)
+    if not approvers.first():
+        await update.message.reply_html("solo i superadmin sono abilitati alla gestione delle richieste", quote=True)
+        return
+
+    users_list = []
+    user: User
+    for user in approvers:
+        text = f"• {user.mention()} [<code>{user.user_id}</code>]"
+        users_list.append(text)
+
+    await update.message.reply_html("\n".join(users_list), quote=True)
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_resetapprovers_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/resetapprovers {utilities.log(update)}")
+
+    users.reset_approvers(session)
+    await update.message.reply_html(
+        "Ora solo i superadmin possono approvare/rifiutare nuovi utenti\n"
+        "Puoi usare /approver in risposta ad un altro utente per abilitarlo alla gestione delle richieste",
+        quote=True
+    )
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
 async def on_approver_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/approver {utilities.log(update)}")
 
@@ -65,6 +97,8 @@ async def on_adminsapprovers_command(update: Update, context: ContextTypes.DEFAU
 
 
 HANDLERS = (
+    (CommandHandler(["resetapprovers"], on_resetapprovers_command, filters=Filter.SUPERADMIN), Group.NORMAL),
+    (CommandHandler(["approverslist"], on_approverslist_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["approver"], on_approver_command, filters=Filter.SUPERADMIN_AND_GROUP), Group.NORMAL),
     (CommandHandler(["adminsapprovers"], on_adminsapprovers_command, filters=Filter.SUPERADMIN_AND_GROUP), Group.NORMAL),
 )

@@ -9,6 +9,7 @@ from sqlalchemy.sql import func
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
     ChatMemberLeft, ChatMemberBanned, ChatMemberMember, Message, InputMediaPhoto, InputMediaVideo
+from telegram.helpers import mention_html
 
 import utilities
 from constants import Language
@@ -114,6 +115,13 @@ class User(Base):
         self.language_code = telegram_user.language_code
         self.is_bot = telegram_user.is_bot
         self.is_premium = telegram_user.is_premium
+
+    def mention(self, full_name=True, escape=True):
+        name = self.full_name() if full_name else self.first_name
+        if escape:
+            name = utilities.escape_html(name)
+
+        return mention_html(self.user_id, name)
 
     def set_started(self):
         self.started = True
