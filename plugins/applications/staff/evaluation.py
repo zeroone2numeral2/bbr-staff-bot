@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 def accepted_or_rejected_text(request_id: int, approved: bool, user: TelegramUser):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
-    return f"Richiesta #id{request_id} {result} da {user.mention_html()} (#admin{user.id})"
+    mention = utilities.mention_escaped(user)
+    return f"Richiesta #id{request_id} {result} da {mention} (#admin{user.id})"
 
 
 async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:

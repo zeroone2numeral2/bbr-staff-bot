@@ -428,7 +428,7 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
         description_message.set_log_message(sent_message)
         sent_attachment_messages.append(sent_message)
 
-    user_mention = user.mention_html(name=utilities.escape_html(user.full_name))
+    user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "non impostato"
     base_text = f"#RICHIESTA #id{request.id}\n\n" \
                 f"{Emoji.USER_ICON} {user_mention}\n" \
