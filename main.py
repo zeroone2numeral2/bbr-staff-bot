@@ -4,7 +4,7 @@ from typing import Union, Iterable
 
 import pytz
 from sqlalchemy.orm import Session
-from telegram import Update, BotCommandScopeChat, ChatMemberOwner
+from telegram import Update, BotCommandScopeChat, ChatMemberOwner, ChatInviteLink
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMember, ChatMemberAdministrator
 from telegram.constants import ParseMode
@@ -14,7 +14,7 @@ from telegram.ext import Defaults
 from telegram.ext import ExtBot
 
 from loader import load_modules
-from database.base import get_session, Base, engine
+from database.base import get_session, Base, engine, session_scope
 from database.models import ChatMember as DbChatMember
 from database.models import BotSetting
 from database.queries import chats, chat_members
@@ -140,6 +140,25 @@ async def change_my_name(context: ContextTypes.DEFAULT_TYPE):
         logger.debug(f"error while changing name: {e.message}")
 
 
+async def generate_one_time_link(context: ContextTypes.DEFAULT_TYPE):
+    if not utilities.is_test_bot():
+        return
+
+    logger.debug(f"running at {utilities.now_str()}")
+    with session_scope() as session:
+        users_chat = chats.get_users_chat(session)
+        try:
+            chat_invite_link: ChatInviteLink = await context.bot.create_chat_invite_link(
+                users_chat.chat_id,
+                member_limit=1,
+                # name=f"test"
+            )
+            invite_link = chat_invite_link.invite_link
+            logger.debug(f"generated link {invite_link}")
+        except (TelegramError, BadRequest) as e:
+            logger.error(f"error while generating invite link for chat {users_chat.chat_id}: {e}")
+
+
 def main():
     utilities.load_logging_config('logging.json')
 
@@ -152,6 +171,7 @@ def main():
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
     # app.job_queue.run_repeating(change_my_name, interval=60*10, first=10)
+    app.job_queue.run_repeating(generate_one_time_link, interval=5*60, first=10)
 
     logger.info(f"polling for updates...")
     app.run_polling(
