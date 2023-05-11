@@ -1,6 +1,7 @@
 ### comandi superadmin
 gestione approvatori:  
 - `/approver` in un gruppo risposta ad un utente: abilita utente ad accettare/rifiutare le richieste
+- `/adminsapprovers` in un gruppo: tutti gli admin in quel gruppo saranno abilitati alla gestione delle richieste degli utenti
 
 configurazione chat:  
 - `/suc` (in un gruppo): imposta il gruppo come chat degli utenti (gruppo flytek). Il bot dovrà obbligatoriamente essere admin ed avere il permesso di invitare utenti, per generare i link di invito

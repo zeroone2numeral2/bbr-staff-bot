@@ -103,7 +103,7 @@ def is_organic_user(user: User):
     return not (is_service_account(user) or user.is_bot)
 
 
-def is_reply_to_user(message: Message) -> bool:
+def is_reply_to_user(message: Message, not_self=False) -> bool:
     if not message.reply_to_message:
         return False
 
@@ -115,6 +115,9 @@ def is_reply_to_user(message: Message) -> bool:
         return False
 
     if is_service_account(replied_message.from_user):
+        return False
+
+    if not_self and message.from_user and message.from_user.id == replied_message.from_user.id:
         return False
 
     return True

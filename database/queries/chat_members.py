@@ -5,14 +5,19 @@ from sqlalchemy.orm import Session
 from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
 
 from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
-
+from database.queries import users
 
 CHAT_MEMBER_STATUS_ADMIN = [ChatMember.ADMINISTRATOR, ChatMember.OWNER]
 
 CHAT_MEMBER_STATUS_MEMBER = [ChatMember.ADMINISTRATOR, ChatMember.OWNER, ChatMember.MEMBER, ChatMember.RESTRICTED]
 
 
-def save_administrators(session: Session, chat_id: int, administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]]):
+def save_administrators(session: Session, chat_id: int, administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]], save_users=True):
+    if save_users:
+        for administrator in administrators:
+            # mae sure we have the User model for that user
+            users.get_safe(session, administrator.user)
+
     chat_administrators_dict = chat_members_to_dict(chat_id, administrators)
 
     for _, chat_member_dict in chat_administrators_dict.items():
@@ -50,3 +55,14 @@ def get_users_chat_chat_member(session: Session, user_id: int) -> Optional[DbCha
     ).one_or_none()
 
     return chat_member
+
+
+def get_chat_administrators(session: Session, chat_id: int):
+    # noinspection PyUnresolvedReferences
+
+    statement = session.query(DbChatMember).where(
+        DbChatMember.chat_id == chat_id,
+        Chat.status in (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER)
+    )
+
+    return session.scalars(statement)
