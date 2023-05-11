@@ -5,3 +5,4 @@ idea/
 *.log.*
 config.toml
 *.db
+*.db-journal

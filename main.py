@@ -79,10 +79,24 @@ async def post_init(application: Application) -> None:
 
     staff_chat = chats.get_staff_chat(session)
     if not staff_chat:
-        logger.info("no staff chat set")
+        logger.info("no staff chat set, exiting")
+
+        # remember to commit before exiting!!!
+        session.commit()
         return
 
-    staff_chat_chat_member: ChatMember = await bot.get_chat_member(staff_chat.chat_id, bot.id)
+    try:
+        staff_chat_chat_member: ChatMember = await bot.get_chat_member(staff_chat.chat_id, bot.id)
+    except BadRequest as e:
+        logger.error(f"error while gettign staff chat's ChatMember: {e}")
+        if "chat not found" in e.message.lower():
+            logger.warning(f"staff chat {staff_chat.chat_id} not found: resetting staff chat...")
+            chats.reset_staff_chat(session)
+
+        # remember to commit before exiting!!!
+        session.commit()
+        return
+
     if not isinstance(staff_chat_chat_member, ChatMemberAdministrator):
         logger.info(f"not an admin in the staff chat {staff_chat.chat_id}, current status: {staff_chat_chat_member.status}")
         staff_chat.unset_as_administrator()
