@@ -2,9 +2,10 @@ import logging
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
-from telegram import Update
+from telegram import Update, ChatMemberUpdated, Bot
 from telegram import ChatMember, ChatMemberMember, ChatMemberRestricted, ChatMemberLeft, ChatMemberBanned, ChatMemberAdministrator
-from telegram.ext import ChatMemberHandler
+from telegram.error import TelegramError, BadRequest
+from telegram.ext import ChatMemberHandler, CallbackContext
 
 from constants import Group
 from database.models import User, Chat, ChatMember as DbChatMember
@@ -76,9 +77,36 @@ def save_chat_member(session: Session, update: Update, commit=False):
         session.commit()
 
 
+async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
+    logger.info("user joined users chat")
+    user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
+    if not user.last_request_id:
+        logger.debug("no last request to check")
+        return
+
+    if user.last_request.accepted_message_message_id:
+        # always remove the inline keyboard
+        logger.debug(f"removing keyboard from message_id {user.last_request.accepted_message_message_id}")
+        try:
+            await bot.edit_message_reply_markup(
+                user.user_id,
+                user.last_request.accepted_message_message_id,
+                reply_markup=None
+            )
+        except (TelegramError, BadRequest) as e:
+            logger.error(f"error while removing reply makrup: {e}")
+
+    if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
+        logger.info(f"revoking invite link {user.last_request.invite_link}...")
+        try:
+            await bot.revoke_chat_invite_link(chat.chat_id, user.last_request.invite_link)
+        except (BadRequest, TelegramError) as e:
+            logger.error(f"error while revoking invite link: {e}")
+
+
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
-async def on_chat_member_update(update: Update, _, session: Session, chat: Optional[Chat] = None):
+async def on_chat_member_update(update: Update, context: CallbackContext, session: Session, chat: Optional[Chat] = None):
     logger.info(f"chat member update {utilities.log(update)}")
 
     logger.info("saving or updating User objects...")
@@ -89,6 +117,14 @@ async def on_chat_member_update(update: Update, _, session: Session, chat: Optio
 
     logger.info("saving new chat_member object...")
     save_chat_member(session, update)
+
+    if not utilities.is_join_update(update.chat_member):
+        return
+
+    if not chat.is_users_chat:
+        return
+
+    await handle_new_member(session, chat, context.bot, update.chat_member)
 
 
 @decorators.catch_exception(silent=True)

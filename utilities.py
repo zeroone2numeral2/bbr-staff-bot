@@ -10,7 +10,8 @@ from re import Match
 from typing import Union, Optional, Tuple
 from typing import List
 
-from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, Bot
+from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, Bot, ChatMemberUpdated, \
+    ChatMember
 from telegram.error import BadRequest
 
 from config import config
@@ -121,6 +122,13 @@ def is_reply_to_user(message: Message, not_self=False) -> bool:
         return False
 
     return True
+
+
+def is_join_update(chat_member_update: ChatMemberUpdated):
+    not_member_statuses = (ChatMember.LEFT, ChatMember.BANNED)
+    member_statuses = (ChatMember.MEMBER, ChatMember.RESTRICTED, ChatMember.ADMINISTRATOR, ChatMember.OWNER)
+
+    return chat_member_update.old_chat_member.status in not_member_statuses and chat_member_update.new_chat_member.status in member_statuses
 
 
 def is_reply_to_forwarded_channel_message(message: Message) -> bool:
