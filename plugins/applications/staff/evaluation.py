@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from typing import Optional, List
@@ -133,12 +134,15 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
 
     logger.info("editing staff chat message...")
     evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, update.effective_user)
-    await context.bot.edit_message_text(
+    edited_staff_message = await context.bot.edit_message_text(
         chat_id=user.last_request.staff_message_chat_id,
         message_id=user.last_request.staff_message_message_id,
         text=f"{user.last_request.staff_message_text_html}\n\n{evaluation_text}",
         reply_markup=None
     )
+    user.last_request.staff_message_text = edited_staff_message.text
+    user.last_request.staff_message_text_html = edited_staff_message.text_html
+    user.last_request.staff_message_json = json.dumps(edited_staff_message.to_dict(), indent=2)
 
     logger.info("sending log chat message...")
     await context.bot.send_message(
