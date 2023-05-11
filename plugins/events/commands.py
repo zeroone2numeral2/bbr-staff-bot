@@ -11,8 +11,8 @@ from telegram import Update, Message, MessageEntity
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext
 from telegram.constants import MessageLimit
 
-from ext.filters import ChatFilter
-from .common import Filter, parse_message_entities, parse_message_text
+from ext.filters import ChatFilter, Filter
+from .common import parse_message_entities, parse_message_text
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
 from database.queries import settings, events, chats
 import decorators
@@ -296,11 +296,11 @@ async def on_fwd_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 
 HANDLERS = (
-    (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["events", "eventsall"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
-    (CommandHandler(["invalidevents", "ie", "soon"], on_invalid_events_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
-    (CommandHandler(["fwd"], on_fwd_command, filters=Filter.SUPERADMIN_PRIVATE), Group.NORMAL),
+    (CommandHandler(["invalidevents", "ie", "soon"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["fwd"], on_fwd_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )
