@@ -141,9 +141,7 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
         text=f"{user.last_request.staff_message_text_html}\n\n{evaluation_text}",
         reply_markup=None
     )
-    user.last_request.staff_message_text = edited_staff_message.text
-    user.last_request.staff_message_text_html = edited_staff_message.text_html
-    user.last_request.staff_message_json = json.dumps(edited_staff_message.to_dict(), indent=2)
+    user.last_request.update_staff_message(edited_staff_message)
 
     logger.info("sending log chat message...")
     await context.bot.send_message(
