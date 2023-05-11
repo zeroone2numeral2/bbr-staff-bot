@@ -12,6 +12,7 @@ import decorators
 import utilities
 from constants import BotSettingKey, LocalizedTextKey, Group, Language
 from emojis import Emoji
+from ext.filters import Filter
 
 logger = logging.getLogger(__name__)
 
@@ -83,5 +84,5 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (MessageHandler(filters.ChatType.PRIVATE, on_user_message), Group.NORMAL),
+    (MessageHandler(filters.ChatType.PRIVATE & ~Filter.SUPERADMIN, on_user_message), Group.NORMAL),
 )
