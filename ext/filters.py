@@ -4,10 +4,9 @@ from sqlalchemy.orm import Session
 from telegram.ext import filters
 
 from config import config
-from constants import BotSettingKey
 from database.base import session_scope
-from database.models import BotSetting, Chat
-from database.queries import settings, chats
+from database.models import Chat
+from database.queries import chats
 
 logger = logging.getLogger(__name__)
 
@@ -32,23 +31,19 @@ def init_filters():
     with session_scope() as session:
         session: Session
 
-        setting: BotSetting = settings.get_or_create(session, BotSettingKey.EVENTS_CHAT_ID)
-        if not setting.value():
-            logger.debug(f"setting events chat id: {config.events.chat_id}")
-            setting.update_value(config.events.chat_id)
-            session.commit()
-
-        logger.debug(f"initializing EVENTS_CHAT filter ({setting.value()})...")
-        ChatFilter.EVENTS.chat_ids = {setting.value()}
+        events_chat: Chat = chats.get_events_chat(session)
+        if events_chat:
+            logger.debug(f"initializing EVENTS filter ({events_chat.chat_id})...")
+            ChatFilter.EVENTS.chat_ids = {events_chat.chat_id}
 
         staff_chat: Chat = chats.get_staff_chat(session)
         if staff_chat:
-            logger.debug(f"initializing STAFF_CHAT filter ({staff_chat.chat_id})...")
+            logger.debug(f"initializing STAFF filter ({staff_chat.chat_id})...")
             ChatFilter.STAFF.chat_ids = {staff_chat.chat_id}
 
         users_chat: Chat = chats.get_users_chat(session)
         if users_chat:
-            logger.debug(f"initializing USERS_CHAT filter ({users_chat.chat_id})...")
+            logger.debug(f"initializing USERS filter ({users_chat.chat_id})...")
             ChatFilter.USERS.chat_ids = {users_chat.chat_id}
 
 
