@@ -19,7 +19,6 @@ users.revoke
 users.message
 
 superadmins.chats
-staff.chat.setstaff
 staff.chat.reloadadmins
 staff.chat.ban
 staff.chat.info

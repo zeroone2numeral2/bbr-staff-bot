@@ -48,6 +48,14 @@ def reset_users_chat(session: Session):
     session.execute(update(Chat).values(is_users_chat=False))
 
 
+def reset_log_chat(session: Session):
+    session.execute(update(Chat).values(is_log_chat=False))
+
+
+def reset_events_chat(session: Session):
+    session.execute(update(Chat).values(is_events_chat=False))
+
+
 def get_all_chats(session: Session):
     statement = select(Chat).where()
     return session.scalars(statement)

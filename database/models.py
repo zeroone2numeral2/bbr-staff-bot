@@ -171,6 +171,9 @@ class User(Base):
 class Chat(Base):
     __tablename__ = 'chats'
 
+    DESTINATION_TYPES_GROUP = ("staff", "users")
+    DESTINATION_TYPES_CHANNEL = ("log", "events")
+
     chat_id = Column(Integer, primary_key=True)
     title = Column(String, default=None)
     username = Column(String, default=None)
@@ -239,8 +242,16 @@ class Chat(Base):
         self.is_users_chat = False
 
     def set_as_users_chat(self):
-        self.is_staff_chat = False
         self.is_users_chat = True
+        self.is_staff_chat = False
+
+    def set_as_log_chat(self):
+        self.is_log_chat = True
+        self.is_events_chat = False
+
+    def set_as_events_chat(self):
+        self.is_events_chat = True
+        self.is_log_chat = False
 
 
 chat_member_union_type = Union[
