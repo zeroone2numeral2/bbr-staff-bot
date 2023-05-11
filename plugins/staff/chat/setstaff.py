@@ -33,6 +33,8 @@ async def on_setstaff_command(update: Update, _, session: Session, chat: Chat):
 
     session.commit()  # make sure to commit now, just in case something unexpected happens while saving admins
 
+    await update.message.reply_text("This chat ahs been set as staff chat")
+
     logger.info("saving administrators...")
     administrators: Tuple[ChatMember] = await update.effective_chat.get_administrators()
     chats.update_administrators(session, chat, administrators)
