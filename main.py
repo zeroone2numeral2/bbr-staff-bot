@@ -144,6 +144,10 @@ async def generate_one_time_link(context: ContextTypes.DEFAULT_TYPE):
     if not utilities.is_test_bot():
         return
 
+    if "errors_count" in context.bot_data and context.bot_data["errors_count"] >= 10:
+        logger.debug("too many errors")
+        return
+
     logger.debug(f"running at {utilities.now_str()}")
     with session_scope() as session:
         users_chat = chats.get_users_chat(session)
@@ -157,6 +161,10 @@ async def generate_one_time_link(context: ContextTypes.DEFAULT_TYPE):
             logger.debug(f"generated link {invite_link}")
         except (TelegramError, BadRequest) as e:
             logger.error(f"error while generating invite link for chat {users_chat.chat_id}: {e}")
+
+            if "errors_count" not in context.bot_data:
+                context.bot_data["errors_count"] = 0
+            context.bot_data["errors_count"] += 1
 
 
 def main():
