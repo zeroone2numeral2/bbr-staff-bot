@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-async def on_app_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/app {utilities.log(update)}")
+async def on_approver_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/approver {utilities.log(update)}")
 
     if not utilities.is_reply_to_user(update.message):
-        await update.message.reply_text("rispondi ad un utente non bot e non anonimo")
+        await update.message.reply_text("Rispondi all'utente (non bot e non anonimo)", quote=True)
         return
 
     target_user = update.message.reply_to_message.from_user
@@ -42,5 +42,5 @@ async def on_app_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 
 HANDLERS = (
-    (CommandHandler(["app"], on_app_command, filters=Filter.SUPERADMIN_AND_GROUP & filters.REPLY), Group.NORMAL),
+    (CommandHandler(["approver"], on_approver_command, filters=Filter.SUPERADMIN_AND_GROUP), Group.NORMAL),
 )
