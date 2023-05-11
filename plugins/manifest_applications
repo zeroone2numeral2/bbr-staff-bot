@@ -13,7 +13,7 @@ staff.private.ltexts
 events.commands
 
 help
-applications.users.start
+applications.users.request
 users.revoke
 users.message
 
