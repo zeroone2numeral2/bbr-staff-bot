@@ -30,6 +30,11 @@ def escape_html(string):
     return escape(str(string))
 
 
+def mention_escaped(user: User, full_name=True) -> str:
+    name = user.full_name if full_name else user.first_name
+    return user.mention_html(name=escape_html(name))
+
+
 def now():
     return datetime.datetime.utcnow()
 
@@ -71,6 +76,55 @@ def is_admin(user: User) -> bool:
 def is_normal_group(chat: Chat) -> bool:
     # return str(chat.id).startswith("-100")
     return chat.type == Chat.GROUP
+
+
+def forward_from_hidden_account(message: Message):
+    return message.forward_sender_name and not message.forward_from
+
+
+def is_service_account(user: User):
+    return user.id in (777000,)
+
+
+def is_forward_from_user(message: Message, exclude_service=True, exclude_bots=True):
+    """Returns True if the original sender of the message was an user accunt. Will exlcude service account"""
+
+    if message.forward_from and exclude_service and is_service_account(message.forward_from):
+        return False
+    elif message.forward_from and exclude_bots and message.forward_from.is_bot:
+        # message.forward_from always exist with bots because they cannot hide their forwards
+        return False
+
+    # return True even when the user decided to hide their account
+    return message.forward_sender_name or message.forward_from
+
+
+def is_organic_user(user: User):
+    return not (is_service_account(user) or user.is_bot)
+
+
+def is_reply_to_user(message: Message) -> bool:
+    if not message.reply_to_message:
+        return False
+
+    replied_message = message.reply_to_message
+    if not replied_message.from_user:
+        return False
+
+    if replied_message.from_user.is_bot:
+        return False
+
+    if is_service_account(replied_message.from_user):
+        return False
+
+    return True
+
+
+def is_reply_to_forwarded_channel_message(message: Message) -> bool:
+    if not message.reply_to_message:
+        return False
+
+    return message.reply_to_message.forward_from_chat and message.reply_to_message.forward_from_chat.type == Chat.CHANNEL
 
 
 def detect_media_type(message: Message) -> str:
