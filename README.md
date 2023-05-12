@@ -27,7 +27,7 @@ comandi per impostare queste chat:
 - `/setchat log` o `/setchat events` (in privato, in risposta ad un messaggio inoltrato da un canale): imposta quel canale come log oppure canale in cui vengono postati gli eventi
 
 altri comandi:
-- `/chats` (solo superadmin, in privato o in un gruppo): restituisce l'elenco delle chat rilevanti
+- `/chats` (in privato o in un gruppo): restituisce l'elenco delle chat rilevanti
 
 ## comandi approvatori
 
@@ -35,3 +35,9 @@ Gli approvatori sono gli utenti abilitati alla gestione delle richieste degli ut
 I superadmin possono aggiungere o rimuovere un utente dall'elenco degli approvatori con i comandi elencati sopra
 
 - `/reset [user id, anche con hashtag]`: permetti all'utente di richiedere nuovamente l'accesso alla chat, anche se è stato rifiutato in precedenza
+
+## Comandi per admin chat staff/approvazione utenti
+
+- `/ban [motivazione]` (chat staff, in risposta ad un messaggio inviato da un utente): banna l'utente, non potrà più utilizzare il bot. Quando l'utente invia un messaggio il bot lo informerà che è stato bannato
+- `/shadownban [motivazione]` (chat staff, in risposta ad un messaggio inviato da un utente): come `/ban`, ma il bot non risponderà ai suoi messaggi dicendogli che è stato bannato
+- `/unban` (chat staff, in risposta ad un messaggio inviato da un utente): si capisce dai
