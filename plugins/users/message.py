@@ -32,10 +32,15 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     chat: Chat = chats.get_staff_chat(session)
     if not chat:
-        logger.warning("there is no staff chat set as default")
+        logger.warning("ignoring message: there is no staff chat set")
         return
 
     approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
+
+    if approval_mode and user.pending_request_id:
+        logger.info("user has a pending request: ignoring message")
+        return
+
     if approval_mode and user.last_request and user.last_request.status is False:
         logger.info(f"ignoring user message because they were rejected")
         ltext = texts.get_localized_text_with_fallback(
