@@ -151,14 +151,15 @@ async def generate_one_time_link(context: ContextTypes.DEFAULT_TYPE):
     logger.debug(f"running at {utilities.now_str()}")
     with session_scope() as session:
         users_chat = chats.get_users_chat(session)
+        now_str = utilities.now_str()
         try:
             chat_invite_link: ChatInviteLink = await context.bot.create_chat_invite_link(
                 users_chat.chat_id,
                 member_limit=1,
-                # name=f"test"
+                name=f"t {now_str}"
             )
             invite_link = chat_invite_link.invite_link
-            logger.debug(f"generated link {invite_link}")
+            logger.debug(f"generated link {now_str}: {invite_link}")
         except (TelegramError, BadRequest) as e:
             logger.error(f"error while generating invite link for chat {users_chat.chat_id}: {e}")
 
