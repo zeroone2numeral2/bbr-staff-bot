@@ -30,8 +30,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             private_chat_messages.save(session, sent_message)
         return
 
-    chat: Chat = chats.get_staff_chat(session)
-    if not chat:
+    staff_chat: Chat = chats.get_staff_chat(session)
+    if not staff_chat:
         logger.warning("ignoring message: there is no staff chat set")
         return
 
@@ -55,11 +55,11 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             private_chat_messages.save(session, sent_message)
         return
 
-    forwarded_message = await update.message.forward(chat.chat_id)
+    forwarded_message = await update.message.forward(staff_chat.chat_id)
     user_message = UserMessage(
         message_id=update.message.message_id,
         user_id=update.effective_user.id,
-        forwarded_chat_id=chat.chat_id,
+        forwarded_chat_id=staff_chat.chat_id,
         forwarded_message_id=forwarded_message.message_id,
         message_datetime=update.effective_message.date
     )
