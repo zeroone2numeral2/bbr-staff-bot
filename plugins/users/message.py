@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes, MessageHandler
 from telegram.ext import filters
 
 from database.models import User, UserMessage, Chat
-from database.queries import settings, chats, texts, private_chat_messages
+from database.queries import settings, chats, texts, private_chat_messages, chat_members
 import decorators
 import utilities
 from constants import BotSettingKey, LocalizedTextKey, Group, Language
@@ -38,7 +38,11 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
 
     if approval_mode and user.pending_request_id:
-        logger.info("user has a pending request: ignoring message")
+        logger.info("approval mode is on and user has a pending request: ignoring message")
+        return
+
+    if approval_mode and chat_members.is_users_chat_member(session, update.effective_user.id):
+        logger.info("approval mode is on and user is not member of the users chat: ignoring message")
         return
 
     if approval_mode and user.last_request and user.last_request.status is False:
