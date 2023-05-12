@@ -150,22 +150,24 @@ async def generate_one_time_link(context: ContextTypes.DEFAULT_TYPE):
 
     logger.debug(f"running at {utilities.now_str()}")
     with session_scope() as session:
-        users_chat = chats.get_users_chat(session)
         now_str = utilities.now_str()
-        try:
-            chat_invite_link: ChatInviteLink = await context.bot.create_chat_invite_link(
-                users_chat.chat_id,
-                member_limit=1,
-                name=f"t {now_str}"
-            )
-            invite_link = chat_invite_link.invite_link
-            logger.debug(f"generated link {now_str}: {invite_link}")
-        except (TelegramError, BadRequest) as e:
-            logger.error(f"error while generating invite link for chat {users_chat.chat_id}: {e}")
+        users_chat = chats.get_users_chat(session)
+        for i in range(5):
+            try:
+                chat_invite_link: ChatInviteLink = await context.bot.create_chat_invite_link(
+                    users_chat.chat_id,
+                    member_limit=1,
+                    name=f"#{i+1} {now_str}"
+                )
+                invite_link = chat_invite_link.invite_link
+                logger.debug(f"generated link {now_str}: {invite_link}")
+            except (TelegramError, BadRequest) as e:
+                logger.error(f"error while generating invite link for chat {users_chat.chat_id}: {e}")
+                await context.bot.send_message(users_chat.chat_id, f"invite link error #{i+1}: {e}")
 
-            if "errors_count" not in context.bot_data:
-                context.bot_data["errors_count"] = 0
-            context.bot_data["errors_count"] += 1
+                if "errors_count" not in context.bot_data:
+                    context.bot_data["errors_count"] = 0
+                context.bot_data["errors_count"] += 1
 
 
 def main():
@@ -180,7 +182,7 @@ def main():
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
     # app.job_queue.run_repeating(change_my_name, interval=60*10, first=10)
-    app.job_queue.run_repeating(generate_one_time_link, interval=5*60, first=10)
+    app.job_queue.run_repeating(generate_one_time_link, interval=10*60, first=10)
 
     logger.info(f"polling for updates...")
     app.run_polling(
