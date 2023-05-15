@@ -2,7 +2,7 @@ import logging
 import re
 
 from sqlalchemy.orm import Session
-from telegram import Update
+from telegram import Update, MessageId
 from telegram.constants import ChatAction
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import filters, ContextTypes, MessageHandler
@@ -72,6 +72,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
     session.add(admin_message)
     session.commit()  # we need to commit now because otherwise 'admin_message.user_message' would be none
 
+    admin_message.save_message_json(sent_message)
     admin_message.user_message.add_reply()
 
 
@@ -106,7 +107,7 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         else:
             raise e
 
-    sent_message = await update.message.copy(
+    sent_message: MessageId = await update.message.copy(
         chat_id=user_message.user_id,
         reply_to_message_id=user_message.message_id,
         allow_sending_without_reply=True  # in case the user deleted their own message in the bot's chat

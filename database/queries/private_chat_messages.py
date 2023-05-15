@@ -1,3 +1,4 @@
+import json
 from typing import Optional, List, Tuple, Union
 
 from sqlalchemy import true, false, select
@@ -5,8 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from telegram import Message, Update
 
-from database.models import PrivateChatMessage, User
-from constants import Language
+from database.models import PrivateChatMessage
 
 
 def get_messages(session: Session, user_id: int):
@@ -30,7 +30,7 @@ def save(session: Session, message: Union[Message, Update], commit: Optional[boo
         user_id=message.chat.id,
         from_self=message.from_user.is_bot,
         date=message.date,
-        message_json=message.to_json()
+        message_json=json.dumps(message.to_dict(), indent=2)
     )
     session.add(private_chat_message)
     if commit:

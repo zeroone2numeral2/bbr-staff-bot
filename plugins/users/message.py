@@ -67,6 +67,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         forwarded_message_id=forwarded_message.message_id,
         message_datetime=update.effective_message.date
     )
+    user_message.save_message_json(forwarded_message)
     session.add(user_message)
 
     if settings.get_or_create(session, BotSettingKey.SENT_TO_STAFF).value():

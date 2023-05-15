@@ -445,6 +445,10 @@ class UserMessage(Base):
         self.revoked = True
         self.revoked_on = utilities.now()
 
+    def save_message_json(self, message: Message):
+        # we convert manually because Message.to_json() doesn't indent
+        self.message_json = json.dumps(message.to_dict(), indent=2)
+
 
 class AdminMessage(Base):
     __tablename__ = 'admin_messages'
@@ -479,6 +483,9 @@ class AdminMessage(Base):
         self.revoked = True
         self.revoked_on = utilities.now()
         self.revoked_by = revoked_by
+
+    def save_message_json(self, message: Message):
+        self.message_json = json.dumps(message.to_dict(), indent=2)
 
 
 class LocalizedText(Base):

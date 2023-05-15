@@ -31,11 +31,12 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
         return
 
     logger.info(f"editing message {admin_message.reply_message_id} in chat {admin_message.user_message.user_id}")
-    await context.bot.edit_message_text(
+    new_message = await context.bot.edit_message_text(
         chat_id=admin_message.user_message.user_id,
         message_id=admin_message.reply_message_id,
         text=update.effective_message.text_html
     )
+    admin_message.save_message_json(new_message)
 
 
 HANDLERS = (
