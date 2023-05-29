@@ -128,6 +128,6 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (MessageHandler(ChatFilter.STAFF & filters.UpdateType.EDITED_MESSAGE & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
-    (MessageHandler(ChatFilter.STAFF & filters.UpdateType.EDITED_MESSAGE & reply_topics_aware, on_message_reply), Group.NORMAL),
+    (MessageHandler(ChatFilter.STAFF & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
+    (MessageHandler(ChatFilter.STAFF & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware, on_message_reply), Group.NORMAL),
 )
