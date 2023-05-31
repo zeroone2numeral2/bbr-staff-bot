@@ -1,10 +1,11 @@
-### Guida agli utilizzatori
+### Info utili
 
-La guida è nella [wiki](https://github.com/zeroone2numeral2/bbr-staff-bot/wiki) di questa repository
+La guida agli utilizzatori è nella [wiki](https://github.com/zeroone2numeral2/bbr-staff-bot/wiki) di questa repository, la lista delle cose da fare è nelle [issues](https://github.com/zeroone2numeral2/bbr-staff-bot/issues)
 
 ### Installazione
 
 E' necessario avere Python 3.6+ installato sulla propria macchina.  
+
 Per eseguire il bot:
 
 ```bash
@@ -20,7 +21,7 @@ cp config.example.toml config.toml
 python main.py
 ```
 
-Dopo ogni aggiornamento, ricordarsi di aggiornare la struttra del database all'ultima versione disponibile con:
+Dopo ogni pull/sync, è necessario aggiornare la struttra del database all'ultima versione disponibile con:
 
 ```bash
 alembic upgrade head
