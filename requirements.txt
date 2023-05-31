@@ -1,4 +1,4 @@
-sqlalchemy==2.0.7
+sqlalchemy==2.0.15
 alembic
 python-telegram-bot[ext]==20.3
 toml
