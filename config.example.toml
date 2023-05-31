@@ -1,24 +1,20 @@
 [telegram]
-token = ""
+token = "" # your bot's token from @BotFather
+# list of super admins, place your Telegram ID here
 admins = [
     23646077, # riccardo
     1159605359 # flytek mod
 ]
-errors_log = 0
-chat_invite_link = ""
+chat_invite_link = "" # the users' chat invite link
 
 [database]
-engine_string = "sqlite:///bot.db"
+engine_string = "sqlite:///bot.db" # sqlalchemy engine string, doesn't need to be changed
 
 [settings]
+# these are the defautl values, no need to change them. they can be changed on the fly from the bot
 sent_to_staff_message = true
 broadcast_message_edits = true
 
 [handlers]
+# which handlers manifest to use, depending on what the bot should do
 manifest = "manifest_feedback"
-
-[webcal]
-api_key = ""
-legal_subcal_name = ""
-free_subcal_name = ""
-other_subcal_name = ""
