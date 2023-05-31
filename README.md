@@ -19,3 +19,9 @@ cp config.example.toml config.toml
 # 4. avviare il processo
 python main.py
 ```
+
+Dopo ogni aggiornamento, ricordarsi di aggiornare la struttra del database all'ultima versione disponibile con:
+
+```bash
+alembic upgrade head
+```
