@@ -215,7 +215,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.CHAT_INVITE_LINK: dict(
-        default=config.telegram.chat_invite_link,
+        default=None,
         label="chat invite link",
         emoji=Emoji.LINK,
         description="the chat's invite link",

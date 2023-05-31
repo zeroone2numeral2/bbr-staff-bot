@@ -5,14 +5,9 @@ admins = [
     23646077, # riccardo
     1159605359 # flytek mod
 ]
-chat_invite_link = "" # the users' chat invite link
-
-[database]
-engine_string = "sqlite:///bot.db" # sqlalchemy engine string, doesn't need to be changed
 
 [settings]
 # these are the defautl values, no need to change them. they can be changed on the fly from the bot
-sent_to_staff_message = true
 broadcast_message_edits = true
 
 [handlers]

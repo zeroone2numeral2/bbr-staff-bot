@@ -7,10 +7,8 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.exc import SQLAlchemyError
 
-from config import config
 
-
-engine = create_engine(config.database.engine_string)
+engine = create_engine("sqlite:///bot.db")
 SessionClass = sessionmaker(bind=engine)
 
 
