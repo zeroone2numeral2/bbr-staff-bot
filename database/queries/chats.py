@@ -37,6 +37,7 @@ def get_events_chat(session: Session) -> Optional[Chat]:
 def get_core_chats(session: Session):
     query = session.query(Chat).filter(or_(
         Chat.is_staff_chat == true(),
+        Chat.is_evaluation_chat == true(),
         Chat.is_users_chat == true(),
         Chat.is_log_chat == true(),
         Chat.is_events_chat == true(),
