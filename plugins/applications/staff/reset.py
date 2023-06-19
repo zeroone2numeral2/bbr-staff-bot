@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 
-from database.models import User
-from database.queries import users
+from database.models import User, Chat
+from database.queries import users, chats
 import decorators
 import utilities
 from constants import Group
@@ -37,6 +37,14 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     user.reset_evaluation()
     await update.message.reply_text(f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo")
+
+    log_chat = chats.get_chat(session, Chat.is_log_chat)
+    if not log_chat:
+        return
+
+    log_text = f"#RESET da parte di {update.effective_user.mention_html()} (#admin{update.effective_user.id}): " \
+               f"{user.mention()} (#id{user.user_id}) potrà richiedere di essere ammesso nuovamente nel gruppo"
+    await context.bot.send_message(log_chat.chat_id, log_text)
 
 
 HANDLERS = (
