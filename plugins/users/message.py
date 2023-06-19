@@ -51,8 +51,10 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             session.add(chat_member)
             session.commit()
 
-        if not chat_member.is_member():
-            logger.info("ignoring user message: approval mode is on and user is not a member of the users chat")
+        if not chat_member.is_member() and not chat_member.left():
+            # we ignore requests coming from users that are not member BUT also didn't left
+            # people who left should be able to talk with the staff
+            logger.info("ignoring user message: approval mode is on and user is not a member of the users chat and didn't previously leave")
             return
 
         if user.last_request and user.last_request.status is False:
