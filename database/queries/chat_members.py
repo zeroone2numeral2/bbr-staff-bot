@@ -25,6 +25,20 @@ def save_administrators(session: Session, chat_id: int, administrators: Iterable
         session.merge(chat_administrator)
 
 
+def is_member(session: Session, user_id: int, chat_filter, is_admin=False) -> Optional[DbChatMember]:
+    filters = [DbChatMember.user_id == user_id, chat_filter == true()]
+    if is_admin:
+        # noinspection PyUnresolvedReferences
+        filters.append(DbChatMember.status.in_(CHAT_MEMBER_STATUS_ADMIN))
+    else:
+        # noinspection PyUnresolvedReferences
+        filters.append(DbChatMember.status.in_(CHAT_MEMBER_STATUS_MEMBER))
+
+    chat_member = session.query(DbChatMember).join(Chat).filter(**filters).one_or_none()
+
+    return chat_member
+
+
 def is_staff_chat_admin(session: Session, user_id: int) -> Optional[DbChatMember]:
     # noinspection PyUnresolvedReferences
     chat_member = session.query(DbChatMember).join(Chat).where(
