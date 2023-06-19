@@ -417,6 +417,9 @@ class ChatMember(Base):
     def is_member(self):
         return self.status in (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER, TgChatMember.RESTRICTED, TgChatMember.MEMBER)
 
+    def left(self):
+        return self.status == TgChatMember.LEFT
+
     def status_pretty(self):
         if self.status == TgChatMember.OWNER:
             return "member (owner)"
