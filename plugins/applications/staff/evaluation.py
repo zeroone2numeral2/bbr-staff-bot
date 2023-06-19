@@ -31,7 +31,7 @@ def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUs
 
 async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
     logger.info("generating invite link...")
-    users_chat = chats.get_users_chat(session)
+    users_chat = chats.get_chat(session, Chat.is_users_chat)
 
     use_default_invite_link = True
     can_be_revoked = False

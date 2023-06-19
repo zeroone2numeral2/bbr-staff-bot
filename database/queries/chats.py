@@ -14,26 +14,6 @@ def get_chat(session: Session, chat_filter) -> Optional[Chat]:
     return chat
 
 
-def get_staff_chat(session: Session) -> Optional[Chat]:
-    chat: Chat = session.query(Chat).filter(Chat.is_staff_chat == true()).one_or_none()
-    return chat
-
-
-def get_users_chat(session: Session) -> Optional[Chat]:
-    chat: Chat = session.query(Chat).filter(Chat.is_users_chat == true()).one_or_none()
-    return chat
-
-
-def get_log_chat(session: Session) -> Optional[Chat]:
-    chat: Chat = session.query(Chat).filter(Chat.is_log_chat == true()).one_or_none()
-    return chat
-
-
-def get_events_chat(session: Session) -> Optional[Chat]:
-    chat: Chat = session.query(Chat).filter(Chat.is_events_chat == true()).one_or_none()
-    return chat
-
-
 def get_core_chats(session: Session):
     query = session.query(Chat).filter(or_(
         Chat.is_staff_chat == true(),

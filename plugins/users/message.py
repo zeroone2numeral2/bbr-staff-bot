@@ -30,7 +30,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             private_chat_messages.save(session, sent_message)
         return
 
-    staff_chat: Chat = chats.get_staff_chat(session)
+    staff_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)
     if not staff_chat:
         logger.warning("ignoring message: there is no staff chat set")
         return

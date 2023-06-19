@@ -181,7 +181,7 @@ def staff_admin():
             # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
             if not chat_members.is_staff_chat_admin(session, update.effective_user.id) and not utilities.is_superadmin(update.effective_user):
                 logger.warning(f"{update.effective_user.id} ({update.effective_user.full_name}) not recognized as admin of {update.effective_chat.id} ({update.effective_chat.title})")
-                staff_chat = chats.get_staff_chat(session)
+                staff_chat = chats.get_chat(session, Chat.is_staff_chat)
                 await update.message.reply_text(f"You're not an admin of {utilities.escape_html(staff_chat.title)}. "
                                                 f"If you think this is an error, please ask a recognized admin to "
                                                 f"use <code>/reloadadmins</code> in the staff chat")

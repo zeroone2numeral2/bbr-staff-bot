@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from telegram import Update, helpers
 from telegram.ext import filters, PrefixHandler, ContextTypes
 
-from database.models import UserMessage, ChatMember as DbChatMember
+from database.models import UserMessage, ChatMember as DbChatMember, Chat
 from database.queries import chats, user_messages, chat_members
 import decorators
 import utilities
@@ -47,7 +47,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     chat_member = chat_members.is_users_chat_member(session, user_message.user.user_id)
     if not chat_member:
-        users_chat = chats.get_users_chat(session)
+        users_chat = chats.get_chat(session, Chat.is_users_chat)
         if users_chat:
             chat_member_object = context.bot.get_chat_member(users_chat.chat_id, user_message.user.user_id)
             chat_member = DbChatMember.from_chat_member(users_chat.chat_id, chat_member_object)

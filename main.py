@@ -15,7 +15,7 @@ from telegram.ext import ExtBot
 
 from loader import load_modules
 from database.base import get_session, Base, engine, session_scope
-from database.models import ChatMember as DbChatMember
+from database.models import ChatMember as DbChatMember, Chat
 from database.models import BotSetting
 from database.queries import chats, chat_members
 import utilities
@@ -77,7 +77,7 @@ async def post_init(application: Application) -> None:
 
     session.commit()
 
-    staff_chat = chats.get_staff_chat(session)
+    staff_chat = chats.get_chat(session, Chat.is_staff_chat)
     if not staff_chat:
         logger.info("no staff chat set, exiting")
 
@@ -151,7 +151,7 @@ async def generate_one_time_link(context: ContextTypes.DEFAULT_TYPE):
     logger.debug(f"running at {utilities.now_str()}")
     with session_scope() as session:
         now_str = utilities.now_str()
-        users_chat = chats.get_users_chat(session)
+        users_chat = chats.get_chat(session, Chat.is_users_chat)
         for i in range(5):
             try:
                 chat_invite_link: ChatInviteLink = await context.bot.create_chat_invite_link(
