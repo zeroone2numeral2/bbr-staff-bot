@@ -171,7 +171,7 @@ class User(Base):
 class Chat(Base):
     __tablename__ = 'chats'
 
-    DESTINATION_TYPES_GROUP = ("staff", "users")
+    DESTINATION_TYPES_GROUP = ("staff", "users", "evaluation")
     DESTINATION_TYPES_CHANNEL = ("log", "events")
 
     chat_id = Column(Integer, primary_key=True)
@@ -219,6 +219,8 @@ class Chat(Base):
             return "events chat"
         if self.is_log_chat:
             return "log chat"
+        if self.is_evaluation_chat:
+            return "evaluation chat"
         else:
             return "chat"
 

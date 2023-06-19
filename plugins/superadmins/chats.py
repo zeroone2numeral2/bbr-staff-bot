@@ -51,12 +51,18 @@ async def on_setchat_group_command(update: Update, context: ContextTypes.DEFAULT
         chat.set_as_staff_chat()
 
         ChatFilter.STAFF.chat_ids = {chat.chat_id}
-    else:
+    elif destination_type == "users":
         chats.reset_users_chat(session)
         session.commit()
         chat.set_as_users_chat()
 
         ChatFilter.USERS.chat_ids = {chat.chat_id}
+    elif destination_type == "evaluation":
+        chats.reset_evaluation_chat(session)
+        session.commit()
+        chat.set_as_evaluation_chat()
+
+        ChatFilter.EVALUATION.chat_ids = {chat.chat_id}
 
     await update.effective_message.reply_text(f"{utilities.escape_html(chat.title)} impostata come chat {destination_type}")
 

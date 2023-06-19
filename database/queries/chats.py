@@ -61,6 +61,10 @@ def reset_events_chat(session: Session):
     session.execute(update(Chat).values(is_events_chat=False))
 
 
+def reset_evaluation_chat(session: Session):
+    session.execute(update(Chat).values(is_evaluation_chat=False))
+
+
 def get_all_chats(session: Session):
     statement = select(Chat).where()
     return session.scalars(statement)

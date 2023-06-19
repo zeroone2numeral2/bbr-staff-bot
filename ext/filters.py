@@ -22,6 +22,7 @@ class Filter:
 
 class ChatFilter:
     STAFF = filters.Chat([])
+    EVALUATION = filters.Chat([])
     USERS = filters.Chat([])
     EVENTS = filters.Chat([])
 
@@ -40,6 +41,11 @@ def init_filters():
         if staff_chat:
             logger.debug(f"initializing STAFF filter ({staff_chat.chat_id})...")
             ChatFilter.STAFF.chat_ids = {staff_chat.chat_id}
+
+        evaluation_chat: Chat = chats.get_chat(session, Chat.is_evaluation_chat)
+        if evaluation_chat:
+            logger.debug(f"initializing EVALUATION filter ({evaluation_chat.chat_id})...")
+            ChatFilter.USERS.chat_ids = {evaluation_chat.chat_id}
 
         users_chat: Chat = chats.get_users_chat(session)
         if users_chat:
