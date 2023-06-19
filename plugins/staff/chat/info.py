@@ -45,7 +45,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 f"• <b>reason</b>: {user_message.user.banned_reason}\n" \
                 f"• <b>banned on</b>: {user_message.user.banned_on}"
 
-    chat_member = chat_members.is_users_chat_member(session, user_message.user.user_id)
+    chat_member = chat_members.is_member(session, user_message.user.user_id, Chat.is_users_chat)
     if not chat_member:
         users_chat = chats.get_chat(session, Chat.is_users_chat)
         if users_chat:

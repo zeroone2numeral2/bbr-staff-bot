@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 from telegram.ext import filters
 from telegram.ext import PrefixHandler
 
-from database.models import User
+from database.models import User, Chat
 from database.queries import chat_members
 import decorators
 import utilities
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/help {utilities.log(update)}")
 
-    if not chat_members.is_staff_chat_admin(session, update.effective_user.id):
+    if not chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat, is_admin=True):
         logger.debug("user is not admin")
         return await on_start_command(update, context)
 

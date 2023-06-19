@@ -41,7 +41,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         logger.info("approval mode is on and user has a pending request: ignoring message")
         return
 
-    if approval_mode and chat_members.is_users_chat_member(session, update.effective_user.id):
+    if approval_mode and chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
         logger.info("approval mode is on and user is not member of the users chat: ignoring message")
         return
 
