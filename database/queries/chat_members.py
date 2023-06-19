@@ -39,6 +39,15 @@ def is_member(session: Session, user_id: int, chat_filter, is_admin=False) -> Op
     return chat_member
 
 
+def get_chat_member(session: Session, user_id: int, chat_filter) -> Optional[DbChatMember]:
+    chat_member = session.query(DbChatMember).join(Chat).filter(
+        DbChatMember.user_id == user_id,
+        chat_filter == true()
+    ).one_or_none()
+
+    return chat_member
+
+
 def get_chat_administrators(session: Session, chat_id: int):
     # noinspection PyUnresolvedReferences
 

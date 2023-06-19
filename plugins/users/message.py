@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler
 from telegram.ext import filters
 
-from database.models import User, UserMessage, Chat
+from database.models import User, UserMessage, Chat, ChatMember as DbChatMember
 from database.queries import settings, chats, texts, private_chat_messages, chat_members
 import decorators
 import utilities
@@ -36,28 +36,38 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         return
 
     approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
+    if approval_mode:
+        if user.pending_request_id:
+            logger.info("approval mode is on and user has a pending request: ignoring message")
+            return
 
-    if approval_mode and user.pending_request_id:
-        logger.info("approval mode is on and user has a pending request: ignoring message")
-        return
+        chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
+        if not chat_member:
+            # we don't have the ChatMember record saved for this user in the users chat
+            users_chat = chats.get_chat(session, Chat.is_users_chat)
+            logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
+            tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
+            chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
+            session.add(chat_member)
+            session.commit()
 
-    if approval_mode and not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
-        logger.info("approval mode is on and user is not a member of the users chat: ignoring message")
-        return
+        if not chat_member.is_member():
+            logger.info("approval mode is on and user is not a member of the users chat: ignoring message")
+            return
 
-    if approval_mode and user.last_request and user.last_request.status is False:
-        logger.info(f"ignoring user message because they were rejected")
-        ltext = texts.get_localized_text_with_fallback(
-            session,
-            LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
-            Language.IT,
-            fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
-            raise_if_no_fallback=False
-        )
-        if ltext:
-            sent_message = await update.message.reply_html(ltext.value)
-            private_chat_messages.save(session, sent_message)
-        return
+        if user.last_request and user.last_request.status is False:
+            logger.info(f"ignoring user message because they were rejected")
+            ltext = texts.get_localized_text_with_fallback(
+                session,
+                LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
+                Language.IT,
+                fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
+                raise_if_no_fallback=False
+            )
+            if ltext:
+                sent_message = await update.message.reply_html(ltext.value)
+                private_chat_messages.save(session, sent_message)
+            return
 
     forwarded_message = await update.message.forward(staff_chat.chat_id)
     user_message = UserMessage(
