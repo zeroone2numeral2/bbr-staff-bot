@@ -24,7 +24,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
         return
 
-    user_id_match = re.search(r"(?:#id)?(?P<user_id>\d+)", update.message.text, re.I)
+    user_id_match = re.search(r"(?:#user|#id)?(?P<user_id>\d+)", update.message.text, re.I)
     if not user_id_match:
         await update.message.reply_text("impossibile rilevare l'id dell'utente")
         return
