@@ -14,7 +14,7 @@ from telegram.ext import filters
 
 from database.base import session_scope
 from database.models import User, ChatMember as DbChatMember, ApplicationRequest, DescriptionMessage, \
-    DescriptionMessageType
+    DescriptionMessageType, Chat
 from database.queries import settings, texts, chat_members, chats, private_chat_messages, application_requests
 import decorators
 import utilities
@@ -334,7 +334,7 @@ async def on_done_button(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
     return State.WAITING_DESCRIBE_SELF
 
 
-async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
+async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
     # we will save the whole list just in case we will need to link them, but we actually need just the first one
     # because it's the message we reply to
     sent_attachment_messages: List[Message] = []
@@ -448,7 +448,7 @@ async def send_application_to_staff(bot: Bot, staff_chat_id: int, log_chat_id: i
     logger.debug("sending staff message...")
     staff_message_text = f"{base_text}\n\n••• <b><u>allegati</u></b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
     staff_message_reply_markup = get_evaluation_keyboard(request.user_id, request.id)
-    staff_message: Message = await bot.send_message(staff_chat_id, staff_message_text, reply_markup=staff_message_reply_markup, **timeouts)
+    staff_message: Message = await bot.send_message(evaluation_chat_id, staff_message_text, reply_markup=staff_message_reply_markup, **timeouts)
     request.set_staff_message(staff_message)
 
 
@@ -484,11 +484,16 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
     private_chat_messages.save(session, sent_message)
 
-    staff_chat = chats.get_staff_chat(session)
+    log_chat = chats.get_chat(session, Chat.is_log_chat)
+    evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
+    if not evaluation_chat:
+        logger.debug("no evaluation chat set: using staff chat")
+        evaluation_chat = chats.get_chat(session, Chat.is_staff_chat)
+
     await send_application_to_staff(
         bot=context.bot,
-        log_chat_id=-1001922853416,
-        staff_chat_id=staff_chat.chat_id,
+        log_chat_id=log_chat.chat_id,
+        evaluation_chat_id=evaluation_chat.chat_id,
         request=user.pending_request,
         user=update.effective_user
     )
