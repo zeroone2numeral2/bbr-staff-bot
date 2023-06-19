@@ -23,7 +23,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info(f"new user message {utilities.log(update)}")
 
     if user.banned:
-        logger.info(f"ignoring user message because the user was banned (shadowban: {user.shadowban})")
+        logger.info(f"ignoring user message: the user was banned (shadowban: {user.shadowban})")
         if not user.shadowban:
             reason = user.banned_reason or "not provided"
             sent_message = await update.message.reply_text(f"{Emoji.BANNED} You were banned from using this bot. Reason: {utilities.escape_html(reason)}")
@@ -32,13 +32,13 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     staff_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)
     if not staff_chat:
-        logger.warning("ignoring message: there is no staff chat set")
+        logger.warning("ignoring user message: there is no staff chat set")
         return
 
     approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
     if approval_mode:
         if user.pending_request_id:
-            logger.info("approval mode is on and user has a pending request: ignoring message")
+            logger.info("ignoring user message: approval mode is on and user has a pending request")
             return
 
         chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
@@ -52,11 +52,11 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             session.commit()
 
         if not chat_member.is_member():
-            logger.info("approval mode is on and user is not a member of the users chat: ignoring message")
+            logger.info("ignoring user message: approval mode is on and user is not a member of the users chat")
             return
 
         if user.last_request and user.last_request.status is False:
-            logger.info(f"ignoring user message because they were rejected")
+            logger.info(f"ignoring user message: approval mode is on and they were rejected")
             ltext = texts.get_localized_text_with_fallback(
                 session,
                 LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
