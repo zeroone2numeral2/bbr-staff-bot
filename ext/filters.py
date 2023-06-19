@@ -32,12 +32,12 @@ def init_filters():
     with session_scope() as session:
         session: Session
 
-        events_chat: Chat = chats.get_events_chat(session)
+        events_chat: Chat = chats.get_chat(session, Chat.is_events_chat)
         if events_chat:
             logger.debug(f"initializing EVENTS filter ({events_chat.chat_id})...")
             ChatFilter.EVENTS.chat_ids = {events_chat.chat_id}
 
-        staff_chat: Chat = chats.get_staff_chat(session)
+        staff_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)
         if staff_chat:
             logger.debug(f"initializing STAFF filter ({staff_chat.chat_id})...")
             ChatFilter.STAFF.chat_ids = {staff_chat.chat_id}
@@ -47,7 +47,7 @@ def init_filters():
             logger.debug(f"initializing EVALUATION filter ({evaluation_chat.chat_id})...")
             ChatFilter.EVALUATION.chat_ids = {evaluation_chat.chat_id}
 
-        users_chat: Chat = chats.get_users_chat(session)
+        users_chat: Chat = chats.get_chat(session, Chat.is_users_chat)
         if users_chat:
             logger.debug(f"initializing USERS filter ({users_chat.chat_id})...")
             ChatFilter.USERS.chat_ids = {users_chat.chat_id}
