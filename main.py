@@ -182,7 +182,7 @@ def main():
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
     # app.job_queue.run_repeating(change_my_name, interval=60*10, first=10)
-    app.job_queue.run_repeating(generate_one_time_link, interval=10*60, first=10)
+    # app.job_queue.run_repeating(generate_one_time_link, interval=10*60, first=10)
 
     logger.info(f"polling for updates...")
     app.run_polling(
