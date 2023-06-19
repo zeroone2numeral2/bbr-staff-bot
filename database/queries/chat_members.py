@@ -34,7 +34,7 @@ def is_member(session: Session, user_id: int, chat_filter, is_admin=False) -> Op
         # noinspection PyUnresolvedReferences
         filters.append(DbChatMember.status.in_(CHAT_MEMBER_STATUS_MEMBER))
 
-    chat_member = session.query(DbChatMember).join(Chat).filter(**filters).one_or_none()
+    chat_member = session.query(DbChatMember).join(Chat).filter(*filters).one_or_none()
 
     return chat_member
 

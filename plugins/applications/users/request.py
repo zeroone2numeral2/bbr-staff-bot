@@ -111,7 +111,7 @@ def get_text(session: Session, ltext_key: str, user: TelegramUser, raise_if_no_f
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/start {utilities.log(update)}")
 
-    chat_member = chat_members.get_users_chat_chat_member(session, update.effective_user.id)
+    chat_member = chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat)
     if not chat_member:
         users_chat = chats.get_users_chat(session)
         logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
