@@ -44,6 +44,11 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     log_text = f"#RESET da parte di {update.effective_user.mention_html()} (#admin{update.effective_user.id}): " \
                f"{user.mention()} (#id{user.user_id}) potrà richiedere di essere ammesso nuovamente nel gruppo"
+
+    additional_context = utilities.get_argument(["reset"], update.message.text_html)
+    if additional_context:
+        log_text += f"\n<b>Contesto</b>: {additional_context}"
+
     await context.bot.send_message(log_chat.chat_id, log_text)
 
 
