@@ -224,6 +224,20 @@ class Chat(Base):
         else:
             return "chat"
 
+    def type_pretty_it(self):
+        if self.is_staff_chat:
+            return "chat staff"
+        if self.is_users_chat:
+            return "chat utenti"
+        if self.is_events_chat:
+            return "chat eventi"
+        if self.is_log_chat:
+            return "chat log"
+        if self.is_evaluation_chat:
+            return "chat approvazioni"
+        else:
+            return "chat"
+
     def set_as_administrator(self, can_delete_messages: bool = None, can_invite_users: bool = None):
         self.is_admin = True
         if can_delete_messages is not None:

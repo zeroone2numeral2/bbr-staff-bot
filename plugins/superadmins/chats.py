@@ -25,7 +25,7 @@ async def on_chats_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     chats_list: Iterable[Chat] = chats.get_core_chats(session)
     lines = []
     for chat in chats_list:
-        chat_text = f"• <b>{chat.type_pretty()}</b>: {utilities.escape_html(chat.title)} [<code>{chat.chat_id}</code>]"
+        chat_text = f"• <b>{chat.type_pretty_it()}</b>: {utilities.escape_html(chat.title)} [<code>{chat.chat_id}</code>]"
         lines.append(chat_text)
 
     await update.message.reply_text("\n".join(lines))
