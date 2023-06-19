@@ -181,6 +181,7 @@ class Chat(Base):
     is_forum = Column(Boolean, default=None)
 
     is_staff_chat = Column(Boolean, default=False)
+    is_evaluation_chat = Column(Boolean, default=False)
     is_users_chat = Column(Boolean, default=False)
     is_events_chat = Column(Boolean, default=False)
     is_log_chat = Column(Boolean, default=False)
@@ -239,10 +240,17 @@ class Chat(Base):
 
     def set_as_staff_chat(self):
         self.is_staff_chat = True
+        self.is_evaluation_chat = False
         self.is_users_chat = False
 
     def set_as_users_chat(self):
         self.is_users_chat = True
+        self.is_evaluation_chat = False
+        self.is_staff_chat = False
+
+    def set_as_evaluation_chat(self):
+        self.is_evaluation_chat = True
+        self.is_users_chat = False
         self.is_staff_chat = False
 
     def set_as_log_chat(self):
