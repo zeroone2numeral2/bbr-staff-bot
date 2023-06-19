@@ -9,6 +9,11 @@ from database.models import Chat, ChatMember as DbChatMember, chat_members_to_di
 from database.queries import users
 
 
+def get_chat(session: Session, chat_filter) -> Optional[Chat]:
+    chat: Chat = session.query(Chat).filter(chat_filter == true()).one_or_none()
+    return chat
+
+
 def get_staff_chat(session: Session) -> Optional[Chat]:
     chat: Chat = session.query(Chat).filter(Chat.is_staff_chat == true()).one_or_none()
     return chat
