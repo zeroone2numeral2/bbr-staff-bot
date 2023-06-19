@@ -7,7 +7,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 
 from database.models import User, Chat
-from database.queries import users, chats
+from database.queries import users, chats, private_chat_messages
 import decorators
 import utilities
 from constants import Group
@@ -48,6 +48,10 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     additional_context = utilities.get_argument(["reset"], update.message.text_html)
     if additional_context:
         log_text += f"\n<b>Contesto</b>: {additional_context}"
+
+        # send the context to the user
+        sent_message = await context.bot.send_message(user.user_id, additional_context)
+        private_chat_messages.save(session, sent_message)
 
     await context.bot.send_message(log_chat.chat_id, log_text)
 
