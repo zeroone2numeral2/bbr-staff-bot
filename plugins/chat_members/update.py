@@ -124,10 +124,12 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
     if not utilities.is_join_update(update.chat_member):
         return
 
+    # mark the user as "has_been_member" even if it isn't the users chat
+    chat_member_record.has_been_member = True
+
     if not chat.is_users_chat:
         return
 
-    chat_member_record.has_been_member = True
     await handle_new_member(session, chat, context.bot, update.chat_member)
 
 
