@@ -430,7 +430,10 @@ class ChatMember(Base):
         if self.is_member():
             self.has_been_member = True
 
-    def left(self):
+    def left_or_kicked(self):
+        # the user has been member, but he:
+        # - left the chat
+        # - was removed but is no longer in the blocked users list (can join again)
         return self.status == TgChatMember.LEFT and self.has_been_member
 
     def status_pretty(self):
