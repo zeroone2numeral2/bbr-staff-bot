@@ -431,7 +431,7 @@ class ChatMember(Base):
             self.has_been_member = True
 
     def left(self):
-        return self.status == TgChatMember.LEFT
+        return self.status == TgChatMember.LEFT and self.has_been_member
 
     def status_pretty(self):
         if self.status == TgChatMember.OWNER:
