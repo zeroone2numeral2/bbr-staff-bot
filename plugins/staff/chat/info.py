@@ -43,10 +43,10 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     text = f"• <b>name</b>: {user.mention()}\n" \
            f"• <b>username</b>: @{user.username or '-'}\n" \
-           f"• <b>first seen</b>: {user.first_seen or '-'}\n" \
-           f"• <b>last seen</b>: {user.last_message or '-'}\n" \
-           f"• <b>started</b>: {user.started} (on: {user.started_on or '-'})\n" \
-           f"• <b>stopped</b>: {user.stopped} (on: {user.stopped_on or '-'})\n" \
+           f"• <b>first seen</b>: {utilities.format_datetime(user.first_seen)}\n" \
+           f"• <b>last seen</b>: {utilities.format_datetime(user.last_message)}\n" \
+           f"• <b>started</b>: {user.started} (on: {utilities.format_datetime(user.started_on)})\n" \
+           f"• <b>stopped</b>: {user.stopped} (on: {utilities.format_datetime(user.stopped_on)})\n" \
            f"• <b>is bot/is premium</b>: {user.is_bot}, {user.is_premium}\n" \
            f"• <b>language code (telegram)</b>: {user.language_code or '-'}\n" \
            f"• <b>selected language</b>: {user.selected_language or '-'}"
@@ -54,7 +54,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     if user.banned:
         text += f"\n• <b>banned</b>: {user.banned} (shadowban: {user.shadowban})\n" \
                 f"• <b>reason</b>: {user.banned_reason or '-'}\n" \
-                f"• <b>banned on</b>: {user.banned_on or '-'}"
+                f"• <b>banned on</b>: {utilities.format_datetime(user.banned_on)}"
 
     chat_member = chat_members.is_member(session, user.user_id, Chat.is_users_chat)
     if not chat_member:
@@ -63,9 +63,9 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             chat_member_object = context.bot.get_chat_member(users_chat.chat_id, user.user_id)
             chat_member = DbChatMember.from_chat_member(users_chat.chat_id, chat_member_object)
             session.add(chat_member)
-            text += f"\n• <b>membership status in users chat</b>: {chat_member.status_pretty()} (last update: {chat_member.updated_on})"
+            text += f"\n• <b>status in users chat</b>: {chat_member.status_pretty()} (last update: {utilities.format_datetime(chat_member.updated_on)})"
     else:
-        text += f"\n• <b>membership status in users chat</b>: {chat_member.status_pretty()} (last update: {chat_member.updated_on})"
+        text += f"\n• <b>status in users chat</b>: {chat_member.status_pretty()} (last update: {utilities.format_datetime(chat_member.updated_on)})"
 
     text += f"\n• #id{user.user_id}"
 

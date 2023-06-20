@@ -44,6 +44,13 @@ def now_str():
     return now().strftime("%d/%m/%Y %H:%M")
 
 
+def format_datetime(dt_object: datetime.datetime, if_none="-"):
+    if not dt_object:
+        return if_none
+
+    return dt_object.strftime("%d/%m/%Y %H:%M:%S")
+
+
 def is_test_bot():
     return "is_test_bot" in config.telegram and config.telegram.is_test_bot
 
