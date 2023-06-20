@@ -56,7 +56,7 @@ def save_or_update_chat_from_chat_member_update(session: Session, update: Update
     return [chat]
 
 
-def save_chat_member(session: Session, update: Update, commit=False):
+def save_chat_member(session: Session, update: Update, commit=False) -> DbChatMember:
     if update.chat_member:
         logger.debug(f"saving ChatMember, new user status: <{update.chat_member.new_chat_member.status}>")
         # from pprint import pprint
@@ -75,6 +75,8 @@ def save_chat_member(session: Session, update: Update, commit=False):
 
     if commit:
         session.commit()
+
+    return chat_member_record
 
 
 async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
@@ -117,7 +119,7 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
         save_or_update_chat_from_chat_member_update(session, update, commit=True)
 
     logger.info("saving new chat_member object...")
-    save_chat_member(session, update)
+    chat_member_record: DbChatMember = save_chat_member(session, update)
 
     if not utilities.is_join_update(update.chat_member):
         return
@@ -125,6 +127,7 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
     if not chat.is_users_chat:
         return
 
+    chat_member_record.has_been_member = True
     await handle_new_member(session, chat, context.bot, update.chat_member)
 
 
