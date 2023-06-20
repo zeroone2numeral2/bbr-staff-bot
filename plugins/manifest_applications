@@ -33,4 +33,5 @@ chat_members.update
 
 # debug.callback_query
 # debug.chat_member
+debug.get_chat_member
 # debug.chatid
