@@ -358,6 +358,9 @@ def chat_members_to_dict(chat_id: int, chat_members: Iterable[chat_member_union_
 
 
 class ChatMember(Base):
+    MEMBER_STATUSES = (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER, TgChatMember.RESTRICTED, TgChatMember.MEMBER)
+    ADMINISTRATOR_STATUSES = (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER)
+
     __tablename__ = 'chat_members'
     __allow_unmapped__ = True
 
@@ -396,6 +399,9 @@ class ChatMember(Base):
     can_add_web_page_previews = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_add_web_page_previews"])
     until_date = Column(DateTime, default=None)
 
+    has_been_member = Column(Boolean, default=False)
+    kicked = Column(Boolean, default=False)
+
     created_on = Column(DateTime, default=utilities.now())
     updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
 
@@ -406,16 +412,19 @@ class ChatMember(Base):
     def from_chat_member(cls, chat_id, chat_member: chat_member_union_type):
         chat_member_dict = chat_member_to_dict(chat_member)
         chat_member_dict.update({"chat_id": chat_id})
+        if chat_member.status in cls.MEMBER_STATUSES:
+            chat_member_dict.update({"has_been_member": True})
+
         # from pprint import pprint
         # pprint(chat_member_dict)
 
         return cls(**chat_member_dict)
 
     def is_administrator(self):
-        return self.status in (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER)
+        return self.status in self.ADMINISTRATOR_STATUSES
 
     def is_member(self):
-        return self.status in (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER, TgChatMember.RESTRICTED, TgChatMember.MEMBER)
+        return self.status in self.MEMBER_STATUSES
 
     def left(self):
         return self.status == TgChatMember.LEFT
