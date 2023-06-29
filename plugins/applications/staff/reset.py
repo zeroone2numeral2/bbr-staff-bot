@@ -50,8 +50,8 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         log_text += f"\n<b>Contesto</b>: {additional_context}"
 
         # send the context to the user
-        sent_message = await context.bot.send_message(user.user_id, additional_context)
-        private_chat_messages.save(session, sent_message)
+        # sent_message = await context.bot.send_message(user.user_id, additional_context)
+        # private_chat_messages.save(session, sent_message)
 
     await context.bot.send_message(log_chat.chat_id, log_text)
 
