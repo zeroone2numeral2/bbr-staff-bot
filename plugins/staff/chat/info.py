@@ -16,14 +16,6 @@ from ext.filters import ChatFilter
 logger = logging.getLogger(__name__)
 
 
-def get_user_id_from_text(text: str) -> Optional[int]:
-    match = re.search(r"(?:#user|#id)?(?P<user_id>\d+)", text, re.I)
-    if not match:
-        return
-
-    return int(match.group("user_id"))
-
-
 async def get_user_instance_from_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session) -> Optional[User]:
     message: Message = update.message
 
@@ -35,11 +27,11 @@ async def get_user_instance_from_message(update: Update, context: ContextTypes.D
         else:
             logger.warning(f"couldn't find replied-to message in the database, message_id: {message.reply_to_message.message_id}")
 
-    user_id = get_user_id_from_text(message.text)
+    user_id = utilities.get_user_id_from_text(message.text)
     if not user_id and message.reply_to_message and (message.reply_to_message.text or message.reply_to_message.caption):
         # try to search the hashtag in the replied-to message
         text = message.reply_to_message.text or message.reply_to_message.caption
-        user_id = get_user_id_from_text(text)
+        user_id = utilities.get_user_id_from_text(text)
 
     if not user_id:
         logger.info("can't find user id in text/replied-to message's text")

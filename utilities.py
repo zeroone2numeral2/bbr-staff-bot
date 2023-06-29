@@ -204,7 +204,15 @@ def get_media_ids(message: Message):
     return media_file_id, media_file_unique_id, media_group_id
 
 
-def get_argument(commands: Union[List, str], text: str) -> str:
+def get_user_id_from_text(text: str) -> Optional[int]:
+    match = re.search(r"(?:#user|#id)?(?P<user_id>\d+)", text, re.I)
+    if not match:
+        return
+
+    return int(match.group("user_id"))
+
+
+def get_argument(commands: Union[List, str], text: str, remove_user_id_hashtag=False) -> str:
     if isinstance(commands, str):
         commands = [commands]
 
