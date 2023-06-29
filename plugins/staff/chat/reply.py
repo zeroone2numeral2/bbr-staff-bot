@@ -85,6 +85,11 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.debug("reply to a non-bot message: ignoring")
         return
 
+    text = update.message.text or update.message.caption
+    if text and text.startswith("."):
+        logger.info("ignoring staff reply starting by .")
+        return
+
     user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:
         logger.warning(f"couldn't find replied-to message, "
