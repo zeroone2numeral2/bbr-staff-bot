@@ -168,6 +168,11 @@ def is_unban_update(chat_member_update: ChatMemberUpdated) -> bool:
     return chat_member_update.old_chat_member.status in banned_statuses and chat_member_update.new_chat_member.status == ChatMember.LEFT
 
 
+def extract_invite_link_id(invite_link: str) -> str:
+    match = re.search(r"t\.me/\+(?P<invite_link>\w+)\b", invite_link, re.I)
+    return match.group("invite_link")
+
+
 def is_reply_to_forwarded_channel_message(message: Message) -> bool:
     if not message.reply_to_message:
         return False
