@@ -240,7 +240,7 @@ def get_media_ids(message: Message):
 
 
 def get_user_id_from_text(text: str) -> Optional[int]:
-    match = re.search(r"(?:#user|#id)?(?P<user_id>\d+)", text, re.I)
+    match = re.search(Regex.USER_ID_HASHTAG, text, re.I)
     if not match:
         return
 
