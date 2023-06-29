@@ -121,15 +121,16 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
     logger.info("saving new chat_member object...")
     chat_member_record: DbChatMember = save_chat_member(session, update)
 
+    if chat_member_record.is_member():
+        # mark the user as "has_been_member" even if it isn't the users chat
+        chat_member_record.has_been_member = True
+
     if utilities.is_left_update(update.chat_member):
         logger.info("user was member and left the chat")
         return
 
     if not utilities.is_join_update(update.chat_member):
         return
-
-    # mark the user as "has_been_member" even if it isn't the users chat
-    chat_member_record.has_been_member = True
 
     if not chat.is_users_chat:
         return
