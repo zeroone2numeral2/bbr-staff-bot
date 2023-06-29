@@ -113,8 +113,8 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     chat_member = chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat)
     if chat_member is None:
-        logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
         users_chat = chats.get_chat(session, Chat.is_users_chat)
+        logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
         tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
         chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
         session.add(chat_member)
