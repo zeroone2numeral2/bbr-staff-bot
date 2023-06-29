@@ -138,6 +138,12 @@ def is_join_update(chat_member_update: ChatMemberUpdated):
     return chat_member_update.old_chat_member.status in not_member_statuses and chat_member_update.new_chat_member.status in member_statuses
 
 
+def is_left_update(chat_member_update: ChatMemberUpdated):
+    member_statuses = (ChatMember.MEMBER, ChatMember.RESTRICTED, ChatMember.ADMINISTRATOR, ChatMember.OWNER)
+
+    return chat_member_update.old_chat_member.status in member_statuses and chat_member_update.new_chat_member.status == ChatMember.LEFT
+
+
 def is_reply_to_forwarded_channel_message(message: Message) -> bool:
     if not message.reply_to_message:
         return False
