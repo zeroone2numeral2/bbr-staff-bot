@@ -120,7 +120,8 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         if "bytype" in args:
             order_by_type = True
         if "legal" in args:
-            query_filters.append(Event.event_type == EventType.LEGAL)
+            # legal = anything that is not a free party
+            query_filters.append(Event.event_type != EventType.LEGAL)
         if "free" in args:
             query_filters.append(Event.event_type == EventType.FREE)
         if "other" in args:
