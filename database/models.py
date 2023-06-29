@@ -996,6 +996,9 @@ class ApplicationRequest(Base):
     def __init__(self, user_id: int):
         self.user_id = user_id
 
+    def is_pending(self):
+        return self.status is None
+
     def media_messages_count(self):
         return len([m for m in self.description_messages if m.can_be_grouped()])
 

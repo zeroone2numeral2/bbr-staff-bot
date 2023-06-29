@@ -81,8 +81,26 @@ def save_chat_member(session: Session, update: Update, commit=False) -> DbChatMe
 
 async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
-    if not user.last_request_id:
-        logger.debug("no last request to check")
+    if not user.last_request_id or user.last_request.is_pending():
+        # user joined the chat without going through the approval process
+
+        if not chat_member_updated.invite_link:
+            logger.info("user was added by an admin and didn't join by invite link")
+            # do not log manual additions
+            return
+
+        logger.debug("no last request to check or last request is pending: we log the join")
+        log_chat = chats.get_chat(session, Chat.is_log_chat)
+
+        user_mention = user.mention()
+        invite_link_name = chat_member_updated.invite_link.name or "-senza nome-"
+        created_by = chat_member_updated.invite_link.creator
+        admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
+        admin_string = f"{admin_mention} (#admin{created_by.id})"
+        text = f"#JOIN_SENZA_RICHIESTA di {user_mention} (#id{user.user_id})\n" \
+               f"link: <a href=\"{chat_member_updated.invite_link.invite_link}\">{invite_link_name}</a> di {admin_string}"
+
+        await bot.send_message(log_chat.chat_id, text)
         return
 
     if user.last_request.accepted_message_message_id:
