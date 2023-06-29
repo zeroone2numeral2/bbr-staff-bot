@@ -33,9 +33,7 @@ async def get_user_instance_from_message(update: Update, context: ContextTypes.D
             user: User = user_message.user
             return user
         else:
-            logger.warning(f"couldn't find replied-to message in the database, "
-                           f"chat_id: {update.effective_chat.id}; "
-                           f"message_id: {message.reply_to_message.message_id}")
+            logger.warning(f"couldn't find replied-to message in the database, message_id: {message.reply_to_message.message_id}")
 
     user_id = get_user_id_from_text(message.text)
     if not user_id and message.reply_to_message and (message.reply_to_message.text or message.reply_to_message.caption):
