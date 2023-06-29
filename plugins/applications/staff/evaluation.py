@@ -15,8 +15,9 @@ from database.models import User, LocalizedText, PrivateChatMessage, Chat
 from database.queries import texts, settings, users, chats, private_chat_messages
 import decorators
 import utilities
-from constants import Group, BotSettingKey, Language, LocalizedTextKey
+from constants import Group, BotSettingKey, Language, LocalizedTextKey, COMMAND_PREFIXES
 from emojis import Emoji
+from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,37 @@ async def delete_history(session: Session, bot: Bot, user: User):
     private_chat_messages.save(session, sent_message)
 
 
+async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: bool, admin: TelegramUser):
+    if accepted:
+        user.accepted(by_user_id=admin.id)
+    else:
+        user.rejected(by_user_id=admin.id)
+    session.commit()
+
+    logger.info("editing evaluation chat message and removing keyboard...")
+    evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, admin, user)
+    edited_staff_message = await bot.edit_message_text(
+        chat_id=user.last_request.staff_message_chat_id,
+        message_id=user.last_request.staff_message_message_id,
+        text=f"{user.last_request.staff_message_text_html}\n\n{evaluation_text}",
+        reply_markup=None
+    )
+    user.last_request.update_staff_message(edited_staff_message)
+
+    logger.info("sending log chat message...")
+    await bot.send_message(
+        user.last_request.log_message_chat_id,
+        evaluation_text,
+        reply_to_message_id=user.last_request.log_message_message_id,
+        allow_sending_without_reply=True
+    )
+
+    if accepted:
+        await send_message_to_user(session, bot, user)
+    else:
+        await delete_history(session, bot, user)
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True, pass_chat=True)
 async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
@@ -133,36 +165,50 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
         await update.callback_query.edit_message_reply_markup(reply_markup=None)
         return
 
-    if accepted:
-        user.accepted(by_user_id=update.effective_user.id)
-    else:
-        user.rejected(by_user_id=update.effective_user.id)
-    session.commit()
-
-    logger.info("editing staff chat message...")
-    evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, update.effective_user, user)
-    edited_staff_message = await context.bot.edit_message_text(
-        chat_id=user.last_request.staff_message_chat_id,
-        message_id=user.last_request.staff_message_message_id,
-        text=f"{user.last_request.staff_message_text_html}\n\n{evaluation_text}",
-        reply_markup=None
-    )
-    user.last_request.update_staff_message(edited_staff_message)
-
-    logger.info("sending log chat message...")
-    await context.bot.send_message(
-        user.last_request.log_message_chat_id,
-        evaluation_text,
-        reply_to_message_id=user.last_request.log_message_message_id,
-        allow_sending_without_reply=True
+    await accept_or_reject(
+        session=session,
+        bot=context.bot,
+        user=user,
+        accepted=accepted,
+        admin=update.effective_user
     )
 
-    if accepted:
-        await send_message_to_user(session, context.bot, user)
-    else:
-        await delete_history(session, context.bot, user)
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True, pass_chat=True)
+async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+    logger.info(f"/accetta or /rifiuta command {utilities.log(update)}")
+
+    if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
+        logger.info("user is not allowed to accept/reject requests")
+        await update.message.reply_text(f"Non sei abilitato all'approvazione delle richieste degli utenti")
+        return
+
+    user_id = utilities.get_user_id_from_text(update.message.reply_to_message.text)
+    if not user_id:
+        await update.message.reply_text(f"<i>impossibile rilevare hashtag con ID dell'utente</i>", quote=True)
+        return
+
+    logger.info(f"user_id: {user_id}")
+    user: User = users.get_or_create(session, user_id)
+    if not user.pending_request_id:
+        await update.message.reply_text(f"Questo utente non ha alcuna richiesta di ingresso pendente")
+        return
+
+    accepted = bool(re.search(r"^/accetta", update.message.text, re.I))
+
+    await accept_or_reject(
+        session=session,
+        bot=context.bot,
+        user=user,
+        accepted=accepted,
+        admin=update.effective_user
+    )
+
+    await update.message.reply_text(f"<i>fatto!</i>")
 
 
 HANDLERS = (
     (CallbackQueryHandler(on_reject_or_accept_button, rf"(?P<action>accept|reject):(?P<user_id>\d+):(?P<request_id>\d+)$"), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ["accetta", "rifiuta"], on_reject_or_accept_command, filters.REPLY & ChatFilter.EVALUATION), Group.NORMAL),
 )
