@@ -44,11 +44,13 @@ async def get_user_instance_from_message(update: Update, context: ContextTypes.D
         user_id = get_user_id_from_text(text)
 
     if not user_id:
+        logger.info("can't find user id in text/replied-to message's text")
         await update.message.reply_text("can't detect the user's id, reply to one of their forwarded message or include its id after the command")
         return
 
     user: User = users.get_or_create(session, user_id, create_if_missing=False)
     if not user:
+        logger.info(f"can't find user <code>{user_id}</code> in the database")
         await update.message.reply_text(f"can't find user <code>{user_id}</code> in the database")
         return
 
