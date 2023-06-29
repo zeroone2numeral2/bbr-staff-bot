@@ -177,7 +177,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/invalidevents {utilities.log(update)}")
 
-    events_list: List[Event] = events.get_events(session)
+    events_list: List[Event] = events.get_events(session, order_by_override=[Event.message_id])
     all_events_strings = []
     for i, event in enumerate(events_list):
         if event.is_valid():

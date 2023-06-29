@@ -24,7 +24,8 @@ def get_events(
         chat_id: Optional[int] = None,
         skip_canceled: bool = False,
         filters: Optional[List] = None,
-        order_by_type=False
+        order_by_type=False,
+        order_by_override: Optional[List] = None  # list of Event class property to use as order_by
 ):
     if not filters:
         filters = []
@@ -46,6 +47,8 @@ def get_events(
     if order_by_type:
         order_by = [Event.event_type, Event.region]
         order_by.extend(order_by_default)
+    elif order_by_override:
+        order_by = order_by_override
     else:
         order_by = order_by_default
 
