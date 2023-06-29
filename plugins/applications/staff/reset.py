@@ -24,12 +24,11 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
         return
 
-    user_id_match = re.search(r"(?:#user|#id)?(?P<user_id>\d+)", update.message.text, re.I)
-    if not user_id_match:
+    user_id = utilities.get_user_id_from_text(update.message.text)
+    if not user_id:
         await update.message.reply_text("impossibile rilevare l'id dell'utente")
         return
 
-    user_id = int(user_id_match.group("user_id"))
     user: User = users.get_or_create(session, user_id, create_if_missing=False)
     if not user:
         await update.message.reply_text(f"impossibile trovare l'utente <code>{user_id}</code> nel database")
