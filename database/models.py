@@ -426,6 +426,9 @@ class ChatMember(Base):
     def is_member(self):
         return self.status in self.MEMBER_STATUSES
 
+    def is_banned(self):
+        return self.status == TgChatMember.BANNED
+
     def update_has_been_member(self):
         if self.is_member():
             self.has_been_member = True

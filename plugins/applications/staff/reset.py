@@ -4,10 +4,11 @@ from typing import Optional, List
 
 from sqlalchemy.orm import Session
 from telegram import Update
+from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, CommandHandler
 
 from database.models import User, Chat
-from database.queries import users, chats, private_chat_messages
+from database.queries import users, chats, private_chat_messages, chat_members
 import decorators
 import utilities
 from constants import Group
@@ -36,7 +37,14 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     user.reset_evaluation()
     await update.message.reply_text(f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
-                                    f"(eventuali richieste pendenti o rifiutate sono state dimenticate)")
+                                    f"(eventuali richieste pendenti o rifiutate sono state dimenticate, se era bannato è stato sbannato)")
+
+    users_chat_member = chat_members.get_chat_member(session, user.user_id, Chat.is_users_chat)
+    try:
+        await context.bot.unban_chat_member(users_chat_member.chat_id, user.user_id, only_if_banned=True)
+        logger.debug("user unbanned")
+    except (TelegramError, BadRequest) as e:
+        logger.debug(f"error while unbanning member: {e}")
 
     log_chat = chats.get_chat(session, Chat.is_log_chat)
     if not log_chat:
