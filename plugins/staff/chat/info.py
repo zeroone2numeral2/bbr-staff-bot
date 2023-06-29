@@ -1,8 +1,9 @@
 import logging
 import re
+from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, helpers
+from telegram import Update, helpers, Message
 from telegram.ext import filters, PrefixHandler, ContextTypes
 
 from database.models import UserMessage, ChatMember as DbChatMember, Chat, User
@@ -15,31 +16,53 @@ from ext.filters import ChatFilter
 logger = logging.getLogger(__name__)
 
 
+def get_user_id_from_text(text: str) -> Optional[int]:
+    match = re.search(r"(?:#user|#id)?(?P<user_id>\d+)", text, re.I)
+    if not match:
+        return
+
+    return int(match.group("user_id"))
+
+
+async def get_user_instance_from_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session) -> Optional[User]:
+    message: Message = update.message
+
+    if message.reply_to_message and message.reply_to_message.from_user.id == context.bot.id:
+        user_message: UserMessage = user_messages.get_user_message(session, update)
+        if user_message:
+            user: User = user_message.user
+            return user
+        else:
+            logger.warning(f"couldn't find replied-to message in the database, "
+                           f"chat_id: {update.effective_chat.id}; "
+                           f"message_id: {message.reply_to_message.message_id}")
+
+    user_id = get_user_id_from_text(message.text)
+    if not user_id and message.reply_to_message and (message.reply_to_message.text or message.reply_to_message.caption):
+        # try to search the hashtag in the replied-to message
+        text = message.reply_to_message.text or message.reply_to_message.caption
+        user_id = get_user_id_from_text(text)
+
+    if not user_id:
+        await update.message.reply_text("can't detect the user's id, reply to one of their forwarded message or include its id after the command")
+        return
+
+    user: User = users.get_or_create(session, user_id, create_if_missing=False)
+    if not user:
+        await update.message.reply_text(f"can't find user <code>{user_id}</code> in the database")
+        return
+
+    return user
+
+
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/info {utilities.log(update)}")
 
-    if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
-        user_message: UserMessage = user_messages.get_user_message(session, update)
-        if not user_message:
-            logger.warning(f"couldn't find replied-to message, "
-                           f"chat_id: {update.effective_chat.id}; "
-                           f"message_id: {update.message.reply_to_message.message_id}")
-            await update.message.reply_text("no data saved for the replied-to message :(")
-            return
-        user: User = user_message.user
-    else:
-        user_id_match = re.search(r"(?:#user|#id)?(?P<user_id>\d+)", update.message.text, re.I)
-        if not user_id_match:
-            await update.message.reply_text("can't detect the user's id, reply to one of their forwarded message or include its id after the command")
-            return
-
-        user_id = int(user_id_match.group("user_id"))
-        user: User = users.get_or_create(session, user_id, create_if_missing=False)
-        if not user:
-            await update.message.reply_text(f"can't find user <code>{user_id}</code> in the database")
-            return
+    user = await get_user_instance_from_message(update, context, session)
+    if not user:
+        return
 
     text = f"• <b>name</b>: {user.mention()}\n" \
            f"• <b>username</b>: @{user.username or '-'}\n" \
