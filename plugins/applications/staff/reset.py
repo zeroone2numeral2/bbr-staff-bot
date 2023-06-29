@@ -36,7 +36,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     user.reset_evaluation()
     await update.message.reply_text(f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
-                                    f"(eventuali richieste pendenti o rifiutate sono state resettate)")
+                                    f"(eventuali richieste pendenti o rifiutate sono state dimenticate)")
 
     log_chat = chats.get_chat(session, Chat.is_log_chat)
     if not log_chat:
