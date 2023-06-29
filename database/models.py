@@ -59,7 +59,7 @@ class User(Base):
     invited_on = Column(DateTime, default=None)
 
     last_message = Column(DateTime, default=None)  # to the staff's chat
-    first_seen = Column(DateTime, default=utilities.now())  # private chat message/ChatMember update
+    first_seen = Column(DateTime, default=utilities.now)  # private chat message/ChatMember update
 
     # relationships
     chat_members = relationship("ChatMember", back_populates="user")
@@ -188,7 +188,7 @@ class Chat(Base):
 
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
-    first_seen = Column(DateTime, default=utilities.now())
+    first_seen = Column(DateTime, default=utilities.now)
     is_admin = Column(Boolean, default=False)  # whether the bot is admin or not
     can_delete_messages = Column(Boolean, default=False)  # whether the bot is allowed to delete messages or not
     can_invite_users = Column(Boolean, default=False)  # whether the bot can manage invite links
@@ -402,8 +402,8 @@ class ChatMember(Base):
     has_been_member = Column(Boolean, default=False)
     kicked = Column(Boolean, default=False)
 
-    created_on = Column(DateTime, default=utilities.now())
-    updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
 
     user: User = relationship("User", back_populates="chat_members")
     chat: Chat = relationship("Chat", back_populates="chat_members")
@@ -464,7 +464,7 @@ class UserMessage(Base):
     replies_count = Column(Integer, default=0)
     message_datetime = Column(DateTime, default=None)
     forwarded_on = Column(DateTime, default=utilities.now())
-    updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     revoked = Column(Boolean, default=False)
     revoked_on = Column(DateTime, default=None)
     message_json = Column(String, default=None)
@@ -504,7 +504,7 @@ class AdminMessage(Base):
     reply_message_id = Column(Integer, nullable=False)  # forwarded reply sent to the user's private chat
     reply_datetime = Column(DateTime, default=utilities.now())
     message_datetime = Column(DateTime, default=None)
-    updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     revoked = Column(Boolean, default=False)
     revoked_on = Column(DateTime, default=None)
     revoked_by = Column(Integer, nullable=True)
@@ -540,7 +540,7 @@ class LocalizedText(Base):
 
     show_if_true_bot_setting_key = mapped_column(String, default=None)  # only show this setting if the parent setting is true
 
-    updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
     show_if_true = relationship(
@@ -599,7 +599,7 @@ class BotSetting(Base):
 
     show_if_true_key = mapped_column(String, default=None)  # only show this setting if the parent setting is true
 
-    updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
     # figure out from this: https://docs.sqlalchemy.org/en/20/orm/join_conditions.html#creating-custom-foreign-conditions
@@ -645,16 +645,12 @@ class BotSetting(Base):
             if raise_on_unknown_type:
                 raise ValueError(f"provided value of unrecognized type: {type(value)}")
 
-        self.updated_on = utilities.now()
-
     def update_value_telegram_media(self, file_id: str, file_unique_id: str, media_type: str):
         self.update_null()
 
         self.value_media_file_id = file_id
         self.value_media_file_unique_id = file_unique_id
         self.value_media_type = media_type
-
-        self.updated_on = utilities.now()
 
     def update_null(self):
         self.value_type = None
@@ -664,8 +660,6 @@ class BotSetting(Base):
         self.value_float = None
         self.value_date = None
         self.value_datetime = None
-
-        self.updated_on = utilities.now()
 
     def value(self):
         if self.value_type == ValueType.BOOL:
@@ -712,8 +706,8 @@ class CustomCommand(Base):
     text = Column(String, default=None)
     enabled_text = Column(Boolean, default=True)
     enabled_inline = Column(Boolean, default=True)
-    created_on = Column(DateTime, default=utilities.now())
-    updated_on = Column(DateTime, default=utilities.now(), onupdate=utilities.now())
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     updated_by = Column(Integer, ForeignKey('users.user_id'))
 
     def __init__(self, trigger: str, text: str, updated_by: int, language=Language.EN):
@@ -732,7 +726,7 @@ class PrivateChatMessage(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'))
     from_self = Column(Boolean, default=False)
     date = Column(DateTime, default=None)
-    saved_on = Column(DateTime, default=utilities.now())
+    saved_on = Column(DateTime, default=utilities.now)
     revoked = Column(Boolean, default=False)
     revoked_on = Column(DateTime, default=None)
     revoked_reason = Column(String, default=None)
@@ -842,8 +836,8 @@ class Event(Base):
 
     hashtags = Column(String, default=None)  # hashtag entities as json string
 
-    created_on = Column(DateTime, default=utilities.now())
-    updated_on = Column(DateTime, default=utilities.now())
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     message_json = Column(String, default=None)
 
     deleted = Column(Boolean, default=False)  # != Event.canceled
@@ -990,8 +984,8 @@ class ApplicationRequest(Base):
 
     handled_by_user_id = mapped_column(Integer, ForeignKey('users.user_id'), default=None)  # admin that changed the status
 
-    created_on = Column(DateTime, default=utilities.now())
-    updated_on = Column(DateTime, default=utilities.now())
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
 
     user: User = relationship("User", foreign_keys=user_id)
     handled_by: User = relationship("User", foreign_keys=handled_by_user_id)
@@ -1017,13 +1011,11 @@ class ApplicationRequest(Base):
         self.other_members_text = message.text_html
         self.other_members_message_id = message.message_id
         self.other_members_received_on = utilities.now()
-        self.updated()
 
     def save_social(self, message: Message):
         self.social_text = message.text_html
         self.social_message_id = message.message_id
         self.social_received_on = utilities.now()
-        self.updated()
 
     def set_log_message(self, message: Message):
         self.log_message_chat_id = message.chat.id
@@ -1066,9 +1058,6 @@ class ApplicationRequest(Base):
     def set_invite_link(self, invite_link: str, can_be_revoked: bool):
         self.invite_link = invite_link
         self.invite_link_can_be_revoked_after_join = can_be_revoked
-
-    def updated(self):
-        self.updated_on = utilities.now()
 
 
 class DescriptionMessageType:
