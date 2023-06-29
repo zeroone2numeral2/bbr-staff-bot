@@ -2,6 +2,7 @@ class Emoji:
     ALARM = "⏰"
     BANNED = "🚫"
     BOT = "🤖"
+    COMRADE = "✊"
     EVIL = "😈"
     EYES = "👀"
     GREEN = "🟢"

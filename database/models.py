@@ -779,6 +779,8 @@ class EventTypeHashtag:
     TEKNIVAL = "#teknival"
     LEGAL_PARTY = "#legalparty"
     LEGAL_PLACE = "#legalplace"
+    CSOA = "#csoa"
+    SQUAT_PARTY = "#squatparty"
     MANIFESTAZIONE = "#manifestazione"
     STREET_PARADE = "#streetparade"
     PRIVATE_PARTY = "#privateparty"
@@ -786,8 +788,10 @@ class EventTypeHashtag:
 
 
 class EventType:
+    # value saved in the db
     FREE = "free"
     LEGAL = "legal"
+    CS_OR_SQUAT = "cs_or_squat"
     STREET_PARADE = "street_parade"
     OTHER = "other"
 
@@ -797,7 +801,8 @@ EVENT_TYPE = {
     EventTypeHashtag.FREE: EventType.FREE,
     EventTypeHashtag.TEKNIVAL: EventType.FREE,
     EventTypeHashtag.LEGAL_PARTY: EventType.LEGAL,
-    EventTypeHashtag.LEGAL_PLACE: EventType.LEGAL,
+    EventTypeHashtag.CSOA: EventType.CS_OR_SQUAT,
+    EventTypeHashtag.SQUAT_PARTY: EventType.CS_OR_SQUAT,
     EventTypeHashtag.STREET_PARADE: EventType.STREET_PARADE,
     EventTypeHashtag.MANIFESTAZIONE: EventType.OTHER,
     EventTypeHashtag.PRIVATE_PARTY: EventType.OTHER,
@@ -868,6 +873,8 @@ class Event(Base):
             return Emoji.TRUCK
         if self.event_type == EventType.LEGAL:
             return Emoji.DISCO
+        if self.event_type == EventType.CS_OR_SQUAT:
+            return Emoji.COMRADE
         if self.event_type == EventType.OTHER:
             return Emoji.PIN_2
 

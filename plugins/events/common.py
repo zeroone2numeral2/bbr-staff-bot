@@ -181,6 +181,8 @@ MONTHS = (
 
 def parse_message_entities_list(hashtags_list: List[str], event: Event):
     event.save_hashtags(hashtags_list)
+
+    # TYPE
     for hashtag, event_type in EVENT_TYPE.items():
         if hashtag in hashtags_list:
             event.event_type = event_type
