@@ -138,7 +138,12 @@ def is_join_update(chat_member_update: ChatMemberUpdated):
     return chat_member_update.old_chat_member.status in not_member_statuses and chat_member_update.new_chat_member.status in member_statuses
 
 
-def is_left_update(chat_member_update: ChatMemberUpdated):
+def is_left_update(chat_member_update: ChatMemberUpdated) -> bool:
+    if chat_member_update.from_user != chat_member_update.new_chat_member.user.id:
+        # performer of the action (chat_member_update.from_user) is not the user that changed status:
+        # this is not a "user left the group" update
+        return False
+
     member_statuses = (ChatMember.MEMBER, ChatMember.RESTRICTED, ChatMember.ADMINISTRATOR, ChatMember.OWNER)
 
     return chat_member_update.old_chat_member.status in member_statuses and chat_member_update.new_chat_member.status == ChatMember.LEFT
