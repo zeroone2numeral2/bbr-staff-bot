@@ -3,6 +3,7 @@ import random
 from typing import Union, Iterable
 
 import pytz
+from sqlalchemy import update, null
 from sqlalchemy.orm import Session
 from telegram import Update, BotCommandScopeChat, ChatMemberOwner, ChatInviteLink
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
@@ -75,6 +76,20 @@ async def post_init(application: Application) -> None:
             )
             session.add(setting)
 
+    session.commit()
+
+    # update has_been_member for every record that has that property set to None
+    logger.info("updating all ChatMember records that are (or were) member of the chat...")
+    chat_member_statuses = list(DbChatMember.MEMBER_STATUSES)
+    chat_member_statuses.append(ChatMember.BANNED)  # banned users were members for sure
+    statement = (
+        update(DbChatMember)
+        .where(
+            DbChatMember.status.in_(chat_member_statuses)
+        )
+        .values(has_been_member=True)
+    )
+    session.execute(statement)
     session.commit()
 
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
