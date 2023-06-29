@@ -80,7 +80,6 @@ def save_chat_member(session: Session, update: Update, commit=False) -> DbChatMe
 
 
 async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
-    logger.info("user joined users chat")
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
     if not user.last_request_id:
         logger.debug("no last request to check")
@@ -129,13 +128,9 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
         logger.info("user was member and left the chat")
         return
 
-    if not utilities.is_join_update(update.chat_member):
-        return
-
-    if not chat.is_users_chat:
-        return
-
-    await handle_new_member(session, chat, context.bot, update.chat_member)
+    if utilities.is_join_update(update.chat_member) and chat.is_users_chat:
+        logger.info("user joined the users chat")
+        await handle_new_member(session, chat, context.bot, update.chat_member)
 
 
 @decorators.catch_exception(silent=True)
