@@ -158,6 +158,16 @@ def is_kicked_update(chat_member_update: ChatMemberUpdated) -> bool:
     return chat_member_update.old_chat_member.status in member_statuses and chat_member_update.new_chat_member.status == ChatMember.LEFT
 
 
+def is_unban_update(chat_member_update: ChatMemberUpdated) -> bool:
+    if chat_member_update.from_user == chat_member_update.new_chat_member.user.id:
+        # performer of the action (chat_member_update.from_user) == user that changed status: user left (not kicked)
+        return False
+
+    banned_statuses = (ChatMember.BANNED,)
+
+    return chat_member_update.old_chat_member.status in banned_statuses and chat_member_update.new_chat_member.status == ChatMember.LEFT
+
+
 def is_reply_to_forwarded_channel_message(message: Message) -> bool:
     if not message.reply_to_message:
         return False
