@@ -125,6 +125,7 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
         chat_member_record.has_been_member = True
 
     if utilities.is_left_update(update.chat_member):
+        # do nothing for now
         logger.info("user was member and left the chat")
         return
 
