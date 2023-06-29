@@ -111,8 +111,8 @@ def get_text(session: Session, ltext_key: str, user: TelegramUser, raise_if_no_f
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/start {utilities.log(update)}")
 
-    chat_member = chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat)
-    if chat_member is None:
+    chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
+    if not chat_member:
         users_chat = chats.get_chat(session, Chat.is_users_chat)
         logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
         tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
@@ -120,7 +120,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         session.add(chat_member)
         session.commit()
 
-    if chat_member.is_member() and False:
+    if chat_member.is_member():
         logger.info("user is already a member of the users chat")
         welcome_text_member = get_text(session, LocalizedTextKey.WELCOME_MEMBER, update.effective_user)
         sent_message = await update.message.reply_text(welcome_text_member)
@@ -228,7 +228,6 @@ async def on_waiting_other_members_received(update: Update, context: ContextType
     # we don't actually need this but we save it anyway
     description_message = DescriptionMessage(user.pending_request.id, update.effective_message, DescriptionMessageType.OTHER_MEMBERS)
     session.add(description_message)
-    user.pending_request.updated()
 
     send_social_text = get_text(session, LocalizedTextKey.SEND_SOCIAL, update.effective_user)
     sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
@@ -271,7 +270,6 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
     # we don't actually need this because they are also saved toApplicationRequest  but we save it anyway
     description_message = DescriptionMessage(user.pending_request.id, update.effective_message, DescriptionMessageType.SOCIAL)
     session.add(description_message)
-    user.pending_request.updated()
 
     send_description_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
     sent_message = await update.message.reply_text(send_description_text, reply_markup=get_done_keyboard())
@@ -297,7 +295,6 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
     if description_message.text:
         # mark as ready only when we receive at least a text
         user.pending_request.ready = True
-    user.pending_request.updated()
 
     # we commit now so request.description_messages will be updated with also the message we just received (not tested)
     session.commit()
