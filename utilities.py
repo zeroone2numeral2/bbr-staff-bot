@@ -256,6 +256,9 @@ def get_argument(commands: Union[List, str], text: str, remove_user_id_hashtag=F
     for command in commands:
         text = re.sub(rf"^[{prefixes}]{command}\s*", "", text, re.I)
 
+    if remove_user_id_hashtag:
+        text = re.sub(Regex.USER_ID_HASHTAG_SUB, "", text)
+
     return text.strip()
 
 
