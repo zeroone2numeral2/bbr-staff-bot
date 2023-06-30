@@ -97,7 +97,14 @@ async def send_message_to_user(session: Session, bot: Bot, user: User):
 async def delete_history(session: Session, bot: Bot, user: User):
     # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
     rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
-    sent_message = await bot.send_photo(user.user_id, rabbit_file_id)
+    sent_message = None
+    try:
+        sent_message = await bot.send_photo(user.user_id, rabbit_file_id)
+    except BadRequest as e:
+        if "wrong file identifier/http url specified" in e.message.lower():
+            logger.error(f"cannot send file: {e.message}")
+        else:
+            raise e
 
     now = utilities.now()
 
@@ -108,10 +115,12 @@ async def delete_history(session: Session, bot: Bot, user: User):
 
         logger.debug(f"deleting message {message.message_id} from chat {user.user_id}")
         await bot.delete_message(user.user_id, message.message_id)
-        message.set_revoked(reason="/delhistory command")
+        message.set_revoked(reason="user was rejected")
 
-    # we need to save it here otherwise it would be deleted with all the other messages
-    private_chat_messages.save(session, sent_message)
+    # we need to save it here after we're done with the cleanup, otherwise it would be deleted with all the other messages
+    if sent_message:
+        # sending the gif might have failed
+        private_chat_messages.save(session, sent_message)
 
 
 async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: bool, admin: TelegramUser):
