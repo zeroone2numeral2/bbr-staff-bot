@@ -974,7 +974,7 @@ class ApplicationRequest(Base):
     accepted_message_message_id = Column(Integer, default=None)
     invite_link = Column(String, default=None)  # the invite link we sent to the user
     invite_link_can_be_revoked_after_join = Column(Boolean, default=False)  # wether it is safe to revoke the invite link after the user joined
-    invite_link_revoked = Column(Boolean, default=False)
+    invite_link_revoked = Column(Boolean, default=False)  # wether 'invite_link' has been revoked or not
 
     other_members_text = Column(String, default=None)
     other_members_message_id = Column(Integer, default=None)
