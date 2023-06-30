@@ -6,3 +6,4 @@ idea/
 config.toml
 *.db
 *.db-journal
+*.pickle

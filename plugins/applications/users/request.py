@@ -500,6 +500,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 approval_mode_conversation_handler = ConversationHandler(
     name="approval_conversation",
+    persistent=True,
     allow_reentry=False,  # if inside the conversation, it will not be restarted if an entry point is triggered
     entry_points=[CommandHandler(["start"], on_start_command, filters=filters.ChatType.PRIVATE)],
     states={

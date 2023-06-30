@@ -10,7 +10,7 @@ from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMember, ChatMemberAdministrator
 from telegram.constants import ParseMode
 from telegram.error import BadRequest, TelegramError
-from telegram.ext import ApplicationBuilder, Application, ContextTypes
+from telegram.ext import ApplicationBuilder, Application, ContextTypes, PicklePersistence, PersistenceInput
 from telegram.ext import Defaults
 from telegram.ext import ExtBot
 
@@ -188,9 +188,15 @@ async def generate_one_time_link(context: ContextTypes.DEFAULT_TYPE):
 def main():
     utilities.load_logging_config('logging.json')
 
+    persistence = PicklePersistence(
+        filepath='data.pickle',
+        store_data=PersistenceInput(chat_data=False, user_data=False, bot_data=False)
+    )
+
     app: Application = ApplicationBuilder() \
         .token(config.telegram.token) \
         .defaults(defaults) \
+        .persistence(persistence) \
         .post_init(post_init) \
         .build()
 
