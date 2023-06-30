@@ -91,6 +91,14 @@ class User(Base):
         # remote_side=user_id,  # breaks the relationship for some reason
         uselist=False
     )
+    users_chat_member: Mapped['ChatMember'] = relationship(
+        "ChatMember",
+        foreign_keys=user_id,
+        primaryjoin="and_(User.user_id == ChatMember.user_id, ChatMember.chat_id == select(Chat.chat_id).filter(Chat.is_users_chat == true()))",
+        # remote_side=user_id,
+        uselist=False,
+        lazy="select"  # https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html
+    )
 
     def __init__(self, telegram_user: TelegramUser, started: Optional[bool] = None):
         self.update_metadata(telegram_user)
