@@ -61,6 +61,7 @@ async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Op
         invite_link = invite_link_setting.value()
 
         if not invite_link:
+            logger.warning("user will receive no invite link because we failed to generate one and no primary link is set")
             return  # reply_markup will be None
 
     # noinspection PyUnboundLocalVariable
