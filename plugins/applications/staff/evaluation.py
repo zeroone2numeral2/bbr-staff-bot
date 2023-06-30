@@ -40,6 +40,8 @@ async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Op
     if not users_chat.can_invite_users:
         logger.info("we don't have the permission to invite members in the users chat")
     else:
+        # try to generate a one-time invite link
+        # if we fail, use the default one
         try:
             chat_invite_link: ChatInviteLink = await bot.create_chat_invite_link(
                 users_chat.chat_id,
@@ -54,13 +56,14 @@ async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Op
             logger.error(f"error while generating invite link for chat {users_chat.chat_id}: {e}")
 
     if use_default_invite_link:
-        logger.info("using default invite link if set")
+        logger.info("using default invite link (if set)")
         invite_link_setting = settings.get_or_create(session, BotSettingKey.CHAT_INVITE_LINK)
         invite_link = invite_link_setting.value()
 
         if not invite_link:
-            return
+            return  # reply_markup will be None
 
+    # noinspection PyUnboundLocalVariable
     user.last_request.set_invite_link(invite_link, can_be_revoked=can_be_revoked)
 
     reply_markup = InlineKeyboardMarkup(
