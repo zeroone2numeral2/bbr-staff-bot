@@ -463,6 +463,9 @@ class ChatMember(Base):
         else:
             return self.status
 
+    def __repr__(self):
+        return f"ChatMember(user_id={self.chat_id}, chat_id={self.user_id}, status=\"{self.status}\")"
+
 
 class UserMessage(Base):
     __tablename__ = 'user_messages'
