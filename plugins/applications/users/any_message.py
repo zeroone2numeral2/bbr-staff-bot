@@ -3,6 +3,7 @@ from typing import Optional, List
 
 from sqlalchemy.orm import Session
 from telegram import Update
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes, MessageHandler, CommandHandler
 from telegram.ext import filters
 
@@ -35,7 +36,13 @@ async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
     rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
-    sent_message = await update.message.reply_photo(rabbit_file_id)
+    try:
+        sent_message = await update.message.reply_photo(rabbit_file_id)
+    except BadRequest as e:
+        if "wrong file identifier/http url specified" in e.message.lower():
+            logger.error(f"cannot send file: {e.message}")
+        else:
+            raise e
 
     now = utilities.now()
 
