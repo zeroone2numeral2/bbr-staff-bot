@@ -35,6 +35,7 @@ async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE,
     logger.info(f"/delhistory {utilities.log(update)}")
 
     # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
+    sent_message = None
     rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
     try:
         sent_message = await update.message.reply_photo(rabbit_file_id)
@@ -55,7 +56,9 @@ async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await context.bot.delete_message(update.effective_user.id, message.message_id)
         message.set_revoked(reason="/delhistory command")
 
-    private_chat_messages.save(session, sent_message)
+    if sent_message:
+        # sending the gif might have failed
+        private_chat_messages.save(session, sent_message)
 
 
 @decorators.catch_exception()
