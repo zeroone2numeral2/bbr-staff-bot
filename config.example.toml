@@ -7,7 +7,7 @@ admins = [
 ]
 
 [settings]
-# these are the defautl values, no need to change them. they can be changed on the fly from the bot
+# these are the default values, no need to change them. they can be changed on the fly from the bot
 broadcast_message_edits = true
 
 [handlers]
