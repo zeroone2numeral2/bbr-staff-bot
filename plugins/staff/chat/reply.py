@@ -75,6 +75,8 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
     admin_message.save_message_json(sent_message)
     admin_message.user_message.add_reply()
 
+    await update.message.reply_html("<i>message sent to the user</i>", quote=True)
+
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True, pass_chat=True)
@@ -130,6 +132,8 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         message_datetime=update.effective_message.date
     )
     session.add(admin_message)
+
+    await update.message.reply_html("<i>message sent to the user</i>", quote=True)
 
 
 HANDLERS = (
