@@ -362,6 +362,7 @@ class RegionHashtag:
     SCOZIA = "#scozia"
     CZECHIA = "#czechia"
     CZ = "#cz"
+    REPUBBLICA_CECA = "#repubblicaceca"
     POLAND = "#poland"
     PL = "#pl"
     POLONIA = "#polonia"
@@ -461,7 +462,7 @@ REGIONS_DATA = {
     RegionName.PAESI_BASSI: dict(hashtags=[RegionHashtag.NETHERLANDS, RegionHashtag.NLD], emoji=Flag.NETHERLANDS),
     RegionName.POLONIA: dict(hashtags=[RegionHashtag.POLAND, RegionHashtag.POLONIA, RegionHashtag.PL], emoji=Flag.POLAND),
     RegionName.PORTOGALLO: dict(hashtags=[RegionHashtag.PORTUGAL, RegionHashtag.PORTOGALLO], emoji=Flag.PORTUGAL),
-    RegionName.REPUBBLICA_CECA: dict(hashtags=[RegionHashtag.CZ, RegionHashtag.CZECHIA], emoji=Flag.CZECH_REPUBLIC),
+    RegionName.REPUBBLICA_CECA: dict(hashtags=[RegionHashtag.CZ, RegionHashtag.CZECHIA, RegionHashtag.REPUBBLICA_CECA], emoji=Flag.CZECH_REPUBLIC),
     RegionName.ROMANIA: dict(hashtags=[RegionHashtag.ROMANIA, RegionHashtag.RO], emoji=Flag.ROMANIA),
     RegionName.SARDEGNA: dict(hashtags=[RegionHashtag.SARDEGNA], emoji=Flag.ITALY),
     RegionName.SCOZIA: dict(hashtags=[RegionHashtag.SCOTLAND, RegionHashtag.SCOZIA], emoji=Flag.SCOTLAND),
