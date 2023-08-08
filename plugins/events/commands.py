@@ -6,7 +6,7 @@ from re import Match
 from typing import Optional, Tuple, List, Union
 
 import telegram.constants
-from sqlalchemy import true
+from sqlalchemy import true, false
 from sqlalchemy.orm import Session
 from telegram import Update, Message, MessageEntity
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext
@@ -179,7 +179,11 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/invalidevents {utilities.log(update)}")
 
-    events_list: List[Event] = events.get_events(session, order_by_override=[Event.message_id])
+    events_list: List[Event] = events.get_events(
+        session,
+        filters=[Event.soon == false()],
+        order_by_override=[Event.message_id]
+    )
     all_events_strings = []
     for i, event in enumerate(events_list):
         if event.is_valid():
