@@ -6,6 +6,8 @@ from pathlib import Path
 # noinspection PyPackageRequirements
 from telegram.ext import Application, BaseHandler, ConversationHandler
 
+from config import config
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,11 +30,23 @@ def read_manifest(manifest_path: Path):
     manifest_lines = manifest_str.split('\n')
 
     modules_list = list()
+    last_header_found = "+"
     for line in manifest_lines:
         line = re.sub(r'(?:\s+)?#.*(?:\n|$)', '', line)  # remove comments from the line
-        if line.strip():  # ignore empty lines
+        if not line.strip():
+            continue
+
+        if line.startswith("["):
+            last_header_found = line.replace("[", "").replace("]", "").strip()
+            logger.debug(f"new header: [{last_header_found}]")
+            continue  # continue to next line
+
+        if last_header_found == "+" or last_header_found == config.handlers.mode:
+            # add if last [header] was "[+]" or the mode specified in the config file
             items = line.split()  # split on spaces. We will consider only the first word
             modules_list.append(items[0])  # tuple: (module_to_import, [callbacks_list])
+        else:
+            logger.debug(f"ignoring module from header [{last_header_found}]: {line.strip()}")
 
     return modules_list
 

@@ -7,9 +7,12 @@ admins = [
 ]
 
 [settings]
+
 # these are the default values, no need to change them. they can be changed on the fly from the bot
 broadcast_message_edits = true
 
 [handlers]
 # which handlers manifest to use, depending on what the bot should do
-manifest = "manifest_feedback"
+manifest = "manifest"
+# which modules to import from the manifest, will load modules in the `[mode]` or `[+]` section
+mode = "bbr"

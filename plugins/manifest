@@ -1,3 +1,4 @@
+[+]
 # PREPROCESS
 applications.users.any_message
 events.message
@@ -14,14 +15,20 @@ staff.private.ltexts
 events.commands
 
 help
+
+[flytek]
 applications.users.request
+
+[+]
 users.revoke
 users.message
 
+[flytek]
 applications.staff.approvers
 applications.staff.reset
 applications.staff.evaluation
 
+[+]
 staff.chat.reloadadmins
 staff.chat.ban
 staff.chat.info
