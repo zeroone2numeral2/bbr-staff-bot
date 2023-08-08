@@ -195,6 +195,13 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
         # un-cancel events that do not have these hashtags
         event.canceled = False
 
+    # SOON
+    if "#soon" in hashtags_list or "#comingsoon" in hashtags_list:
+        event.soon = True
+    else:
+        # un-soon events that do not have these hashtags
+        event.soon = False
+
     # REGION
     region_found = False
     for region_name, region_data in REGIONS_DATA.items():

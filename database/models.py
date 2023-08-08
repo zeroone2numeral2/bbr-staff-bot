@@ -834,6 +834,7 @@ class Event(Base):
     end_day = Column(Integer, default=None)
     end_month = Column(Integer, default=None)
     end_year = Column(Integer, default=None)
+    soon = Column(Boolean, default=False)
     region = Column(String, default=None)
     event_type = Column(String, default=None)
     canceled = Column(Boolean, default=False)

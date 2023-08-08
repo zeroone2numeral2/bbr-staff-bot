@@ -6,6 +6,7 @@ from re import Match
 from typing import Optional, Tuple, List, Union
 
 import telegram.constants
+from sqlalchemy import true
 from sqlalchemy.orm import Session
 from telegram import Update, Message, MessageEntity
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext
@@ -201,6 +202,33 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+async def on_soon_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/soon {utilities.log(update)}")
+
+    events_list: List[Event] = events.get_events(
+        session,
+        filters=[Event.soon == true()],
+        order_by_override=[Event.message_id]
+    )
+    all_events_strings = []
+    for i, event in enumerate(events_list):
+        text_line = format_event_string(event)
+        all_events_strings.append(text_line)
+
+    messages_to_send = split_messages(all_events_strings)
+
+    if not messages_to_send:
+        await update.message.reply_text("none")
+        return
+
+    total_messages = len(messages_to_send)
+    for i, text_to_send in enumerate(messages_to_send):
+        logger.debug(f"sending message {i + 1}/{total_messages}")
+        await update.message.reply_text(text_to_send)
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
 async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/parseevents {utilities.log(update)}")
 
@@ -299,7 +327,8 @@ async def on_fwd_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["events", "eventsall"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
-    (CommandHandler(["invalidevents", "ie", "soon"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["soon"], on_soon_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
