@@ -19,7 +19,7 @@ from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, Bot
 from database.queries import settings, events, chats, chat_members
 import decorators
 import utilities
-from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType, MONTHS_IT, TempDataKey
+from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -341,24 +341,53 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
 
 
+def get_events_strings_from_cache(context: CallbackContext, args_cache_key: str) -> Optional[List]:
+    if TempDataKey.EVENTS_CACHE not in context.bot_data:
+        return
+
+    if args_cache_key not in context.bot_data[TempDataKey.EVENTS_CACHE]:
+        return
+
+    now = utilities.now()
+    time_delta = now - context.bot_data[TempDataKey.EVENTS_CACHE][args_cache_key][TempDataKey.EVENTS_CACHE_SAVED_ON]
+    if time_delta.total_seconds() > Timeout.ONE_HOUR * 3:
+        logger.info(f"cache expired for key {args_cache_key}")
+        return
+
+    logger.info(f"cache hit for key {args_cache_key}")
+    return context.bot_data[TempDataKey.EVENTS_CACHE][args_cache_key][TempDataKey.EVENTS_CACHE_DATA]
+
+
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"confirm callback query {utilities.log(update)}")
 
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
-    query_filters = extract_query_filters(args)
+    args.sort()
+    args_cache_key = "+".join(args)
 
-    events_list: List[Event] = events.get_events(session, filters=query_filters)
+    all_events_strings = get_events_strings_from_cache(context, args_cache_key)
+    if not all_events_strings:
+        query_filters = extract_query_filters(args)
+        events_list: List[Event] = events.get_events(session, filters=query_filters)
 
-    all_events_strings = []
-    for i, event in enumerate(events_list):
-        if not event.is_valid():
-            logger.info(f"skipping invalid event: {event}")
-            continue
+        all_events_strings = []
+        for i, event in enumerate(events_list):
+            if not event.is_valid():
+                logger.info(f"skipping invalid event: {event}")
+                continue
 
-        text_line = format_event_string(event)
-        all_events_strings.append(text_line)
+            text_line = format_event_string(event)
+            all_events_strings.append(text_line)
+
+        logger.info(f"saving cache for key {args_cache_key}...")
+        context.bot_data[TempDataKey.EVENTS_CACHE] = {
+            args_cache_key: {
+                TempDataKey.EVENTS_CACHE_SAVED_ON: utilities.now(),
+                TempDataKey.EVENTS_CACHE_DATA: all_events_strings,
+            }
+        }
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
