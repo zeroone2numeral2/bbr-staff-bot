@@ -469,7 +469,7 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["events"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
-    (CommandHandler(["eventi"], on_eventi_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CommandHandler(["eventi", "radar"], on_eventi_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
