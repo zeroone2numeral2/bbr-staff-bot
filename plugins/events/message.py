@@ -1,7 +1,9 @@
+import json
 import logging
+import pathlib
 
 from sqlalchemy.orm import Session
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import ContextTypes, filters, MessageHandler
 
 from .common import add_event_message_metadata, parse_message_text, parse_message_entities
@@ -11,8 +13,36 @@ from database.queries import events, chats
 import decorators
 import utilities
 from constants import Group
+from config import config
 
 logger = logging.getLogger(__name__)
+
+
+async def download_event_media(message: Message):
+    if not message.photo and not message.video and not message.animation:
+        logger.debug(f"no media to backup")
+        return
+
+    if not message.edit_date:
+        file_name = f"{message.message_id}"
+    else:
+        edit_timestamp = int(message.edit_date.timestamp())
+        file_name = f"{message.message_id}_edit_{edit_timestamp}"
+
+    if message.photo:
+        file_name = f"{file_name}.jpg"
+    elif message.video or message.animation:
+        file_name = f"{file_name}.mp4"
+
+    file_path = pathlib.Path("events_data") / file_name
+
+    logger.info(f"downloading to {file_path}...")
+    if message.photo:
+        new_file = await message.effective_attachment[-1].get_file()
+    else:
+        new_file = await message.effective_attachment.get_file()
+
+    await new_file.download_to_drive(file_path)
 
 
 @decorators.catch_exception(silent=True)
@@ -43,6 +73,14 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     logger.info(f"parsed event: {event}")
 
     session.commit()
+
+    if not config.settings.backup_events:
+        return
+
+    try:
+        await download_event_media(update.effective_message)
+    except Exception as e:
+        logger.error(f"error whiel trying to download media: {e}", exc_info=True)
 
 
 HANDLERS = (

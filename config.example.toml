@@ -10,6 +10,7 @@ admins = [
 
 # these are the default values, no need to change them. they can be changed on the fly from the bot
 broadcast_message_edits = true
+backup_events = true
 
 [handlers]
 # which handlers manifest to use, depending on what the bot should do

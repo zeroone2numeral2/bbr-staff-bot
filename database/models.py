@@ -958,6 +958,9 @@ class Event(Base):
             return []
         return json.loads(self.hashtags)
 
+    def to_dict(self):
+        return {field.name: getattr(self, field.name) for field in self.__table__.c}
+
     def __repr__(self):
         return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
 

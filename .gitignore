@@ -7,3 +7,6 @@ config.toml
 *.db
 *.db-journal
 *.pickle
+
+*.jpg
+*.mp4
