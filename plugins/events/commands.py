@@ -144,7 +144,7 @@ def extract_query_filters(args: List[str]) -> List:
     args = [arg.lower() for arg in args]
 
     # EVENT TYPE
-    if EventFilter.NOT_FREE in args or EventFilter.LEGAL:
+    if EventFilter.NOT_FREE in args or EventFilter.LEGAL in args:
         # legal = anything that is not a free party
         query_filters.append(Event.event_type != EventType.FREE)
     elif EventFilter.FREE in args:
