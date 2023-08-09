@@ -273,7 +273,7 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.info("user is not a member of the users chat")
         return
 
-    # always try to get existing filters (they are not reset after the user confirms his query)
+    # always try to get existing filters (they are not reset after the user confirms their query)
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
 
     reply_markup = get_events_reply_markup(args)
