@@ -882,7 +882,7 @@ class Event(Base):
         if self.event_type == EventType.STREET_PARADE:
             return Emoji.TRUCK
         if self.event_type == EventType.LEGAL:
-            return Emoji.DISCO
+            return Emoji.TICKET
         if self.event_type == EventType.CS_OR_SQUAT:
             return Emoji.COMRADE
         if self.event_type == EventType.OTHER:
