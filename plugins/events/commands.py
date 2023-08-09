@@ -277,7 +277,10 @@ async def on_eventi_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     # override in case there was no existing filter
     context.user_data[TempDataKey.EVENTS_FILTERS] = args
 
-    await update.message.reply_html("Usa i tasti qui sotto per cambiare i filtri", reply_markup=reply_markup)
+    await update.message.reply_html(
+        f"{Emoji.COMPASS} Usa i tasti qui sotto per cambiare i filtri della ricerca, poi usa conferma per vedere gli eventi",
+        reply_markup=reply_markup
+    )
 
 
 def safe_remove(items: List[str], item: str):

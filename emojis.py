@@ -4,6 +4,7 @@ class Emoji:
     BOT = "🤖"
     CALENDAR = "🗓"
     CLOCK = "🕑"
+    COMPASS = "🧭"
     COMRADE = "✊"
     EVIL = "😈"
     EYES = "👀"
