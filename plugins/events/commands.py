@@ -364,7 +364,7 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     logger.info(f"confirm callback query {utilities.log(update)}")
 
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
-    args.sort()
+    args.sort()  # it's important to sort the args, see #82
     args_cache_key = "+".join(args)
 
     all_events_strings = get_events_strings_from_cache(context, args_cache_key)
