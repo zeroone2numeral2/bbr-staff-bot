@@ -283,6 +283,7 @@ class TempDataKey:
     BOT_SETTINGS_LAST_MESSAGE_ID = "bot_settings_last_message_id"
     DB_INSTANCES = "_database_instances"
     EVENTS_FILTERS = "events_filters"
+    EVENTS_CACHE = "events_cache"
 
 
 COMMAND_PREFIXES = ["/", "!", "."]
