@@ -386,7 +386,8 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
-    # do not pop existing filter
+    # do not pop existing filters, we will remember them for the next time the user uses /radar
+    # context.user_data.pop(TempDataKey.EVENTS_FILTERS, None)
 
     await update.effective_message.delete()  # delete the message as we will send the new ones
     await send_events_messages(update.effective_message, all_events_strings)
