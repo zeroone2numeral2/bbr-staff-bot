@@ -16,7 +16,7 @@ from emojis import Emoji, Flag
 from ext.filters import ChatFilter, Filter
 from .common import parse_message_entities, parse_message_text
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
-from database.queries import settings, events, chats
+from database.queries import settings, events, chats, chat_members
 import decorators
 import utilities
 from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType, MONTHS_IT, TempDataKey
@@ -266,8 +266,12 @@ def get_events_reply_markup(args) -> InlineKeyboardMarkup:
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-async def on_eventi_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/eventi {utilities.log(update)}")
+async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/radar {utilities.log(update)}")
+
+    if not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
+        logger.info("user is not a member of the users chat")
+        return
 
     # always try to get existing filters (they are not reset after the user confirms his query)
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
@@ -472,7 +476,7 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["events"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
-    (CommandHandler(["eventi", "radar"], on_eventi_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CommandHandler(["eventi", "radar"], on_radar_command), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
