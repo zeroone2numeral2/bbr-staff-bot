@@ -29,10 +29,12 @@ class EventFilter:
     # region
     IT = "it"
     NOT_IT = "notit"
+
     # type
     LEGAL = "legal"
     FREE = "free"
     NOT_FREE = "notfree"
+
     # time
     WEEK = "week"
     MONTH_AND_NEXT_MONTH = "monthnext"
@@ -44,14 +46,14 @@ FILTER_DESCRIPTION = {
     EventFilter.IT: f"{Flag.ITALY} eventi in italia",
     EventFilter.NOT_IT: f"{Emoji.EARTH} eventi all'estero",
     EventFilter.FREE: f"{Emoji.PIRATE} freeparty",
-    EventFilter.NOT_FREE: f"{Emoji.TICKET} non freeparty",
+    EventFilter.NOT_FREE: f"{Emoji.TICKET} non freeparty (legal/cs/squat/street parade/altro)",
     EventFilter.WEEK: f"{Emoji.CALENDAR} eventi che iniziano questa settimana (lun-dom)",
     EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} eventi che iniziano questo mese o il prossimo",
     EventFilter.SOON: f"{Emoji.CLOCK} eventi ancora senza una data precisa (#soon)"
 }
 
 
-DEFAULT_FILTERS = [EventFilter.IT, EventFilter.FREE, EventFilter.WEEK]
+DEFAULT_FILTERS = [EventFilter.IT, EventFilter.NOT_FREE, EventFilter.WEEK]
 
 
 @decorators.catch_exception()
