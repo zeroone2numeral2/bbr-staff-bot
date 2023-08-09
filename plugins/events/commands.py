@@ -153,10 +153,31 @@ def extract_query_filters(args: List[str]) -> List:
     return query_filters
 
 
+async def send_events_messages(message: Message, all_events_strings: List[str]) -> List[Message]:
+    sent_messages = []
+
+    messages_to_send = split_messages(all_events_strings, return_after_first_message=False)
+
+    if not messages_to_send:
+        sent_message = await message.reply_text("vuoto :(")
+        return [sent_message]
+
+    total_messages = len(messages_to_send)
+    for i, text_to_send in enumerate(messages_to_send):
+        logger.debug(f"sending message {i + 1}/{total_messages}")
+        # if i + 1 == total_messages:
+        #     text_to_send += f"\n\nUsa /soon per gli eventi con data da programmare"
+
+        sent_message = await message.reply_text(text_to_send)
+        sent_messages.append(sent_message)
+
+    return sent_messages
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/events or /eventsall {utilities.log(update)}")
+    logger.info(f"/events {utilities.log(update)}")
 
     args = context.args if context.args else []
     query_filters = extract_query_filters(args)
@@ -174,19 +195,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
-    messages_to_send = split_messages(all_events_strings, return_after_first_message=False)
-
-    if not messages_to_send:
-        await update.message.reply_text("empty :(")
-        return
-
-    total_messages = len(messages_to_send)
-    for i, text_to_send in enumerate(messages_to_send):
-        logger.debug(f"sending message {i+1}/{total_messages}")
-        if i + 1 == total_messages:
-            text_to_send += f"\n\nUse /soon for a list of events without a scheduled date"
-
-        await update.message.reply_text(text_to_send)
+    await send_events_messages(update.message, all_events_strings)
 
 
 @decorators.catch_exception()
@@ -207,43 +216,7 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
         text_line = format_event_string(event)
         all_events_strings.append(text_line)
 
-    messages_to_send = split_messages(all_events_strings)
-
-    if not messages_to_send:
-        await update.message.reply_text("none")
-        return
-
-    total_messages = len(messages_to_send)
-    for i, text_to_send in enumerate(messages_to_send):
-        logger.debug(f"sending message {i + 1}/{total_messages}")
-        await update.message.reply_text(text_to_send)
-
-
-@decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_soon_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/soon {utilities.log(update)}")
-
-    events_list: List[Event] = events.get_events(
-        session,
-        filters=[Event.soon == true()],
-        order_by_override=[Event.message_id]
-    )
-    all_events_strings = []
-    for i, event in enumerate(events_list):
-        text_line = format_event_string(event)
-        all_events_strings.append(text_line)
-
-    messages_to_send = split_messages(all_events_strings)
-
-    if not messages_to_send:
-        await update.message.reply_text("none")
-        return
-
-    total_messages = len(messages_to_send)
-    for i, text_to_send in enumerate(messages_to_send):
-        logger.debug(f"sending message {i + 1}/{total_messages}")
-        await update.message.reply_text(text_to_send)
+    await send_events_messages(update.message, all_events_strings)
 
 
 @decorators.catch_exception()
@@ -334,7 +307,6 @@ HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["events", "eventi"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
-    (CommandHandler(["soon"], on_soon_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
