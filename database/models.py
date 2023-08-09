@@ -865,8 +865,9 @@ class Event(Base):
         self.updated_on = utilities.now()
 
     def is_valid(self):
+        """an event is valid only if it has a title, a start month/year, and at least one hashtag"""
+
         # we basically save any channel post that has a text/caption as an Event
-        # an event is valid only if it has a title, a start month/year, and at least one hashtag
         return self.event_title and self.start_month and self.start_year  # and self.get_hashtags()
 
     def message_link(self):

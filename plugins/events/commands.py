@@ -107,46 +107,61 @@ def split_messages(all_events: List[str], return_after_first_message=False) -> L
     return messages_to_send
 
 
-@decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/events or /eventsall {utilities.log(update)}")
-
-    all_events = "eventsall" in update.message.text.lower()
-    order_by_type = False
-
+def extract_query_filters(args: List[str]) -> List:
     query_filters = []
-    if context.args:
-        args = [arg.lower() for arg in context.args]
-        if "bytype" in args:
-            order_by_type = True
-        if "legal" in args:
-            # legal = anything that is not a free party
-            query_filters.append(Event.event_type != EventType.LEGAL)
-        if "free" in args:
-            query_filters.append(Event.event_type == EventType.FREE)
-        if "other" in args:
-            other_types = [EventType.OTHER, EventType.STREET_PARADE]
-            query_filters.append(Event.event_type.in_(other_types))
-        if "week" in args:
-            last_monday = utilities.previous_weekday(weekday=0)
-            next_monday = utilities.next_weekday(weekday=0)
-            query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
-        if "it" in args or "noit" in args:
-            it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
-            if "it" in args:
-                query_filters.append(Event.region.in_(it_regions))
-            else:
-                query_filters.append(Event.region.not_in(it_regions))
-    if not context.args or "week" not in context.args:
-        # no temporal filters -> extract all events >= this month
+    args = [arg.lower() for arg in args]
+
+    # EVENT TYPE
+    if "legal" in args:
+        # legal = anything that is not a free party
+        query_filters.append(Event.event_type != EventType.FREE)
+    elif "free" in args:
+        query_filters.append(Event.event_type == EventType.FREE)
+
+    # EVENT DATE
+    if "week" in args:
+        last_monday = utilities.previous_weekday(weekday=0)
+        next_monday = utilities.next_weekday(weekday=0)
+        query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
+    elif "all" in args:
+        # all events >= this month
         now = utilities.now()
         query_filters.extend([
             Event.start_year >= now.year,
             Event.start_month >= now.month,
         ])
+    elif "soon" in args:
+        query_filters.extend([Event.soon == true()])
+    else:
+        # this month + next month
+        now = utilities.now()
+        this_month = now.month
+        next_month = now.month + 1 if now.month != 12 else 1
 
-    events_list: List[Event] = events.get_events(session, filters=query_filters, order_by_type=order_by_type)
+        query_filters.extend([
+            Event.start_year >= now.year,
+            Event.start_month.in_(this_month, next_month),
+        ])
+
+    # EVENT REGION
+    it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
+    if "it" in args:
+        query_filters.append(Event.region.in_(it_regions))
+    elif "noit" in args:
+        query_filters.append(Event.region.not_in(it_regions))
+
+    return query_filters
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/events or /eventsall {utilities.log(update)}")
+
+    args = context.args if context.args else []
+    query_filters = extract_query_filters(args)
+
+    events_list: List[Event] = events.get_events(session, filters=query_filters, order_by_type=False)
 
     all_events_strings = []
     for i, event in enumerate(events_list):
@@ -159,7 +174,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
-    messages_to_send = split_messages(all_events_strings, return_after_first_message=not all_events)
+    messages_to_send = split_messages(all_events_strings, return_after_first_message=False)
 
     if not messages_to_send:
         await update.message.reply_text("empty :(")
@@ -169,7 +184,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     for i, text_to_send in enumerate(messages_to_send):
         logger.debug(f"sending message {i+1}/{total_messages}")
         if i + 1 == total_messages:
-            text_to_send += f"\n\nUse /soon for a list of events without a date"
+            text_to_send += f"\n\nUse /soon for a list of events without a scheduled date"
 
         await update.message.reply_text(text_to_send)
 
@@ -330,7 +345,7 @@ async def on_fwd_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
-    (CommandHandler(["events", "eventsall"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CommandHandler(["events", "eventi"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["soon"], on_soon_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
