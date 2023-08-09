@@ -8,20 +8,50 @@ from typing import Optional, Tuple, List, Union
 import telegram.constants
 from sqlalchemy import true, false
 from sqlalchemy.orm import Session
-from telegram import Update, Message, MessageEntity
-from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext
+from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.constants import MessageLimit
 
+from emojis import Emoji, Flag
 from ext.filters import ChatFilter, Filter
 from .common import parse_message_entities, parse_message_text
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
 from database.queries import settings, events, chats
 import decorators
 import utilities
-from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType
+from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType, MONTHS_IT, TempDataKey
 from config import config
 
 logger = logging.getLogger(__name__)
+
+
+class EventFilter:
+    # region
+    IT = "it"
+    NOT_IT = "notit"
+    # type
+    LEGAL = "legal"
+    FREE = "free"
+    NOT_FREE = "notfree"
+    # time
+    WEEK = "week"
+    MONTH_AND_NEXT_MONTH = "monthnext"
+    ALL = "all"
+    SOON = "soon"
+
+
+FILTER_DESCRIPTION = {
+    EventFilter.IT: f"{Flag.ITALY} eventi in italia",
+    EventFilter.NOT_IT: f"{Emoji.EARTH} eventi all'estero",
+    EventFilter.FREE: f"{Emoji.PIRATE} freeparty",
+    EventFilter.NOT_FREE: f"{Emoji.TICKET} non freeparty",
+    EventFilter.WEEK: f"{Emoji.CALENDAR} eventi che iniziano questa settimana (lun-dom)",
+    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} eventi che iniziano questo mese o il prossimo",
+    EventFilter.SOON: f"{Emoji.CLOCK} eventi ancora senza una data precisa (#soon)"
+}
+
+
+DEFAULT_FILTERS = [EventFilter.IT, EventFilter.FREE, EventFilter.WEEK]
 
 
 @decorators.catch_exception()
@@ -112,42 +142,42 @@ def extract_query_filters(args: List[str]) -> List:
     args = [arg.lower() for arg in args]
 
     # EVENT TYPE
-    if "legal" in args:
+    if EventFilter.NOT_FREE in args or EventFilter.LEGAL:
         # legal = anything that is not a free party
         query_filters.append(Event.event_type != EventType.FREE)
-    elif "free" in args:
+    elif EventFilter.FREE in args:
         query_filters.append(Event.event_type == EventType.FREE)
 
     # EVENT DATE
-    if "week" in args:
+    if EventFilter.WEEK in args:
         last_monday = utilities.previous_weekday(weekday=0)
         next_monday = utilities.next_weekday(weekday=0)
         query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
-    elif "all" in args:
+    elif EventFilter.ALL in args:
         # all events >= this month
         now = utilities.now()
         query_filters.extend([
             Event.start_year >= now.year,
             Event.start_month >= now.month,
         ])
-    elif "soon" in args:
+    elif EventFilter.SOON in args:
         query_filters.extend([Event.soon == true()])
     else:
-        # this month + next month
+        # no other time filter: this month + next month
         now = utilities.now()
         this_month = now.month
         next_month = now.month + 1 if now.month != 12 else 1
 
         query_filters.extend([
             Event.start_year >= now.year,
-            Event.start_month.in_(this_month, next_month),
+            Event.start_month.in_([this_month, next_month]),
         ])
 
     # EVENT REGION
     it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
-    if "it" in args:
+    if EventFilter.IT in args:
         query_filters.append(Event.region.in_(it_regions))
-    elif "noit" in args:
+    elif EventFilter.NOT_IT in args:
         query_filters.append(Event.region.not_in(it_regions))
 
     return query_filters
@@ -182,7 +212,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     args = context.args if context.args else []
     query_filters = extract_query_filters(args)
 
-    events_list: List[Event] = events.get_events(session, filters=query_filters, order_by_type=False)
+    events_list: List[Event] = events.get_events(session, filters=query_filters)
 
     all_events_strings = []
     for i, event in enumerate(events_list):
@@ -196,6 +226,137 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
     await send_events_messages(update.message, all_events_strings)
+
+
+def get_month_string():
+    now = utilities.now()
+    this_month = now.month
+    next_month = now.month + 1 if now.month != 12 else 1
+    this_month_str = MONTHS_IT[this_month - 1][:3].lower()
+    next_month_str = MONTHS_IT[next_month - 1][:3].lower()
+
+    return f"{this_month_str} + {next_month_str}"
+
+
+def get_events_reply_markup(args) -> InlineKeyboardMarkup:
+    keyboard = [[]]
+
+    if EventFilter.NOT_IT in args:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.EARTH} estero", callback_data=f"changefilterto:{EventFilter.IT}"))
+    else:
+        keyboard[0].append(InlineKeyboardButton(f"{Flag.ITALY} italia", callback_data=f"changefilterto:{EventFilter.NOT_IT}"))
+
+    if EventFilter.FREE in args:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.PIRATE} freeparty", callback_data=f"changefilterto:{EventFilter.NOT_FREE}"))
+    else:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.TICKET} altro", callback_data=f"changefilterto:{EventFilter.FREE}"))
+
+    if EventFilter.WEEK in args:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} settimana", callback_data=f"changefilterto:{EventFilter.MONTH_AND_NEXT_MONTH}"))
+    elif EventFilter.MONTH_AND_NEXT_MONTH in args:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string()}", callback_data=f"changefilterto:{EventFilter.SOON}"))
+    else:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CLOCK} soon", callback_data=f"changefilterto:{EventFilter.WEEK}"))
+
+    keyboard.append([InlineKeyboardButton(f"{Emoji.DONE} conferma", callback_data="eventsconfirm")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+async def on_eventi_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/eventi {utilities.log(update)}")
+
+    # always try to get existing filters (they are not reset after the user confirms his query)
+    args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
+
+    reply_markup = get_events_reply_markup(args)
+
+    # override in case there was no existing filter
+    context.user_data[TempDataKey.EVENTS_FILTERS] = args
+
+    await update.message.reply_html("Usa i tasti qui sotto per cambiare i filtri", reply_markup=reply_markup)
+
+
+def safe_remove(items: List[str], item: str):
+    try:
+        items.remove(item)
+    except ValueError:
+        pass
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"change filter callback query {utilities.log(update)}")
+
+    args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
+    new_filter = context.matches[0].group("filter")
+
+    if new_filter == EventFilter.FREE:
+        safe_remove(args, EventFilter.NOT_FREE)
+        args.append(EventFilter.FREE)
+    elif new_filter == EventFilter.NOT_FREE:
+        safe_remove(args, EventFilter.FREE)
+        args.append(EventFilter.NOT_FREE)
+    elif new_filter == EventFilter.IT:
+        safe_remove(args, EventFilter.NOT_IT)
+        args.append(EventFilter.IT)
+    elif new_filter == EventFilter.NOT_IT:
+        safe_remove(args, EventFilter.IT)
+        args.append(EventFilter.NOT_IT)
+    elif new_filter == EventFilter.WEEK:
+        safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
+        safe_remove(args, EventFilter.SOON)
+
+        args.append(EventFilter.WEEK)
+    elif new_filter == EventFilter.MONTH_AND_NEXT_MONTH:
+        safe_remove(args, EventFilter.WEEK)
+        safe_remove(args, EventFilter.SOON)
+
+        args.append(EventFilter.MONTH_AND_NEXT_MONTH)
+    elif new_filter == EventFilter.SOON:
+        safe_remove(args, EventFilter.WEEK)
+        safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
+
+        args.append(EventFilter.SOON)
+
+    logger.debug(f"new filters: {args}")
+
+    context.user_data[TempDataKey.EVENTS_FILTERS] = args
+
+    alert_text = FILTER_DESCRIPTION[new_filter]
+    await update.callback_query.answer(alert_text)
+
+    reply_markup = get_events_reply_markup(args)
+    await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"confirm callback query {utilities.log(update)}")
+
+    args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
+    query_filters = extract_query_filters(args)
+
+    events_list: List[Event] = events.get_events(session, filters=query_filters)
+
+    all_events_strings = []
+    for i, event in enumerate(events_list):
+        if not event.is_valid():
+            logger.info(f"skipping invalid event: {event}")
+            continue
+
+        text_line = format_event_string(event)
+        all_events_strings.append(text_line)
+
+    # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
+
+    # do not pop existing filter
+
+    await update.effective_message.delete()  # delete the message as we will send the new ones
+    await send_events_messages(update.effective_message, all_events_strings)
 
 
 @decorators.catch_exception()
@@ -305,7 +466,10 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 HANDLERS = (
     (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
-    (CommandHandler(["events", "eventi"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CommandHandler(["events"], on_events_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CommandHandler(["eventi"], on_eventi_command, filters=filters.User(config.telegram.admins)), Group.NORMAL),
+    (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),

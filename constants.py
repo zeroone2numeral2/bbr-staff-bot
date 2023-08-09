@@ -2,6 +2,22 @@ from emojis import Emoji, Flag
 from config import config
 
 
+MONTHS_IT = [
+    "Gennaio",
+    "Febbraio",
+    "Marzo",
+    "Aprile",
+    "Maggio",
+    "Giugno",
+    "Luglio",
+    "Agosto",
+    "Settembre",
+    "Ottobre",
+    "Novembre",
+    "Dicembre"
+]
+
+
 class Language:
     EN = "en"
     IT = "it"
@@ -266,6 +282,7 @@ class TempDataKey:
     LOCALIZED_TEXTS_LAST_MESSAGE_ID = "localized_text_last_message_id"  # not temp, it is not supposed to be cleaned up
     BOT_SETTINGS_LAST_MESSAGE_ID = "bot_settings_last_message_id"
     DB_INSTANCES = "_database_instances"
+    EVENTS_FILTERS = "events_filters"
 
 
 COMMAND_PREFIXES = ["/", "!", "."]
