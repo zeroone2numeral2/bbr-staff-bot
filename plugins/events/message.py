@@ -80,7 +80,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     try:
         await download_event_media(update.effective_message)
     except Exception as e:
-        logger.error(f"error whiel trying to download media: {e}", exc_info=True)
+        logger.error(f"error while trying to download media: {e}", exc_info=True)
 
 
 HANDLERS = (
