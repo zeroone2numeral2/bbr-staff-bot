@@ -212,7 +212,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     logger.info(f"/events {utilities.log(update)}")
 
     args = context.args if context.args else []
-    all_events_strings = get_all_events_strings(session, args)
+    all_events_strings = get_all_events_strings_from_db(session, args)
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
@@ -347,7 +347,7 @@ def get_events_strings_from_cache(context: CallbackContext, args_cache_key: str)
     return context.bot_data[TempDataKey.EVENTS_CACHE][args_cache_key][TempDataKey.EVENTS_CACHE_DATA]
 
 
-def get_all_events_strings(session: Session, args: List[str]) -> List[str]:
+def get_all_events_strings_from_db(session: Session, args: List[str]) -> List[str]:
     query_filters = extract_query_filters(args)
     events_list: List[Event] = events.get_events(session, filters=query_filters)
 
@@ -374,7 +374,7 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
 
     all_events_strings = get_events_strings_from_cache(context, args_cache_key)
     if not all_events_strings:
-        all_events_strings = get_all_events_strings(session, args)
+        all_events_strings = get_all_events_strings_from_db(session, args)
 
         logger.info(f"saving cache for key {args_cache_key}...")
         context.bot_data[TempDataKey.EVENTS_CACHE] = {
