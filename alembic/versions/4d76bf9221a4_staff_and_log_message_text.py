@@ -21,7 +21,7 @@ def add_colum_skip_duplicate_column_error(table_name, column):
     try:
         op.add_column(table_name, column)
     except OperationalError as operational_error:
-        if "duplicate column name" in str(operational_error.detail):
+        if "duplicate column name" in str(operational_error):
             return
         raise operational_error
 
