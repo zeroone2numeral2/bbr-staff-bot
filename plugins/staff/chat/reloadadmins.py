@@ -29,5 +29,5 @@ async def on_reloadadmins_command(update: Update, _, session: Session, chat: Cha
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, ChatFilter.STAFF), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, ChatFilter.STAFF | ChatFilter.USERS), Group.NORMAL),
 )
