@@ -442,6 +442,7 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
 
     event: Event = await event_from_link(update, context, session)
     if not event:
+        # event_from_link() will also answer the user
         return
 
     # session.delete(event)
