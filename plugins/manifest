@@ -4,14 +4,12 @@ applications.users.any_message # preprocess
 [+]
 events.message # preprocess
 staff.chat.edits # preprocess
-
 superadmins.chats
 staff.private.placeholders
 staff.private.settings_manual
 staff.private.settings
 staff.private.ltexts
 events.commands
-
 help
 
 [flytek]
@@ -26,16 +24,18 @@ users.start
 [+]
 users.revoke
 users.message
-
 staff.chat.reloadadmins
 staff.chat.ban
 staff.chat.info
 staff.chat.revoke
-staff.chat.reply # must be after all the other commands
-
+staff.chat.reply # must be after all the other staff commands
 chat_members.newchat
-chat_members.update
+chat_members.my_chat_member_update
 
+[flytek]
+chat_members.chat_member_update # we don't need to handle these in 'bbr' mode
+
+[+]
 # debug.callback_query
 # debug.chat_member
 debug.get_chat_member
