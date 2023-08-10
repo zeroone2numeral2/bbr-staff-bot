@@ -158,12 +158,14 @@ def extract_query_filters(args: List[str]) -> List:
 
 
 async def send_events_messages(message: Message, all_events_strings: List[str]) -> List[Message]:
+    protect_content = not utilities.is_superadmin(message.from_user)
+
     sent_messages = []
 
     messages_to_send = split_messages(all_events_strings, return_after_first_message=False)
 
     if not messages_to_send:
-        sent_message = await message.reply_text("vuoto :(", protect_content=True)
+        sent_message = await message.reply_text("vuoto :(", protect_content=protect_content)
         return [sent_message]
 
     total_messages = len(messages_to_send)
@@ -172,7 +174,7 @@ async def send_events_messages(message: Message, all_events_strings: List[str]) 
         # if i + 1 == total_messages:
         #     text_to_send += f"\n\nUsa /soon per gli eventi con data da programmare"
 
-        sent_message = await message.reply_text(text_to_send, protect_content=True)
+        sent_message = await message.reply_text(text_to_send, protect_content=protect_content)
         sent_messages.append(sent_message)
 
     return sent_messages
