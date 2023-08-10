@@ -1,12 +1,9 @@
-# PREPROCESS
 [flytek]
-applications.users.any_message
-[+]
-events.message
-staff.chat.edits
+applications.users.any_message # preprocess
 
-# user messages cannot be edited because they are forwarded
-# users.edits
+[+]
+events.message # preprocess
+staff.chat.edits # preprocess
 
 superadmins.chats
 staff.private.placeholders
@@ -19,17 +16,17 @@ help
 
 [flytek]
 applications.users.request
+applications.staff.approvers
+applications.staff.reset
+applications.staff.evaluation
+
+[bbr]
+users.start
 
 [+]
 users.revoke
 users.message
 
-[flytek]
-applications.staff.approvers
-applications.staff.reset
-applications.staff.evaluation
-
-[+]
 staff.chat.reloadadmins
 staff.chat.ban
 staff.chat.info
