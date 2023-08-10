@@ -50,7 +50,7 @@
             "level": "INFO"
         },
         "httpx": {
-            "level": "INFO"
+            "level": "WARNING"
         },
         "loader": {
             "level": "INFO"
