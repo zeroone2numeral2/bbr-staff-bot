@@ -227,6 +227,14 @@ def get_events_reply_markup(args) -> InlineKeyboardMarkup:
 
 
 @decorators.catch_exception()
+async def on_drop_events_cache_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"/dropeventscache {utilities.log(update)}")
+
+    context.bot_data.pop(TempDataKey.EVENTS_CACHE, None)
+    await update.message.reply_text("cache dropped")
+
+
+@decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/radar {utilities.log(update)}")
@@ -481,6 +489,7 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 HANDLERS = (
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["radar"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
