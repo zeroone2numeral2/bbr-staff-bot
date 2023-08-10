@@ -8,7 +8,7 @@ from typing import Optional, Tuple, List, Union
 import telegram.constants
 from sqlalchemy import true, false
 from sqlalchemy.orm import Session
-from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.constants import MessageLimit
 
@@ -157,9 +157,7 @@ def extract_query_filters(args: List[str]) -> List:
     return query_filters
 
 
-async def send_events_messages(message: Message, all_events_strings: List[str]) -> List[Message]:
-    protect_content = not utilities.is_superadmin(message.from_user)
-
+async def send_events_messages(message: Message, all_events_strings: List[str], protect_content: bool = True) -> List[Message]:
     sent_messages = []
 
     messages_to_send = split_messages(all_events_strings, return_after_first_message=False)
@@ -190,7 +188,8 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
-    await send_events_messages(update.message, all_events_strings)
+    protect_content = not utilities.is_superadmin(update.effective_user)
+    await send_events_messages(update.message, all_events_strings, protect_content)
 
 
 def get_month_string():
@@ -365,7 +364,9 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     # context.user_data.pop(TempDataKey.EVENTS_FILTERS, None)
 
     await update.effective_message.delete()  # delete the message as we will send the new ones
-    sent_messages = await send_events_messages(update.effective_message, all_events_strings)
+
+    protect_content = not utilities.is_superadmin(update.effective_user)
+    sent_messages = await send_events_messages(update.effective_message, all_events_strings, protect_content)
     private_chat_messages.save(session, sent_messages)
 
 
@@ -387,7 +388,8 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
         text_line = format_event_string(event)
         all_events_strings.append(text_line)
 
-    sent_messages = await send_events_messages(update.message, all_events_strings)
+    protect_content = not utilities.is_superadmin(update.effective_user)
+    sent_messages = await send_events_messages(update.message, all_events_strings, protect_content)
     private_chat_messages.save(session, sent_messages)
 
 
