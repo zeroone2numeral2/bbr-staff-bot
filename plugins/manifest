@@ -1,6 +1,7 @@
-[+]
 # PREPROCESS
+[flytek]
 applications.users.any_message
+[+]
 events.message
 staff.chat.edits
 
