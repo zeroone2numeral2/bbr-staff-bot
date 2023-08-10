@@ -5,12 +5,12 @@ from re import Match
 from typing import Optional, List, Union
 
 from telegram import Message, MessageEntity
-from telegram.ext import filters
+from telegram.ext import filters, CallbackContext
 
 from config import config
 from database.models import Event, EVENT_TYPE
 import utilities
-from constants import Regex, REGIONS_DATA
+from constants import Regex, REGIONS_DATA, TempDataKey
 
 logger = logging.getLogger(__name__)
 
@@ -311,3 +311,12 @@ def parse_message_text(message_text: str, event: Event):
         event.end_year = end_date.year
         if start_date.day:
             event.start_date = start_date.to_date()
+
+
+def drop_events_cache(context: CallbackContext):
+    if TempDataKey.EVENTS_CACHE in context.bot_data:
+        context.bot_data.pop(TempDataKey.EVENTS_CACHE)
+        return True
+
+    return False
+

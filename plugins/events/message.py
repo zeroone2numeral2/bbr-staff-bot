@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from telegram import Update, Message
 from telegram.ext import ContextTypes, filters, MessageHandler
 
-from .common import add_event_message_metadata, parse_message_text, parse_message_entities
+from .common import add_event_message_metadata, parse_message_text, parse_message_entities, drop_events_cache
 from ext.filters import ChatFilter, Filter
 from database.models import Chat
 from database.queries import events, chats
@@ -71,6 +71,9 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     parse_message_text(update.effective_message.text or update.effective_message.caption, event)
 
     logger.info(f"parsed event: {event}")
+
+    logger.info("dropping events cache...")
+    drop_events_cache(context)
 
     session.commit()
 

@@ -14,7 +14,7 @@ from telegram.constants import MessageLimit
 
 from emojis import Emoji, Flag
 from ext.filters import ChatFilter, Filter
-from .common import parse_message_entities, parse_message_text
+from .common import parse_message_entities, parse_message_text, drop_events_cache
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
 from database.queries import settings, events, chats, chat_members, private_chat_messages
 import decorators
@@ -224,14 +224,6 @@ def get_events_reply_markup(args) -> InlineKeyboardMarkup:
 
     keyboard.append([InlineKeyboardButton(f"{Emoji.DONE} conferma", callback_data="eventsconfirm")])
     return InlineKeyboardMarkup(keyboard)
-
-
-def drop_events_cache(context: CallbackContext):
-    if TempDataKey.EVENTS_CACHE in context.bot_data:
-        context.bot_data.pop(TempDataKey.EVENTS_CACHE)
-        return True
-
-    return False
 
 
 @decorators.catch_exception()
