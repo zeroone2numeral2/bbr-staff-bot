@@ -71,6 +71,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 private_chat_messages.save(session, sent_message)
             return
 
+    logger.debug("forwarding to staff...")
     forwarded_message = await update.message.forward(staff_chat.chat_id)
     user_message = UserMessage(
         message_id=update.message.message_id,
