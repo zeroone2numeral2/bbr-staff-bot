@@ -68,7 +68,6 @@ class BotSettingKey:
     CHAT_INVITE_LINK = "chat_invite_link"
     APPROVAL_MODE = "approval_mode"
     RABBIT_FILE = "rabbit_file"
-    EVENTS_CHAT_ID = "events_chat_id"
 
 
 class LocalizedTextKey:
@@ -261,14 +260,6 @@ BOT_SETTINGS_DEFAULTS = {
         description="file da mandare agli utenti rifiutati",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=True
-    ),
-    BotSettingKey.EVENTS_CHAT_ID: dict(
-        default=None,
-        label="events chat id",
-        emoji=Emoji.ANNOUNCEMENT,
-        description="chat in cui vengono postati fly ed eventi",
-        show_if_true_key=None,
-        telegram_media=None
     ),
 }
 

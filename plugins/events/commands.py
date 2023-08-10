@@ -56,34 +56,6 @@ FILTER_DESCRIPTION = {
 DEFAULT_FILTERS = [EventFilter.IT, EventFilter.NOT_FREE, EventFilter.WEEK]
 
 
-@decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_set_events_chat_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/seteventschat {utilities.log(update)}")
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Use this command in reply to a forwarded message from the channel")
-        return
-
-    if not update.message.reply_to_message.forward_from_chat:
-        await update.message.reply_text("Use this command in reply to a forwarded message from the channel")
-        return
-
-    chats.get_safe(session, update.message.reply_to_message.forward_from_chat)
-
-    events_chat_id = update.message.reply_to_message.forward_from_chat.id
-    events_chat_title = update.message.reply_to_message.forward_from_chat.title
-
-    events_chat_setting: BotSetting = settings.get_or_create(session, BotSettingKey.EVENTS_CHAT_ID)
-
-    ChatFilter.EVENTS.chat_ids = {events_chat_id}
-
-    events_chat_setting.update_value(events_chat_id)
-
-    await update.effective_message.reply_text(f"\"{utilities.escape_html(events_chat_title)}\" has been set "
-                                              f"as the events chat (<code>{events_chat_id}</code>)")
-
-
 def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
     message_length = len("\n\naggiornato al xx/xx/xxxx xx:xx")
     for line in text_lines:
@@ -499,7 +471,6 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 
 HANDLERS = (
-    (CommandHandler(["seteventschat", "sec"], on_set_events_chat_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["radar"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
