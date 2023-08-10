@@ -163,7 +163,7 @@ async def send_events_messages(message: Message, all_events_strings: List[str]) 
     messages_to_send = split_messages(all_events_strings, return_after_first_message=False)
 
     if not messages_to_send:
-        sent_message = await message.reply_text("vuoto :(")
+        sent_message = await message.reply_text("vuoto :(", protect_content=True)
         return [sent_message]
 
     total_messages = len(messages_to_send)
@@ -172,7 +172,7 @@ async def send_events_messages(message: Message, all_events_strings: List[str]) 
         # if i + 1 == total_messages:
         #     text_to_send += f"\n\nUsa /soon per gli eventi con data da programmare"
 
-        sent_message = await message.reply_text(text_to_send)
+        sent_message = await message.reply_text(text_to_send, protect_content=True)
         sent_messages.append(sent_message)
 
     return sent_messages
