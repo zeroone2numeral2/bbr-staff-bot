@@ -321,7 +321,7 @@ def get_all_events_strings_from_cache(context: CallbackContext, args_cache_key: 
 
     now = utilities.now()
     time_delta = now - context.bot_data[TempDataKey.EVENTS_CACHE][args_cache_key][TempDataKey.EVENTS_CACHE_SAVED_ON]
-    if time_delta.total_seconds() > Timeout.ONE_HOUR * 3:
+    if time_delta.total_seconds() > Timeout.ONE_HOUR * 20:
         logger.info(f"cache expired for key {args_cache_key}")
         return
 
