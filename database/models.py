@@ -865,10 +865,12 @@ class Event(Base):
         self.updated_on = utilities.now()
 
     def is_valid(self):
-        """an event is valid only if it has a title, a start month/year, and at least one hashtag"""
+        """an event is valid either if
+        - it has a title and a start month/year
+        - it has a title and is marked as soon"""
 
         # we basically save any channel post that has a text/caption as an Event
-        return self.event_title and self.start_month and self.start_year  # and self.get_hashtags()
+        return (self.event_title and self.start_month and self.start_year) or (self.event_title and self.soon)  # and self.get_hashtags()
 
     def message_link(self):
         chat_id_link = str(self.chat_id).replace("-100", "")
