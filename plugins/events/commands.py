@@ -226,11 +226,19 @@ def get_events_reply_markup(args) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+def drop_events_cache(context: CallbackContext):
+    if TempDataKey.EVENTS_CACHE in context.bot_data:
+        context.bot_data.pop(TempDataKey.EVENTS_CACHE)
+        return True
+
+    return False
+
+
 @decorators.catch_exception()
 async def on_drop_events_cache_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"/dropeventscache {utilities.log(update)}")
 
-    context.bot_data.pop(TempDataKey.EVENTS_CACHE, None)
+    drop_events_cache(context)
     await update.message.reply_text("cache dropped")
 
 
@@ -312,7 +320,7 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
 
 
-def get_events_strings_from_cache(context: CallbackContext, args_cache_key: str) -> Optional[List]:
+def get_all_events_strings_from_cache(context: CallbackContext, args_cache_key: str) -> Optional[List]:
     if TempDataKey.EVENTS_CACHE not in context.bot_data:
         return
 
@@ -345,6 +353,37 @@ def get_all_events_strings_from_db(session: Session, args: List[str]) -> List[st
     return all_events_strings
 
 
+def get_last_message_id_sent_for_cache_key(context: CallbackContext, args_cache_key: str) -> Optional[int]:
+    if TempDataKey.EVENTS_CACHE not in context.user_data:
+        return
+
+    if args_cache_key not in context.user_data[TempDataKey.EVENTS_CACHE]:
+        return
+
+    # we do not need to check whether the cache is expired or not, because we enter the funciton only if
+    # the same cache key is still valid in bot_data
+
+    logger.debug(f"user cache hit for key {args_cache_key}")
+    return context.user_data[TempDataKey.EVENTS_CACHE][args_cache_key]
+
+
+def cache_message_id_for_cache_key(context: CallbackContext, args_cache_key: str, message_id: int):
+    if TempDataKey.EVENTS_CACHE not in context.user_data:
+        context.user_data[TempDataKey.EVENTS_CACHE] = {}
+
+    context.user_data[TempDataKey.EVENTS_CACHE][args_cache_key] = message_id
+
+
+def cache_all_events_strings_for_cache_key(context: CallbackContext, args_cache_key: str, all_events_strings: List[str]):
+    if TempDataKey.EVENTS_CACHE not in context.bot_data:
+        context.bot_data[TempDataKey.EVENTS_CACHE] = {}
+
+    context.bot_data[TempDataKey.EVENTS_CACHE][args_cache_key] = {
+        TempDataKey.EVENTS_CACHE_SAVED_ON: utilities.now(),
+        TempDataKey.EVENTS_CACHE_DATA: all_events_strings,
+    }
+
+
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
@@ -354,17 +393,24 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     args.sort()  # it's important to sort the args, see #82
     args_cache_key = "+".join(args)
 
-    all_events_strings = get_events_strings_from_cache(context, args_cache_key)
+    all_events_strings = get_all_events_strings_from_cache(context, args_cache_key)
     if not all_events_strings:
         all_events_strings = get_all_events_strings_from_db(session, args)
 
         logger.info(f"saving cache for key {args_cache_key}...")
-        context.bot_data[TempDataKey.EVENTS_CACHE] = {
-            args_cache_key: {
-                TempDataKey.EVENTS_CACHE_SAVED_ON: utilities.now(),
-                TempDataKey.EVENTS_CACHE_DATA: all_events_strings,
-            }
-        }
+        cache_all_events_strings_for_cache_key(context, args_cache_key, all_events_strings)
+    else:
+        # only try this if the cache key exists in bot_data
+        message_id: int = get_last_message_id_sent_for_cache_key(context, args_cache_key)
+        if message_id:
+            logger.info(f"cache hit for key {args_cache_key}, replying to previously-sent list...")
+            await update.effective_message.delete()  # delete the message as we will send the new ones
+            await update.effective_message.reply_html(
+                "^consulta questa lista, gli eventi non sono cambiati da quando è stata inviata",
+                reply_to_message_id=message_id,
+                quote=True
+            )
+            return
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
@@ -376,6 +422,10 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     protect_content = not utilities.is_superadmin(update.effective_user)
     sent_messages = await send_events_messages(update.effective_message, all_events_strings, protect_content)
     private_chat_messages.save(session, sent_messages)
+
+    # just save the message_id of the first message sent
+    logger.debug(f"saving cache key {args_cache_key} for user...")
+    cache_message_id_for_cache_key(context, args_cache_key, sent_messages[0].message_id)
 
 
 @decorators.catch_exception()
