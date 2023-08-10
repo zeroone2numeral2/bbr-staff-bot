@@ -18,20 +18,29 @@ def get_messages(session: Session, user_id: int):
     return session.scalars(statement)
 
 
-def save(session: Session, message: Union[Message, Update], commit: Optional[bool] = False):
-    if isinstance(message, Update):
-        message = message.effective_message
+def save(session: Session, messages: [Union[Message, Update], List[Union[Message, Update]]], commit: Optional[bool] = False):
+    if not isinstance(messages, List):
+        messages = [messages]
 
-    if message.chat.id < 0:
-        raise ValueError("cannot save PrivateChatMessage for non-private chat")
+    new_instances = []
+    for message in messages:
+        if isinstance(message, Update):
+            message = message.effective_message
 
-    private_chat_message = PrivateChatMessage(
-        message_id=message.message_id,
-        user_id=message.chat.id,
-        from_self=message.from_user.is_bot,
-        date=message.date,
-        message_json=json.dumps(message.to_dict(), indent=2)
-    )
-    session.add(private_chat_message)
+        message: Message
+        if message.chat.id < 0:
+            raise ValueError("cannot save PrivateChatMessage for non-private chat")
+
+        private_chat_message = PrivateChatMessage(
+            message_id=message.message_id,
+            user_id=message.chat.id,
+            from_self=message.from_user.is_bot,
+            date=message.date,
+            message_json=json.dumps(message.to_dict(), indent=2)
+        )
+        new_instances.append(private_chat_message)
+
+    # see https://stackoverflow.com/a/69488288
+    session.add_all(new_instances)
     if commit:
         session.commit()

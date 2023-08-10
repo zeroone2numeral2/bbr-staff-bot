@@ -16,7 +16,7 @@ from emojis import Emoji, Flag
 from ext.filters import ChatFilter, Filter
 from .common import parse_message_entities, parse_message_text
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
-from database.queries import settings, events, chats, chat_members
+from database.queries import settings, events, chats, chat_members, private_chat_messages
 import decorators
 import utilities
 from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
@@ -242,10 +242,11 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     # override in case there was no existing filter
     context.user_data[TempDataKey.EVENTS_FILTERS] = args
 
-    await update.message.reply_html(
+    sent_message = await update.message.reply_html(
         f"{Emoji.COMPASS} Usa i tasti qui sotto per cambiare i filtri della ricerca, poi usa conferma per vedere gli eventi",
         reply_markup=reply_markup
     )
+    private_chat_messages.save(session, sent_message)
 
 
 def safe_remove(items: List[str], item: str):
@@ -362,7 +363,8 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     # context.user_data.pop(TempDataKey.EVENTS_FILTERS, None)
 
     await update.effective_message.delete()  # delete the message as we will send the new ones
-    await send_events_messages(update.effective_message, all_events_strings)
+    sent_messages = await send_events_messages(update.effective_message, all_events_strings)
+    private_chat_messages.save(session, sent_messages)
 
 
 @decorators.catch_exception()
@@ -383,7 +385,8 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
         text_line = format_event_string(event)
         all_events_strings.append(text_line)
 
-    await send_events_messages(update.message, all_events_strings)
+    sent_messages = await send_events_messages(update.message, all_events_strings)
+    private_chat_messages.save(session, sent_messages)
 
 
 @decorators.catch_exception()
