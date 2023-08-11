@@ -45,7 +45,7 @@ async def download_event_media(message: Message):
     await new_file.download_to_drive(file_path)
 
 
-def backup_event_media(update: Update, event: Event):
+async def backup_event_media(update: Update, event: Event):
     # edited_messages: do not download the media if it was not modified
     if update.edited_message:
         m = update.edited_message
@@ -96,7 +96,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     session.commit()
 
     if config.settings.backup_events:
-        backup_event_media(update, event)
+        await backup_event_media(update, event)
 
 
 HANDLERS = (
