@@ -52,6 +52,7 @@ class Flag:
     AROUND_THE_WORLD = "🌍"
     AUSTRIA = "🇦🇹"
     BELGIUM = "🇧🇪"
+    BLACK = "🏴"
     BULGARIA = "🇧🇬"
     CHILE = "🇨🇱"
     COLOMBIA = "🇨🇴"

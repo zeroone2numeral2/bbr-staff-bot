@@ -44,14 +44,14 @@ class EventFilter:
 
 
 FILTER_DESCRIPTION = {
-    EventFilter.IT: f"{Flag.ITALY} eventi in italia",
-    EventFilter.NOT_IT: f"{Emoji.EARTH} eventi all'estero",
+    EventFilter.IT: f"{Flag.ITALY} in italia",
+    EventFilter.NOT_IT: f"{Emoji.EARTH} all'estero",
     EventFilter.FREE: f"{Emoji.PIRATE} freeparty",
-    EventFilter.NOT_FREE: f"{Emoji.TICKET} non freeparty (legal/cs/squat/street parade/altro)",
-    EventFilter.WEEK: f"{Emoji.CALENDAR} eventi che iniziano questa settimana (lun-dom)",
-    EventFilter.WEEK_2: f"{Emoji.CALENDAR} eventi che iniziano questa settimana (lun-dom) o la prossima",
-    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} eventi che iniziano questo mese o il prossimo",
-    EventFilter.SOON: f"{Emoji.CLOCK} eventi ancora senza una data precisa (#soon)"
+    EventFilter.NOT_FREE: f"{Flag.BLACK} eventi legali, cs, squat, street parade, altro",
+    EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
+    EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
+    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese o il prossimo",
+    EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)"
 }
 
 
@@ -222,7 +222,7 @@ def get_events_reply_markup(args, date_override: Optional[datetime.date] = None)
     if EventFilter.FREE in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.PIRATE} freeparty", callback_data=f"changefilterto:{EventFilter.NOT_FREE}"))
     else:
-        keyboard[0].append(InlineKeyboardButton(f"{Emoji.TICKET} altro", callback_data=f"changefilterto:{EventFilter.FREE}"))
+        keyboard[0].append(InlineKeyboardButton(f"{Flag.BLACK} altro", callback_data=f"changefilterto:{EventFilter.FREE}"))
 
     if EventFilter.WEEK in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} settimana", callback_data=f"changefilterto:{EventFilter.WEEK_2}"))
