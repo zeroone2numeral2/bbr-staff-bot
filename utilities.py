@@ -348,15 +348,15 @@ def log_string_user(user: User) -> str:
 
 def log(update: Update):
     try:
-        if update.effective_message:
+        if update.callback_query:
+            return f"from {log_string_user(update.effective_user)}, cbdata: {update.callback_query.data}"
+        elif update.effective_message:
             if update.effective_chat.type in (Chat.SUPERGROUP, Chat.GROUP):
                 return f"from {log_string_user(update.effective_user)} in {log_string_chat(update.effective_chat)}"
             elif update.effective_chat.type == Chat.CHANNEL:
                 return f"in {log_string_chat(update.effective_chat)}"
             elif update.effective_chat.type == Chat.PRIVATE:
                 return f"from {log_string_user(update.effective_user)}"
-        elif update.callback_query:
-            return f"from {log_string_user(update.effective_user)}, cbdata: {update.callback_query.data}"
         elif update.chat_member or update.my_chat_member:
             chat_member = update.chat_member or update.my_chat_member
             return f"from {log_string_user(chat_member.from_user)} in {log_string_chat(chat_member.chat)}"
