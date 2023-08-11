@@ -1087,6 +1087,9 @@ class ApplicationRequest(Base):
         self.invite_link = invite_link
         self.invite_link_can_be_revoked_after_join = can_be_revoked
 
+    def sent_to_staff(self):
+        return bool(self.staff_message_message_id)
+
 
 class DescriptionMessageType:
     OTHER_MEMBERS = "other_members"

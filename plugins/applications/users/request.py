@@ -129,10 +129,17 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
         return ConversationHandler.END
 
-    if user.pending_request_id:
-        logger.info("user already has a pending request")
+    if user.pending_request_id and user.pending_request.sent_to_staff():
+        logger.info("user already has a pending request that was sent to the staff")
         sent_message = await update.message.reply_text("Una tua richiesta è già in fase di valutazione. "
                                                        "Attendi che lo staff la esamini")
+        private_chat_messages.save(session, sent_message)
+
+        return ConversationHandler.END
+
+    if user.pending_request_id and not user.pending_request.sent_to_staff():
+        logger.info("user already has a pending request that was *not* sent to the staff yet")
+        sent_message = await update.message.reply_text("to do: send correct message and return correct status")
         private_chat_messages.save(session, sent_message)
 
         return ConversationHandler.END
