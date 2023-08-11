@@ -55,7 +55,9 @@ def is_test_bot():
     return "is_test_bot" in config.telegram and config.telegram.is_test_bot
 
 
-def next_weekday(today: Optional[datetime.date] = None, weekday=0):
+def next_weekday(today: Optional[datetime.date] = None, weekday=0, additional_days: int = 0):
+    """returns the datetime.date of the next monday, plus `additional_days` if provided"""
+
     if not today:
         today = datetime.date.today()
 
@@ -63,10 +65,12 @@ def next_weekday(today: Optional[datetime.date] = None, weekday=0):
     if days_ahead <= 0:  # target day already happened this week
         days_ahead += 7
 
-    return today + datetime.timedelta(days_ahead)
+    return today + datetime.timedelta(days_ahead + additional_days)
 
 
 def previous_weekday(today: Optional[datetime.date] = None, weekday=0):
+    """returns the datetime.date of the last monday"""
+
     if not today:
         today = datetime.date.today()
 

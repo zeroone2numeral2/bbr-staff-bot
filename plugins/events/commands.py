@@ -37,6 +37,7 @@ class EventFilter:
 
     # time
     WEEK = "week"
+    WEEK_2 = "week2"
     MONTH_AND_NEXT_MONTH = "monthnext"
     ALL = "all"
     SOON = "soon"
@@ -48,6 +49,7 @@ FILTER_DESCRIPTION = {
     EventFilter.FREE: f"{Emoji.PIRATE} freeparty",
     EventFilter.NOT_FREE: f"{Emoji.TICKET} non freeparty (legal/cs/squat/street parade/altro)",
     EventFilter.WEEK: f"{Emoji.CALENDAR} eventi che iniziano questa settimana (lun-dom)",
+    EventFilter.WEEK_2: f"{Emoji.CALENDAR} eventi che iniziano questa settimana (lun-dom) o la prossima",
     EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} eventi che iniziano questo mese o il prossimo",
     EventFilter.SOON: f"{Emoji.CLOCK} eventi ancora senza una data precisa (#soon)"
 }
@@ -111,7 +113,7 @@ def split_messages(all_events: List[str], return_after_first_message=False) -> L
     return messages_to_send
 
 
-def extract_query_filters(args: List[str]) -> List:
+def extract_query_filters(args: List[str], today: Optional[datetime.date] = None) -> List:
     query_filters = []
     args = [arg.lower() for arg in args]
 
@@ -123,27 +125,34 @@ def extract_query_filters(args: List[str]) -> List:
         query_filters.append(Event.event_type == EventType.FREE)
 
     # EVENT DATE
+    today = today or datetime.date.today()
     if EventFilter.WEEK in args:
-        last_monday = utilities.previous_weekday(weekday=0)
-        next_monday = utilities.next_weekday(weekday=0)
+        last_monday = utilities.previous_weekday(today=today, weekday=0)
+        next_monday = utilities.next_weekday(today=today, weekday=0)
+        logger.debug(f"week filter: {last_monday} <= start date < {next_monday}")
+
+        query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
+    elif EventFilter.WEEK_2 in args:
+        last_monday = utilities.previous_weekday(today=today, weekday=0)
+        next_monday = utilities.next_weekday(today=today, weekday=0, additional_days=7)
+        logger.debug(f"week filter: {last_monday} <= start date < {next_monday}")
+
         query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
     elif EventFilter.ALL in args:
         # all events >= this month
-        now = utilities.now()
         query_filters.extend([
-            Event.start_year >= now.year,
-            Event.start_month >= now.month,
+            Event.start_year >= today.year,
+            Event.start_month >= today.month,
         ])
     elif EventFilter.SOON in args:
         query_filters.extend([Event.soon == true()])
     else:
         # no other time filter: this month + next month
-        now = utilities.now()
-        this_month = now.month
-        next_month = now.month + 1 if now.month != 12 else 1
+        this_month = today.month
+        next_month = today.month + 1 if today.month != 12 else 1
 
         query_filters.extend([
-            Event.start_year >= now.year,
+            Event.start_year >= today.year,
             Event.start_month.in_([this_month, next_month]),
         ])
 
@@ -216,7 +225,9 @@ def get_events_reply_markup(args) -> InlineKeyboardMarkup:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.TICKET} altro", callback_data=f"changefilterto:{EventFilter.FREE}"))
 
     if EventFilter.WEEK in args:
-        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} settimana", callback_data=f"changefilterto:{EventFilter.MONTH_AND_NEXT_MONTH}"))
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} settimana", callback_data=f"changefilterto:{EventFilter.WEEK_2}"))
+    elif EventFilter.WEEK_2 in args:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} 2 settimane", callback_data=f"changefilterto:{EventFilter.MONTH_AND_NEXT_MONTH}"))
     elif EventFilter.MONTH_AND_NEXT_MONTH in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string()}", callback_data=f"changefilterto:{EventFilter.SOON}"))
     else:
@@ -234,6 +245,27 @@ async def on_drop_events_cache_command(update: Update, context: ContextTypes.DEF
     await update.message.reply_text("cache dropped")
 
 
+def radar_save_date_override(context: ContextTypes.DEFAULT_TYPE):
+    provided_date = context.args[0]
+
+    strptime_formats_to_try = ["%Y%m%d", "%d/%m/%Y", "%d.%m.%Y", "%Y-%m-%d"]
+    today_object = None
+    for strptime_format in strptime_formats_to_try:
+        try:
+            today_object = datetime.datetime.strptime(provided_date, strptime_format)
+        except ValueError:
+            continue
+
+    if not today_object:
+        logger.info(f"wrong date arg provided: {provided_date}")
+        return False
+
+    today_object = today_object.date()
+    logger.info(f"radar date override: {today_object}")
+    context.user_data[TempDataKey.RADAR_DATE_OVERRIDE] = today_object
+    return True
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
@@ -242,6 +274,10 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
         logger.info("user is not a member of the users chat")
         return
+
+    # save to temp data the date the user passed, so we force-override todays' date when the confirm button is used
+    if context.args:
+        radar_save_date_override(context)
 
     # always try to get existing filters (they are not reset after the user confirms their query)
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
@@ -286,17 +322,26 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
         safe_remove(args, EventFilter.IT)
         args.append(EventFilter.NOT_IT)
     elif new_filter == EventFilter.WEEK:
+        safe_remove(args, EventFilter.WEEK_2)
         safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
         safe_remove(args, EventFilter.SOON)
 
         args.append(EventFilter.WEEK)
+    elif new_filter == EventFilter.WEEK_2:
+        safe_remove(args, EventFilter.WEEK)
+        safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
+        safe_remove(args, EventFilter.SOON)
+
+        args.append(EventFilter.WEEK_2)
     elif new_filter == EventFilter.MONTH_AND_NEXT_MONTH:
         safe_remove(args, EventFilter.WEEK)
+        safe_remove(args, EventFilter.WEEK_2)
         safe_remove(args, EventFilter.SOON)
 
         args.append(EventFilter.MONTH_AND_NEXT_MONTH)
     elif new_filter == EventFilter.SOON:
         safe_remove(args, EventFilter.WEEK)
+        safe_remove(args, EventFilter.WEEK_2)
         safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
 
         args.append(EventFilter.SOON)
@@ -312,25 +357,31 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
 
 
-def get_all_events_strings_from_cache(context: CallbackContext, args_cache_key: str) -> Optional[List]:
+def args_key_in_cache(context: CallbackContext, args_cache_key: str) -> bool:
     if TempDataKey.EVENTS_CACHE not in context.bot_data:
-        return
+        return False
 
     if args_cache_key not in context.bot_data[TempDataKey.EVENTS_CACHE]:
-        return
+        return False
 
     now = utilities.now()
     time_delta = now - context.bot_data[TempDataKey.EVENTS_CACHE][args_cache_key][TempDataKey.EVENTS_CACHE_SAVED_ON]
     if time_delta.total_seconds() > Timeout.ONE_HOUR * 20:
         logger.info(f"cache expired for key {args_cache_key}")
-        return
+        return False
 
     logger.info(f"cache hit for key {args_cache_key}")
+    return True
+
+
+def get_all_events_strings_from_cache(context: CallbackContext, args_cache_key: str) -> Optional[List]:
+    """must be uased after checking whether the cache key is still cached, using args_key_in_cache()"""
+
     return context.bot_data[TempDataKey.EVENTS_CACHE][args_cache_key][TempDataKey.EVENTS_CACHE_DATA]
 
 
-def get_all_events_strings_from_db(session: Session, args: List[str]) -> List[str]:
-    query_filters = extract_query_filters(args)
+def get_all_events_strings_from_db(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
+    query_filters = extract_query_filters(args, today=date_override)
     events_list: List[Event] = events.get_events(session, filters=query_filters)
 
     all_events_strings = []
@@ -385,17 +436,25 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     args.sort()  # it's important to sort the args, see #82
     args_cache_key = "+".join(args)
 
-    all_events_strings = get_all_events_strings_from_cache(context, args_cache_key)
-    if not all_events_strings:
+    date_override = context.user_data.pop(TempDataKey.RADAR_DATE_OVERRIDE, None)
+    args_key_cached = args_key_in_cache(context, args_cache_key)
+
+    if date_override:
+        logger.debug(f"date override detected ({date_override}): querying db...")
+        # never get the events from the cache, and don't cache the result
+        all_events_strings = get_all_events_strings_from_db(session, args, date_override)
+    elif not args_key_cached:
         all_events_strings = get_all_events_strings_from_db(session, args)
 
         logger.info(f"saving cache for key {args_cache_key}...")
         cache_all_events_strings_for_cache_key(context, args_cache_key, all_events_strings)
-    else:
+    else:  # cache key still valid in bot_data
+        all_events_strings = get_all_events_strings_from_cache(context, args_cache_key)
+
         # only try this if the cache key exists in bot_data
         message_id: int = get_last_message_id_sent_for_cache_key(context, args_cache_key)
         if message_id:
-            logger.info(f"cache hit for key {args_cache_key}, replying to previously-sent list...")
+            logger.info(f"cache hit for key {args_cache_key} in user_data, replying to previously-sent list...")
             await update.effective_message.delete()  # delete the message as we will send the new ones
             await update.effective_message.reply_html(
                 "^consulta questa lista, gli eventi non sono cambiati da quando è stata inviata",
@@ -531,10 +590,10 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 HANDLERS = (
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["radar"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
