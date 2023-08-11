@@ -1055,9 +1055,13 @@ class ApplicationRequest(Base):
         self.staff_message_posted_on = utilities.now()
         self.staff_message_json = json.dumps(message.to_dict(), indent=2)
 
-    def update_staff_message(self, message: Message):
+    def update_staff_chat_message(self, message: Message):
         self.staff_message_text_html = message.text_html
         self.staff_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def update_log_chat_message(self, message: Message):
+        self.log_message_text_html = message.text_html
+        self.log_message_json = json.dumps(message.to_dict(), indent=2)
 
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")

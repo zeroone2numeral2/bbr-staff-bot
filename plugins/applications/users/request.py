@@ -427,10 +427,9 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
 
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "non impostato"
-    base_text = f"{Emoji.SPARKLE_SQUARE} #RICHIESTA #R{request.id}\n\n" \
-                f"{Emoji.USER_ICON} {user_mention}\n" \
-                f"{Emoji.HASHTAG} {user_username}\n" \
-                f"{Emoji.NUMBERS} #id{user.id}"
+    base_text = f"nuova #richiesta [#ric{request.id}][#pendente]\n\n" \
+                f"••• <b><u>utente</u></b>\n" \
+                f"{user_mention} [{user_username}][#id{user.id}]"
 
     other_members_text = utilities.escape_html(request.other_members_text or "non forniti")
     base_text += f"\n\n••• <b><u>utenti garanti</u></b>\n{other_members_text}"

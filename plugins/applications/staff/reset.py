@@ -23,6 +23,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     logger.info(f"/reset {utilities.log(update)}")
 
     if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
+        logger.debug("user is not allowed to use this command")
         return
 
     user_id = utilities.get_user_id_from_text(update.message.text)

@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUser, user: User):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     admin_mention = utilities.mention_escaped(admin)
-    return f"Richiesta #R{request_id} {result}\n" \
+    return f"Richiesta #ric{request_id} {result}\n" \
            f"• admin: {admin_mention} [#admin{admin.id}]\n" \
            f"• utente: {user.mention()} [#id{user.user_id}]"
 
@@ -131,22 +131,34 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     session.commit()
 
     logger.info("editing evaluation chat message and removing keyboard...")
+    # we attach it at the end of the original message
     evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, admin, user)
+    # we have to remove the #pendente hashtag
+    original_message_without_pending_hashtag = user.last_request.staff_message_text_html.replace("[#pendente]", "")
     edited_staff_message = await bot.edit_message_text(
         chat_id=user.last_request.staff_message_chat_id,
         message_id=user.last_request.staff_message_message_id,
-        text=f"{user.last_request.staff_message_text_html}\n\n{evaluation_text}",
+        text=f"{original_message_without_pending_hashtag}\n\n{evaluation_text}",
         reply_markup=None
     )
-    user.last_request.update_staff_message(edited_staff_message)
+    user.last_request.update_staff_chat_message(edited_staff_message)
 
-    logger.info("sending log chat message...")
+    logger.info("sending new accepted/rejected log chat message...")
     await bot.send_message(
         user.last_request.log_message_chat_id,
         evaluation_text,
         reply_to_message_id=user.last_request.log_message_message_id,
         allow_sending_without_reply=True
     )
+
+    logger.info("editing previously sent log chat message...")  # we only need to remove the #pendente hashtag
+    edited_log_chat_message = await bot.edit_message_text(
+        chat_id=user.last_request.log_message_chat_id,
+        message_id=user.last_request.log_message_message_id,
+        text=f"{user.last_request.log_message_text_html.replace('[#pendente]', '')}",
+        reply_markup=None
+    )
+    user.last_request.update_log_chat_message(edited_log_chat_message)
 
     if accepted:
         await send_message_to_user(session, bot, user)
@@ -162,7 +174,7 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
     if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
         logger.info("user is not allowed to accept/reject requests")
         await update.callback_query.answer(
-            f"Non sei abilitato all'approvazione delle richieste degli utenti",
+            f"Non sei abilitato alla gestione delle richieste degli utenti",
             show_alert=True,
             cache_time=10
         )
