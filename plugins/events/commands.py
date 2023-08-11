@@ -281,6 +281,7 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     # always try to get existing filters (they are not reset after the user confirms their query)
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
+    logger.debug(f"existing filters: {args}")
 
     reply_markup = get_events_reply_markup(args)
 
@@ -433,20 +434,25 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     logger.info(f"confirm callback query {utilities.log(update)}")
 
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
+    # we create a copy of the list because modifiyng `args`'s content
+    # will also modify context.user_data[TempDataKey.EVENTS_FILTERS]
+    args = args[:]
+
+    date_override: Optional[datetime.date] = context.user_data.pop(TempDataKey.RADAR_DATE_OVERRIDE, None)
+    if date_override:
+        # we cache the result *for this specific date override*, queries that
+        # do not override the date should not be date-dependent
+        logger.debug(f"date override detected: {date_override}")
+        args.append(date_override.strftime("%Y%m%d"))
+
     args.sort()  # it's important to sort the args, see #82
     args_cache_key = "+".join(args)
+    logger.debug(f"cache key: {args_cache_key}")
 
-    date_override = context.user_data.pop(TempDataKey.RADAR_DATE_OVERRIDE, None)
-    args_key_cached = args_key_in_cache(context, args_cache_key)
+    if not args_key_in_cache(context, args_cache_key):
+        all_events_strings = get_all_events_strings_from_db(session, args, date_override=date_override)
 
-    if date_override:
-        logger.debug(f"date override detected ({date_override}): querying db...")
-        # never get the events from the cache, and don't cache the result
-        all_events_strings = get_all_events_strings_from_db(session, args, date_override)
-    elif not args_key_cached:
-        all_events_strings = get_all_events_strings_from_db(session, args)
-
-        logger.info(f"saving cache for key {args_cache_key}...")
+        logger.info(f"caching query result for key {args_cache_key}...")
         cache_all_events_strings_for_cache_key(context, args_cache_key, all_events_strings)
     else:  # cache key still valid in bot_data
         all_events_strings = get_all_events_strings_from_cache(context, args_cache_key)
@@ -475,7 +481,7 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     private_chat_messages.save(session, sent_messages)
 
     # just save the message_id of the first message sent
-    logger.debug(f"saving cache key {args_cache_key} for user...")
+    logger.debug(f"caching user's message_id for key {args_cache_key}...")
     cache_message_id_for_cache_key(context, args_cache_key, sent_messages[0].message_id)
 
 
