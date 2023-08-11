@@ -153,7 +153,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
         return ConversationHandler.END
 
-    logger.info("user is not a member of the users chat and doesn't have any pending request")
+    logger.info("user is not a member of the users chat and doesn't have any pending/accepted request")
 
     request = ApplicationRequest(update.effective_user.id)
     session.add(request)
