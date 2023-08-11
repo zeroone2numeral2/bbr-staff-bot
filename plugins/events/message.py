@@ -80,6 +80,14 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if not config.settings.backup_events:
         return
 
+    # edited_messages: do not download the media if it was not modified
+    if update.edited_message:
+        m = update.edited_message
+        new_file_unique_id = m.photo[-1].file_unique_id if m.photo else m.effective_attachment.file_unique_id
+        if new_file_unique_id == event.media_file_unique_id:
+            logger.debug(f"edited event message: file_unique_id ({new_file_unique_id}) didn't change, skipping media download")
+            return
+
     try:
         await download_event_media(update.effective_message)
     except Exception as e:
