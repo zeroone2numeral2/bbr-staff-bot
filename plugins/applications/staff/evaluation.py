@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUser, user: User):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     admin_mention = utilities.mention_escaped(admin)
-    return f"Richiesta #ric{request_id} {result}\n" \
+    return f"Richiesta #rid{request_id} {result}\n" \
            f"• admin: {admin_mention} [#admin{admin.id}]\n" \
            f"• utente: {user.mention()} [#id{user.user_id}]"
 

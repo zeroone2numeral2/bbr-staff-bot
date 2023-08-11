@@ -364,7 +364,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     # no idea why but we *need* large timeouts
     timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
 
-    merged_text = f"••• <b><u>descrizione</u></b>"
+    merged_text = f"•• <b>descrizione</b> ••"
     merged_text_includes = []  # list of indexes of the DescriptionMessage that have been merged into the current merged_text
     for i, description_message in enumerate(text_messages_to_merge):
         if len(merged_text) + len(description_message.text_html) > MessageLimit.MAX_TEXT_LENGTH:
@@ -427,15 +427,15 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
 
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "non impostato"
-    base_text = f"nuova #richiesta [#ric{request.id}][#pendente]\n\n" \
-                f"••• <b><u>utente</u></b>\n" \
+    base_text = f"nuova #richiesta [#rid{request.id}][#pendente]\n\n" \
+                f"•• <b>utente</b> ••\n" \
                 f"{user_mention} [{user_username}][#id{user.id}]"
 
     other_members_text = utilities.escape_html(request.other_members_text or "non forniti")
-    base_text += f"\n\n••• <b><u>utenti garanti</u></b>\n{other_members_text}"
+    base_text += f"\n\n•• <b>utenti garanti</b> ••\n{other_members_text}"
 
     social_text = utilities.escape_html(request.social_text or "non forniti")
-    base_text += f"\n\n••• <b><u>social</u></b>\n{social_text}"
+    base_text += f"\n\n•• <b>social</b> ••\n{social_text}"
 
     logger.debug("sending log message...")
     log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True, **timeouts)
