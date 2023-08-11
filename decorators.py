@@ -41,7 +41,7 @@ def action(chat_action):
     return real_decorator
 
 
-def catch_exception(silent=False, skip_not_modified_exception=False):
+def catch_exception(silent=False, ignore_message_not_modified_exception=False):
     def real_decorator(func):
         @wraps(func)
         async def wrapped(update: Update, context: CallbackContext, *args, **kwargs):
@@ -51,6 +51,10 @@ def catch_exception(silent=False, skip_not_modified_exception=False):
                 # what should this return when we are inside a conversation?
                 logger.error('Telegram exception: TimedOut')
             except Exception as e:
+                if ignore_message_not_modified_exception and isinstance(e, BadRequest) and "message is not modified" in e.message.lower():
+                    logger.warning("\"message is not modified\" exception ignored")
+                    return
+
                 logger.error('error while running handler callback: %s', str(e), exc_info=True)
 
                 if not silent:

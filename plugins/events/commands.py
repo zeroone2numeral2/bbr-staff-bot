@@ -304,7 +304,7 @@ def safe_remove(items: List[str], item: str):
         pass
 
 
-@decorators.catch_exception()
+@decorators.catch_exception(ignore_message_not_modified_exception=True)
 @decorators.pass_session()
 async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"change filter callback query {utilities.log(update)}")
