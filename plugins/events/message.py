@@ -8,7 +8,7 @@ from telegram.ext import ContextTypes, filters, MessageHandler
 
 from .common import add_event_message_metadata, parse_message_text, parse_message_entities, drop_events_cache
 from ext.filters import ChatFilter, Filter
-from database.models import Chat
+from database.models import Chat, Event
 from database.queries import events, chats
 import decorators
 import utilities
@@ -45,6 +45,24 @@ async def download_event_media(message: Message):
     await new_file.download_to_drive(file_path)
 
 
+def backup_event_media(update: Update, event: Event):
+    # edited_messages: do not download the media if it was not modified
+    if update.edited_message:
+        m = update.edited_message
+        new_file_unique_id = m.photo[-1].file_unique_id if m.photo else m.effective_attachment.file_unique_id
+        if new_file_unique_id == event.media_file_unique_id:
+            logger.debug(
+                f"edited event message: file_unique_id ({new_file_unique_id}) didn't change, skipping media download")
+            return False
+
+    try:
+        await download_event_media(update.effective_message)
+        return True
+    except Exception as e:
+        logger.error(f"error while trying to download media: {e}", exc_info=True)
+        return False
+
+
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
@@ -61,7 +79,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         chat_id = update.effective_chat.id
         message_id = update.effective_message.message_id
 
-    event = events.get_or_create(session, chat_id, message_id)
+    event: Event = events.get_or_create(session, chat_id, message_id)
     if event.deleted:
         logger.debug(f"event ({event.chat_id}; {event.message_id}) was deleted: skipping update")
         return
@@ -77,21 +95,8 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     session.commit()
 
-    if not config.settings.backup_events:
-        return
-
-    # edited_messages: do not download the media if it was not modified
-    if update.edited_message:
-        m = update.edited_message
-        new_file_unique_id = m.photo[-1].file_unique_id if m.photo else m.effective_attachment.file_unique_id
-        if new_file_unique_id == event.media_file_unique_id:
-            logger.debug(f"edited event message: file_unique_id ({new_file_unique_id}) didn't change, skipping media download")
-            return
-
-    try:
-        await download_event_media(update.effective_message)
-    except Exception as e:
-        logger.error(f"error while trying to download media: {e}", exc_info=True)
+    if config.settings.backup_events:
+        backup_event_media(update, event)
 
 
 HANDLERS = (
