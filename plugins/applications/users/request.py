@@ -142,7 +142,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         sent_message = await update.message.reply_text("to do: send correct message and return correct status")
         private_chat_messages.save(session, sent_message)
 
-        return ConversationHandler.END
+        return ConversationHandler.END  # <-- return correct status based on what we already received
 
     if user.last_request and user.last_request.status is False:
         logger.info("ignoring: user already went through the application process, but was rejected")
