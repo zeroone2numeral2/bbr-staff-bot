@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Optional, List, Tuple, Union
 
 from sqlalchemy import true, false, select
@@ -7,6 +8,8 @@ from sqlalchemy.sql import func
 from telegram import Message, Update
 
 from database.models import PrivateChatMessage
+
+logger = logging.getLogger(__name__)
 
 
 def get_messages(session: Session, user_id: int):
@@ -31,6 +34,7 @@ def save(session: Session, messages: [Union[Message, Update], List[Union[Message
         if message.chat.id < 0:
             raise ValueError("cannot save PrivateChatMessage for non-private chat")
 
+        # logger.debug(f"saving message_id {message.message_id}")
         private_chat_message = PrivateChatMessage(
             message_id=message.message_id,
             user_id=message.chat.id,

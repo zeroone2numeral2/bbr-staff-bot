@@ -201,8 +201,8 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     await send_events_messages(update.message, all_events_strings, protect_content)
 
 
-def get_month_string():
-    now = utilities.now()
+def get_month_string(date_override: Optional[datetime.date]) -> str:
+    now = date_override or utilities.now()
     this_month = now.month
     next_month = now.month + 1 if now.month != 12 else 1
     this_month_str = MONTHS_IT[this_month - 1][:3].lower()
@@ -211,7 +211,7 @@ def get_month_string():
     return f"{this_month_str} + {next_month_str}"
 
 
-def get_events_reply_markup(args) -> InlineKeyboardMarkup:
+def get_events_reply_markup(args, date_override: Optional[datetime.date] = None) -> InlineKeyboardMarkup:
     keyboard = [[]]
 
     if EventFilter.NOT_IT in args:
@@ -229,7 +229,7 @@ def get_events_reply_markup(args) -> InlineKeyboardMarkup:
     elif EventFilter.WEEK_2 in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} 2 settimane", callback_data=f"changefilterto:{EventFilter.MONTH_AND_NEXT_MONTH}"))
     elif EventFilter.MONTH_AND_NEXT_MONTH in args:
-        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string()}", callback_data=f"changefilterto:{EventFilter.SOON}"))
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.SOON}"))
     else:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CLOCK} soon", callback_data=f"changefilterto:{EventFilter.WEEK}"))
 
@@ -245,7 +245,7 @@ async def on_drop_events_cache_command(update: Update, context: ContextTypes.DEF
     await update.message.reply_text("cache dropped")
 
 
-def radar_save_date_override(context: ContextTypes.DEFAULT_TYPE):
+def radar_save_date_override_to_user_data(context: ContextTypes.DEFAULT_TYPE):
     provided_date = context.args[0]
 
     strptime_formats_to_try = ["%Y%m%d", "%d/%m/%Y", "%d.%m.%Y", "%Y-%m-%d"]
@@ -258,12 +258,12 @@ def radar_save_date_override(context: ContextTypes.DEFAULT_TYPE):
 
     if not today_object:
         logger.info(f"wrong date arg provided: {provided_date}")
-        return False
+        return
 
     today_object = today_object.date()
     logger.info(f"radar date override: {today_object}")
     context.user_data[TempDataKey.RADAR_DATE_OVERRIDE] = today_object
-    return True
+    return today_object
 
 
 @decorators.catch_exception()
@@ -276,22 +276,24 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return
 
     # save to temp data the date the user passed, so we force-override todays' date when the confirm button is used
+    date_override = None
     if context.args:
-        radar_save_date_override(context)
+        date_override: Optional[datetime.date] = radar_save_date_override_to_user_data(context)
 
     # always try to get existing filters (they are not reset after the user confirms their query)
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
     logger.debug(f"existing filters: {args}")
 
-    reply_markup = get_events_reply_markup(args)
+    reply_markup = get_events_reply_markup(args, date_override)
 
     # override in case there was no existing filter
     context.user_data[TempDataKey.EVENTS_FILTERS] = args
 
-    sent_message = await update.message.reply_html(
-        f"{Emoji.COMPASS} Usa i tasti qui sotto per cambiare i filtri della ricerca, poi usa conferma per vedere gli eventi",
-        reply_markup=reply_markup
-    )
+    text = f"{Emoji.COMPASS} Usa i tasti qui sotto per cambiare i filtri della ricerca, poi usa conferma per vedere gli eventi"
+    if date_override:
+        text = f"{text} (data di riferimento: {date_override.strftime('%d/%m/%Y')})"
+
+    sent_message = await update.message.reply_html(text, reply_markup=reply_markup)
     private_chat_messages.save(session, sent_message)
 
 
@@ -310,6 +312,7 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
     new_filter = context.matches[0].group("filter")
 
+    date_override: Optional[datetime.date] = None
     if new_filter == EventFilter.FREE:
         safe_remove(args, EventFilter.NOT_FREE)
         args.append(EventFilter.FREE)
@@ -340,6 +343,9 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
         safe_remove(args, EventFilter.SOON)
 
         args.append(EventFilter.MONTH_AND_NEXT_MONTH)
+
+        # we just need to get the date override here
+        date_override = context.user_data.get(TempDataKey.RADAR_DATE_OVERRIDE, None)
     elif new_filter == EventFilter.SOON:
         safe_remove(args, EventFilter.WEEK)
         safe_remove(args, EventFilter.WEEK_2)
@@ -354,7 +360,7 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
     alert_text = FILTER_DESCRIPTION[new_filter]
     await update.callback_query.answer(alert_text)
 
-    reply_markup = get_events_reply_markup(args)
+    reply_markup = get_events_reply_markup(args, date_override)
     await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
 
 
