@@ -138,11 +138,15 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return ConversationHandler.END
 
     if user.pending_request_id and not user.pending_request.sent_to_staff():
-        logger.info("user already has a pending request that was *not* sent to the staff yet")
-        sent_message = await update.message.reply_text("to do: send correct message and return correct status")
+        # we should never enter this, since this conversation is persistent and if the user uses /start again,
+        # the conversation will *not* reset because ConversationHandler.allow_reentry is False
+
+        logger.info("user already has a pending request that was *not* sent to the staff yet, we will reset the request")
+        user.reset_evaluation()
+        sent_message = await update.message.reply_text("Oops, qualcosa è andato storto :(\nUsa /start per reinviare la richiesta")
         private_chat_messages.save(session, sent_message)
 
-        return ConversationHandler.END  # <-- return correct status based on what we already received
+        return ConversationHandler.END  # <-- idea/todo: return correct status based on what we already received
 
     if user.last_request and user.last_request.status is False:
         logger.info("ignoring: user already went through the application process, but was rejected")
@@ -209,7 +213,7 @@ async def on_waiting_other_members_unexpected_message_received(update: Update, c
 async def on_waiting_social_unexpected_message_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"(unexpected) received non-text message while waiting for social {utilities.log(update)}")
 
-    send_social_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
+    send_social_text = get_text(session, LocalizedTextKey.SEND_SOCIAL, update.effective_user)
     sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard("Link ai social"))
     private_chat_messages.save(session, sent_message)
 
@@ -277,7 +281,8 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
 
     user.pending_request.save_social(update.message)
 
-    # we don't actually need this because they are also saved toApplicationRequest  but we save it anyway
+    # we don't actually need this because they are also saved to some dedicated ApplicationRequest fields,
+    # but we save it anyway
     description_message = DescriptionMessage(user.pending_request.id, update.effective_message, DescriptionMessageType.SOCIAL)
     session.add(description_message)
 
