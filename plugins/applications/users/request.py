@@ -138,7 +138,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return ConversationHandler.END
 
     if user.pending_request_id and not user.pending_request.sent_to_staff():
-        # we should never enter this, since this conversation is persistent and if the user uses /start again,
+        # we should never enter this, since this ConversationHandler is persistent and if the user uses /start again,
         # the conversation will *not* reset because ConversationHandler.allow_reentry is False
 
         logger.info("user already has a pending request that was *not* sent to the staff yet, we will reset the request")
