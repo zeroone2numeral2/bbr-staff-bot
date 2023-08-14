@@ -167,7 +167,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     private_chat_messages.save(session, sent_message)
 
     send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
-    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard("Membri che conosci"))
     private_chat_messages.save(session, sent_message)
 
     user.set_started()
@@ -182,6 +182,9 @@ async def on_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, session:
 
     context.user_data.pop(TempDataKey.APPLICATION_DATA, None)
 
+    # remove any pending request
+    user.pending_request_id = None
+
     cancel_text = get_text(session, LocalizedTextKey.APPLICATION_CANCELED, update.effective_user)
     sent_message = await update.effective_message.reply_text(cancel_text, reply_markup=ReplyKeyboardRemove())
     private_chat_messages.save(session, sent_message)
@@ -195,7 +198,7 @@ async def on_waiting_other_members_unexpected_message_received(update: Update, c
     logger.info(f"(unexpected) received non-text message while waiting for other members {utilities.log(update)}")
 
     send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
-    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard("Membri che conosci"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_OTHER_MEMBERS
@@ -207,7 +210,7 @@ async def on_waiting_social_unexpected_message_received(update: Update, context:
     logger.info(f"(unexpected) received non-text message while waiting for social {utilities.log(update)}")
 
     send_social_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
-    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard("Link ai social"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
@@ -219,7 +222,7 @@ async def on_waiting_description_unexpected_message_received(update: Update, con
     logger.info(f"(unexpected) received message while waiting for social {utilities.log(update)}")
 
     send_social_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
-    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard("Presentati"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
@@ -237,7 +240,7 @@ async def on_waiting_other_members_received(update: Update, context: ContextType
     session.add(description_message)
 
     send_social_text = get_text(session, LocalizedTextKey.SEND_SOCIAL, update.effective_user)
-    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard("Link ai tuoi social"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
@@ -249,7 +252,7 @@ async def on_waiting_other_members_skip(update: Update, context: ContextTypes.DE
     logger.info(f"waiting other members: skip {utilities.log(update)}")
 
     send_social_text = get_text(session, LocalizedTextKey.SEND_SOCIAL, update.effective_user)
-    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard())
+    sent_message = await update.message.reply_text(send_social_text, reply_markup=get_cancel_keyboard("Link ai tuoi social"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_SOCIAL
@@ -261,7 +264,7 @@ async def on_waiting_socials_skip(update: Update, context: ContextTypes.DEFAULT_
     logger.info(f"waiting socials: skip {utilities.log(update)}")
 
     describe_self_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
-    sent_message = await update.message.reply_text(describe_self_text, reply_markup=get_done_keyboard())
+    sent_message = await update.message.reply_text(describe_self_text, reply_markup=get_done_keyboard("Presentati"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
@@ -279,14 +282,14 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
     session.add(description_message)
 
     send_description_text = get_text(session, LocalizedTextKey.DESCRIBE_SELF, update.effective_user)
-    sent_message = await update.message.reply_text(send_description_text, reply_markup=get_done_keyboard())
+    sent_message = await update.message.reply_text(send_description_text, reply_markup=get_done_keyboard("Presentati"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
 
 
 async def send_waiting_for_more_message(context: CallbackContext):
-    sent_message = await context.bot.send_message(context.job.data["user_id"], context.job.data["text"], reply_markup=get_done_keyboard())
+    sent_message = await context.bot.send_message(context.job.data["user_id"], context.job.data["text"], reply_markup=get_done_keyboard("Invia uno o più messaggi/media"))
     with session_scope() as session:
         private_chat_messages.save(session, sent_message)
 
@@ -318,7 +321,7 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
             context.job_queue.run_once(callback=send_waiting_for_more_message, when=3, name=job_name, data=data)
     else:
         # this is actually needed if we want the "done" keyboard to appear after the user sends the message
-        sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard(), quote=True)
+        sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard("Invia altri messaggi/media"), quote=True)
         private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
