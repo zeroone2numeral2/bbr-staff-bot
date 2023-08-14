@@ -601,7 +601,7 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 HANDLERS = (
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
-    (CommandHandler(["radar"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["radar", "radar23"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
