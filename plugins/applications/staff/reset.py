@@ -40,9 +40,11 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     await update.message.reply_text(f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
                                     f"(eventuali richieste pendenti o rifiutate sono state dimenticate, se era bannato è stato sbannato)")
 
+    # unban the user so they can join again, just in case the user was removed manually before /reset was used
+    only_if_banned = not utilities.get_command(update.message.text) == "resetkick"  # check whether to kick the user
     users_chat_member = chat_members.get_chat_member(session, user.user_id, Chat.is_users_chat)
     try:
-        await context.bot.unban_chat_member(users_chat_member.chat_id, user.user_id, only_if_banned=True)
+        await context.bot.unban_chat_member(users_chat_member.chat_id, user.user_id, only_if_banned=only_if_banned)
         logger.debug("user unbanned")
     except (TelegramError, BadRequest) as e:
         logger.debug(f"error while unbanning member: {e}")
@@ -54,7 +56,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     log_text = f"#RESET da parte di {update.effective_user.mention_html()} (#admin{update.effective_user.id})\n\n" \
                f"{user.mention()} (#id{user.user_id}) potrà richiedere di essere ammesso nuovamente nel gruppo"
 
-    additional_context = utilities.get_argument(["reset"], update.message.text_html, remove_user_id_hashtag=True)
+    additional_context = utilities.get_argument(["resetkick", "reset"], update.message.text_html, remove_user_id_hashtag=True)
     if additional_context:
         log_text += f"\n<b>Contesto</b>: {additional_context}"
 
@@ -66,5 +68,5 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (CommandHandler(["reset"], on_reset_command), Group.NORMAL),
+    (CommandHandler(["reset", "resetkick"], on_reset_command), Group.NORMAL),
 )
