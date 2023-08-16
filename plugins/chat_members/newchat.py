@@ -14,6 +14,7 @@ from database.models import User, Chat
 from database.queries import chat_members, users
 import decorators
 import utilities
+from emojis import Emoji
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,12 @@ async def on_new_group_chat(update: Update, context: CallbackContext, session: S
 
     if not utilities.is_superadmin(update.effective_user):
         logger.info("unauthorized: leaving...")
+        # noinspection PyBroadException
+        try:
+            await update.message.reply_text(Emoji.MIDDLE_FINGER, quote=False)
+        except Exception:
+            pass
+
         await update.effective_chat.leave()
         chat.set_left()
         return

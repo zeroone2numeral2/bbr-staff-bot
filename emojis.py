@@ -11,6 +11,7 @@ class Emoji:
     GREEN = "🟢"
     HASHTAG = "#️⃣"
     LINE = "➖"
+    MIDDLE_FINGER = "🖕"
     NUMBERS = "🔢"
     PLUS = "➕"
     RED = "🔴"
