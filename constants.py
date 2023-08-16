@@ -68,6 +68,7 @@ class BotSettingKey:
     CHAT_INVITE_LINK = "chat_invite_link"
     APPROVAL_MODE = "approval_mode"
     RABBIT_FILE = "rabbit_file"
+    RADAR_FILE = "radar_file"
 
 
 class LocalizedTextKey:
@@ -259,6 +260,14 @@ BOT_SETTINGS_DEFAULTS = {
         emoji=Emoji.RABBIT,
         description="file da mandare agli utenti rifiutati",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=True
+    ),
+    BotSettingKey.RADAR_FILE: dict(
+        default=None,
+        label="gif comando radar",
+        emoji=Emoji.COMPASS,
+        description="gif da mandare quando qualcuno usa /radar23",
+        show_if_true_key=None,
         telegram_media=True
     ),
 }
