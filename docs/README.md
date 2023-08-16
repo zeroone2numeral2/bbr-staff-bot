@@ -93,6 +93,11 @@ Altre cose:
 
 ### Altri comandi staff
 
+In privato, `/settings` (oppure `/s`) permette di configurare alcune impostazioni globali del bot. Solamente i membri della chat staff possono usare questo comando. 
+Tutte le impostazioni disponibili sono configurabili tramite tastiera inline, e ogni sotto-menu spiega cosa fa ogni opzione.  
+Allo stesso modo, `/texts` (oppure `/t`) permette di modificare le risposte del bot. Non tutte, solo quelle che potremmo dover modificare al volo.  
+Sia `/settings` che `/texts` funzionano solo in privato.
+
 Per bannare qualcuno dall'utilizzare il bot si usa il comando `/ban` in risposta ad un messaggio dell'utente inoltrato nel gruppo staff. 
 È possibile anche fornire una motivazione dopo il comando.  
-`/shadowban` funziona allo stesso modo, ma agli utenti bannati non verrà comunicato che sono stati bannati quando usano il bot (per loro è come se il bot non funzionasse)
+`/shadowban` funziona allo stesso modo, ma agli utenti bannati non verrà comunicato che sono stati bannati quando usano il bot (per loro è come se il bot non funzionasse).
