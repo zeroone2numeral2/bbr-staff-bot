@@ -10,7 +10,7 @@ from telegram import Update, ChatMember
 # noinspection PyPackageRequirements
 from telegram.error import TimedOut, BadRequest
 # noinspection PyPackageRequirements
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, ConversationHandler
 
 from constants import TempDataKey
 from database.base import get_session
@@ -192,6 +192,31 @@ def staff_admin():
                 return
 
             result = await func(update, context, session=session, *args, **kwargs)
+            return result
+
+        return wrapped
+
+    return real_decorator
+
+
+def check_ban():
+    def real_decorator(func):
+        @wraps(func)
+        async def wrapped(update: Update, context: CallbackContext, session: Session, user: User, *args, **kwargs):
+            # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
+            if user.banned:
+                logger.info(f"ignoring user message: the user was banned (shadowban: {user.shadowban})")
+                if not user.shadowban:
+                    reason = user.banned_reason or "not provided"
+                    text = f"{Emoji.BANNED} You were banned from using this bot"
+                    if config.settings.tell_ban_reason:
+                        text += f". Reason: {utilities.escape_html(reason)}"
+
+                    sent_message = await update.message.reply_text(text)
+                    private_chat_messages.save(session, sent_message)
+                return ConversationHandler.END
+
+            result = await func(update, context, session=session, user=user, *args, **kwargs)
             return result
 
         return wrapped

@@ -268,6 +268,7 @@ def radar_save_date_override_to_user_data(context: ContextTypes.DEFAULT_TYPE):
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_ban()
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/radar {utilities.log(update)}")
 
@@ -493,6 +494,7 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_ban()
 async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/invalidevents {utilities.log(update)}")
 

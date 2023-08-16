@@ -108,6 +108,7 @@ def get_text(session: Session, ltext_key: str, user: TelegramUser, raise_if_no_f
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_ban()
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/start {utilities.log(update)}")
 

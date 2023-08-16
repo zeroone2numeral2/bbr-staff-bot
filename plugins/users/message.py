@@ -19,16 +19,9 @@ logger = logging.getLogger(__name__)
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_ban()
 async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
     logger.info(f"new user message {utilities.log(update)}")
-
-    if user.banned:
-        logger.info(f"ignoring user message: the user was banned (shadowban: {user.shadowban})")
-        if not user.shadowban:
-            reason = user.banned_reason or "not provided"
-            sent_message = await update.message.reply_text(f"{Emoji.BANNED} You were banned from using this bot. Reason: {utilities.escape_html(reason)}")
-            private_chat_messages.save(session, sent_message)
-        return
 
     staff_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)
     if not staff_chat:
