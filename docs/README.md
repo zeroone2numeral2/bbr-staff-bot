@@ -95,9 +95,12 @@ Altre cose:
 
 In privato, `/settings` (oppure `/s`) permette di configurare alcune impostazioni globali del bot. Solamente i membri della chat staff possono usare questo comando. 
 Tutte le impostazioni disponibili sono configurabili tramite tastiera inline, e ogni sotto-menu spiega cosa fa ogni opzione.  
-Allo stesso modo, `/texts` (oppure `/t`) permette di modificare le risposte del bot. Non tutte, solo quelle che potremmo dover modificare al volo.  
-Sia `/settings` che `/texts` funzionano solo in privato.
+Allo stesso modo, `/texts` (oppure `/t`) permette di modificare le risposte del bot. Non tutte però, solo quelle che potremmo dover modificare al volo.  
+Il comando `/placeholders` (oppure `/ph`) restituisce un elenco di placeholder utilizzabili nei testi configurati da `/texts`.
 
 Per bannare qualcuno dall'utilizzare il bot si usa il comando `/ban` in risposta ad un messaggio dell'utente inoltrato nel gruppo staff. 
 È possibile anche fornire una motivazione dopo il comando.  
 `/shadowban` funziona allo stesso modo, ma agli utenti bannati non verrà comunicato che sono stati bannati quando usano il bot (per loro è come se il bot non funzionasse).
+
+Il comando `/reloadadmins` (oppure `/ra`) va usato nei gruppi e permette di aggiornare la lista degli admin del gruppo in cui è usato. 
+Funziona solo nei gruppi "speciali" elencati sopra. Può essere usato solo dagli admin del gruppo.
