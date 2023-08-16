@@ -22,7 +22,7 @@ async def on_placeholders_command(update: Update, context: ContextTypes.DEFAULT_
     for placeholder, _ in {**PLACEHOLDER_REPLACEMENTS_TELEGRAM_USER, **PLACEHOLDER_REPLACEMENTS_DATABASE}.items():
         text += "• <code>{" + placeholder + "}</code>\n"
 
-    text += "\nHold on a placeholder to copy quickly it"
+    text += "\nHold on a placeholder to quickly copy it"
 
     await update.message.reply_text(text)
 
