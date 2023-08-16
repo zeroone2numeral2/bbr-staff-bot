@@ -90,3 +90,9 @@ L'utente potrà così provare a inviare una nuova richiesta, usando il comando `
 Altre cose:
 - gli utenti accettati ma che per qualsiasi motivo non si sono uniti alla chat flytek possono comunque usare il bot per parlare con lo staff
 - il bot invia nel canale log un messaggio che notifica quando si unisce un membro tramite link d'invito che non è passato attraverso il processo di verifica, o ne ha uno pendente, o è stato rifiutato. Questa cosa non dovrebbe succedere ed è per questo che viene loggata
+
+### Altri comandi staff
+
+Per bannare qualcuno dall'utilizzare il bot (ovvero, non potrà più usarlo per contattare gli admin, o per richiedere di essere aggiunti) si usa il comando `/ban` in risposta ad un messaggio dell'utente inoltrato nel gruppo staff. 
+È possibile anche fornire una motivazione dopo il comando.  
+`/shadowban` funziona allo stesso modo, ma agli utenti bannati non verrà comunicato che sono stati bannati quando usano il bot (per loro è come se il bot non funzionasse)
