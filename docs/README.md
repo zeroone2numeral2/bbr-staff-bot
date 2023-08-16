@@ -25,6 +25,8 @@ Se si vuole rispondere ad un messaggio di un utente inviato dal bot nella chat s
 
 È anche possibile rispondere ad un messaggio di un altro admin facendo in modo che anche questa risposta venga inviata all'utente, iniziando il proprio messaggio con "++".
 
+Molte delle risposte predefinite del bot, comunque, sono in inglese perchè questa parte del codice è in comune con BBR, che è un gruppo internazionale e quindi le risposte sono in inglese. Questa cosa verrà sistemata più avanti.
+
 ## Chiedere di essere aggiunti
 
 Prima di spiegare come funziona questa cosa del richiedere l'approvazione, breve premessa su come il bot gestisce le chat necessarie al suo funzionamento. Queste chat sono 5:
@@ -62,10 +64,23 @@ Il messaggio inviato in questo gruppo contiene solo le info fondamentali della r
 
 Per accettare o rifiutare un utente basta usare itasti "accetta" e "rifiuta" sotto al messaggio inviato dal bot nel gruppo per le approvazioni.
 
-Se un utente viene rifiutato, il bot eliminerà la cronologia della chat con l'utente ed una gif molto fica. Molto scenico.
+Se un utente viene rifiutato, il bot elimina la cronologia della chat con l'utente e invia una gif molto fica. Molto scenico.  
+Gli utenti rifiutati non potranno usare il bot per parlare con lo staff, e non potranno avviare di nuovo la procedura per richiedere di essere aggiunti, a meno che non venga usato il comando `/reset` (vedi dopo).
 
 Se un utente invece viene accettato, riceve dal bot un link d'invito **generato appositamente** per lui. 
 Il link può essere usato da un solo utente, questo significa che una volta che l'utente lo usa per unirsi alla chat, nessuno potrà più farne uso. Inoltre, il messaggio che contiene il link non può essere inoltrato e il suo testo non può essere copiato.  
 Non appena l'utente si unisce al gruppo, per sicurezza il link viene anche revocato e viene anche rimosso dal messaggio che l'utente ha ricevuto che gli comunicava che la sua richiesta è stata accettata. 
-Queste rpecauzioni dovrebbero fare si che condividere il link per entrare sia pressochè impossibile.
+Queste precauzioni dovrebbero fare si che condividere il link per entrare sia pressochè impossibile.
+
+Dopo che un utente è stato accettato, potrà utilizzare il bot per parlare con lo staff come descritto sopra. Cosa non possibile mentre una richiesta è pendente.
+
+Altre cose:
+- per generare link d'invito, il bot deve essere admin nella chat flytek ed avere il permesso per aggiunere utenti
+- gli utenti accettati ma che per qualsiasi motivo non si sono uniti alla chat flytek possono comunque usare il bot per parlare con lo staff
+- il bot invia nel canale log un messaggio che notifica quando si unisce un membro tramite link d'invito che non è passato attraverso il processo di verifica, o ne ha uno pendente, o è stato rifiutato. Questa cosa non dovrebbe succedere ed è per questo che viene loggata
+
+#### Resettare una richiesta di un utente
+
+È possibile resettare la richiesta (pendente o rifiutata) di un utente usando il comando `/reset` seguito dall'ID o l'hashtag identificativo di un utente, ad esempio: `/reset 1234567` oppure `/reset #id1234567` (l'hashtag si può trovare in un qualsiasi messaggio inviato da bot riguardo alle richieste di un determinato utente).  
+L'utente potrà così provare a inviare una nuova richiesta, usando il comando `/start`. Viene anche unbannato dalla chat flytek, nel caso in cui fosse stato bannato.
 
