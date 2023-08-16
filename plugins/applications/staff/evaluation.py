@@ -87,7 +87,7 @@ async def send_message_to_user(session: Session, bot: Bot, user: User):
     reply_markup = await invite_link_reply_markup(session, bot, user)
 
     logger.info("sending message to user...")
-    sent_message = await bot.send_message(user.user_id, text, reply_markup=reply_markup)
+    sent_message = await bot.send_message(user.user_id, text, reply_markup=reply_markup, protect_content=True)
     private_chat_messages.save(session, sent_message)
     user.last_request.accepted_message_message_id = sent_message.message_id
 
