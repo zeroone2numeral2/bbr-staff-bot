@@ -75,6 +75,9 @@ Queste precauzioni dovrebbero fare si che condividere il link per entrare sia pr
 Importante: per generare link d'invito, il bot deve essere admin nella chat flytek e avere il permesso di aggiunere utenti. 
 Se non ha il permesso di farlo, agli utenti accettati viene inviato il link salvato in `/settings`.
 
+Anche i comandi `/accetta` e `/rifiuta` possono essere usati per accettare o rifiutare una richiesta di un utente. 
+Si utilizzano fornendo l'ID o l'hastag dell'utente:  `/accetta 1234567` oppure `/accetta #id1234567`.
+
 Dopo che un utente è stato accettato, potrà utilizzare il bot per parlare con lo staff come descritto sopra. Cosa non possibile mentre una richiesta è pendente.
 
 #### Resettare le richieste di un utente
