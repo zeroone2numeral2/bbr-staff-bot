@@ -1026,6 +1026,14 @@ class ApplicationRequest(Base):
     def is_pending(self):
         return self.status is None
 
+    def status_pretty(self):
+        if self.status is None:
+            return "pending"
+        elif self.status is True:
+            return "accepted"
+        else:
+            return "rejected"
+
     def media_messages_count(self):
         return len([m for m in self.description_messages if m.can_be_grouped()])
 

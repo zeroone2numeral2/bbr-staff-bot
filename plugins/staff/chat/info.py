@@ -71,10 +71,10 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 f"• <b>reason</b>: {user.banned_reason or '-'}\n" \
                 f"• <b>banned on</b>: {utilities.format_datetime(user.banned_on)}"
 
-    chat_member = chat_members.is_member(session, user.user_id, Chat.is_users_chat)
+    chat_member = chat_members.get_chat_member(session, user.user_id, Chat.is_users_chat)
     if not chat_member:
         users_chat = chats.get_chat(session, Chat.is_users_chat)
-        chat_member_object = context.bot.get_chat_member(users_chat.chat_id, user.user_id)
+        chat_member_object = await context.bot.get_chat_member(users_chat.chat_id, user.user_id)
         chat_member = DbChatMember.from_chat_member(users_chat.chat_id, chat_member_object)
         session.add(chat_member)
     text += f"\n• <b>status in users chat</b>: {chat_member.status_pretty()} (last update: {utilities.format_datetime(chat_member.updated_on)})"
@@ -84,9 +84,9 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 f"{utilities.format_datetime(user.pending_request.created_on)} and updated on " \
                 f"{utilities.format_datetime(user.pending_request.updated_on)}"
     elif user.last_request_id:
-        text += f"\n• <b>user has a completed request with result</b> <code>{user.last_request.status}</code>, created on " \
-                f"{utilities.format_datetime(user.pending_request.created_on)} and updated on " \
-                f"{utilities.format_datetime(user.pending_request.updated_on)}"
+        text += f"\n• <b>user has a completed request with result</b> <code>{user.last_request.status_pretty()}</code>, created on " \
+                f"{utilities.format_datetime(user.last_request.created_on)} and updated on " \
+                f"{utilities.format_datetime(user.last_request.updated_on)}"
 
     text += f"\n• #id{user.user_id}"
 
