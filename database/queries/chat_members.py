@@ -48,6 +48,14 @@ def get_chat_member(session: Session, user_id: int, chat_filter) -> Optional[DbC
     return chat_member
 
 
+def all_chat_members(session: Session, user_id: int):
+    query = session.query(DbChatMember).join(Chat).filter(
+        DbChatMember.user_id == user_id
+    )
+
+    return session.scalars(query)
+
+
 def get_chat_administrators(session: Session, chat_id: int):
     # noinspection PyUnresolvedReferences
 
