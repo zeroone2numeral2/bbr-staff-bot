@@ -10,7 +10,6 @@ staff.private.settings_manual
 staff.private.settings
 staff.private.ltexts
 events.commands
-help
 
 [flytek]
 applications.users.request
@@ -19,6 +18,7 @@ applications.staff.reset
 applications.staff.evaluation
 
 [bbr]
+help
 users.start
 
 [+]
