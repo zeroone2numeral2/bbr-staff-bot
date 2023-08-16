@@ -694,6 +694,8 @@ class BotSetting(Base):
             return self.value_datetime
         elif self.value_type == ValueType.DATE:
             return self.value_date
+        elif self.value_type == ValueType.MEDIA:
+            return self.value_media_file_id
 
     def value_pretty(self):
         raw_value = self.value()

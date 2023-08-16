@@ -11,7 +11,7 @@ from telegram.ext import ContextTypes, CommandHandler
 from telegram.ext import filters
 from telegram.ext import MessageHandler, CallbackQueryHandler, PrefixHandler, ConversationHandler
 
-from database.models import User, LocalizedText, PrivateChatMessage, Chat
+from database.models import User, LocalizedText, PrivateChatMessage, Chat, BotSetting
 from database.queries import texts, settings, users, chats, private_chat_messages, chat_members
 import decorators
 import utilities
@@ -96,15 +96,18 @@ async def send_message_to_user(session: Session, bot: Bot, user: User):
 
 async def delete_history(session: Session, bot: Bot, user: User):
     # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
-    rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
+    # rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
+    setting: BotSetting = settings.get_or_create(session, BotSettingKey.RABBIT_FILE)
+
     sent_message = None
-    try:
-        sent_message = await bot.send_photo(user.user_id, rabbit_file_id)
-    except BadRequest as e:
-        if "wrong file identifier/http url specified" in e.message.lower():
-            logger.error(f"cannot send file: {e.message}")
-        else:
-            raise e
+    if setting.value():
+        try:
+            sent_message = await bot.send_photo(user.user_id, setting.value())
+        except BadRequest as e:
+            if "wrong file identifier/http url specified" in e.message.lower():
+                logger.error(f"cannot send file: {e.message}")
+            else:
+                raise e
 
     now = utilities.now()
 
