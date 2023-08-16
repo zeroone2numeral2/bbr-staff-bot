@@ -107,3 +107,5 @@ Funziona solo nei gruppi "speciali" elencati sopra. Può essere usato solo dagli
 
 Il comando `/info` può essere usato nella chat staff o nella chat per le richieste, e restituisce le info fondamentali di un utente (metadati, stato nel gruppo flytek, se bannato, richieste per entrare, altre cose).  
 Dopo il comando va inserito il solito ID/hashtag dell'utente, oppure può essere usato in risposta a un messaggio dell'utente inoltrato nel gruppo staff.
+
+Il comando `/userchats` restituisce un elenco di chat di cui un utente fa parte e il suo stato di appartenenza a queste chat.

@@ -93,7 +93,38 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     await update.effective_message.reply_text(text)
 
 
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_userchats_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/userchats {utilities.log(update)}")
+
+    user = await get_user_instance_from_message(update, context, session)
+    if not user:
+        return
+
+    user_chat_members = chat_members.all_chat_members(session, user.user_id)
+    chats_strings = []
+    chat_member: DbChatMember
+    for chat_member in user_chat_members:
+        text = f"• <b>{utilities.escape_html(chat_member.chat.title)}</b> [<code>{chat_member.chat.chat_id}</code>]: " \
+               f"<i>{chat_member.status_pretty()}</i>"
+
+        if not chat_member.is_member() and chat_member.has_been_member:
+            text = f"{text}<i>, but has been member in the past</i>"
+
+        text = f"{text}  (last update: {utilities.format_datetime(chat_member.updated_on, '-')})"
+        chats_strings.append(text)
+
+    if not chats_strings:
+        await update.message.reply_text("-")
+        return
+
+    text = "\n".join(chats_strings)
+    await update.message.reply_html(text)
+
+
 HANDLERS = (
     (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, 'userchats', on_userchats_command, ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
 )
 
