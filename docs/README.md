@@ -93,6 +93,6 @@ Altre cose:
 
 ### Altri comandi staff
 
-Per bannare qualcuno dall'utilizzare il bot (ovvero, non potrà più usarlo per contattare gli admin, o per richiedere di essere aggiunti) si usa il comando `/ban` in risposta ad un messaggio dell'utente inoltrato nel gruppo staff. 
+Per bannare qualcuno dall'utilizzare il bot si usa il comando `/ban` in risposta ad un messaggio dell'utente inoltrato nel gruppo staff. 
 È possibile anche fornire una motivazione dopo il comando.  
 `/shadowban` funziona allo stesso modo, ma agli utenti bannati non verrà comunicato che sono stati bannati quando usano il bot (per loro è come se il bot non funzionasse)
