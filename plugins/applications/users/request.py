@@ -111,6 +111,15 @@ def get_text(session: Session, ltext_key: str, user: TelegramUser, raise_if_no_f
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/start {utilities.log(update)}")
 
+    if user.banned:
+        logger.info(f"ignoring user message: the user was banned (shadowban: {user.shadowban})")
+        if not user.shadowban:
+            reason = user.banned_reason or "not provided"
+            sent_message = await update.message.reply_text(f"{Emoji.BANNED} Sei stato bannato dall'utilizzare questo bot. "
+                                                           f"Motivo: {utilities.escape_html(reason)}")
+            private_chat_messages.save(session, sent_message)
+        return ConversationHandler.END
+
     chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
     if not chat_member:
         users_chat = chats.get_chat(session, Chat.is_users_chat)
