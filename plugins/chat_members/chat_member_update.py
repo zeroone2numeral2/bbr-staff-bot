@@ -35,8 +35,8 @@ def save_or_update_chat_from_chat_member_update(session: Session, update: Update
 
 async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
-    if not user.last_request_id or user.last_request.is_pending():
-        # user joined the chat without going through the approval process
+    if not user.last_request_id or user.last_request.is_pending() or user.last_request.status is False:
+        # user joined the chat without going through the approval process, or their request was rejected
 
         if not chat_member_updated.invite_link:
             logger.info("user was added by an admin and didn't join by invite link")

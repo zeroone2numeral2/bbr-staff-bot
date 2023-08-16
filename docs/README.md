@@ -72,9 +72,12 @@ Il link può essere usato da un solo utente, questo significa che una volta che 
 Non appena l'utente si unisce al gruppo, per sicurezza il link viene anche revocato e viene anche rimosso dal messaggio che l'utente ha ricevuto che gli comunicava che la sua richiesta è stata accettata. 
 Queste precauzioni dovrebbero fare si che condividere il link per entrare sia pressochè impossibile.
 
+Importante: per generare link d'invito, il bot deve essere admin nella chat flytek e avere il permesso di aggiunere utenti. 
+Se non ha il permesso di farlo, agli utenti accettati viene inviato il link salvato in `/settings`.
+
 Dopo che un utente è stato accettato, potrà utilizzare il bot per parlare con lo staff come descritto sopra. Cosa non possibile mentre una richiesta è pendente.
 
-#### Resettare una richiesta di un utente
+#### Resettare le richieste di un utente
 
 È possibile resettare la richiesta (pendente o rifiutata) di un utente usando il comando `/reset` seguito dall'ID o l'hashtag identificativo di un utente, ad esempio: `/reset 1234567` oppure `/reset #id1234567` (l'hashtag si può trovare in un qualsiasi messaggio inviato da bot riguardo alle richieste di un determinato utente).  
 L'utente potrà così provare a inviare una nuova richiesta, usando il comando `/start`. Viene anche unbannato dalla chat flytek, nel caso in cui fosse stato bannato.
@@ -82,6 +85,5 @@ L'utente potrà così provare a inviare una nuova richiesta, usando il comando `
 ***
 
 Altre cose:
-- per generare link d'invito, il bot deve essere admin nella chat flytek ed avere il permesso per aggiunere utenti
 - gli utenti accettati ma che per qualsiasi motivo non si sono uniti alla chat flytek possono comunque usare il bot per parlare con lo staff
 - il bot invia nel canale log un messaggio che notifica quando si unisce un membro tramite link d'invito che non è passato attraverso il processo di verifica, o ne ha uno pendente, o è stato rifiutato. Questa cosa non dovrebbe succedere ed è per questo che viene loggata
