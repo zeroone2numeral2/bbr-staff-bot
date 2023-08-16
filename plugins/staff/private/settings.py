@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update
+from telegram import Update, Message
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes
 from telegram.ext import filters
@@ -14,9 +14,19 @@ from database.queries import settings
 import decorators
 import utilities
 from emojis import Emoji
-from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group
+from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group, \
+    MediaType
 
 logger = logging.getLogger(__name__)
+
+FILTER_MEDIA = filters.PHOTO \
+               | filters.VIDEO \
+               | filters.Sticker.ALL \
+               | filters.Document.ALL \
+               | filters.VOICE \
+               | filters.VIDEO_NOTE \
+               | filters.AUDIO \
+               | filters.ANIMATION
 
 
 def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> InlineKeyboardMarkup:
@@ -27,6 +37,15 @@ def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> I
         else:
             button = InlineKeyboardButton(f"✅ enable", callback_data=f"bs:setbool:true:{setting.key}")
         keyboard.append([button])
+    elif setting.value_type == ValueType.MEDIA:
+        row = [
+            InlineKeyboardButton(f"✏️ edit", callback_data=f"bs:editmedia:{setting.key}"),
+            InlineKeyboardButton(f"⚫️ nullify", callback_data=f"bs:null:{setting.key}")
+        ]
+        if setting.value_media_file_id:
+            row.append(InlineKeyboardButton(f"📎 test", callback_data=f"bs:testmedia:{setting.key}"))
+
+        keyboard.append(row)
     else:
         keyboard.append([
             InlineKeyboardButton(f"✏️ edit", callback_data=f"bs:edit:{setting.key}"),
@@ -119,7 +138,7 @@ async def on_bot_setting_switch_bool_button(update: Update, context: ContextType
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
 
-@decorators.catch_exception()
+@decorators.catch_exception(ignore_message_not_modified_exception=True)
 @decorators.pass_session()
 async def on_bot_setting_nullify_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"bot setting nullify button {utilities.log(update)}")
@@ -138,6 +157,18 @@ async def on_bot_setting_nullify_button(update: Update, context: ContextTypes.DE
 
 @decorators.catch_exception()
 @decorators.pass_session()
+async def on_bot_setting_test_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"bot setting test media button {utilities.log(update)}")
+    setting_key = context.matches[0].group("key")
+
+    setting: BotSetting = settings.get_or_create(session, setting_key)
+
+    await update.callback_query.answer(f"sending media of type {setting.value_media_type}...")
+    await utilities.reply_media(update.effective_message, setting.value_media_type, setting.value_media_file_id, quote=True)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
 async def on_bot_setting_edit_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
     logger.info(f"non-bool bot setting edit {utilities.log(update)}")
     setting_key = context.matches[0].group("key")
@@ -149,6 +180,21 @@ async def on_bot_setting_edit_button(update: Update, context: ContextTypes.DEFAU
                                              f"(or use /cancel to cancel):")
 
     return State.WAITING_NEW_SETTING_VALUE
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_bot_setting_edit_media_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"media bot setting edit {utilities.log(update)}")
+    setting_key = context.matches[0].group("key")
+    setting_label = BOT_SETTINGS_DEFAULTS[setting_key]["label"]
+    setting_emoji = BOT_SETTINGS_DEFAULTS[setting_key]["emoji"]
+
+    context.user_data[TempDataKey.BOT_SETTINGS] = dict(key=setting_key)
+    await update.effective_message.edit_text(f"Please send me the new media for {setting_emoji} <b>{setting_label}</b> "
+                                             f"(or use /cancel to cancel):")
+
+    return State.WAITING_NEW_SETTING_VALUE_MEDIA
 
 
 @decorators.catch_exception()
@@ -177,7 +223,14 @@ async def on_new_setting_value_receive(update: Update, context: ContextTypes.DEF
     setting_emoji = BOT_SETTINGS_DEFAULTS[setting_key]["emoji"]
 
     setting = settings.get_or_create(session, setting_key)
-    setting.update_value(utilities.convert_string_to_value(update.effective_message.text_html))
+    if not utilities.contains_media_with_file_id(update.message):
+        logger.info("new setting is text")
+        setting.update_value(utilities.convert_string_to_value(update.effective_message.text_html))
+    else:
+        logger.info("new setting is a media")
+        file_id, file_unique_id, _ = utilities.get_media_ids(update.message)
+        setting.update_value_telegram_media(file_id, file_unique_id, utilities.detect_media_type(update.message))
+
     setting.updated_by = update.effective_user.id
 
     await update.effective_message.reply_text(f"{setting_emoji} <b>{setting_label}</b> updated:\n\n{setting.value_pretty()}")
@@ -218,11 +271,19 @@ async def on_new_setting_value_timeout(update: Update, context: ContextTypes.DEF
 
 edit_nonbool_setting_conversation_handler = ConversationHandler(
     name="bot_settings_conversation",
-    entry_points=[CallbackQueryHandler(on_bot_setting_edit_button, rf"bs:edit:(?P<key>\w+)$")],
+    entry_points=[
+        CallbackQueryHandler(on_bot_setting_edit_button, rf"bs:edit:(?P<key>\w+)$"),
+        CallbackQueryHandler(on_bot_setting_edit_media_button, rf"bs:editmedia:(?P<key>\w+)$"),
+    ],
     states={
         State.WAITING_NEW_SETTING_VALUE: [
             PrefixHandler(COMMAND_PREFIXES, "cancel", on_new_setting_value_cancel_command),
             MessageHandler(filters.TEXT, on_new_setting_value_receive),
+            MessageHandler(~filters.TEXT, on_new_setting_value_receive_unexpected)
+        ],
+        State.WAITING_NEW_SETTING_VALUE_MEDIA: [
+            PrefixHandler(COMMAND_PREFIXES, "cancel", on_new_setting_value_cancel_command),
+            MessageHandler(FILTER_MEDIA, on_new_setting_value_receive),
             MessageHandler(~filters.TEXT, on_new_setting_value_receive_unexpected)
         ],
         ConversationHandler.TIMEOUT: [
@@ -244,5 +305,6 @@ HANDLERS = (
     (CallbackQueryHandler(on_bot_setting_show_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_bot_setting_switch_bool_button, rf"bs:setbool:(?P<value>\w+):(?P<key>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_bot_setting_nullify_button, rf"bs:null:(?P<key>\w+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_bot_setting_test_button, rf"bs:testmedia:(?P<key>\w+)$"), Group.NORMAL),
     (edit_nonbool_setting_conversation_handler, Group.NORMAL),
 )

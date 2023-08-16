@@ -327,6 +327,7 @@ when they send new messages. The reason is optional
 class State:
     WAITING_NEW_LOCALIZED_TEXT = 10
     WAITING_NEW_SETTING_VALUE = 20
+    WAITING_NEW_SETTING_VALUE_MEDIA = 30
 
 
 class Group:

@@ -189,6 +189,9 @@ def detect_media_type(message: Message) -> str:
         return MediaType.PHOTO
     elif message.video:
         return MediaType.VIDEO
+    elif message.animation:
+        # must be before the 'document' check because message.document is also populated for gifs
+        return MediaType.ANIMATION
     elif message.document:
         return MediaType.DOCUMENT
     elif message.voice:
@@ -199,8 +202,6 @@ def detect_media_type(message: Message) -> str:
         return MediaType.AUDIO
     elif message.sticker:
         return MediaType.STICKER
-    elif message.animation:
-        return MediaType.ANIMATION
 
     raise ValueError("message contains unknown media type or doesn't contain a media")
 

@@ -294,7 +294,7 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if date_override:
         text = f"{text} (data di riferimento: {date_override.strftime('%d/%m/%Y')})"
 
-    sent_message = await update.message.reply_html(text, reply_markup=reply_markup)
+    sent_message = await update.message.reply_animation("CgACAgQAAxkBAAIDeWTcx7WoY92OHQ8zO7UlLOBV6-leAAJuDgACuiHpUp1YvF1DD_wEMAQ", caption=text, reply_markup=reply_markup)
     private_chat_messages.save(session, sent_message)
 
 

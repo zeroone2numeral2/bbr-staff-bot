@@ -39,4 +39,4 @@ chat_members.chat_member_update # we don't need to handle these in 'bbr' mode
 # debug.callback_query
 # debug.chat_member
 debug.get_chat_member
-# debug.chatid
+debug.chatid

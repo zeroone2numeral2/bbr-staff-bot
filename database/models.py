@@ -662,18 +662,24 @@ class BotSetting(Base):
     def update_value_telegram_media(self, file_id: str, file_unique_id: str, media_type: str):
         self.update_null()
 
+        self.value_type = ValueType.MEDIA
+
         self.value_media_file_id = file_id
         self.value_media_file_unique_id = file_unique_id
         self.value_media_type = media_type
 
     def update_null(self):
-        self.value_type = None
+        # self.value_type = None  # do not nullify this: if it was a media setting, it must stay a media setting
         self.value_int = None
         self.value_bool = None
         self.value_str = None
         self.value_float = None
         self.value_date = None
         self.value_datetime = None
+
+        self.value_media_type = None
+        self.value_media_file_id = None
+        self.value_media_file_unique_id = None
 
     def value(self):
         if self.value_type == ValueType.BOOL:
@@ -692,10 +698,7 @@ class BotSetting(Base):
     def value_pretty(self):
         raw_value = self.value()
         if self.value_type == ValueType.MEDIA:
-            if self.value_media_file_id:
-                return f"{self.value_media_type}: {self.value_media_file_id}"
-            else:
-                return f"{self.value_media_type}: null"
+            return f"{self.value_media_type if self.value_media_type else 'null'}"
         elif self.value_type == ValueType.BOOL:
             return str(raw_value).lower()
         elif raw_value is None:
