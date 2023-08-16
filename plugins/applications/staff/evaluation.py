@@ -12,7 +12,7 @@ from telegram.ext import filters
 from telegram.ext import MessageHandler, CallbackQueryHandler, PrefixHandler, ConversationHandler
 
 from database.models import User, LocalizedText, PrivateChatMessage, Chat
-from database.queries import texts, settings, users, chats, private_chat_messages
+from database.queries import texts, settings, users, chats, private_chat_messages, chat_members
 import decorators
 import utilities
 from constants import Group, BotSettingKey, Language, LocalizedTextKey, COMMAND_PREFIXES
@@ -166,15 +166,26 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
         await delete_history(session, bot, user)
 
 
+def can_evaluate_applications(session: Session, user: TelegramUser):
+    if utilities.is_superadmin(user):
+        return True
+
+    chat_member = chat_members.get_chat_member(session, user.id, Chat.is_evaluation_chat)
+    if chat_member:
+        return chat_member.is_administrator()
+
+    return False
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True, pass_chat=True)
 async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
     logger.info(f"reject/accept user button {utilities.log(update)}")
 
-    if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
+    if not can_evaluate_applications(session, update.effective_user):
         logger.info("user is not allowed to accept/reject requests")
         await update.callback_query.answer(
-            f"Non sei abilitato alla gestione delle richieste degli utenti",
+            f"Non puoi gestire le richieste degli utenti",
             show_alert=True,
             cache_time=10
         )
@@ -204,9 +215,9 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
 async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
     logger.info(f"/accetta or /rifiuta command {utilities.log(update)}")
 
-    if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
+    if not can_evaluate_applications(session, update.effective_user):
         logger.info("user is not allowed to accept/reject requests")
-        await update.message.reply_text(f"Non sei abilitato all'approvazione delle richieste degli utenti")
+        await update.message.reply_text(f"Non puoi gestire le richieste degli utenti")
         return
 
     user_id = utilities.get_user_id_from_text(update.message.reply_to_message.text)
