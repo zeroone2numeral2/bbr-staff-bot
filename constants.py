@@ -287,6 +287,7 @@ class TempDataKey:
     EVENTS_CACHE_DATA = "events_cache_data"
     EVENTS_CACHE_SAVED_ON = "events_cache_saved_on"
     RADAR_DATE_OVERRIDE = "radar_date_override"
+    RADAR_PROTECT_CONTENT_OVERRIDE = "radar_protect_content_override"
 
 
 COMMAND_PREFIXES = ["/", "!", "."]

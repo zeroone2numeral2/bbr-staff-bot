@@ -276,6 +276,12 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.info("user is not a member of the users chat")
         return
 
+    command = utilities.get_command(update.message.text)
+    if command.lower() == "radar24" and chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat):
+        # only for staff chat members:
+        logger.info("protect content override for staff chat member")
+        context.user_data[TempDataKey.RADAR_PROTECT_CONTENT_OVERRIDE] = True
+
     # save to temp data the date the user passed, so we force-override todays' date when the confirm button is used
     date_override = None
     if context.args:
@@ -449,6 +455,8 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     # will also modify context.user_data[TempDataKey.EVENTS_FILTERS]
     args = args[:]
 
+    # if the key exists (if it exists, it's always True), do *not* protect the content
+    protect_content_override = context.user_data.pop(TempDataKey.RADAR_PROTECT_CONTENT_OVERRIDE, False)
     date_override: Optional[datetime.date] = context.user_data.pop(TempDataKey.RADAR_DATE_OVERRIDE, None)
     if date_override:
         # we cache the result *for this specific date override*, queries that
@@ -470,7 +478,12 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # only try this if the cache key exists in bot_data
         message_id: int = get_last_message_id_sent_for_cache_key(context, args_cache_key)
-        if message_id:
+        logger.info(f"protect_content_override: {protect_content_override}")
+        if message_id and not protect_content_override:
+            # we do not reply to an old message if protect_content_override: this flag is set when an user uses /radar24,
+            # which is supposed to send the un-content-protected list of events. It is pointless to reply to
+            # an old message in this case
+
             logger.info(f"cache hit for key {args_cache_key} in user_data, replying to previously-sent list...")
             await update.effective_message.delete()  # delete the message as we will send the new ones
             await update.effective_message.reply_html(
@@ -487,7 +500,8 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
 
     await update.effective_message.delete()  # delete the message as we will send the new ones
 
-    protect_content = not utilities.is_superadmin(update.effective_user)
+    # protect_content = not utilities.is_superadmin(update.effective_user)
+    protect_content = not protect_content_override
     sent_messages = await send_events_messages(update.effective_message, all_events_strings, protect_content)
     private_chat_messages.save(session, sent_messages)
 
@@ -568,6 +582,7 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.staff_admin()
 async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/delevent {utilities.log(update)}")
 
@@ -607,7 +622,7 @@ async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 HANDLERS = (
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
-    (CommandHandler(["radar", "radar23"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),

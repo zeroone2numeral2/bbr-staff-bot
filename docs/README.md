@@ -109,3 +109,43 @@ Il comando `/info` può essere usato nella chat staff o nella chat per le richie
 Dopo il comando va inserito il solito ID/hashtag dell'utente, oppure può essere usato in risposta a un messaggio dell'utente inoltrato nel gruppo staff.
 
 Il comando `/userchats` restituisce un elenco di chat di cui un utente fa parte e il suo stato di appartenenza a queste chat.
+
+## Radar23
+
+Per i membri della chat flytek, il bot mette a disposizione un comando (`/radar23`) che restituisce l'elenco (in ordine cronologico) degli eventi pubblicati nel canale, in base a dei filtri per regione/tipo festa/date.  
+
+I filtri sono i seguenti:
+- **regione**:
+  - italia
+  - estero
+- **tipo**:
+  - freeparty
+  - qualsiasi altra cosa (legal, squat, street parade, CS...)
+- **data inizio**:
+  - questa settimana (da lunedì a domenica)
+  - questa settimana (da lunedì a domenica) e la prossima
+  - questo mese (dall'1 all'ultimo giorno) e il prossimo
+  - eventi taggati come #soon o #comingsoon nel canale
+
+L'elenco di feste restutito include solo le date e il nome, non è inoltrabile nè copiabile (come i post nel gruppo/canale), e ogni evento linka al relativo post nel canale, quindi si potrà acceder al fly/dettagli solo se si è iscritti.  
+Ogni volta che si modifica un post nel canale, il bot ne aggiorna le informazioni nel database (cambio date, eventi annullati, hashtag, eccetera).  
+
+I membri della chat staff possono usare `/radar24` per ottenere la stessa lista di feste, ma copiabile/inoltrabile.
+
+È possibile anche "sovrascrivere" la data odierna scrivendola sopo il comando, ad esempio: `/radar23 22/09/2023`. In questo caso, il bot si comporterà come fosse il 22 Settembre, e i filtri temporali ragioneranno di conseguenza.
+
+La parte più dfficile nel realizzare sta cosa è stata prendere in considerazione i centomila formati in cui sono scritte le date. 
+Sarebbe preferibile, quando si posta un evento nel canale, modificare il testo del messaggio affinchè la data dell'evento rispetti i seguenti formati:
+- per gli eventi che durano un giorno: `gg.mm.aaaa` (es. `19.08.2023`)
+- per gli eventi che durano più giorni: `gg-gg.mm.aaaa` (es. `19-21.08.2023`)
+- per gli eventi che durano più giorni ma la cui data di fine è incerta: `gg-??.08.2023` (es. `18-??.08.2023`)
+- per gli eventi la cui data fine cade il mese successivo rispetto alla data d'inizio: `gg-gg.mm.aaaa` (es. `28-03.08.2023`; in questo caso ad esempio dovrebbe essere sufficientemente chiaro che lo `03` è il 3 di Settembre)
+
+Detto ciò, il bot è abbastanza sveglio - gli zeri davanti al giorno/mese non sono necessari, "_23_" come anno va bene al posto di "_2023_", il separatore della data può essere anche "/", e in realtà i casi strani ma comuni vengono tutti presi in considerazione.
+
+Se per un evento non è possibile estrarre una data, allora il bot prenderà in considerazione l'hashtag. Ad esempio, se per un evento non c'è una data ma l'hashtag è "_#settembre_", il bot salverà come data `??.09.2023`.  
+In ogni caso, esiste il comando `/invalidevents` (o `/ie`): elencherà tutti gli eventi per i quali non è stato possibile estrarre nemmeno il mese. Basta correggere il post nel canale affinchè il bot aggiorni la data in automatico.  
+
+Unico problema di questa cosa: il bot non può sapere quando eliminiamo un post dal canale. Per eliminare un evento dal suo database, è sufficiente usare il comando `/delevent` (o `/de`) seguito dal link al post eliminato. Il link ad un post già eliminato basta copiarlo dall'elenco degli eventi inviati dal bot in risposta a `/radar23`.
+
+

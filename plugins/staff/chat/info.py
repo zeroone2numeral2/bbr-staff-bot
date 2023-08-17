@@ -52,7 +52,7 @@ async def get_user_instance_from_message(update: Update, context: ContextTypes.D
 async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/info {utilities.log(update)}")
 
-    user = await get_user_instance_from_message(update, context, session)
+    user: User = await get_user_instance_from_message(update, context, session)
     if not user:
         return
 
