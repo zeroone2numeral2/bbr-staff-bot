@@ -600,6 +600,7 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.staff_admin()
 async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/getpost {utilities.log(update)}")
 
@@ -613,17 +614,24 @@ async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     else:
         # if no media_type, assume photo
         media_type = event.media_type or MediaType.PHOTO
-        await utilities.reply_media(message=update.message, media_type=media_type, file_id=event.media_file_id)
+        await utilities.reply_media(
+            message=update.message,
+            media_type=media_type,
+            file_id=event.media_file_id,
+            caption=event.message_text
+        )
 
 
 HANDLERS = (
-    (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
+
     (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    # superadmins
+    (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
-    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
-    (CommandHandler(["getpost"], on_getpost_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )
