@@ -600,24 +600,20 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-async def on_getfly_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/getfly {utilities.log(update)}")
+async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/getpost {utilities.log(update)}")
 
     event: Event = await event_from_link(update, context, session)
     if not event:
+        await update.message.reply_text("nessuno evento per questo link")
         return
-
-    event_str = format_event_string(event)
 
     if not event.media_file_id:
-        await update.effective_message.reply_text(f"No file id for {event_str}")
-        return
-
-    await update.effective_message.reply_text(f"fly for {event_str}")
-
-    # if no media_type, assume photo
-    media_type = event.media_type or MediaType.PHOTO
-    await utilities.reply_media(message=update.message, media_type=media_type, file_id=event.media_file_id)
+        await update.effective_message.reply_html(f"{event.message_text}")
+    else:
+        # if no media_type, assume photo
+        media_type = event.media_type or MediaType.PHOTO
+        await utilities.reply_media(message=update.message, media_type=media_type, file_id=event.media_file_id)
 
 
 HANDLERS = (
@@ -629,5 +625,5 @@ HANDLERS = (
     (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
-    (CommandHandler(["fly", "getfly"], on_getfly_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["getpost"], on_getpost_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )
