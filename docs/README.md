@@ -127,12 +127,12 @@ I filtri sono i seguenti:
   - questo mese (dall'1 all'ultimo giorno) e il prossimo
   - eventi taggati come #soon o #comingsoon nel canale
 
-L'elenco di feste restutito include solo le date e il nome, non è inoltrabile nè copiabile (come i post nel gruppo/canale), e ogni evento linka al relativo post nel canale, quindi si potrà acceder al fly/dettagli solo se si è iscritti.  
+L'elenco di feste restutito include solo le date e il nome, non è inoltrabile nè copiabile (come i post nel gruppo/canale), e ogni evento linka al relativo post nel canale, quindi si potrà acceder al fly/dettagli solo se si è già iscritti.  
 Ogni volta che si modifica un post nel canale, il bot ne aggiorna le informazioni nel database (cambio date, eventi annullati, hashtag, eccetera).  
 
 I membri della chat staff possono usare `/radar24` per ottenere la stessa lista di feste, ma copiabile/inoltrabile.
 
-È possibile anche "sovrascrivere" la data odierna scrivendola sopo il comando, ad esempio: `/radar23 22/09/2023`. In questo caso, il bot si comporterà come fosse il 22 Settembre, e i filtri temporali ragioneranno di conseguenza.
+È possibile anche "sovrascrivere" la data odierna scrivendola dopo il comando, ad esempio: `/radar23 22/09/2023`. In questo caso, il bot si comporterà come fosse il 22 Settembre, e i filtri temporali funzioneranno di conseguenza.
 
 La parte più dfficile nel realizzare sta cosa è stata prendere in considerazione i centomila formati in cui sono scritte le date. 
 Sarebbe preferibile, quando si posta un evento nel canale, modificare il testo del messaggio affinchè la data dell'evento rispetti i seguenti formati:
@@ -141,11 +141,12 @@ Sarebbe preferibile, quando si posta un evento nel canale, modificare il testo d
 - per gli eventi che durano più giorni ma la cui data di fine è incerta: `gg-??.08.2023` (es. `18-??.08.2023`)
 - per gli eventi la cui data fine cade il mese successivo rispetto alla data d'inizio: `gg-gg.mm.aaaa` (es. `28-03.08.2023`; in questo caso ad esempio dovrebbe essere sufficientemente chiaro che lo `03` è il 3 di Settembre)
 
-Detto ciò, il bot è abbastanza sveglio - gli zeri davanti al giorno/mese non sono necessari, "_23_" come anno va bene al posto di "_2023_", il separatore della data può essere anche "/", e in realtà i casi strani ma comuni vengono tutti presi in considerazione.
+Detto ciò, il bot è di manica larga - gli zeri davanti al giorno/mese non sono necessari, "_23_" come anno va bene al posto di "_2023_", il separatore della data può essere anche "/" o altri caratteri, e la maggior parte dei casi strani ma comuni vengono tutti presi in considerazione. 
+Da maggio avrò dovuto correggere una decina di post in totale.
 
 Se per un evento non è possibile estrarre una data, allora il bot prenderà in considerazione l'hashtag. Ad esempio, se per un evento non c'è una data ma l'hashtag è "_#settembre_", il bot salverà come data `??.09.2023`.  
-In ogni caso, esiste il comando `/invalidevents` (o `/ie`): elencherà tutti gli eventi per i quali non è stato possibile estrarre nemmeno il mese. Basta correggere il post nel canale affinchè il bot aggiorni la data in automatico.  
+In ogni caso, esiste il comando `/invalidevents` (o `/ie`): elencherà tutte le feste per le quali non è stato possibile estrarre nemmeno il mese. Basta correggere il post nel canale affinchè il bot aggiorni la data in automatico.  
 
-Unico problema di questa cosa: il bot non può sapere quando eliminiamo un post dal canale. Per eliminare un evento dal suo database, è sufficiente usare il comando `/delevent` (o `/de`) seguito dal link al post eliminato. Il link ad un post già eliminato basta copiarlo dall'elenco degli eventi inviati dal bot in risposta a `/radar23`.
-
-
+Unico problema di questa cosa: il bot non può sapere quando eliminiamo un post dal canale. Per eliminare un evento dal suo database, è sufficiente usare il comando `/delevent` (o `/de`) seguito dal link al post eliminato. 
+Il link ad un post già eliminato basta copiarlo dall'elenco degli eventi inviati dal bot in risposta a `/radar24` (attenzione al "_24_", perchè col 23 il testo **non** è copiabile).  
+Se un post eliminato dal canale non viene anche eliminato dal bot, poco male: quando un utente ci preme sopra, Telegram gli dirà che il messaggio non esiste più e amen.
