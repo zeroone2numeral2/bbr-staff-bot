@@ -84,7 +84,7 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False) 
         title_escaped = f"<s>{title_escaped}</s>"
 
     if message_date_instead_of_event_date:
-        date = utilities.format_datetime(event.message_date, format_str="%d/%m/%Y")
+        date = utilities.format_datetime(event.message_date, format_str="msg date: %d/%m/%Y")
     else:
         date = event.pretty_date()
 
