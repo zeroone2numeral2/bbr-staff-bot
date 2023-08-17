@@ -70,7 +70,7 @@ def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
         return True
 
 
-def format_event_string(event: Event) -> str:
+def format_event_string(event: Event, message_date_instead_of_event_date=False) -> str:
     region_icon = ""
     if event.region and event.region in REGIONS_DATA:
         region_icon = REGIONS_DATA[event.region]["emoji"]
@@ -83,8 +83,13 @@ def format_event_string(event: Event) -> str:
     if event.canceled:
         title_escaped = f"<s>{title_escaped}</s>"
 
+    if message_date_instead_of_event_date:
+        date = utilities.format_datetime(event.message_date, format_str="%d/%m/%Y")
+    else:
+        date = event.pretty_date()
+
     # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
-    text = f"{event.icon()}{region_icon} <b><a href=\"{event.message_link()}\">{title_escaped}</a></b> • {event.pretty_date()}"
+    text = f"{event.icon()}{region_icon} <b><a href=\"{event.message_link()}\">{title_escaped}</a></b> • {date}"
 
     return text
 
@@ -526,7 +531,7 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
         if event.is_valid():
             continue
 
-        text_line = format_event_string(event)
+        text_line = format_event_string(event, message_date_instead_of_event_date=True)
         all_events_strings.append(text_line)
 
     protect_content = not utilities.is_superadmin(update.effective_user)

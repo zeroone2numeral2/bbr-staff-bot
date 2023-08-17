@@ -44,11 +44,11 @@ def now_str():
     return now().strftime("%d/%m/%Y %H:%M")
 
 
-def format_datetime(dt_object: datetime.datetime, if_none="-"):
+def format_datetime(dt_object: datetime.datetime, if_none="-", format_str: str = "%d/%m/%Y %H:%M:%S"):
     if not dt_object:
         return if_none
 
-    return dt_object.strftime("%d/%m/%Y %H:%M:%S")
+    return dt_object.strftime(format_str)
 
 
 def is_test_bot():
