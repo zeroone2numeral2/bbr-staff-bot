@@ -271,14 +271,18 @@ def radar_save_date_override_to_user_data(context: ContextTypes.DEFAULT_TYPE):
     return today_object
 
 
+def can_use_radar(user_id: int):
+    return user_id in config.settings.radar_enabled
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 @decorators.check_ban()
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/radar {utilities.log(update)}")
+    logger.info(f"/radar23 {utilities.log(update)}")
 
-    if not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
-        logger.info("user is not a member of the users chat")
+    if not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat) and not can_use_radar(update.effective_user.id):
+        logger.info("user is not a member of the users chat and can't use the command")
         return
 
     command = utilities.get_command(update.message.text)
