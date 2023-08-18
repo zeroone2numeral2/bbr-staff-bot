@@ -606,6 +606,8 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     event_str = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event deleted")
 
+    drop_events_cache(context)
+
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
