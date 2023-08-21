@@ -35,9 +35,7 @@ defaults = Defaults(
 Base.metadata.create_all(engine)
 
 
-async def post_init(application: Application) -> None:
-    bot: ExtBot = application.bot
-
+async def set_bbr_commands(bot: ExtBot):
     default_english_commands = [
         BotCommand("start", "see the welcome message"),
         BotCommand("lang", "set your language")
@@ -62,6 +60,20 @@ async def post_init(application: Application) -> None:
         language_code=Language.FR,
         scope=BotCommandScopeAllPrivateChats()
     )
+
+
+async def post_init(application: Application) -> None:
+    bot: ExtBot = application.bot
+
+    if config.handlers.mode == "bbr":
+        logger.info("setting bbr commands...")
+        await set_bbr_commands(bot)
+    else:
+        logger.info("setting flytek commands...")
+        await bot.set_my_commands(
+            [BotCommand("start", "chiedi 👀"), BotCommand("radar23", "feste")],
+            scope=BotCommandScopeAllPrivateChats()
+        )
 
     session: Session = get_session()
 
