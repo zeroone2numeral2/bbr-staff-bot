@@ -94,7 +94,7 @@ async def post_init(application: Application) -> None:
 
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
     if not staff_chat:
-        logger.info("no staff chat set, exiting")
+        logger.info("no staff chat set, exiting post_init")
 
         # remember to commit before exiting!!!
         session.commit()
