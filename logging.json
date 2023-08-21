@@ -52,6 +52,9 @@
         "httpx": {
             "level": "WARNING"
         },
+        "httpcore": {
+            "level": "WARNING"
+        },
         "loader": {
             "level": "INFO"
         }
