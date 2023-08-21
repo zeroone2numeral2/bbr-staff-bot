@@ -467,7 +467,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     request.set_log_message(log_message)
 
     logger.debug("sending staff message...")
-    staff_message_text = f"{base_text}\n\n••• <b><u>allegati</u></b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
+    staff_message_text = f"{base_text}\n\n• <b>presentazione ed allegati</b> ••\n<a href=\"{request.log_message_link()}\">vai al log</a>"
     staff_message_reply_markup = get_evaluation_keyboard(request.user_id, request.id)
     staff_message: Message = await bot.send_message(evaluation_chat_id, staff_message_text, reply_markup=staff_message_reply_markup, **timeouts)
     request.set_staff_message(staff_message)
