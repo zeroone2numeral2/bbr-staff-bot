@@ -93,43 +93,47 @@ async def post_init(application: Application) -> None:
     session.commit()
 
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
-    if not staff_chat:
-        logger.info("no staff chat set, exiting post_init")
+    users_chat = chats.get_chat(session, Chat.is_users_chat)
+    evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
+    for chat in [staff_chat, users_chat, evaluation_chat]:
+        if not chat:
+            logger.info("chat is none, next chat...")
+            continue
 
-        # remember to commit before exiting!!!
+        try:
+            staff_chat_chat_member: ChatMember = await bot.get_chat_member(chat.chat_id, bot.id)
+        except BadRequest as e:
+            logger.error(f"error while gettign {chat.title}'s ChatMember: {e}")
+            if "chat not found" in e.message.lower():
+                logger.warning(f"{chat.title} {chat.chat_id} not found: resetting that type of chat...")
+                if chat.is_staff_chat:
+                    chats.reset_staff_chat(session)
+                elif chat.is_users_chat:
+                    chats.reset_users_chat(session)
+                elif chat.is_evaluation_chat:
+                    chats.reset_events_chat(session)
+
+            session.commit()
+            continue
+
+        if not isinstance(staff_chat_chat_member, ChatMemberAdministrator):
+            logger.info(f"not an admin in {chat.title} {chat.chat_id}, current status: {staff_chat_chat_member.status}")
+            chat.unset_as_administrator()
+        else:
+            logger.info(f"admin in {chat.title} {chat.chat_id}, can_delete_messages: {staff_chat_chat_member.can_delete_messages}")
+            chat.set_as_administrator(
+                can_delete_messages=staff_chat_chat_member.can_delete_messages,
+                can_invite_users=staff_chat_chat_member.can_invite_users
+            )
+
+        session.add(chat)
         session.commit()
-        return
 
-    try:
-        staff_chat_chat_member: ChatMember = await bot.get_chat_member(staff_chat.chat_id, bot.id)
-    except BadRequest as e:
-        logger.error(f"error while gettign staff chat's ChatMember: {e}")
-        if "chat not found" in e.message.lower():
-            logger.warning(f"staff chat {staff_chat.chat_id} not found: resetting staff chat...")
-            chats.reset_staff_chat(session)
-
-        # remember to commit before exiting!!!
+        logger.info(f"updating {chat.title} administrators...")
+        # noinspection PyTypeChecker
+        administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]] = await bot.get_chat_administrators(chat.chat_id)
+        chat_members.save_administrators(session, chat.chat_id, administrators)
         session.commit()
-        return
-
-    if not isinstance(staff_chat_chat_member, ChatMemberAdministrator):
-        logger.info(f"not an admin in the staff chat {staff_chat.chat_id}, current status: {staff_chat_chat_member.status}")
-        staff_chat.unset_as_administrator()
-    else:
-        logger.info(f"admin in the staff chat {staff_chat.chat_id}, can_delete_messages: {staff_chat_chat_member.can_delete_messages}")
-        staff_chat.set_as_administrator(
-            can_delete_messages=staff_chat_chat_member.can_delete_messages,
-            can_invite_users=staff_chat_chat_member.can_invite_users
-        )
-
-    session.add(staff_chat)
-    session.commit()
-
-    logger.info("updating staff chat administrators...")
-    # noinspection PyTypeChecker
-    administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]] = await bot.get_chat_administrators(staff_chat.chat_id)
-    chat_members.save_administrators(session, staff_chat.chat_id, administrators)
-    session.commit()
 
     admin_commands = defaul_english_commands + [
         BotCommand("settings", "change the bot's global settings"),
