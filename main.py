@@ -35,39 +35,35 @@ defaults = Defaults(
 Base.metadata.create_all(engine)
 
 
-async def set_bbr_commands(bot: ExtBot):
+async def post_init(application: Application) -> None:
+    bot: ExtBot = application.bot
+
     default_english_commands = [
         BotCommand("start", "see the welcome message"),
         BotCommand("lang", "set your language")
     ]
 
-    await bot.set_my_commands(
-        default_english_commands,
-        scope=BotCommandScopeAllPrivateChats()
-    )
-    await bot.set_my_commands(
-        [BotCommand("start", "messaggio di benvenuto"), BotCommand("lang", "cambia lingua")],
-        language_code=Language.IT,
-        scope=BotCommandScopeAllPrivateChats()
-    )
-    await bot.set_my_commands(
-        [BotCommand("start", "mensaje de bienvenida"), BotCommand("lang", "cambiar idioma")],
-        language_code=Language.ES,
-        scope=BotCommandScopeAllPrivateChats()
-    )
-    await bot.set_my_commands(
-        [BotCommand("start", "message d'accueil"), BotCommand("lang", "changer langue")],
-        language_code=Language.FR,
-        scope=BotCommandScopeAllPrivateChats()
-    )
-
-
-async def post_init(application: Application) -> None:
-    bot: ExtBot = application.bot
-
     if config.handlers.mode == "bbr":
         logger.info("setting bbr commands...")
-        await set_bbr_commands(bot)
+        await bot.set_my_commands(
+            default_english_commands,
+            scope=BotCommandScopeAllPrivateChats()
+        )
+        await bot.set_my_commands(
+            [BotCommand("start", "messaggio di benvenuto"), BotCommand("lang", "cambia lingua")],
+            language_code=Language.IT,
+            scope=BotCommandScopeAllPrivateChats()
+        )
+        await bot.set_my_commands(
+            [BotCommand("start", "mensaje de bienvenida"), BotCommand("lang", "cambiar idioma")],
+            language_code=Language.ES,
+            scope=BotCommandScopeAllPrivateChats()
+        )
+        await bot.set_my_commands(
+            [BotCommand("start", "message d'accueil"), BotCommand("lang", "changer langue")],
+            language_code=Language.FR,
+            scope=BotCommandScopeAllPrivateChats()
+        )
     else:
         logger.info("setting flytek commands...")
         await bot.set_my_commands(
