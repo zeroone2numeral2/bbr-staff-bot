@@ -1,17 +1,17 @@
 [flytek]
 applications.users.any_message # preprocess
+events.message # preprocess
 
 [+]
-events.message # preprocess
 staff.chat.edits # preprocess
 superadmins.chats
 staff.private.placeholders
 staff.private.settings_manual
 staff.private.settings
 staff.private.ltexts
-events.commands
 
 [flytek]
+events.commands
 applications.users.request
 applications.staff.approvers
 applications.staff.reset
