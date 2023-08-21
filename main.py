@@ -38,13 +38,13 @@ Base.metadata.create_all(engine)
 async def post_init(application: Application) -> None:
     bot: ExtBot = application.bot
 
-    defaul_english_commands = [
+    default_english_commands = [
         BotCommand("start", "see the welcome message"),
         BotCommand("lang", "set your language")
     ]
 
     await bot.set_my_commands(
-        defaul_english_commands,
+        default_english_commands,
         scope=BotCommandScopeAllPrivateChats()
     )
     await bot.set_my_commands(
@@ -135,7 +135,7 @@ async def post_init(application: Application) -> None:
         chat_members.save_administrators(session, chat.chat_id, administrators)
         session.commit()
 
-    admin_commands = defaul_english_commands + [
+    admin_commands = default_english_commands + [
         BotCommand("settings", "change the bot's global settings"),
         BotCommand("texts", "manage text messages that depend on the user's language"),
         BotCommand("placeholders", "list all available placeholders")
