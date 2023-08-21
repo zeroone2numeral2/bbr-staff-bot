@@ -102,12 +102,12 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
         emoji=Emoji.PEOPLE,
         show_if_true_bot_setting_key=None
     ),
-    LocalizedTextKey.USERNAME_REQUIRED: dict(
-        label="username necessario",
-        explanation="Il messaggio che verrà inviato agli utenti se non hanno impostato uno username",
-        emoji=Emoji.SIGN,
-        show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
-    ),
+    # LocalizedTextKey.USERNAME_REQUIRED: dict(
+    #     label="username necessario",
+    #     explanation="Il messaggio che verrà inviato agli utenti se non hanno impostato uno username",
+    #     emoji=Emoji.SIGN,
+    #     show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
+    # ),
     LocalizedTextKey.WELCOME_MEMBER: dict(
         label="benvenuto (membri)",
         explanation="Il messaggio che verrà inviato agli utenti quando avviano il bot, se non fanno parte del gruppo",
