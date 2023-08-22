@@ -4,7 +4,7 @@ from sqlalchemy import true
 from sqlalchemy.orm import Session
 from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
 
-from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
+from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict, User
 from database.queries import users
 
 CHAT_MEMBER_STATUS_ADMIN = [ChatMember.ADMINISTRATOR, ChatMember.OWNER]
@@ -43,6 +43,15 @@ def get_chat_member(session: Session, user_id: int, chat_filter) -> Optional[DbC
     chat_member = session.query(DbChatMember).join(Chat).filter(
         DbChatMember.user_id == user_id,
         chat_filter == true()
+    ).one_or_none()
+
+    return chat_member
+
+
+def get_chat_chat_member(session: Session, user_id: int, chat_id: int) -> Optional[DbChatMember]:
+    chat_member = session.query(DbChatMember).filter(
+        DbChatMember.user_id == user_id,
+        DbChatMember.chat_id == chat_id
     ).one_or_none()
 
     return chat_member

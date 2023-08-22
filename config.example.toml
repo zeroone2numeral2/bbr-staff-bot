@@ -11,6 +11,7 @@ admins = [
 broadcast_message_edits = true
 backup_events = true
 tell_ban_reason = false
+save_chat_member_from_message = false
 radar_enabled = []
 
 [handlers]

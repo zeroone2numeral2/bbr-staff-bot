@@ -34,6 +34,7 @@ chat_members.my_chat_member_update
 
 [flytek]
 chat_members.chat_member_update # we don't need to handle these in 'bbr' mode
+chat_members.save_from_message # postprocess
 
 [+]
 # debug.callback_query

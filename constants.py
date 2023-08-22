@@ -344,6 +344,7 @@ class Group:
     DEBUG = 1
     PREPROCESS = 3
     NORMAL = 5
+    POSTPROCESS = 10
 
 
 class Regex:
