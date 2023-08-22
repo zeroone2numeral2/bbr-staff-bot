@@ -286,8 +286,8 @@ class Chat(Base):
         self.is_events_chat = True
         self.is_log_chat = False
 
-    def is_special_group_chat(self):
-        return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat
+    def is_special_chat(self):
+        return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat or self.is_events_chat or self.is_log_chat
 
 
 chat_member_union_type = Union[
