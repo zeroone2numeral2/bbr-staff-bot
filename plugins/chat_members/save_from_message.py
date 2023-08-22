@@ -2,6 +2,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from telegram import Update
+from telegram.error import BadRequest, TelegramError
 from telegram.ext import MessageHandler, filters, ContextTypes
 
 from constants import Group
@@ -33,8 +34,12 @@ async def on_group_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         # chat member records exist: do nothing
         return
 
-    logger.info("saving previously unknown ChatMember...")
-    tg_chat_member = await update.effective_chat.get_member(user_id)
+    logger.info("saving previously unknown chat member...")
+    try:
+        tg_chat_member = await update.effective_chat.get_member(user_id)
+    except (BadRequest, TelegramError) as e:
+        logger.warning(f"error while getting chat member from telegram: {e}")
+        return
 
     db_chat_member = DbChatMember.from_chat_member(chat_id, tg_chat_member)
     session.add(db_chat_member)
