@@ -57,6 +57,9 @@
         },
         "loader": {
             "level": "INFO"
+        },
+        "save_from_message": {
+            "level": "INFO"
         }
     },
     "formatters": {
