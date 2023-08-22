@@ -286,7 +286,7 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return
 
     command = utilities.get_command(update.message.text)
-    if command.lower() == "radar24" and chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat):
+    if command.lower() == "radar24" and (utilities.is_superadmin(update.effective_user) or chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat)):
         # only for staff chat members:
         logger.info("protect content override for staff chat member")
         context.user_data[TempDataKey.RADAR_PROTECT_CONTENT_OVERRIDE] = True
