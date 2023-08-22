@@ -91,6 +91,10 @@ async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_
 async def on_chat_member_update(update: Update, context: CallbackContext, session: Session, chat: Optional[Chat] = None):
     logger.info(f"chat member update {utilities.log(update)}")
 
+    if not chat.is_special_group_chat() and not chat.save_chat_members:
+        logger.info(f"chat is not a special chat and save_chat_members is false: ignoring update")
+        return
+
     logger.info("saving or updating User objects...")
     save_or_update_users_from_chat_member_update(session, update, commit=True)
     if update.effective_chat.id < 0:

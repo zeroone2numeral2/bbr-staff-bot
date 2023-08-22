@@ -5,6 +5,7 @@ events.message # preprocess
 [+]
 staff.chat.edits # preprocess
 superadmins.chats
+superadmins.save_chat_members
 staff.private.placeholders
 staff.private.settings_manual
 staff.private.settings

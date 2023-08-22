@@ -282,6 +282,17 @@ def get_language_code(selected_language_code, telegram_language_code):
     return telegram_language_code or Language.EN
 
 
+async def delete_messages_safe(messages: Union[Message, List[Message]]):
+    if not isinstance(messages, list):
+        messages = [messages]
+
+    for message in messages:
+        try:
+            await message.delete()
+        except BadRequest as e:
+            pass
+
+
 async def edit_text_safe(update: Update, *args, **kwargs):
     try:
         await update.effective_message.edit_text(*args, **kwargs)

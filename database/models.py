@@ -201,6 +201,7 @@ class Chat(Base):
     can_delete_messages = Column(Boolean, default=False)  # whether the bot is allowed to delete messages or not
     can_invite_users = Column(Boolean, default=False)  # whether the bot can manage invite links
     last_administrators_fetch = Column(DateTime, default=None, nullable=True)
+    save_chat_members = Column(Boolean, default=False)  # wether to save chat member updates even if the chat is not `special`
 
     chat_members = relationship("ChatMember", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
     admin_messages = relationship("AdminMessage", back_populates="chat", cascade="all, delete, delete-orphan, save-update")
@@ -284,6 +285,9 @@ class Chat(Base):
     def set_as_events_chat(self):
         self.is_events_chat = True
         self.is_log_chat = False
+
+    def is_special_group_chat(self):
+        return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat
 
 
 chat_member_union_type = Union[
