@@ -79,8 +79,8 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+@decorators.pass_session(pass_chat=True)
+async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"reply to a message {utilities.log(update)}")
 
     if update.message.reply_to_message.from_user and update.message.reply_to_message.from_user.id != context.bot.id:
@@ -103,8 +103,10 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
                        f"message_id: {update.message.reply_to_message.message_id}")
         return
 
+    user: User = user_message.user
+
     try:
-        await context.bot.send_chat_action(user_message.user_id, ChatAction.TYPING)
+        await context.bot.send_chat_action(user.user_id, ChatAction.TYPING)
         # time.sleep(3)
     except (TelegramError, BadRequest) as e:
         if e.message.lower() == "forbidden: bot was blocked by the user":
@@ -113,13 +115,13 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
                 f"{Emoji.WARNING} <i>coudln't send the message to the user: they blocked the bot</i>",
                 quote=True
             )
-            user_message.user.set_stopped()
+            user.set_stopped()
             return
         else:
             raise e
 
     sent_message: MessageId = await update.message.copy(
-        chat_id=user_message.user_id,
+        chat_id=user.user_id,
         reply_to_message_id=user_message.message_id,
         allow_sending_without_reply=True  # in case the user deleted their own message in the bot's chat
     )
