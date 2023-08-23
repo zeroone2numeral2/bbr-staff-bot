@@ -51,15 +51,6 @@ def get_all_chats(session: Session):
     return session.scalars(statement)
 
 
-def get_staff_chat_administrators(session: Session):
-    # noinspection PyUnresolvedReferences
-    statement = session.query(DbChatMember).join(Chat).join(User).where(
-        DbChatMember.status.in_([ChatMember.ADMINISTRATOR, ChatMember.OWNER]),
-        Chat.is_staff_chat == true()
-    )
-    return session.scalars(statement)
-
-
 def get_or_create(session: Session, chat_id: int, create_if_missing=True, telegram_chat: Optional[TelegramChat] = None):
     chat: Chat = session.query(Chat).filter(Chat.chat_id == chat_id).one_or_none()
 

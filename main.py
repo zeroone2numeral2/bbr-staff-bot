@@ -70,14 +70,17 @@ async def set_bbr_commands(session: Session, bot: ExtBot):
         BotCommand("texts", "manage text messages that depend on the user's language"),
         BotCommand("placeholders", "list all available placeholders")
     ]
-    staff_chat_administrators = chats.get_staff_chat_administrators(session)
+    staff_chat_member = chat_members.get_chat_chat_members(session, Chat.is_staff_chat)
     chat_member: DbChatMember
-    for chat_member in staff_chat_administrators:
+    for chat_member in staff_chat_member:
         logger.info(f"setting admin commands for {chat_member.user.user_id}...")
         await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
 
 
 async def set_flytek_commands(session: Session, bot: ExtBot):
+    # first: reset all commands
+    await bot.set_my_commands([], scope=BotCommandScopeDefault())
+
     logger.info("setting flytek commands...")
 
     users_commands_private = [
@@ -114,7 +117,7 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
     if staff_chat:
         await bot.set_my_commands(staff_chat_commands, scope=BotCommandScopeChat(staff_chat.chat_id))
 
-        staff_chat_members = chat_members.get_chat_members(session, staff_chat.chat_id)
+        staff_chat_members = chat_members.get_chat_chat_members(session, Chat.is_staff_chat)
         chat_member: DbChatMember
         for chat_member in staff_chat_members:
             await bot.set_my_commands(staff_commands_private, scope=BotCommandScopeChat(chat_member.user_id))

@@ -102,7 +102,7 @@ async def on_userchats_command(update: Update, context: ContextTypes.DEFAULT_TYP
     if not user:
         return
 
-    user_chat_members = chat_members.all_chat_members(session, user.user_id)
+    user_chat_members = chat_members.get_user_chat_members(session, user.user_id)
     chats_strings = []
     chat_member: DbChatMember
     for chat_member in user_chat_members:
