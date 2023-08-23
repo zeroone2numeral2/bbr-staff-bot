@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class User(Base):
     __tablename__ = 'users'
 
+    # metadata
     user_id = mapped_column(Integer, primary_key=True)
     name = Column(String, default=None)
     first_name = Column(String, default=None)
@@ -49,7 +50,8 @@ class User(Base):
     # application (user)
     pending_request_id = mapped_column(Integer, default=None)  # pending ApplicationRequest
     last_request_id = mapped_column(Integer, default=None)  # status of the last application processed
-    last_request_status = Column(Boolean, default=None)  # SHOULDN'T BE USED
+    # last_request_status = Column(Boolean, default=None)  # SHOULDN'T BE USED
+    conversate_with_staff_override = Column(Boolean, default=False)  # whether the user can conversate with the staff even when a request is pending/rejected
 
     # application (admin)
     can_evaluate_applications = Column(Boolean, default=False)
