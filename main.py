@@ -5,7 +5,7 @@ from typing import Union, Iterable
 import pytz
 from sqlalchemy import update, null
 from sqlalchemy.orm import Session
-from telegram import Update, BotCommandScopeChat, ChatMemberOwner, ChatInviteLink
+from telegram import Update, BotCommandScopeChat, ChatMemberOwner, ChatInviteLink, BotCommandScopeDefault
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMember, ChatMemberAdministrator
 from telegram.constants import ParseMode
@@ -42,6 +42,9 @@ async def post_init(application: Application) -> None:
         BotCommand("start", "see the welcome message"),
         BotCommand("lang", "set your language")
     ]
+
+    # first: reset all commands
+    await bot.set_my_commands([], scope=BotCommandScopeDefault())
 
     if config.handlers.mode == "bbr":
         logger.info("setting bbr commands...")
