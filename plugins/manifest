@@ -14,7 +14,6 @@ staff.private.ltexts
 [flytek]
 events.commands
 applications.users.request
-applications.staff.approvers
 applications.staff.reset
 applications.staff.evaluation
 
