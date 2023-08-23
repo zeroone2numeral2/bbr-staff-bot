@@ -177,7 +177,7 @@ LOCALIZED_TEXTS_DESCRIPTORS = {
     ),
     LocalizedTextKey.APPLICATION_REJECTED_ANSWER: dict(
         label="risposta ai rifiutati",
-        explanation="Il messaggio che verrà inviato come risposta a tutti i messaggi degli utenti rifiutati",
+        explanation="Il messaggio che verrà inviato come risposta agli utenti rifiutati quando usano /start",
         emoji=Emoji.EVIL,
         show_if_true_bot_setting_key=BotSettingKey.APPROVAL_MODE
     ),
