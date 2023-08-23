@@ -990,7 +990,7 @@ class ApplicationRequest(Base):
     status_notes = Column(String, default=None)
     status_changed_on = Column(DateTime, default=None)
     # canceled = Column(Boolean, default=False)
-    request_sent_message_message_id = Column(Integer, default=None)
+    request_sent_message_message_id = Column(Integer, default=None)  # message_id of the message we sent to the user saying that their request has been sent to the staff
     accepted_message_message_id = Column(Integer, default=None)
     invite_link = Column(String, default=None)  # the invite link we sent to the user
     invite_link_can_be_revoked_after_join = Column(Boolean, default=False)  # wether it is safe to revoke the invite link after the user joined
