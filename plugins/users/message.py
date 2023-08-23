@@ -23,53 +23,63 @@ logger = logging.getLogger(__name__)
 async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
     logger.info(f"new user message {utilities.log(update)}")
 
-    staff_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)
-    if not staff_chat:
-        logger.warning("ignoring user message: there is no staff chat set")
+    target_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)  # we check whether none or not later
+
+    if user.conversate_with_staff_override:
+        # in this case, the user should be able to talk to the staff even if a request is pending/rejected
+        # if the user has a pending/rejected request, use the evaluation chat as target chat
+        # otherwise, keep the staff chat as target chat
+        logger.info("user can talk to the staff regardless of the approval mode status/whether they are part of the users chat or not")
+        if user.last_request_id and (user.last_request.is_pending() or user.last_request.status is False):
+            logger.info("user has a pending/rejected request: target chat is evaluation chat")
+            target_chat: Chat = chats.get_chat(session, Chat.is_evaluation_chat)
+    else:
+        approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
+        if approval_mode:
+            if user.pending_request_id:
+                logger.info("ignoring user message: approval mode is on and user has a pending request")
+                return
+
+            chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
+            if not chat_member:
+                # we don't have the ChatMember record saved for this user in the users chat
+                users_chat = chats.get_chat(session, Chat.is_users_chat)
+                logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
+                tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
+                chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
+                session.add(chat_member)
+                session.commit()
+
+            if not chat_member.is_member() and not chat_member.left_or_kicked():
+                # we ignore requests coming from users that are not member BUT also didn't left
+                # people who left should be able to talk with the staff
+                logger.info("ignoring user message: approval mode is on and user is not a member of the users chat and didn't previously leave")
+                return
+
+            if user.last_request and user.last_request.status is False:
+                logger.info(f"ignoring user message: approval mode is on and they were rejected")
+                ltext = texts.get_localized_text_with_fallback(
+                    session,
+                    LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
+                    Language.IT,
+                    fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
+                    raise_if_no_fallback=False
+                )
+                if ltext:
+                    sent_message = await update.message.reply_html(ltext.value)
+                    private_chat_messages.save(session, sent_message)
+                return
+
+    if not target_chat:
+        logger.warning("ignoring user message: there is no target chat set")
         return
 
-    approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
-    if approval_mode:
-        if user.pending_request_id:
-            logger.info("ignoring user message: approval mode is on and user has a pending request")
-            return
-
-        chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
-        if not chat_member:
-            # we don't have the ChatMember record saved for this user in the users chat
-            users_chat = chats.get_chat(session, Chat.is_users_chat)
-            logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
-            tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
-            chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
-            session.add(chat_member)
-            session.commit()
-
-        if not chat_member.is_member() and not chat_member.left_or_kicked():
-            # we ignore requests coming from users that are not member BUT also didn't left
-            # people who left should be able to talk with the staff
-            logger.info("ignoring user message: approval mode is on and user is not a member of the users chat and didn't previously leave")
-            return
-
-        if user.last_request and user.last_request.status is False:
-            logger.info(f"ignoring user message: approval mode is on and they were rejected")
-            ltext = texts.get_localized_text_with_fallback(
-                session,
-                LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
-                Language.IT,
-                fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
-                raise_if_no_fallback=False
-            )
-            if ltext:
-                sent_message = await update.message.reply_html(ltext.value)
-                private_chat_messages.save(session, sent_message)
-            return
-
     logger.debug("forwarding to staff...")
-    forwarded_message = await update.message.forward(staff_chat.chat_id)
+    forwarded_message = await update.message.forward(target_chat.chat_id)
     user_message = UserMessage(
         message_id=update.message.message_id,
         user_id=update.effective_user.id,
-        forwarded_chat_id=staff_chat.chat_id,
+        forwarded_chat_id=target_chat.chat_id,
         forwarded_message_id=forwarded_message.message_id,
         message_datetime=update.effective_message.date
     )
