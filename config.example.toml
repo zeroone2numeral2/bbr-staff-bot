@@ -7,12 +7,11 @@ admins = [
 ]
 
 [settings]
-# these are the default values, no need to change them. they can be changed on the fly from the bot
-broadcast_message_edits = true
-backup_events = true
-tell_ban_reason = false
-save_chat_member_from_message = false
-radar_enabled = []
+broadcast_message_edits = true # whether to broadcast message edits from the staff to the user chat
+backup_events = true # download flyers, for archival purposes
+tell_ban_reason = false # tell the user why they were banned, if a reason was provided (doesn't apply to shadowbans)
+save_chat_member_from_message = false # when a message in a group is received, check whether we saved the user membership in that group
+radar_enabled = [] # always enable /radar23 for these user ids
 
 [handlers]
 # which handlers manifest to use, depending on what the bot should do
