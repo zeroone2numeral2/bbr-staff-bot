@@ -92,6 +92,10 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.info("ignoring staff reply starting by .")
         return
 
+    if chat.is_evaluation_chat and update.message.reply_to_message.text and update.message.reply_to_message.text.startswith("nuova #richiesta"):
+        logger.info("reply to an user request message sent by the bot in the evaluation chat")
+        # what to do?
+
     user_message: UserMessage = user_messages.get_user_message(session, update)
     if not user_message:
         logger.warning(f"couldn't find replied-to message, "
