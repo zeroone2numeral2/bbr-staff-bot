@@ -128,9 +128,9 @@ async def delete_history(session: Session, bot: Bot, user: User):
 
 async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: bool, admin: TelegramUser):
     if accepted:
-        user.accepted(by_user_id=admin.id)
+        user.accept(by_user_id=admin.id)
     else:
-        user.rejected(by_user_id=admin.id)
+        user.reject(by_user_id=admin.id)
     session.commit()
 
     logger.info("editing evaluation chat message and removing keyboard...")

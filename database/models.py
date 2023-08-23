@@ -161,15 +161,21 @@ class User(Base):
         self.banned_reason = None
         self.banned_on = None
 
-    def accepted(self, by_user_id: int, notes: Optional[str] = None):
-        self.pending_request.accepted(by_user_id, notes)
+    def accept(self, by_user_id: int, notes: Optional[str] = None):
+        self.pending_request.accept(by_user_id, notes)
         self.last_request_id = self.pending_request_id
         self.pending_request_id = None
 
-    def rejected(self, by_user_id: int, notes: Optional[str] = None):
-        self.pending_request.rejected(by_user_id, notes)
+        # no need to have this set to True once the user is accepted
+        self.conversate_with_staff_override = False
+
+    def reject(self, by_user_id: int, notes: Optional[str] = None):
+        self.pending_request.reject(by_user_id, notes)
         self.last_request_id = self.pending_request_id
         self.pending_request_id = None
+
+        # we set this to false also when the user is rejected
+        self.conversate_with_staff_override = False
 
     def reset_evaluation(self, keep_pending=False):
         if not keep_pending:

@@ -50,14 +50,14 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 session.add(chat_member)
                 session.commit()
 
-            if not chat_member.is_member() and not chat_member.left_or_kicked():
-                # we ignore requests coming from users that are not member BUT also didn't left
-                # people who left should be able to talk with the staff
-                logger.info("ignoring user message: approval mode is on and user is not a member of the users chat and didn't previously leave")
+            if not chat_member.is_member() and not chat_member.left_or_kicked() and user.last_request_id and user.last_request.status is not True:
+                # we ignore requests coming from users that are not member BUT also didn't left AND were rejected by the staff
+                # people who left (or that were accepted but never joined) should be able to talk with the staff
+                logger.info("ignoring user message: user is not a member of the users chat, didn't previously leave, and their last request was not accepted")
                 return
 
             if user.last_request and user.last_request.status is False:
-                logger.info(f"ignoring user message: approval mode is on and they were rejected")
+                logger.info(f"ignoring user message: they were rejected")
                 ltext = texts.get_localized_text_with_fallback(
                     session,
                     LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
