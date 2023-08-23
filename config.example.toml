@@ -11,6 +11,7 @@ broadcast_message_edits = true # whether to broadcast message edits from the sta
 backup_events = true # download flyers, for archival purposes
 tell_ban_reason = false # tell the user why they were banned, if a reason was provided (doesn't apply to shadowbans)
 save_chat_member_from_message = false # when a message in a group is received, check whether we saved the user membership in that group
+protected_admin_replies = true # whether admin replies sent to the user can be forwarded/copied
 radar_enabled = [] # always enable /radar23 for these user ids
 
 [handlers]

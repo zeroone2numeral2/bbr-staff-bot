@@ -16,6 +16,7 @@ import decorators
 import utilities
 from emojis import Emoji
 from ext.filters import ChatFilter
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,8 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
         chat_id=admin_message.user_message.user_id,
         text=re.sub(r"^\+\+\s*", "", update.effective_message.text_html),
         reply_to_message_id=admin_message.reply_message_id,  # reply to the admin message we previously sent in the chat
-        allow_sending_without_reply=True
+        allow_sending_without_reply=True,
+        protect_content=config.settings.protected_admin_replies
     )
 
     admin_message = AdminMessage(
@@ -136,7 +138,8 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     sent_message: MessageId = await update.message.copy(
         chat_id=user.user_id,
         reply_to_message_id=user_chat_reply_to_message_id,
-        allow_sending_without_reply=True  # in case the user deleted their own message in the bot's chat
+        allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
+        protect_content=config.settings.protected_admin_replies
     )
 
     if user_message:
@@ -157,6 +160,6 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (MessageHandler(ChatFilter.STAFF & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
+    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
     (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware, on_message_reply), Group.NORMAL),
 )
