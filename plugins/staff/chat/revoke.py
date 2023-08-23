@@ -50,5 +50,5 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ["revoke"], on_revoke_admin_command, ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ["revoke"], on_revoke_admin_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
 )

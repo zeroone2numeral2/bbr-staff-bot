@@ -35,44 +35,97 @@ defaults = Defaults(
 Base.metadata.create_all(engine)
 
 
-async def post_init(application: Application) -> None:
-    bot: ExtBot = application.bot
+async def set_bbr_commands(session: Session, bot: ExtBot):
+    # first: reset all commands
+    await bot.set_my_commands([], scope=BotCommandScopeDefault())
 
     default_english_commands = [
         BotCommand("start", "see the welcome message"),
         BotCommand("lang", "set your language")
     ]
 
-    # first: reset all commands
-    await bot.set_my_commands([], scope=BotCommandScopeDefault())
+    logger.info("setting bbr commands...")
+    await bot.set_my_commands(
+        default_english_commands,
+        scope=BotCommandScopeAllPrivateChats()
+    )
+    await bot.set_my_commands(
+        [BotCommand("start", "messaggio di benvenuto"), BotCommand("lang", "cambia lingua")],
+        language_code=Language.IT,
+        scope=BotCommandScopeAllPrivateChats()
+    )
+    await bot.set_my_commands(
+        [BotCommand("start", "mensaje de bienvenida"), BotCommand("lang", "cambiar idioma")],
+        language_code=Language.ES,
+        scope=BotCommandScopeAllPrivateChats()
+    )
+    await bot.set_my_commands(
+        [BotCommand("start", "message d'accueil"), BotCommand("lang", "changer langue")],
+        language_code=Language.FR,
+        scope=BotCommandScopeAllPrivateChats()
+    )
 
-    if config.handlers.mode == "bbr":
-        logger.info("setting bbr commands...")
-        await bot.set_my_commands(
-            default_english_commands,
-            scope=BotCommandScopeAllPrivateChats()
-        )
-        await bot.set_my_commands(
-            [BotCommand("start", "messaggio di benvenuto"), BotCommand("lang", "cambia lingua")],
-            language_code=Language.IT,
-            scope=BotCommandScopeAllPrivateChats()
-        )
-        await bot.set_my_commands(
-            [BotCommand("start", "mensaje de bienvenida"), BotCommand("lang", "cambiar idioma")],
-            language_code=Language.ES,
-            scope=BotCommandScopeAllPrivateChats()
-        )
-        await bot.set_my_commands(
-            [BotCommand("start", "message d'accueil"), BotCommand("lang", "changer langue")],
-            language_code=Language.FR,
-            scope=BotCommandScopeAllPrivateChats()
-        )
-    else:
-        logger.info("setting flytek commands...")
-        await bot.set_my_commands(
-            [BotCommand("start", "chiedi 👀"), BotCommand("radar23", "feste")],
-            scope=BotCommandScopeAllPrivateChats()
-        )
+    admin_commands = default_english_commands + [
+        BotCommand("settings", "change the bot's global settings"),
+        BotCommand("texts", "manage text messages that depend on the user's language"),
+        BotCommand("placeholders", "list all available placeholders")
+    ]
+    staff_chat_administrators = chats.get_staff_chat_administrators(session)
+    chat_member: DbChatMember
+    for chat_member in staff_chat_administrators:
+        logger.info(f"setting admin commands for {chat_member.user.user_id}...")
+        await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
+
+
+async def set_flytek_commands(session: Session, bot: ExtBot):
+    logger.info("setting flytek commands...")
+
+    users_commands_private = [
+        BotCommand("start", "chiedi 👀"),
+        BotCommand("radar23", "feste")
+    ]
+    staff_commands_private = [
+        BotCommand("radar23", "elenco feste"),
+        BotCommand("radar24", "radar23, ma inoltrabile/copiabile"),
+        BotCommand("ie", "feste senza data"),
+        BotCommand("settings", "impostazioni bot"),
+        BotCommand("texts", "testi risposte bot"),
+    ]
+    staff_chat_commands = [
+        BotCommand("info", "id/in risposta: info su un utente"),
+        BotCommand("ban", "in risposta: banna l'utente dall'utilizzo del bot"),
+        BotCommand("shadowban", "in risposta: banna l'utente dall'utilizzo del bot"),
+        BotCommand("unban", "in risposta: permetti all'utente di utilizzare il bot"),
+        BotCommand("revoke", "revoca un messaggio inviato all'utente"),
+        BotCommand("userschat", "id/in risposta: elenco delle chat di cui un utente fa parte"),
+    ]
+    evaluation_chat_commands = staff_chat_commands + [
+        BotCommand("reset", "resetta richiesta utente"),
+        BotCommand("accetta", "in risposta: accetta una richiesta utente"),
+        BotCommand("rifiuta", "in risposta: rifiuta una richiesta utente"),
+    ]
+
+    await bot.set_my_commands(
+        users_commands_private,
+        scope=BotCommandScopeAllPrivateChats()
+    )
+
+    staff_chat = chats.get_chat(session, Chat.is_staff_chat)
+    if staff_chat:
+        await bot.set_my_commands(staff_chat_commands, scope=BotCommandScopeChat(staff_chat.chat_id))
+
+        staff_chat_members = chat_members.get_chat_members(session, staff_chat.chat_id)
+        chat_member: DbChatMember
+        for chat_member in staff_chat_members:
+            await bot.set_my_commands(staff_commands_private, scope=BotCommandScopeChat(chat_member.user_id))
+
+    evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
+    if evaluation_chat:
+        await bot.set_my_commands(evaluation_chat_commands, scope=BotCommandScopeChat(evaluation_chat.chat_id))
+
+
+async def post_init(application: Application) -> None:
+    bot: ExtBot = application.bot
 
     session: Session = get_session()
 
@@ -132,16 +185,10 @@ async def post_init(application: Application) -> None:
         chat_members.save_administrators(session, chat.chat_id, administrators)
         session.commit()
 
-    admin_commands = default_english_commands + [
-        BotCommand("settings", "change the bot's global settings"),
-        BotCommand("texts", "manage text messages that depend on the user's language"),
-        BotCommand("placeholders", "list all available placeholders")
-    ]
-    staff_chat_administrators = chats.get_staff_chat_administrators(session)
-    chat_member: DbChatMember
-    for chat_member in staff_chat_administrators:
-        logger.info(f"setting admin commands for {chat_member.user.user_id}...")
-        await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
+    if config.handlers.mode == "bbr":
+        await set_bbr_commands(session, bot)
+    else:
+        await set_flytek_commands(session, bot)
 
 
 async def change_my_name(context: ContextTypes.DEFAULT_TYPE):

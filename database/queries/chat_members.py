@@ -65,6 +65,16 @@ def all_chat_members(session: Session, user_id: int):
     return session.scalars(query)
 
 
+def get_chat_members(session: Session, chat_id: int, admins_only: bool = False):
+    filters = [DbChatMember.chat_id == chat_id]
+    if admins_only:
+        filters.append(DbChatMember.status.in_(CHAT_MEMBER_STATUS_ADMIN))
+
+    query = session.query(DbChatMember).join(Chat).filter(*filters)
+
+    return session.scalars(query)
+
+
 def get_chat_administrators(session: Session, chat_id: int):
     # noinspection PyUnresolvedReferences
 
