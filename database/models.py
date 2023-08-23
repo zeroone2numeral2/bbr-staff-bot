@@ -49,7 +49,7 @@ class User(Base):
 
     # application (user)
     pending_request_id = mapped_column(Integer, default=None)  # pending ApplicationRequest
-    last_request_id = mapped_column(Integer, default=None)  # status of the last application processed
+    last_request_id = mapped_column(Integer, default=None)  # status of the last application accepted/rejected by the admins
     # last_request_status = Column(Boolean, default=None)  # SHOULDN'T BE USED
     conversate_with_staff_override = Column(Boolean, default=False)  # whether the user can conversate with the staff even when a request is pending/rejected
 
@@ -175,7 +175,6 @@ class User(Base):
         if not keep_pending:
             self.pending_request_id = None
         self.last_request_id = None
-        self.last_request_status = None
 
 
 class Chat(Base):
