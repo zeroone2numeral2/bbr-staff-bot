@@ -36,8 +36,12 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     else:
         approval_mode = settings.get_or_create(session, BotSettingKey.APPROVAL_MODE).value()
         if approval_mode:
+            # if approval mode is on and conversate_with_staff_override is false, find all possible
+            # cases where we should ignore the message
+            logger.debug("approval mode is on and conversate_with_staff_override is false")
+
             if user.pending_request_id:
-                logger.info("ignoring user message: approval mode is on and user has a pending request")
+                logger.info("ignoring user message: user has a pending request")
                 return
 
             chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
