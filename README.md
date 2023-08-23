@@ -1,10 +1,6 @@
-### Info utili
-
-La guida agli utilizzatori è nella [wiki](https://github.com/zeroone2numeral2/bbr-staff-bot/wiki) di questa repository, la lista delle cose da fare è nelle [issues](https://github.com/zeroone2numeral2/bbr-staff-bot/issues)
-
 ### Installazione
 
-E' necessario avere Python 3.6+ installato sulla propria macchina.  
+È necessario avere Python 3.6+ installato sulla propria macchina.  
 
 Per eseguire il bot:
 
@@ -26,3 +22,6 @@ Dopo ogni pull/sync, è necessario aggiornare la struttra del database all'ultim
 ```bash
 alembic upgrade head
 ```
+
+Purtroppo sono stupido ed ho sempre ignorato le migrazioni di tipo `create_table`, visto che le tabelle vengono create da SQLAlchemy nel momento in cui si avvia il processo.  
+Quindi è buona cosa avviare il bot prima di applicare le migrazioni del db, stopparlo e poi apllicarle.
