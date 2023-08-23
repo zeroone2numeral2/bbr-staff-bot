@@ -132,7 +132,7 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     # if the admin message is a reply to a request message in the evaluation chat, reply to the message we sent the user
     # when we told them their request was sent to the staff
-    user_chat_reply_to_message_id = user_message.message_id if user_message else user.last_request.request_sent_message_message_id
+    user_chat_reply_to_message_id = user_message.message_id if user_message else user.pending_request.request_sent_message_message_id
     sent_message: MessageId = await update.message.copy(
         chat_id=user.user_id,
         reply_to_message_id=user_chat_reply_to_message_id,
