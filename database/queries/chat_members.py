@@ -48,7 +48,7 @@ def get_chat_member(session: Session, user_id: int, chat_filter) -> Optional[DbC
     return chat_member
 
 
-def get_chat_chat_member(session: Session, user_id: int, chat_id: int) -> Optional[DbChatMember]:
+def get_chat_member_by_id(session: Session, user_id: int, chat_id: int) -> Optional[DbChatMember]:
     chat_member = session.query(DbChatMember).filter(
         DbChatMember.user_id == user_id,
         DbChatMember.chat_id == chat_id

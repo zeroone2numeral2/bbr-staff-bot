@@ -29,7 +29,7 @@ async def on_group_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
 
-    db_chat_member = chat_members.get_chat_chat_member(session, user_id, chat_id)
+    db_chat_member = chat_members.get_chat_member_by_id(session, user_id, chat_id)
     if db_chat_member:
         # chat member records exist: do nothing
         return
