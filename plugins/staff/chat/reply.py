@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update, MessageId
@@ -10,7 +11,7 @@ from telegram.ext.filters import MessageFilter
 
 from constants import Group
 from database.models import UserMessage, AdminMessage, User, Chat
-from database.queries import user_messages, admin_messages
+from database.queries import user_messages, admin_messages, users
 import decorators
 import utilities
 from emojis import Emoji
@@ -92,18 +93,27 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.info("ignoring staff reply starting by .")
         return
 
+    user_message: Optional[UserMessage] = None
     if chat.is_evaluation_chat and update.message.reply_to_message.text and update.message.reply_to_message.text.startswith("nuova #richiesta"):
         logger.info("reply to an user request message sent by the bot in the evaluation chat")
-        # what to do?
+        # get the User object from the db based on the #id hashtag
+        user_id = utilities.get_user_id_from_text(update.message.reply_to_message.text)
+        user: User = users.get_or_create(session, user_id, create_if_missing=False)
+        if not user:
+            # return if missing
+            logger.warning(f"couldn't find user {user_id} in the database")
+            return
 
-    user_message: UserMessage = user_messages.get_user_message(session, update)
-    if not user_message:
-        logger.warning(f"couldn't find replied-to message, "
-                       f"chat_id: {update.effective_chat.id}; "
-                       f"message_id: {update.message.reply_to_message.message_id}")
-        return
-
-    user: User = user_message.user
+        # set this flag to true so we know that the user's replies should be forwarded to the staff
+        user.conversate_with_staff_override = True
+    else:
+        user_message: UserMessage = user_messages.get_user_message(session, update)
+        if not user_message:
+            logger.warning(f"couldn't find replied-to message, "
+                           f"chat_id: {update.effective_chat.id}; "
+                           f"message_id: {update.message.reply_to_message.message_id}")
+            return
+        user: User = user_message.user
 
     try:
         await context.bot.send_chat_action(user.user_id, ChatAction.TYPING)
@@ -120,20 +130,24 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         else:
             raise e
 
+    # if the admin message is a reply to a request message in the evaluation chat, reply to the message we sent the user
+    # when we told them their request was sent to the staff
+    user_chat_reply_to_message_id = user_message.message_id if user_message else user.last_request.request_sent_message_message_id
     sent_message: MessageId = await update.message.copy(
         chat_id=user.user_id,
-        reply_to_message_id=user_message.message_id,
+        reply_to_message_id=user_chat_reply_to_message_id,
         allow_sending_without_reply=True  # in case the user deleted their own message in the bot's chat
     )
 
-    user_message.add_reply()
+    if user_message:
+        user_message.add_reply()
     session.commit()
 
     admin_message = AdminMessage(
         message_id=update.effective_message.id,
         chat_id=update.effective_chat.id,
         user_id=update.effective_user.id,
-        user_message_id=user_message.message_id,
+        user_message_id=user_chat_reply_to_message_id,  # the message_id of the message we replied to in ther user chat
         reply_message_id=sent_message.message_id,
         message_datetime=update.effective_message.date
     )
@@ -144,5 +158,5 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 HANDLERS = (
     (MessageHandler(ChatFilter.STAFF & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
-    (MessageHandler(ChatFilter.STAFF & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware, on_message_reply), Group.NORMAL),
+    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware, on_message_reply), Group.NORMAL),
 )

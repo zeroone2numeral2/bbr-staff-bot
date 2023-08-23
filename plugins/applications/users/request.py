@@ -505,6 +505,9 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
     private_chat_messages.save(session, sent_message)
 
+    # save the message_id of the message we sent to the user saying that their request has been sent to the admins
+    user.pending_request.request_sent_message_message_id = sent_message.message_id
+
     log_chat = chats.get_chat(session, Chat.is_log_chat)
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
 
