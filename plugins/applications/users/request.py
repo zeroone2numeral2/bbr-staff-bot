@@ -507,9 +507,6 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     log_chat = chats.get_chat(session, Chat.is_log_chat)
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
-    if not evaluation_chat:
-        logger.debug("no evaluation chat set: using staff chat")
-        evaluation_chat = chats.get_chat(session, Chat.is_staff_chat)
 
     await send_application_to_staff(
         bot=context.bot,
