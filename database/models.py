@@ -990,8 +990,10 @@ class ApplicationRequest(Base):
     status_notes = Column(String, default=None)
     status_changed_on = Column(DateTime, default=None)
     # canceled = Column(Boolean, default=False)
+
     request_sent_message_message_id = Column(Integer, default=None)  # message_id of the message we sent to the user saying that their request has been sent to the staff
-    accepted_message_message_id = Column(Integer, default=None)
+    accepted_message_message_id = Column(Integer, default=None)  # message notifying the user that they were accepted
+
     invite_link = Column(String, default=None)  # the invite link we sent to the user
     invite_link_can_be_revoked_after_join = Column(Boolean, default=False)  # wether it is safe to revoke the invite link after the user joined
     invite_link_revoked = Column(Boolean, default=False)  # wether 'invite_link' has been revoked or not
@@ -1092,13 +1094,13 @@ class ApplicationRequest(Base):
         chat_id = str(self.staff_message_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id}/{self.staff_message_message_id}"
 
-    def accepted(self, by_user_id: int, notes: Optional[str] = None):
+    def accept(self, by_user_id: int, notes: Optional[str] = None):
         self.status = True
         self.handled_by_user_id = by_user_id
         self.status_changed_on = utilities.now()
         self.status_notes = notes
 
-    def rejected(self, by_user_id: int, notes: Optional[str] = None):
+    def reject(self, by_user_id: int, notes: Optional[str] = None):
         self.status = False
         self.handled_by_user_id = by_user_id
         self.status_changed_on = utilities.now()

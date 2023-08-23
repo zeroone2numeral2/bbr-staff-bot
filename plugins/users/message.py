@@ -30,7 +30,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         # if the user has a pending/rejected request, use the evaluation chat as target chat
         # otherwise, keep the staff chat as target chat
         logger.info("user can talk to the staff regardless of the approval mode status/whether they are part of the users chat or not")
-        if user.last_request_id and (user.last_request.is_pending() or user.last_request.status is False):
+        if user.pending_request_id or user.last_request.status is False:
             logger.info("user has a pending/rejected request: target chat is evaluation chat")
             target_chat: Chat = chats.get_chat(session, Chat.is_evaluation_chat)
     else:
