@@ -181,6 +181,7 @@ class User(Base):
         if not keep_pending:
             self.pending_request_id = None
         self.last_request_id = None
+        self.conversate_with_staff_override = False
 
 
 class Chat(Base):
