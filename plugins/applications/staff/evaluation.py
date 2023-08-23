@@ -102,7 +102,7 @@ async def delete_history(session: Session, bot: Bot, user: User):
     sent_message = None
     if setting.value():
         try:
-            sent_message = await bot.send_photo(user.user_id, setting.value())
+            sent_message = await bot.send_photo(user.user_id, setting.value(), protect_content=True)
         except BadRequest as e:
             if "wrong file identifier/http url specified" in e.message.lower():
                 logger.error(f"cannot send file: {e.message}")
