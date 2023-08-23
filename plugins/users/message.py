@@ -55,8 +55,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 session.commit()
 
             if not chat_member.is_member() and not chat_member.left_or_kicked() and user.last_request_id and user.last_request.status is not True:
-                # we ignore requests coming from users that are not member BUT also didn't left AND were rejected by the staff
-                # people who left (or that were accepted but never joined) should be able to talk with the staff
+                # we ignore requests coming from users that are not member, but we shouldn't ignore messages from
+                # users that were members but left, or that were accepted but never joined
                 logger.info("ignoring user message: user is not a member of the users chat, didn't previously leave, and their last request was not accepted")
                 return
 
