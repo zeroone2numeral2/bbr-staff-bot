@@ -10,8 +10,8 @@ from telegram.ext import filters, ContextTypes, MessageHandler
 from telegram.ext.filters import MessageFilter
 
 from constants import Group
-from database.models import UserMessage, AdminMessage, User, Chat
-from database.queries import user_messages, admin_messages, users
+from database.models import UserMessage, AdminMessage, User, Chat, PrivateChatMessage
+from database.queries import user_messages, admin_messages, users, private_chat_messages
 import decorators
 import utilities
 from emojis import Emoji
@@ -53,6 +53,18 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
         )
         return
 
+    if chat.is_evaluation_chat and not admin_message.user_message:
+        # this happens *only* when the message starting by "++" is sent in reply to an admin message that was sent
+        # in reply to a "new request" message sent in this chat by the bot. In fact, that admin reply wasn't sent in reply to
+        # an user message, therefore admin_message.user_message is empty because it cannot be linked to any UserMessage
+        logger.info("++ was sent in reply to an admin message that was sent in reply to a \"new request\" message: ignoring")
+        await update.message.reply_html(
+            "<i>\"++\" non può essere usato in risposta ad un messaggio dello staff che risponde ad "
+            "un messaggio di servizio che notifica l'arrivo di una nuova richiesta</i>",
+            quote=True
+        )
+        return
+
     await context.bot.send_chat_action(admin_message.user_message.user_id, ChatAction.TYPING)
     # time.sleep(3)
 
@@ -63,6 +75,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
         allow_sending_without_reply=True,
         protect_content=config.settings.protected_admin_replies
     )
+    private_chat_messages.save(session, sent_message)
 
     admin_message = AdminMessage(
         message_id=update.effective_message.id,
@@ -141,6 +154,14 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
         protect_content=config.settings.protected_admin_replies
     )
+
+    private_chat_message = PrivateChatMessage(
+        message_id=sent_message.message_id,
+        user_id=user.user_id,
+        from_self=True,
+        message_json=sent_message.to_json()
+    )
+    session.add(private_chat_message)
 
     if user_message:
         user_message.add_reply()
