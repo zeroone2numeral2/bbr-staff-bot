@@ -99,6 +99,27 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         await backup_event_media(update, event)
 
 
+@decorators.catch_exception(silent=True)
+@decorators.pass_session()
+async def on_linked_group_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"discussion group: events chat message update {utilities.log(update)}")
+
+    channel_chat_id = update.message.sender_chat.id
+    channel_message_id = update.message.forward_from_message_id
+    event: Event = events.get_or_create(session, channel_chat_id, channel_message_id)
+    if not event:
+        logger.warning(f"received discussion group channel post message, but no Event was found ({channel_chat_id}, {channel_message_id})")
+        return
+
+    logger.info("saving discussion group's post info...")
+    event.save_discussion_group_message(update.message)
+
+    # make sure to drop the event cache so new commands will have updated info
+    logger.info("dropping events cache...")
+    drop_events_cache(context)
+
+
 HANDLERS = (
     (MessageHandler(ChatFilter.EVENTS & Filter.MESSAGE_OR_EDIT & Filter.WITH_TEXT, on_event_message), Group.PREPROCESS),
+    (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
 )

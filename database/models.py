@@ -842,6 +842,12 @@ class Event(Base):
     chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     message_id = Column(Integer, primary_key=True)
 
+    # info about the channel post that was forwarded to the discussion group
+    discussion_group_chat_id = Column(Integer, default=None)
+    discussion_group_message_id = Column(Integer, default=None)
+    discussion_group_received_on = Column(DateTime, default=None)
+    discussion_group_message_json = Column(String, default=None)
+
     event_id = Column(Integer, default=None)
     event_title = Column(String, default=None)
     start_date = Column(Date, default=None)  # just a convenience Date column that should be used for queries
@@ -892,6 +898,16 @@ class Event(Base):
     def message_link(self):
         chat_id_link = str(self.chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id_link}/{self.message_id}"
+
+    def discussion_group_message_link(self):
+        chat_id_link = str(self.discussion_group_chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id_link}/{self.discussion_group_message_id}"
+
+    def save_discussion_group_message(self, message: Message):
+        self.discussion_group_chat_id = message.chat.id
+        self.discussion_group_message_id = message.message_id
+        self.discussion_group_received_on = message.date
+        self.discussion_group_message_json = json.dumps(message.to_dict(), indent=2)
 
     def icon(self):
         if not self.event_type:

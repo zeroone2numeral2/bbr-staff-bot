@@ -89,7 +89,12 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False) 
         date = event.pretty_date()
 
     # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
-    text = f"{event.icon()}{region_icon} <b><a href=\"{event.message_link()}\">{title_escaped}</a></b> • {date}"
+    title_with_link = f"<b><a href=\"{event.message_link()}\">{title_escaped}</a></b>"
+    if event.discussion_group_message_id:
+        # add a link to the post in the discussion group
+        title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
+
+    text = f"{event.icon()}{region_icon} {title_with_link} • {date}"
 
     return text
 
@@ -98,7 +103,7 @@ def split_messages(all_events: List[str], return_after_first_message=False) -> L
     messages_to_send = []
     next_message_events = []
     for events_string in all_events:
-        if time_to_split(next_message_events, entities_per_line=2):
+        if time_to_split(next_message_events, entities_per_line=3):
             new_message_to_send = "\n".join(next_message_events)
             messages_to_send.append(new_message_to_send)
 
