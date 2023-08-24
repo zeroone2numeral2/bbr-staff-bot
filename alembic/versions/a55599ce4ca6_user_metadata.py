@@ -24,7 +24,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column('chats', 'is_bot')
-    op.drop_column('chats', 'first_name')
-    op.drop_column('chats', 'last_name')
-    op.drop_column('chats', 'is_premium')
+    op.drop_column('users', 'is_bot')
+    op.drop_column('users', 'first_name')
+    op.drop_column('users', 'last_name')
+    op.drop_column('users', 'is_premium')
