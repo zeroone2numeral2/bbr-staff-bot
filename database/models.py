@@ -201,6 +201,7 @@ class Chat(Base):
     is_users_chat = Column(Boolean, default=False)
     is_events_chat = Column(Boolean, default=False)
     is_log_chat = Column(Boolean, default=False)
+    is_modlog_chat = Column(Boolean, default=False)
 
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
