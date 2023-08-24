@@ -19,3 +19,7 @@ radar_enabled = [] # always enable /radar23 for these user ids
 manifest = "manifest"
 # which modules to import from the manifest, will load modules in the `[mode]` or `[+]` section
 mode = "bbr"
+
+[log]
+events_chat_member_updates = true
+users_chat_member_updates = true

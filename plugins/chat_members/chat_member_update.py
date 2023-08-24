@@ -2,7 +2,7 @@ import logging
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
-from telegram import Update, ChatMemberUpdated, Bot
+from telegram import Update, ChatMemberUpdated, Bot, Chat as TelegramChat
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ChatMemberHandler, CallbackContext
 
@@ -97,16 +97,16 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
 
     logger.info("saving or updating User objects...")
     save_or_update_users_from_chat_member_update(session, update, commit=True)
-    if update.effective_chat.id < 0:
+    if update.effective_chat.type in (TelegramChat.CHANNEL, TelegramChat.SUPERGROUP):
         logger.info("saving or updating Chat object...")
         save_or_update_chat_from_chat_member_update(session, update, commit=True)
 
     logger.info("saving new chat_member object...")
-    chat_member_record: DbChatMember = save_chat_member(session, update)
+    db_member_record: DbChatMember = save_chat_member(session, update)
 
-    if chat_member_record.is_member():
+    if db_member_record.is_member():
         # mark the user as "has_been_member" even if it isn't the users chat
-        chat_member_record.has_been_member = True
+        db_member_record.has_been_member = True
 
     if utilities.is_left_update(update.chat_member):
         # do nothing for now

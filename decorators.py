@@ -1,12 +1,10 @@
-import datetime
 import logging
 from functools import wraps
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func as sql_func
 # noinspection PyPackageRequirements
-from telegram import Update, ChatMember
+from telegram import Update
 # noinspection PyPackageRequirements
 from telegram.error import TimedOut, BadRequest
 # noinspection PyPackageRequirements
