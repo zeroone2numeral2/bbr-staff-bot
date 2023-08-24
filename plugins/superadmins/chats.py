@@ -97,6 +97,7 @@ async def on_setchat_private_command(update: Update, context: ContextTypes.DEFAU
         chat.set_as_events_chat()
 
         ChatFilter.EVENTS.chat_ids = {chat.chat_id}
+        ChatFilter.EVENTS_GROUP_POST.chat_ids = {chat.chat_id}
 
     await update.effective_message.reply_text(f"{utilities.escape_html(chat.title)} impostata come chat {chat.type_pretty()}")
 

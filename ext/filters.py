@@ -25,6 +25,7 @@ class ChatFilter:
     EVALUATION = filters.Chat([])
     USERS = filters.Chat([])
     EVENTS = filters.Chat([])
+    EVENTS_GROUP_POST = filters.SenderChat([])  # filter to catch EVENTS post in the linked group
 
 
 def init_filters():
@@ -36,6 +37,7 @@ def init_filters():
         if events_chat:
             logger.debug(f"initializing EVENTS filter ({events_chat.chat_id})...")
             ChatFilter.EVENTS.chat_ids = {events_chat.chat_id}
+            ChatFilter.EVENTS_GROUP_POST.chat_ids = {events_chat.chat_id}
 
         staff_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)
         if staff_chat:
