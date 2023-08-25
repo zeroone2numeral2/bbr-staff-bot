@@ -805,8 +805,11 @@ class EventTypeHashtag:
     TEKNIVAL = "#teknival"
     LEGAL_PARTY = "#legalparty"
     LEGAL_PLACE = "#legalplace"
+    CS = "#cs"
+    CSO = "#cso"
     CSOA = "#csoa"
     SQUAT_PARTY = "#squatparty"
+    SQUAT = "#squat"
     MANIFESTAZIONE = "#manifestazione"
     STREET_PARADE = "#streetparade"
     PRIVATE_PARTY = "#privateparty"
@@ -828,12 +831,15 @@ EVENT_TYPE = {
     EventTypeHashtag.FREE: EventType.FREE,
     EventTypeHashtag.TEKNIVAL: EventType.FREE,
     EventTypeHashtag.LEGAL_PARTY: EventType.LEGAL,
+    EventTypeHashtag.FESTIVAL: EventType.LEGAL,
+    EventTypeHashtag.CS: EventType.CS_OR_SQUAT,
+    EventTypeHashtag.CSO: EventType.CS_OR_SQUAT,
     EventTypeHashtag.CSOA: EventType.CS_OR_SQUAT,
+    EventTypeHashtag.SQUAT: EventType.CS_OR_SQUAT,
     EventTypeHashtag.SQUAT_PARTY: EventType.CS_OR_SQUAT,
     EventTypeHashtag.PRIVATE_PARTY: EventType.PRIVATE,
     EventTypeHashtag.STREET_PARADE: EventType.STREET_PARADE,
     EventTypeHashtag.MANIFESTAZIONE: EventType.OTHER,
-    EventTypeHashtag.FESTIVAL: EventType.LEGAL,
 }
 
 
