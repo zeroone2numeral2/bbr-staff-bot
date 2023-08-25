@@ -817,6 +817,7 @@ class EventType:
     # value saved in the db
     FREE = "free"
     LEGAL = "legal"
+    PRIVATE = "private"
     CS_OR_SQUAT = "cs_or_squat"
     STREET_PARADE = "street_parade"
     OTHER = "other"
@@ -829,9 +830,9 @@ EVENT_TYPE = {
     EventTypeHashtag.LEGAL_PARTY: EventType.LEGAL,
     EventTypeHashtag.CSOA: EventType.CS_OR_SQUAT,
     EventTypeHashtag.SQUAT_PARTY: EventType.CS_OR_SQUAT,
+    EventTypeHashtag.PRIVATE_PARTY: EventType.PRIVATE,
     EventTypeHashtag.STREET_PARADE: EventType.STREET_PARADE,
     EventTypeHashtag.MANIFESTAZIONE: EventType.OTHER,
-    EventTypeHashtag.PRIVATE_PARTY: EventType.OTHER,
     EventTypeHashtag.FESTIVAL: EventType.LEGAL,
 }
 
@@ -921,8 +922,10 @@ class Event(Base):
             return Emoji.TICKET
         if self.event_type == EventType.CS_OR_SQUAT:
             return Emoji.COMRADE
+        if self.event_type == EventType.PRIVATE:
+            return Emoji.HOUSE
         if self.event_type == EventType.OTHER:
-            return Emoji.PIN_2
+            return Emoji.SPEAKER
 
     def start_date_as_str(self):
         start_date = None
