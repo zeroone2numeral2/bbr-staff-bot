@@ -22,6 +22,3 @@ Dopo ogni pull/sync, è necessario aggiornare la struttra del database all'ultim
 ```bash
 alembic upgrade head
 ```
-
-Purtroppo sono stupido ed ho sempre ignorato le migrazioni di tipo `create_table`, visto che le tabelle vengono create da SQLAlchemy nel momento in cui si avvia il processo.  
-Quindi è buona cosa avviare il bot prima di applicare le migrazioni del db, stopparlo e poi apllicarle.
