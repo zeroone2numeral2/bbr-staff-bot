@@ -70,7 +70,11 @@ def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
         return True
 
 
-def format_event_string(event: Event, message_date_instead_of_event_date=False) -> str:
+def format_event_string(event: Event, message_date_instead_of_event_date=False) -> Tuple[str, int]:
+    # telegram entities present in this text, useful to calculate how many
+    # of these strings to include in a single message
+    entities_count = 2
+
     region_icon = ""
     if event.region and event.region in REGIONS_DATA:
         region_icon = REGIONS_DATA[event.region]["emoji"]
@@ -93,10 +97,11 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False) 
     if event.discussion_group_message_id:
         # add a link to the post in the discussion group
         title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
+        entities_count += 1
 
     text = f"{event.icon()}{region_icon} {title_with_link} • {date}"
 
-    return text
+    return text, entities_count
 
 
 def split_messages(all_events: List[str], return_after_first_message=False) -> List[str]:
@@ -421,13 +426,15 @@ def get_all_events_strings_from_db(session: Session, args: List[str], date_overr
     events_list: List[Event] = events.get_events(session, filters=query_filters)
 
     all_events_strings = []
+    total_entities_count = 0  # total number of telegram entities for the list of events
     for i, event in enumerate(events_list):
         if not event.is_valid():
             logger.info(f"skipping invalid event: {event}")
             continue
 
-        text_line = format_event_string(event)
+        text_line, event_entities_count = format_event_string(event)
         all_events_strings.append(text_line)
+        total_entities_count += event_entities_count  # not used yet, find something to do with this
 
     return all_events_strings
 
@@ -540,12 +547,14 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
         order_by_override=[Event.message_id]
     )
     all_events_strings = []
+    total_entities_count = 0
     for i, event in enumerate(events_list):
         if event.is_valid():
             continue
 
-        text_line = format_event_string(event, message_date_instead_of_event_date=True)
+        text_line, event_entities_count = format_event_string(event, message_date_instead_of_event_date=True)
         all_events_strings.append(text_line)
+        total_entities_count += event_entities_count  # not used yet, find something to do with this
 
     protect_content = not utilities.is_superadmin(update.effective_user)
     sent_messages = await send_events_messages(update.message, all_events_strings, protect_content)
@@ -612,7 +621,7 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     # session.delete(event)
     event.deleted = True
 
-    event_str = format_event_string(event)
+    event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event deleted")
 
     drop_events_cache(context)
