@@ -58,15 +58,32 @@ FILTER_DESCRIPTION = {
 DEFAULT_FILTERS = [EventFilter.IT, EventFilter.NOT_FREE, EventFilter.WEEK]
 
 
-def time_to_split(text_lines: List[str], entities_per_line: int) -> bool:
-    message_length = len("\n\naggiornato al xx/xx/xxxx xx:xx")
+def time_to_split(
+        text_lines: List[str],
+        entities_per_line: int,
+        initial_message_length: int = 0,
+        initial_entities_count: int = 0
+) -> bool:
+    # message_length = len("\n\naggiornato al xx/xx/xxxx xx:xx")
+
+    # we do this thing to avoid to create references
+    message_length = 0
+    message_length += initial_message_length
+    entities_count = 0
+    entities_count += initial_entities_count
+
     for line in text_lines:
         message_length += len(line)
+        entities_count += utilities.count_html_entities(line)
 
     if message_length >= MessageLimit.MAX_TEXT_LENGTH:
         return True
 
     if len(text_lines) * entities_per_line >= MessageLimit.MESSAGE_ENTITIES:
+        # keep both the tests on entities, but this one should be removed once the other one is tested
+        return True
+
+    if entities_count >= MessageLimit.MESSAGE_ENTITIES:
         return True
 
 
