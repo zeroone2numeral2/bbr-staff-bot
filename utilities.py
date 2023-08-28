@@ -275,6 +275,10 @@ def get_command(text: str) -> str:
     return text.strip()
 
 
+def count_html_entities(string: str) -> int:
+    return len(re.findall(r"(<(?:b|i|u|s|code)>|<a href=)", string))
+
+
 def get_language_code(selected_language_code, telegram_language_code):
     if selected_language_code:
         return selected_language_code
