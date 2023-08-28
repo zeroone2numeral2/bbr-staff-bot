@@ -68,16 +68,11 @@ async def backup_event_media(update: Update, event: Event):
 async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"events chat message update {utilities.log(update)}")
 
-    if "origin_fwd" in context.bot_data and update.effective_message.forward_from_chat:
-        logger.debug("saved forwarded message data")
-        chat_id = update.effective_message.forward_from_chat.id
-        message_id = update.effective_message.forward_from_message_id
+    # chat_id = update.effective_message.forward_from_chat.id
+    # message_id = update.effective_message.forward_from_message_id
 
-        # save origin chat
-        chats.get_safe(session, update.effective_message.forward_from_chat)
-    else:
-        chat_id = update.effective_chat.id
-        message_id = update.effective_message.message_id
+    chat_id = update.effective_chat.id
+    message_id = update.effective_message.message_id
 
     event: Event = events.get_or_create(session, chat_id, message_id)
     if event.deleted:
