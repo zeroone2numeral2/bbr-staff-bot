@@ -8,13 +8,13 @@ from typing import Optional, Tuple, List, Union
 import telegram.constants
 from sqlalchemy import true, false
 from sqlalchemy.orm import Session
-from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
+from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser, Chat as TelegramChat
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.constants import MessageLimit
 
 from emojis import Emoji, Flag
 from ext.filters import ChatFilter, Filter
-from .common import parse_message_entities, parse_message_text, drop_events_cache
+from .common import parse_message_entities, parse_message_text, drop_events_cache, add_event_message_metadata
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
 from database.queries import settings, events, chats, chat_members, private_chat_messages
 import decorators
@@ -651,6 +651,39 @@ async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         )
 
 
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_admin()
+async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/reparse {utilities.log(update)}")
+
+    if not update.message.reply_to_message.forward_from_chat or update.message.reply_to_message.forward_from_chat.type != TelegramChat.CHANNEL:
+        await update.message.reply_html("Rispondi ad un messaggi inoltrato di un canale")
+        return
+
+    chat_id = update.message.reply_to_message.forward_from_chat.id
+    message_id = update.message.reply_to_message.forward_from_message_id
+
+    event: Event = events.get_or_create(session, chat_id, message_id)
+    if not event:
+        await update.message.reply_html(f"Nessun evento per <code>{chat_id}</code>/<code>{message_id}</code>")
+        return
+
+    add_event_message_metadata(update.message.reply_to_message, event)
+    parse_message_entities(update.message.reply_to_message, event)
+    parse_message_text(update.message.reply_to_message.text or update.message.reply_to_message.caption, event)
+
+    logger.info(f"re-parsed parsed event: {event}")
+
+    event_str, _ = format_event_string(event)
+    await update.effective_message.reply_text(f"{event_str}\n\n^event re-parsed")
+
+    logger.info("dropping events cache...")
+    drop_events_cache(context)
+
+    session.commit()
+
+
 HANDLERS = (
     (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
@@ -658,6 +691,7 @@ HANDLERS = (
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     # superadmins
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
