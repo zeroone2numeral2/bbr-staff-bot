@@ -86,7 +86,7 @@ def get_setting_text(setting: BotSetting):
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_settings_config_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/settings {utilities.log(update)}")
 
@@ -199,7 +199,7 @@ async def on_bot_setting_edit_media_button(update: Update, context: ContextTypes
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_new_setting_value_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"waiting new setting value: /cancel command {utilities.log(update)}")
 
@@ -212,7 +212,7 @@ async def on_new_setting_value_cancel_command(update: Update, context: ContextTy
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_new_setting_value_receive(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"received new setting value {utilities.log(update)})")
 
@@ -244,7 +244,7 @@ async def on_new_setting_value_receive(update: Update, context: ContextTypes.DEF
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_new_setting_value_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"(unexpected) received new setting value {utilities.log(update)}")
 
@@ -255,7 +255,7 @@ async def on_new_setting_value_receive_unexpected(update: Update, context: Conte
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_new_setting_value_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"waiting for new setting value: timed out")
 

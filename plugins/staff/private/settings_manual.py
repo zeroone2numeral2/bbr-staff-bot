@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_oldsettings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/oldsettings {utilities.log(update)}")
 
@@ -43,7 +43,7 @@ async def on_oldsettings_command(update: Update, context: ContextTypes.DEFAULT_T
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/set {utilities.log(update)}")
 
@@ -70,7 +70,7 @@ async def on_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_enable_disable_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/enable or /disable {utilities.log(update)}")
 

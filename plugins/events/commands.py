@@ -609,7 +609,7 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/delevent {utilities.log(update)}")
 
@@ -629,7 +629,7 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/getpost {utilities.log(update)}")
 
@@ -653,7 +653,7 @@ async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/reparse {utilities.log(update)}")
 

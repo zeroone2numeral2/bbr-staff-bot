@@ -182,7 +182,7 @@ async def on_localized_text_delete_button(update: Update, context: ContextTypes.
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/texts {utilities.log(update)}")
 
@@ -215,7 +215,7 @@ async def on_localized_text_edit_button(update: Update, context: ContextTypes.DE
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"received new localized text {utilities.log(update)})")
 
@@ -248,7 +248,7 @@ async def on_localized_text_receive(update: Update, context: ContextTypes.DEFAUL
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_localized_text_receive_unexpected(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"(unexpected) received new localized text message {utilities.log(update)}")
 
@@ -259,7 +259,7 @@ async def on_localized_text_receive_unexpected(update: Update, context: ContextT
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_localized_text_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"waiting for new localized text: timed out")
 
@@ -274,7 +274,7 @@ async def on_localized_text_timeout(update: Update, context: ContextTypes.DEFAUL
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_admin()
+@decorators.staff_member()
 async def on_localized_text_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"waiting new localized text: /cancel command {utilities.log(update)}")
 

@@ -176,7 +176,7 @@ def pass_session(
     return real_decorator
 
 
-def staff_admin():
+def staff_member():
     def real_decorator(func):
         @wraps(func)
         async def wrapped(update: Update, context: CallbackContext, session: Session, *args, **kwargs):
