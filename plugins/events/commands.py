@@ -590,7 +590,7 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
     message_link = context.args[0]
     chat_id, message_id = utilities.unpack_message_link(message_link)
     if not chat_id:
-        await update.message.reply_text("cannot detect the message link pointing to the event to delete")
+        await update.message.reply_text("cannot detect the message link pointing to the event")
         return
 
     if isinstance(chat_id, str):
@@ -657,23 +657,42 @@ async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/reparse {utilities.log(update)}")
 
-    if not update.message.reply_to_message.forward_from_chat or update.message.reply_to_message.forward_from_chat.type != TelegramChat.CHANNEL:
-        await update.message.reply_html("Rispondi ad un messaggi inoltrato di un canale")
-        return
+    # two ways for this command to work:
+    # 1. it can be used with no argument as an answer to a forwarded channel message, in this case we will
+    #    try to get the event from the forwarded message and re-parse it
+    # 2. it can be used in reply to a message with an argument, that is, the message link of the Event object
+    #    this is particularly useful when we need to re-parse an event in a channel where content is protected,
+    #    so we send to the bot the new "dummy" text and reply to that text with the link of the event to update
 
-    chat_id = update.message.reply_to_message.forward_from_chat.id
-    message_id = update.message.reply_to_message.forward_from_message_id
+    if context.args:
+        logger.info("args were passed: get the event from the message link")
+        # if the command argument is wrong or no event is found, this function will also reply to the user
+        event: Optional[Event] = await event_from_link(update, context, session)
+        if not event:
+            # event_from_link() already replied to the user, just return
+            return
+    else:
+        if not update.message.reply_to_message.forward_from_chat or update.message.reply_to_message.forward_from_chat.type != TelegramChat.CHANNEL:
+            await update.message.reply_html(
+                "Rispondi ad un messaggi inoltrato da un canale, oppure ad un messaggio di testo seguito dal link "
+                "al messaggio dell'evento"
+            )
+            return
 
-    event: Event = events.get_or_create(session, chat_id, message_id)
-    if not event:
-        await update.message.reply_html(f"Nessun evento per <code>{chat_id}</code>/<code>{message_id}</code>")
-        return
+        chat_id = update.message.reply_to_message.forward_from_chat.id
+        message_id = update.message.reply_to_message.forward_from_message_id
 
-    add_event_message_metadata(update.message.reply_to_message, event)
-    parse_message_entities(update.message.reply_to_message, event)
-    parse_message_text(update.message.reply_to_message.text or update.message.reply_to_message.caption, event)
+        event: Event = events.get_or_create(session, chat_id, message_id)
+        if not event:
+            await update.message.reply_html(f"No event for <code>{chat_id}</code>/<code>{message_id}</code>")
+            return
 
-    logger.info(f"re-parsed parsed event: {event}")
+    message_to_parse: Message = update.message.reply_to_message
+    add_event_message_metadata(message_to_parse, event, reparse=True)
+    parse_message_entities(message_to_parse, event)
+    parse_message_text(message_to_parse.text or message_to_parse.caption, event)
+
+    logger.info(f"re-parsed event: {event}")
 
     event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event re-parsed")
@@ -691,7 +710,7 @@ HANDLERS = (
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     # superadmins
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),

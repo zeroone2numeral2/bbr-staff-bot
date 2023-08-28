@@ -149,16 +149,24 @@ class DateMatchDaysList:
         return start_date, end_date
 
 
-def add_event_message_metadata(message: Message, event: Event):
+def add_event_message_metadata(message: Message, event: Event, reparse: bool = False):
     message_text = message.text or message.caption
 
-    event.message_date = message.date
-    event.message_edit_date = message.edit_date
     event.message_text = message_text
-    event.message_json = message.to_json()
 
-    event.media_group_id = message.media_group_id
+    if not reparse:
+        # do not override these properties if the message text is being re-parsed on request
+        event.message_date = message.date
+        event.message_edit_date = message.edit_date
+        event.message_json = message.to_json()
+
+        event.media_group_id = message.media_group_id
+
     if utilities.contains_media_with_file_id(message):
+        # we do not remove the media metadata if the utility function returns false: a media message
+        # cannot be edited and turned into a text message
+        # this means that if we ask to /reparse a media channel post by just providing the text, the media
+        # metadata should not (and won't) be erased
         event.media_file_id, event.media_file_unique_id, event.media_group_id = utilities.get_media_ids(message)
         event.media_type = utilities.detect_media_type(message)
 
@@ -238,7 +246,7 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
 
 def parse_message_entities(message: Message, event: Event):
     # HASHTAGS
-    hashtags_dict = message.parse_entities(MessageEntity.HASHTAG) if message.text else message.parse_caption_entities(MessageEntity.HASHTAG)
+    hashtags_dict = message.parse_entities([MessageEntity.HASHTAG]) if message.text else message.parse_caption_entities([MessageEntity.HASHTAG])
     hashtags_list = [v.lower() for v in hashtags_dict.values()]
     parse_message_entities_list(hashtags_list, event)
 
