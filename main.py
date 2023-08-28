@@ -1,9 +1,7 @@
 import logging
-import random
 from typing import Union, Iterable
 
 import pytz
-from sqlalchemy import update, null
 from sqlalchemy.orm import Session
 from telegram import Update, BotCommandScopeChat, ChatMemberOwner, ChatInviteLink, BotCommandScopeDefault
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
@@ -156,7 +154,7 @@ async def post_init(application: Application) -> None:
         try:
             staff_chat_chat_member: ChatMember = await bot.get_chat_member(chat.chat_id, bot.id)
         except BadRequest as e:
-            logger.error(f"error while gettign {chat.title}'s ChatMember: {e}")
+            logger.error(f"error while getting {chat.title}'s ChatMember: {e}")
             if "chat not found" in e.message.lower():
                 logger.warning(f"{chat.title} {chat.chat_id} not found: resetting that type of chat...")
                 if chat.is_staff_chat:
