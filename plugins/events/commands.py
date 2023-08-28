@@ -611,7 +611,7 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
 @decorators.pass_session(pass_user=True)
 @decorators.staff_member()
 async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/delevent {utilities.log(update)}")
+    logger.info(f"/delevent or /resevent {utilities.log(update)}")
 
     event: Event = await event_from_link(update, context, session)
     if not event:
@@ -619,10 +619,16 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
         return
 
     # session.delete(event)
-    event.deleted = True
+    command = utilities.get_command(update.message.text)
+    if command in ("delevent", "de"):
+        event.deleted = True
+        action = "deleted"
+    else:
+        event.deleted = False
+        action = "restored"
 
     event_str, _ = format_event_string(event)
-    await update.effective_message.reply_text(f"{event_str}\n\n^event deleted")
+    await update.effective_message.reply_text(f"{event_str}\n\n^event {action}")
 
     drop_events_cache(context)
 
@@ -708,7 +714,7 @@ HANDLERS = (
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["delevent", "de"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["delevent", "de", "resevent", "re"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     # superadmins
