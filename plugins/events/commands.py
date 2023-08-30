@@ -39,6 +39,7 @@ class EventFilter:
     WEEK = "week"
     WEEK_2 = "week2"
     MONTH_AND_NEXT_MONTH = "monthnext"
+    MONTH_FUTURE_AND_NEXT_MONTH = "monthfuturenext"
     ALL = "all"
     SOON = "soon"
 
