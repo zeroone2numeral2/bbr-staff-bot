@@ -23,6 +23,16 @@ logger = logging.getLogger(__name__)
 async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
     logger.info(f"new user message {utilities.log(update)}")
 
+    if utilities.is_superadmin(update.effective_user):
+        logger.info("superadmin, ignoring message")
+        # TODO: continue update propagation
+        return
+
+    if chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat):
+        logger.info("staff chat member, ignoring message")
+        # TODO: continue update propagation
+        return
+
     target_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)  # we check whether none or not later
 
     if user.conversate_with_staff_override:
@@ -114,5 +124,5 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (MessageHandler(filters.ChatType.PRIVATE & ~Filter.SUPERADMIN, on_user_message), Group.NORMAL),
+    (MessageHandler(filters.ChatType.PRIVATE & ~filters.COMMAND, on_user_message), Group.NORMAL),
 )
