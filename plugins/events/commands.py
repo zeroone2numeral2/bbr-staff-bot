@@ -155,18 +155,31 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
 
     # EVENT DATE
     today = today or datetime.date.today()
-    if EventFilter.WEEK in args:
+    if EventFilter.WEEK in args or EventFilter.WEEK_2 in args:
+        additional_days = 0
+        if EventFilter.WEEK_2 in args:
+            # events of this week + events of the next week
+            additional_days = 7
+
         last_monday = utilities.previous_weekday(today=today, weekday=0)
-        next_monday = utilities.next_weekday(today=today, weekday=0)
+        next_monday = utilities.next_weekday(today=today, weekday=0, additional_days=additional_days)
+
         logger.debug(f"week filter: {last_monday} <= start date < {next_monday}")
 
-        query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
-    elif EventFilter.WEEK_2 in args:
-        last_monday = utilities.previous_weekday(today=today, weekday=0)
-        next_monday = utilities.next_weekday(today=today, weekday=0, additional_days=7)
-        logger.debug(f"week filter: {last_monday} <= start date < {next_monday}")
-
-        query_filters.extend([Event.start_date >= last_monday, Event.start_date < next_monday])
+        query_filters.extend([
+            # start date is between last monday and next monday...
+            (
+                (Event.start_date >= last_monday)
+                & (Event.start_date < next_monday)
+            )
+            # ...or end date exists and is between last monday and next monday (extract also
+            # events which end during the week/weeks)
+            | (
+                Event.end_date.is_not(null())
+                & (Event.end_date >= last_monday)
+                & (Event.end_date < next_monday)
+            )
+        ])
     elif EventFilter.ALL in args:
         # all events >= this month
         query_filters.extend([
@@ -184,7 +197,10 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
         next_month = today.month + 1 if today.month != 12 else 1
         next_month_year = today.year if next_month != 12 else today.year + 1
 
-        no_end_date_tolerance_date = today + datetime.timedelta(days=-7)
+        # we need this date to extract all events that do not have an end date, but
+        # that started recently in the past. The party might last several days, so we
+        # decide to extract all events started within n days ago
+        no_end_tolerance_date = today + datetime.timedelta(days=-7)
 
         query_filters.extend([
             # all events that start next month
@@ -200,9 +216,9 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
             )
             | (
                 # events that do not have an end day, but
-                # their start date is between `no_end_date_tolerance_date` and today
+                # their start date is between `no_end_tolerance_date` and today
                 (Event.end_day.is_(null())) & (Event.start_day.is_not(null()))
-                & (Event.start_date >= no_end_date_tolerance_date)
+                & (Event.start_date >= no_end_tolerance_date)
                 & (Event.start_date <= today)
             )
         ])
