@@ -62,7 +62,6 @@ DEFAULT_FILTERS = [EventFilter.IT, EventFilter.NOT_FREE, EventFilter.WEEK]
 
 def time_to_split(
         text_lines: List[str],
-        entities_per_line: int,
         initial_message_length: int = 0,
         initial_entities_count: int = 0
 ) -> bool:
@@ -79,10 +78,6 @@ def time_to_split(
         entities_count += utilities.count_html_entities(line)
 
     if message_length >= MessageLimit.MAX_TEXT_LENGTH:
-        return True
-
-    if len(text_lines) * entities_per_line >= MessageLimit.MESSAGE_ENTITIES:
-        # keep both the tests on entities, but this one should be removed once the other one is tested
         return True
 
     if entities_count >= MessageLimit.MESSAGE_ENTITIES:
@@ -127,7 +122,7 @@ def split_messages(all_events: List[str], return_after_first_message=False) -> L
     messages_to_send = []
     next_message_events = []
     for events_string in all_events:
-        if time_to_split(next_message_events, entities_per_line=3):
+        if time_to_split(next_message_events):
             new_message_to_send = "\n".join(next_message_events)
             messages_to_send.append(new_message_to_send)
 
