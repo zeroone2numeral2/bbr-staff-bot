@@ -402,18 +402,21 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
     new_filter = context.matches[0].group("filter")
 
     date_override: Optional[datetime.date] = None
+    # TYPE
     if new_filter == EventFilter.FREE:
         safe_remove(args, EventFilter.NOT_FREE)
         args.append(EventFilter.FREE)
     elif new_filter == EventFilter.NOT_FREE:
         safe_remove(args, EventFilter.FREE)
         args.append(EventFilter.NOT_FREE)
+    # REGION
     elif new_filter == EventFilter.IT:
         safe_remove(args, EventFilter.NOT_IT)
         args.append(EventFilter.IT)
     elif new_filter == EventFilter.NOT_IT:
         safe_remove(args, EventFilter.IT)
         args.append(EventFilter.NOT_IT)
+    # PERIOD
     elif new_filter == EventFilter.WEEK:
         safe_remove(args, EventFilter.WEEK_2)
         safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
