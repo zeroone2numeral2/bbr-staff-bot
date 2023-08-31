@@ -52,7 +52,7 @@ FILTER_DESCRIPTION = {
     EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
     EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
     EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutti) o il prossimo",
-    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (in corso/in programma) o il prossimo",
+    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"[TEST] {Emoji.CALENDAR} questo mese (in corso/in programma) o il prossimo",
     EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)"
 }
 
@@ -416,18 +416,21 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
         safe_remove(args, EventFilter.WEEK_2)
         safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
         safe_remove(args, EventFilter.SOON)
+        safe_remove(args, EventFilter.MONTH_FUTURE_AND_NEXT_MONTH)
 
         args.append(EventFilter.WEEK)
     elif new_filter == EventFilter.WEEK_2:
         safe_remove(args, EventFilter.WEEK)
         safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
         safe_remove(args, EventFilter.SOON)
+        safe_remove(args, EventFilter.MONTH_FUTURE_AND_NEXT_MONTH)
 
         args.append(EventFilter.WEEK_2)
     elif new_filter == EventFilter.MONTH_AND_NEXT_MONTH:
         safe_remove(args, EventFilter.WEEK)
         safe_remove(args, EventFilter.WEEK_2)
         safe_remove(args, EventFilter.SOON)
+        safe_remove(args, EventFilter.MONTH_FUTURE_AND_NEXT_MONTH)
 
         args.append(EventFilter.MONTH_AND_NEXT_MONTH)
 
@@ -437,6 +440,7 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
         safe_remove(args, EventFilter.WEEK)
         safe_remove(args, EventFilter.WEEK_2)
         safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
+        safe_remove(args, EventFilter.MONTH_FUTURE_AND_NEXT_MONTH)
 
         args.append(EventFilter.SOON)
 
@@ -558,7 +562,7 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
         message_id: int = get_last_message_id_sent_for_cache_key(context, args_cache_key)
         logger.info(f"protect_content_override: {protect_content_override}")
         if message_id and not protect_content_override:
-            # we do not reply to an old message if protect_content_override: this flag is set when an user uses /radar24,
+            # we do not reply to an old message if protect_content_override: this flag is set when a user uses /radar24,
             # which is supposed to send the un-content-protected list of events. It is pointless to reply to
             # an old message in this case
 
@@ -718,9 +722,9 @@ async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     # two ways for this command to work:
     # 1. it can be used with no argument as an answer to a forwarded channel message, in this case we will
-    #    try to get the event from the forwarded message and re-parse it
+    #    try to get the event from the forwarded message and reparse it
     # 2. it can be used in reply to a message with an argument, that is, the message link of the Event object
-    #    this is particularly useful when we need to re-parse an event in a channel where content is protected,
+    #    this is particularly useful when we need to reparse an event in a channel where content is protected,
     #    so we send to the bot the new "dummy" text and reply to that text with the link of the event to update
 
     if context.args:
