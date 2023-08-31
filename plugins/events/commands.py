@@ -51,7 +51,8 @@ FILTER_DESCRIPTION = {
     EventFilter.NOT_FREE: f"{Flag.BLACK} eventi legali, cs, squat, street parade, altro",
     EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
     EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
-    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese o il prossimo",
+    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutti) o il prossimo",
+    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (in corso/in programma) o il prossimo",
     EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)"
 }
 
