@@ -164,7 +164,7 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
         last_monday = utilities.previous_weekday(today=today, weekday=0)
         next_monday = utilities.next_weekday(today=today, weekday=0, additional_days=additional_days)
 
-        logger.debug(f"week filter: {last_monday} <= start date < {next_monday}")
+        logger.debug(f"week filter: {last_monday} <= start/end date < {next_monday}")
 
         query_filters.extend([
             # start date is between last monday and next monday...
