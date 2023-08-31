@@ -52,7 +52,7 @@ FILTER_DESCRIPTION = {
     EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
     EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
     EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutti) o il prossimo",
-    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"[TEST] {Emoji.CALENDAR} questo mese (in corso/in programma) o il prossimo",
+    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"[TEST] {Emoji.FORWARD} questo mese (in corso/in programma) o il prossimo",
     EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)"
 }
 
@@ -298,6 +298,8 @@ def get_events_reply_markup(args, date_override: Optional[datetime.date] = None)
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} 2 settimane", callback_data=f"changefilterto:{EventFilter.MONTH_AND_NEXT_MONTH}"))
     elif EventFilter.MONTH_AND_NEXT_MONTH in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.SOON}"))
+    elif EventFilter.MONTH_FUTURE_AND_NEXT_MONTH in args:
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.FORWARD} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.SOON}"))
     else:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CLOCK} soon", callback_data=f"changefilterto:{EventFilter.WEEK}"))
 
@@ -434,7 +436,18 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         args.append(EventFilter.MONTH_AND_NEXT_MONTH)
 
-        # we just need to get the date override here, because it's the only keyboard button which shows
+        # we need to get the date override, because the keyboard button shows
+        # a string based on the current/provided date
+        date_override = context.user_data.get(TempDataKey.RADAR_DATE_OVERRIDE, None)
+    elif new_filter == EventFilter.MONTH_FUTURE_AND_NEXT_MONTH:
+        safe_remove(args, EventFilter.WEEK)
+        safe_remove(args, EventFilter.WEEK_2)
+        safe_remove(args, EventFilter.SOON)
+        safe_remove(args, EventFilter.MONTH_AND_NEXT_MONTH)
+
+        args.append(EventFilter.MONTH_FUTURE_AND_NEXT_MONTH)
+
+        # we need to get the date override, because the keyboard button shows
         # a string based on the current/provided date
         date_override = context.user_data.get(TempDataKey.RADAR_DATE_OVERRIDE, None)
     elif new_filter == EventFilter.SOON:
