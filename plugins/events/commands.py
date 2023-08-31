@@ -51,8 +51,8 @@ FILTER_DESCRIPTION = {
     EventFilter.NOT_FREE: f"{Flag.BLACK} eventi legali, cs, squat, street parade, altro",
     EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
     EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
-    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutti) o il prossimo",
-    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"[TEST] {Emoji.FORWARD} questo mese (in corso/in programma) o il prossimo",
+    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutte) o il prossimo",
+    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"{Emoji.FORWARD} questo mese (in corso/futuri/incerti), o il prossimo",
     EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)"
 }
 
@@ -297,9 +297,9 @@ def get_events_reply_markup(args, date_override: Optional[datetime.date] = None)
     elif EventFilter.WEEK_2 in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} 2 settimane", callback_data=f"changefilterto:{EventFilter.MONTH_AND_NEXT_MONTH}"))
     elif EventFilter.MONTH_AND_NEXT_MONTH in args:
-        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.MONTH_FUTURE_AND_NEXT_MONTH}"))
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} 2 mesi (interi)", callback_data=f"changefilterto:{EventFilter.MONTH_FUTURE_AND_NEXT_MONTH}"))
     elif EventFilter.MONTH_FUTURE_AND_NEXT_MONTH in args:
-        keyboard[0].append(InlineKeyboardButton(f"{Emoji.FORWARD} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.SOON}"))
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.SOON}"))
     else:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CLOCK} soon", callback_data=f"changefilterto:{EventFilter.WEEK}"))
 
