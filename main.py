@@ -147,7 +147,7 @@ async def post_init(application: Application) -> None:
     all_events = events.get_all_events(session)
     event: Event
     for event in all_events:
-        event.fix_date_fields()
+        event.populate_date_fields()
     session.commit()
 
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
