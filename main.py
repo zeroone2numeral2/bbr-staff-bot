@@ -14,9 +14,9 @@ from telegram.ext import ExtBot
 
 from loader import load_modules
 from database.base import get_session, Base, engine, session_scope
-from database.models import ChatMember as DbChatMember, Chat
+from database.models import ChatMember as DbChatMember, Chat, Event
 from database.models import BotSetting
-from database.queries import chats, chat_members
+from database.queries import chats, chat_members, events
 import utilities
 from constants import Language, BOT_SETTINGS_DEFAULTS
 from config import config
@@ -141,6 +141,13 @@ async def post_init(application: Application) -> None:
             )
             session.add(setting)
 
+    session.commit()
+
+    logger.info("fixing events dates...")
+    all_events = events.get_all_events(session)
+    event: Event
+    for event in all_events:
+        event.fix_date_fields()
     session.commit()
 
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
