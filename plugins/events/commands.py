@@ -94,7 +94,7 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False) 
         region_icon = REGIONS_DATA[event.region]["emoji"]
 
     if event.event_title:
-        title_escaped = utilities.escape_html(event.event_title)
+        title_escaped = utilities.escape_html(event.event_title.upper())
     else:
         title_escaped = "unnamed party"
 
