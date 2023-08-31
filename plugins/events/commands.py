@@ -6,7 +6,7 @@ from re import Match
 from typing import Optional, Tuple, List, Union
 
 import telegram.constants
-from sqlalchemy import true, false
+from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
 from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser, Chat as TelegramChat
 from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext, CallbackQueryHandler
@@ -179,6 +179,40 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
         ])
     elif EventFilter.SOON in args:
         query_filters.extend([Event.soon == true()])
+    elif EventFilter.MONTH_FUTURE_AND_NEXT_MONTH in args:
+        this_day = today.day
+        this_month = today.month
+        this_month_year = today.year
+        prev_month = today.month - 1 if today.month != 1 else 12
+        prev_month_year = today.year if prev_month != 1 else today.year - 1
+        next_month = today.month + 1 if today.month != 12 else 1
+        next_month_year = today.year if next_month != 12 else today.year + 1
+        no_end_date_tolerance = 7
+
+        query_filters.extend([
+            # all events that start next month
+            ((Event.start_month == next_month) & (Event.start_year == next_month_year))
+            | (
+                # all events starting this month...
+                (Event.start_month == this_month) & (Event.start_year == this_month_year)
+                & (
+                    (Event.start_day.is_(null()))  # ...and they don't have a start date
+                    | (this_day <= Event.start_day)  # ...or they start today/in the future
+                    | (this_day <= Event.end_day)  # ...or they end today/in the future
+                    # ...or there is no end date, but the start day is before today and in the `no_end_date_tolerance` previous days of *this month*
+                    | ((Event.end_day.is_(null())) & (Event.start_day < this_day) & (Event.start_day > this_day - no_end_date_tolerance))
+                )
+            )
+            | (
+                # events in the previous month that do not have an end day, but
+                # their start date falls inside our tolerance
+                (Event.end_day.is_(null()))
+                & (Event.start_day.is_not(null()))
+                & (Event.start_month == prev_month)
+                & (Event.start_year == prev_month_year)
+                & ((31 + this_day - Event.start_day) <= no_end_date_tolerance)
+            )
+        ])
     else:
         # no other time filter: this month + next month
         this_month = today.month
