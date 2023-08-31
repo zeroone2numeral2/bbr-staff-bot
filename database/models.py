@@ -988,7 +988,7 @@ class Event(Base):
 
         return start_day == end_day and self.start_month == self.end_month and self.start_year == self.end_year
 
-    def fix_date_fields(self):
+    def populate_date_fields(self):
         """if we know the start and end dates, make sure the Date fields are set"""
 
         if self.start_year and self.start_month and self.start_day:

@@ -317,8 +317,8 @@ def parse_message_text(message_text: str, event: Event):
         event.end_day = end_date.day
         event.end_month = end_date.month
         event.end_year = end_date.year
-        if start_date.day:
-            event.start_date = start_date.to_date()
+
+        event.populate_date_fields()
 
 
 def drop_events_cache(context: CallbackContext):
