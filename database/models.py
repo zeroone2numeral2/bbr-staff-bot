@@ -960,7 +960,7 @@ class Event(Base):
         if not self.end_day and not fill_missing_day:
             return
 
-        end_day = self.end_ay if self.end_day else fill_missing_day
+        end_day = self.end_day if self.end_day else fill_missing_day
         end_date = datetime.date(self.end_year, self.end_month, end_day)
 
         return end_date
