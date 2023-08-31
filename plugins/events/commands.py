@@ -434,7 +434,8 @@ async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         args.append(EventFilter.MONTH_AND_NEXT_MONTH)
 
-        # we just need to get the date override here
+        # we just need to get the date override here, because it's the only keyboard button which shows
+        # a string based on the current/provided date
         date_override = context.user_data.get(TempDataKey.RADAR_DATE_OVERRIDE, None)
     elif new_filter == EventFilter.SOON:
         safe_remove(args, EventFilter.WEEK)
