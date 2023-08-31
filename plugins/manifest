@@ -10,6 +10,7 @@ staff.private.placeholders
 staff.private.settings_manual
 staff.private.settings
 staff.private.ltexts
+staff.private.diff
 
 [flytek]
 events.commands

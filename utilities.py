@@ -1,4 +1,5 @@
 import datetime
+import difflib
 import json
 import logging
 import logging.config
@@ -494,6 +495,34 @@ def unpack_message_link(message_link: str) -> Tuple[Optional[Union[int, str]], O
         chat_id = int(f"-100{chat_id}")
 
     return chat_id, message_id
+
+
+def diff(string1: str, string2: str):
+    lines1 = string1.strip().splitlines()
+    lines2 = string2.strip().splitlines()
+
+    output_lines = []
+    for line in difflib.unified_diff(lines1, lines2, lineterm=''):
+        output_lines.append(line)
+
+    return "\n".join(output_lines)
+
+
+def diff_alt(string1: str, string2: str, ignore_empty_lines_diff=True, ignore_context_lines=False):
+    lines1 = string1.strip().splitlines()
+    lines2 = string2.strip().splitlines()
+
+    output_lines = []
+    for line in difflib.unified_diff(lines1, lines2, lineterm='', n=0):
+        if ignore_context_lines and line.startswith(('---', '+++', '@@')):
+            continue
+
+        if ignore_empty_lines_diff and not re.sub(r"^(\+|-)", "", line.strip()):
+            continue
+
+        output_lines.append(line)
+
+    return "\n".join(output_lines)
 
 
 if __name__ == "__main__":
