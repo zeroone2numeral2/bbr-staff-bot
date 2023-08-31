@@ -863,6 +863,7 @@ class Event(Base):
     start_day = Column(Integer, default=None)
     start_month = Column(Integer, default=None)
     start_year = Column(Integer, default=None)
+    end_date = Column(Date, default=None)  # just a convenience Date column that should be used for queries
     end_day = Column(Integer, default=None)
     end_month = Column(Integer, default=None)
     end_year = Column(Integer, default=None)
@@ -979,11 +980,21 @@ class Event(Base):
         return self.start_date_as_date(fill_missing_day), self.end_date_as_date(fill_missing_day)
 
     def single_day(self):
+        """wether the event is a single-day event or not"""
+
         # avoid "int == None" comparision
         start_day = self.start_day or 0
         end_day = self.end_day or 0
 
         return start_day == end_day and self.start_month == self.end_month and self.start_year == self.end_year
+
+    def fix_date_fields(self):
+        """if we know the start and end dates, make sure the Date fields are set"""
+
+        if self.start_year and self.start_month and self.start_day:
+            self.start_date = self.start_date_as_date()
+        if self.end_year and self.end_month and self.end_day:
+            self.end_date = self.end_date_as_date()
 
     def pretty_date(self) -> str:
         if not self.start_month or not self.start_year:
