@@ -207,7 +207,8 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
                 # events that do not have an end day, but
                 # their start date is between `no_end_date_tolerance_date` and today
                 (Event.end_day.is_(null())) & (Event.start_day.is_not(null()))
-                & (no_end_date_tolerance_date <= Event.start_date <= today)
+                & (Event.start_date >= no_end_date_tolerance_date)
+                & (Event.start_date <= today)
             )
         ])
     else:
