@@ -297,7 +297,7 @@ def get_events_reply_markup(args, date_override: Optional[datetime.date] = None)
     elif EventFilter.WEEK_2 in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} 2 settimane", callback_data=f"changefilterto:{EventFilter.MONTH_AND_NEXT_MONTH}"))
     elif EventFilter.MONTH_AND_NEXT_MONTH in args:
-        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.SOON}"))
+        keyboard[0].append(InlineKeyboardButton(f"{Emoji.CALENDAR} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.MONTH_FUTURE_AND_NEXT_MONTH}"))
     elif EventFilter.MONTH_FUTURE_AND_NEXT_MONTH in args:
         keyboard[0].append(InlineKeyboardButton(f"{Emoji.FORWARD} {get_month_string(date_override)}", callback_data=f"changefilterto:{EventFilter.SOON}"))
     else:
