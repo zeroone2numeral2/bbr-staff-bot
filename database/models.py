@@ -831,6 +831,7 @@ EVENT_TYPE = {
     EventTypeHashtag.FREE: EventType.FREE,
     EventTypeHashtag.TEKNIVAL: EventType.FREE,
     EventTypeHashtag.LEGAL_PARTY: EventType.LEGAL,
+    EventTypeHashtag.LEGAL_PLACE: EventType.LEGAL,
     EventTypeHashtag.FESTIVAL: EventType.LEGAL,
     EventTypeHashtag.CS: EventType.CS_OR_SQUAT,
     EventTypeHashtag.CSO: EventType.CS_OR_SQUAT,
