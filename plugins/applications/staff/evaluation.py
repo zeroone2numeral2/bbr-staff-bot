@@ -18,6 +18,7 @@ import utilities
 from constants import Group, BotSettingKey, Language, LocalizedTextKey, COMMAND_PREFIXES
 from emojis import Emoji
 from ext.filters import ChatFilter
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,8 @@ async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Op
             chat_invite_link: ChatInviteLink = await bot.create_chat_invite_link(
                 users_chat.chat_id,
                 member_limit=1,
-                name=f"user {user.user_id}"
+                name=f"user {user.user_id}",
+                creates_join_request=config.setting.invite_link_join_request
             )
             invite_link = chat_invite_link.invite_link
 
