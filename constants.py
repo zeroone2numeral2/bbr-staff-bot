@@ -69,6 +69,7 @@ class BotSettingKey:
     APPROVAL_MODE = "approval_mode"
     RABBIT_FILE = "rabbit_file"
     RADAR_FILE = "radar_file"
+    PARTIES_LIST = "parties_list"
 
 
 class LocalizedTextKey:
@@ -243,6 +244,14 @@ BOT_SETTINGS_DEFAULTS = {
         label="fallback language",
         emoji=Emoji.EARTH,
         description="the language that should be used if the user language's version of a text is not available",
+        show_if_true_key=None,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST: dict(
+        default=False,
+        label="parties list",
+        emoji=Emoji.PIRATE,
+        description="every week, send a message in the events channel listing the parties of the week",
         show_if_true_key=None,
         telegram_media=False
     ),
