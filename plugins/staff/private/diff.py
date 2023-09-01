@@ -53,16 +53,13 @@ async def on_diff_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     elif command == "altdiff":
         result = utilities.diff_alt(string1, string2, ignore_context_lines=True)
 
-    try:
-        file_to_send = tempfile.SpooledTemporaryFile(mode="w+b")
-        file_to_send.write(result.encode())
-        file_to_send.seek(0)
+    file_to_send = tempfile.SpooledTemporaryFile(mode="w+b")
+    file_to_send.write(result.encode())
+    file_to_send.seek(0)
 
-        await update.message.reply_document(file_to_send.read(), filename="diff.txt")
+    await update.message.reply_document(file_to_send.read(), filename="diff.txt")
 
-        file_to_send.close()
-    except Exception as e:
-        await update.message.reply_text(f"error while creating and sending the diff file: {e}")
+    file_to_send.close()
 
 
 HANDLERS = (
