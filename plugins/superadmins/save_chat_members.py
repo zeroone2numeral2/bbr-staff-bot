@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_savechatmembers_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
-    logger.info(f"/savechatmembers (private) {utilities.log(update)}")
+    logger.info(f"/savechatmembers {utilities.log(update)}")
 
     await utilities.delete_messages_safe(update.message)  # delete as soon as possible
 
