@@ -223,6 +223,9 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
 
         if region_found:
             break
+    if not region_found:
+        # if no region is found in the hashtags list, set it to NULL
+        event.region = None
 
     # DATES
     # enter this only if dates are not already filled
