@@ -21,7 +21,7 @@ async def on_senddb_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_html(f"sending <code>{DB_FILE_PATH}</code>...")
 
     with open(DB_FILE_PATH, "rb") as fh:
-        await update.message.reply_document(fh.read())
+        await update.message.reply_document(fh)
 
 
 HANDLERS = (
