@@ -1023,6 +1023,58 @@ class Event(Base):
         return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
 
 
+class PartiesMessage(Base):
+    __tablename__ = 'parties_messages'
+    __allow_unmapped__ = True
+
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    message_id = Column(Integer, primary_key=True)
+    events_type = Column(String, nullable=False)
+
+    # info about the channel post that was forwarded to the discussion group
+    discussion_group_chat_id = Column(Integer, default=None)
+    discussion_group_message_id = Column(Integer, default=None)
+    discussion_group_received_on = Column(DateTime, default=None)
+    discussion_group_message_json = Column(String, default=None)
+
+    message_date = Column(DateTime, default=None)
+    message_edit_date = Column(DateTime, default=None)
+
+    force_sent = Column(Boolean, default=False)
+    deleted = Column(Boolean, default=False)
+    ignore = Column(Boolean, default=False)
+    events_list = Column(String, default=json.dumps([]))
+
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
+    message_json = Column(String, default=None)
+
+    def __init__(self, message: Message, events_list: Optional[List] = None):
+        self.message_id = message.message_id
+        self.chat_id = message.chat.id
+        self.message_date = message.date
+        self.message_json = json.dumps(message.to_dict(), indent=2)
+        if events_list:
+            self.save_events(events_list)
+
+    def save_message_edit(self, edited_message: Message):
+        self.message_edit_date = edited_message.edit_date
+        self.message_json = json.dumps(edited_message.to_dict(), indent=2)
+
+    def save_events(self, events_list: List):
+        self.events_list = json.dumps(events_list, indent=2)
+
+    def compare_events(self, events_list: List, save=True):
+        same_events = set(events_list) == set(self.events_list)
+        if not same_events and save:
+            self.save_events(events_list)
+
+        return same_events
+
+    def isoweek(self):
+        return self.message_date.isocalendar()[1]
+
+
 class ApplicationRequest(Base):
     __tablename__ = 'application_requests'
     __allow_unmapped__ = True

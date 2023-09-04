@@ -1,9 +1,11 @@
-from typing import Optional, List
+import datetime
+from typing import Optional, List, Any, Tuple
 
-from sqlalchemy import select, false, and_
+from sqlalchemy import select, false, and_, null
 from sqlalchemy.orm import Session
 
 import utilities
+from constants import RegionName
 from database.models import Event
 
 
@@ -56,6 +58,35 @@ def get_events(
     query = select(Event).filter(*filters).order_by(*order_by)
 
     return session.scalars(query)
+
+
+def get_week_events(session: Session, now: datetime.datetime, filters: List) -> Tuple[Any, datetime.datetime, datetime.datetime]:
+    last_monday = utilities.previous_weekday(today=now.date(), weekday=0)
+    next_monday = utilities.next_weekday(today=now.date(), weekday=0)
+
+    filters.extend([
+        # start date is between last monday and next monday...
+        (
+            (Event.start_date >= last_monday)
+            & (Event.start_date < next_monday)
+        )
+        # ...or end date exists and is between last monday and next monday (extract also
+        # events which end during the week/weeks)
+        | (
+            Event.end_date.is_not(null())
+            & (Event.end_date >= last_monday)
+            & (Event.end_date < next_monday)
+        )
+    ])
+
+    statement = select(Event).filter(*filters).order_by(
+        Event.start_year,
+        Event.start_month,
+        Event.start_day,
+        Event.message_id
+    )
+
+    return session.scalars(statement), last_monday, next_monday
 
 
 def get_all_events(session: Session):

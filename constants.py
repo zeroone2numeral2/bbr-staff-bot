@@ -298,6 +298,7 @@ class TempDataKey:
     RADAR_DATE_OVERRIDE = "radar_date_override"
     RADAR_PROTECT_CONTENT_OVERRIDE = "radar_protect_content_override"
     FIRST_DIFF_TEXT = "first_diff_text"
+    UPDATE_PARTIES_MESSAGE = "update_parties_message"
 
 
 COMMAND_PREFIXES = ["/", "!", "."]

@@ -198,6 +198,9 @@ async def post_init(application: Application) -> None:
     else:
         await set_flytek_commands(session, bot)
 
+    session.commit()
+    session.close()
+
 
 def main():
     utilities.load_logging_config('logging.json')
