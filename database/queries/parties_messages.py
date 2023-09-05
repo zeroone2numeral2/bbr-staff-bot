@@ -14,3 +14,12 @@ def get_last_parties_message(session: Session, chat_id: int, events_type: str):
     ).one_or_none()
 
     return parties_message
+
+
+def get_parties_message(session: Session, chat_id: int, message_id: int):
+    parties_message: Optional[PartiesMessage] = session.query(PartiesMessage).filter(
+        PartiesMessage.chat_id == chat_id,
+        PartiesMessage.message_id == message_id
+    ).one_or_none()
+
+    return parties_message

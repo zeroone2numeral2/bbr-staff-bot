@@ -1,6 +1,7 @@
 import json
 import logging
 import pathlib
+from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update, Message
@@ -8,8 +9,8 @@ from telegram.ext import ContextTypes, filters, MessageHandler
 
 from .common import add_event_message_metadata, parse_message_text, parse_message_entities, drop_events_cache
 from ext.filters import ChatFilter, Filter
-from database.models import Chat, Event
-from database.queries import events, chats
+from database.models import Chat, Event, PartiesMessage
+from database.queries import events, chats, parties_messages
 import decorators
 import utilities
 from constants import Group, TempDataKey
@@ -85,7 +86,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     logger.info(f"parsed event: {event}")
 
-    logger.info("setting flag to signal that the parties message list shoudl be updated...")
+    logger.info("setting flag to signal that the parties message list should be updated...")
     context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
 
     logger.info("dropping events cache...")
@@ -100,24 +101,56 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 @decorators.catch_exception(silent=True)
 @decorators.pass_session()
 async def on_linked_group_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"discussion group: events chat message update {utilities.log(update)}")
+    logger.info(f"discussion group: channel message update {utilities.log(update)}")
 
     channel_chat_id = update.message.sender_chat.id
     channel_message_id = update.message.forward_from_message_id
-    event: Event = events.get_or_create(session, channel_chat_id, channel_message_id)
+    
+    event: Event = events.get_or_create(session, channel_chat_id, channel_message_id, create_if_missing=False)
     if not event:
-        logger.warning(f"received discussion group channel post message, but no Event was found ({channel_chat_id}, {channel_message_id})")
+        logger.warning(f"no Event was found for message {channel_message_id} in chat {channel_chat_id}")
+    else:
+        logger.info("Event: saving discussion group's post info...")
+        event.save_discussion_group_message(update.effective_message)
+
+        logger.info("setting flag to signal that the parties message list should be updated...")
+        context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
+    
+        # make sure to drop the event cache so new commands will have updated info
+        logger.info("dropping events cache...")
+        drop_events_cache(context)
+
+        # no need to try to get a PartiesMessage if an Event for this message was found
+        return
+    
+    parties_message: Optional[PartiesMessage] = parties_messages.get_parties_message(session, channel_chat_id, channel_message_id)
+    if not parties_message:
+        logger.warning(f"no PartiesMessage was found for message {channel_message_id} in chat {channel_chat_id}")
+    else:
+        logger.info("PartiesMessage: saving discussion group's post info...")
+        parties_message.save_discussion_group_message(update.effective_message)
+
+
+@decorators.catch_exception(silent=True)
+@decorators.pass_session()
+async def on_events_chat_pinned_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"events chat: pinned message {utilities.log(update)}")
+
+    # we check whether the pinned message is a parties message: in that case, we delete the service message
+    chat_id = update.effective_chat.id
+    message_id = update.effective_message.pinned_message.message_id
+
+    parties_message: Optional[PartiesMessage] = parties_messages.get_parties_message(session, chat_id, message_id)
+    if not parties_message:
+        logger.warning(f"no PartiesMessage was found for message {message_id} in chat {chat_id}")
         return
 
-    logger.info("saving discussion group's post info...")
-    event.save_discussion_group_message(update.message)
-
-    # make sure to drop the event cache so new commands will have updated info
-    logger.info("dropping events cache...")
-    drop_events_cache(context)
-
+    logger.info("deleting \"pinned message\" service message...")
+    await utilities.delete_messages_safe(update.effective_message)
+    
 
 HANDLERS = (
     (MessageHandler(ChatFilter.EVENTS & Filter.MESSAGE_OR_EDIT & Filter.WITH_TEXT, on_event_message), Group.PREPROCESS),
     (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
+    (MessageHandler(ChatFilter.EVENTS & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
 )

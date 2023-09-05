@@ -1062,6 +1062,12 @@ class PartiesMessage(Base):
         self.message_edit_date = edited_message.edit_date
         self.message_json = json.dumps(edited_message.to_dict(), indent=2)
 
+    def save_discussion_group_message(self, message: Message):
+        self.discussion_group_chat_id = message.chat.id
+        self.discussion_group_message_id = message.message_id
+        self.discussion_group_received_on = message.date
+        self.discussion_group_message_json = json.dumps(message.to_dict(), indent=2)
+
     def save_events(self, events_list: List):
         self.events_list = json.dumps(events_list, indent=2)
 

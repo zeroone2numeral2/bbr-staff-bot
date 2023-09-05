@@ -220,7 +220,7 @@ def main():
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
-    app.job_queue.run_repeating(parties_message_job, interval=30, first=10)
+    app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency, first=20)
 
     logger.info(f"polling for updates...")
     app.run_polling(

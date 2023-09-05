@@ -14,6 +14,7 @@ from database.models import Chat, Event, PartiesMessage
 from database.models import BotSetting
 from database.queries import chats, events, settings, parties_messages
 import utilities
+import decorators
 from constants import Language, BOT_SETTINGS_DEFAULTS, BotSettingKey, RegionName, TempDataKey
 from config import config
 from emojis import Flag, Emoji
@@ -49,7 +50,7 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
         event_string, _ = format_event_string(event)
         text += f"\n{event_string}"
 
-    text += f"\n\nUltimo aggiornamento: {utilities.format_datetime(now)}"
+    text += f"\n\n<i>Ultimo aggiornamento: {utilities.format_datetime(now, format_str='%d/%m %H:%M')}</i>"
 
     entities_count = utilities.count_html_entities(text)
     logger.debug(f"entities count: {entities_count}")
@@ -75,9 +76,10 @@ async def pin_message(bot: Bot, new_parties_message: Message, old_parties_messag
             logger.error(f"error while unpinning old parties message: {e}")
 
 
-async def parties_message_job(context: ContextTypes.DEFAULT_TYPE):
+@decorators.catch_exception_job()
+@decorators.pass_session_job()
+async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info("parties message job")
-    session: Session = get_session()
 
     events_chat = chats.get_chat(session, Chat.is_events_chat)
     if not events_chat:
@@ -106,19 +108,25 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE):
         logger.info(f"filter: {filter_key}")
 
         current_isoweek = now.isocalendar()[1]
-        last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id,
-                                                                         events_type=filter_key)
+        last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
+        last_parties_message_isoweek = 53 if not last_parties_message else last_parties_message.isoweek()
 
         post_new_message = False
+        post_new_message_force = False  # we need this to populate PartiesMessage.force_posted
 
         today_is_post_weekday = now.weekday() == config.settings.parties_message_weekday  # whether today is the weekday we should post the message
-        if not last_parties_message:
-            logger.info("no last parties message: it's time to post a new one")
+        new_week = current_isoweek != last_parties_message_isoweek
+        logger.info(f"current isoweek: {current_isoweek}, last post isoweek: {last_parties_message_isoweek}, weekday: {now.weekday()}, hour: {now.hour}")
+        if today_is_post_weekday and new_week and now.hour >= config.settings.parties_message_hour:
+            # post a new message only if it's a different weekn than the last message's isoweek
+            # even if no parties message was posted yet, wait for the correct day and hour
+            logger.info(f"it's time to post")
             post_new_message = True
-        elif today_is_post_weekday and current_isoweek != last_parties_message.isoweek() and now.hour >= config.settings.parties_message_hour:
-            logger.info(f"time to post, current isoweek: {current_isoweek}, last post isoweek: "
-                        f"{last_parties_message.isoweek()}, weekday: {now.weekday()}, hour: {now.hour}")
+        elif TempDataKey.FORCE_POST_PARTIES_MESSAGE in context.bot_data:
+            logger.info("force-post new message flag was true: time to post a new message")
+            context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
             post_new_message = True
+            post_new_message_force = True
 
         if not post_new_message and not update_existing_message:
             logger.info("no need to post new message or update the existing one: continuing to next filter...")
@@ -132,6 +140,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE):
 
             logger.info("saving new PartiesMessage...")
             new_parties_message = PartiesMessage(sent_message, events_type=filter_key)
+            new_parties_message.force_sent = post_new_message_force
             session.add(new_parties_message)
             session.commit()
 
