@@ -122,10 +122,9 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             # even if no parties message was posted yet, wait for the correct day and hour
             logger.info(f"it's time to post")
             post_new_message = True
-        elif TempDataKey.FORCE_POST_PARTIES_MESSAGE in context.bot_data:
+        elif post_new_message_force:
             logger.info("force-post new message flag was true: time to post a new message")
             post_new_message = True
-            post_new_message_force = True
 
         if not post_new_message and not update_existing_message:
             logger.info("no need to post new message or update the existing one: continuing to next filter...")
