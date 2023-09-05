@@ -94,6 +94,8 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     # this flag is set every time an event that edited the parties list is received
     # we need to get it before the for loop because it's valid for every filter
     update_existing_message = context.bot_data.pop(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
+
+    # we check whether the flag is set once for every filter
     post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
 
     now = utilities.now()
