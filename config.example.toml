@@ -16,6 +16,7 @@ invite_link_join_request = false # wether bot-generated invite links should crea
 radar_enabled = [] # always enable /radar23 for these user ids
 parties_message_weekday = 0
 parties_message_hour = 9
+parties_message_pin = true
 
 [handlers]
 # which handlers manifest to use, depending on what the bot should do

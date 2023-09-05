@@ -2,7 +2,7 @@ import datetime
 import logging
 import re
 from re import Match
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Tuple
 
 from telegram import Message, MessageEntity
 from telegram.ext import filters, CallbackContext
@@ -11,6 +11,7 @@ from config import config
 from database.models import Event, EVENT_TYPE
 import utilities
 from constants import Regex, REGIONS_DATA, TempDataKey
+from emojis import Emoji
 
 logger = logging.getLogger(__name__)
 

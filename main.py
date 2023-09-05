@@ -17,6 +17,7 @@ from database.base import get_session, Base, engine, session_scope
 from database.models import ChatMember as DbChatMember, Chat, Event
 from database.models import BotSetting
 from database.queries import chats, chat_members, events
+from plugins.events.job import parties_message_job
 import utilities
 from constants import Language, BOT_SETTINGS_DEFAULTS
 from config import config
@@ -218,6 +219,8 @@ def main():
         .build()
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
+
+    app.job_queue.run_repeating(parties_message_job, interval=30, first=10)
 
     logger.info(f"polling for updates...")
     app.run_polling(

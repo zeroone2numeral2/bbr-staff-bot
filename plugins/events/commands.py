@@ -678,6 +678,9 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event {action}")
 
+    logger.info("setting flag to signal that the parties message list shoudl be updated...")
+    context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
+
     drop_events_cache(context)
 
 
@@ -747,6 +750,9 @@ async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     parse_message_text(message_to_parse.text or message_to_parse.caption, event)
 
     logger.info(f"re-parsed event: {event}")
+
+    logger.info("setting flag to signal that the parties message list shoudl be updated...")
+    context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
 
     event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event re-parsed")

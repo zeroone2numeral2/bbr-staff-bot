@@ -12,7 +12,7 @@ from database.models import Chat, Event
 from database.queries import events, chats
 import decorators
 import utilities
-from constants import Group
+from constants import Group, TempDataKey
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -84,6 +84,9 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     parse_message_text(update.effective_message.text or update.effective_message.caption, event)
 
     logger.info(f"parsed event: {event}")
+
+    logger.info("setting flag to signal that the parties message list shoudl be updated...")
+    context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
 
     logger.info("dropping events cache...")
     drop_events_cache(context)
