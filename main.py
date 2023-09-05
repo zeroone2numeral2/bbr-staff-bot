@@ -17,6 +17,7 @@ from database.base import get_session, Base, engine, session_scope
 from database.models import ChatMember as DbChatMember, Chat, Event
 from database.models import BotSetting
 from database.queries import chats, chat_members, events
+from plugins.events.job import parties_message_job
 import utilities
 from constants import Language, BOT_SETTINGS_DEFAULTS
 from config import config
@@ -198,6 +199,9 @@ async def post_init(application: Application) -> None:
     else:
         await set_flytek_commands(session, bot)
 
+    session.commit()
+    session.close()
+
 
 def main():
     utilities.load_logging_config('logging.json')
@@ -216,9 +220,11 @@ def main():
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
+    app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency, first=20)
+
     logger.info(f"polling for updates...")
     app.run_polling(
-        drop_pending_updates=False,
+        drop_pending_updates=utilities.is_test_bot(),
         allowed_updates=[
             Update.MESSAGE,
             Update.CHANNEL_POST,

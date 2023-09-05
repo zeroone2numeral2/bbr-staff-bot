@@ -369,7 +369,11 @@ def log(update: Update):
             return f"from {log_string_user(update.effective_user)}, cbdata: {update.callback_query.data}"
         elif update.effective_message:
             if update.effective_chat.type in (Chat.SUPERGROUP, Chat.GROUP):
-                return f"from {log_string_user(update.effective_user)} in {log_string_chat(update.effective_chat)}"
+                if update.effective_message.sender_chat:
+                    # message is a group message, but the sender is a chat
+                    return f"from {log_string_chat(update.effective_message.sender_chat)} in {log_string_chat(update.effective_chat)}"
+                else:
+                    return f"from {log_string_user(update.effective_user)} in {log_string_chat(update.effective_chat)}"
             elif update.effective_chat.type == Chat.CHANNEL:
                 return f"in {log_string_chat(update.effective_chat)}"
             elif update.effective_chat.type == Chat.PRIVATE:

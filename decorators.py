@@ -77,6 +77,27 @@ def catch_exception(silent=False, ignore_message_not_modified_exception=False):
     return real_decorator
 
 
+def catch_exception_job(silent=True):
+    def real_decorator(func):
+        @wraps(func)
+        async def wrapped(context: CallbackContext, *args, **kwargs):
+            try:
+                return await func(context, *args, **kwargs)
+            except Exception as e:
+                logger.error('error while running job: %s', str(e), exc_info=True)
+
+                if not silent:
+                    # what to do?
+                    pass
+
+                # return ConversationHandler.END
+                return
+
+        return wrapped
+
+    return real_decorator
+
+
 def pass_session(
         pass_user=False,
         pass_chat=False,
@@ -165,6 +186,47 @@ def pass_session(
                     DatabaseInstanceKey.USER: user,
                     DatabaseInstanceKey.CHAT: chat
                 }
+
+            logger.debug("committing session...")
+            session.commit()
+
+            return result
+
+        return wrapped
+
+    return real_decorator
+
+
+def pass_session_job(
+        rollback_on_exception=False,
+        commit_on_exception=True
+):
+    # 'rollback_on_exception' should be false by default because we might want to commit
+    # what has been added (session.add()) to the session until the exception has been raised anyway.
+    # For the same reason, we might want to commit anyway when an exception happens using 'commit_on_exception'
+
+    if all([rollback_on_exception, commit_on_exception]):
+        raise ValueError("'rollback_on_exception' and 'commit_on_exception' are mutually exclusive")
+
+    def real_decorator(func):
+        @wraps(func)
+        async def wrapped(context: CallbackContext, *args, **kwargs):
+            session: Session = get_session()
+
+            # noinspection PyBroadException
+            try:
+                result = await func(context, session=session, *args, **kwargs)
+            except Exception as e:
+                if rollback_on_exception:
+                    logger.warning(f"exception while running job ({e}): rolling back")
+                    session.rollback()
+
+                if commit_on_exception:
+                    logger.warning(f"exception while running job ({e}): committing")
+                    session.commit()
+
+                # raise the exception anyway, so outher decorators can catch it
+                raise
 
             logger.debug("committing session...")
             session.commit()

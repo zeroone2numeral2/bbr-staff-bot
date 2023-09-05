@@ -14,6 +14,10 @@ save_chat_member_from_message = false # when a message in a group is received, c
 protected_admin_replies = true # whether admin replies sent to the user can be forwarded/copied
 invite_link_join_request = false # wether bot-generated invite links should create a join request
 radar_enabled = [] # always enable /radar23 for these user ids
+parties_message_weekday = 0 # weekday when to post new messages, 0 = Monday
+parties_message_hour = 9 # hour when to post new messages, 24h format
+parties_message_job_frequency = 60 # in minutes
+parties_message_pin = true
 
 [handlers]
 # which handlers manifest to use, depending on what the bot should do

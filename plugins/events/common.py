@@ -2,7 +2,7 @@ import datetime
 import logging
 import re
 from re import Match
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Tuple
 
 from telegram import Message, MessageEntity
 from telegram.ext import filters, CallbackContext
@@ -11,6 +11,7 @@ from config import config
 from database.models import Event, EVENT_TYPE
 import utilities
 from constants import Regex, REGIONS_DATA, TempDataKey
+from emojis import Emoji
 
 logger = logging.getLogger(__name__)
 
@@ -331,3 +332,36 @@ def drop_events_cache(context: CallbackContext):
 
     return False
 
+
+def format_event_string(event: Event, message_date_instead_of_event_date=False) -> Tuple[str, int]:
+    # telegram entities present in this text, useful to calculate how many
+    # of these strings to include in a single message
+    entities_count = 2
+
+    region_icon = ""
+    if event.region and event.region in REGIONS_DATA:
+        region_icon = REGIONS_DATA[event.region]["emoji"]
+
+    if event.event_title:
+        title_escaped = utilities.escape_html(event.event_title.upper())
+    else:
+        title_escaped = "unnamed party"
+
+    if event.canceled:
+        title_escaped = f"<s>{title_escaped}</s>"
+
+    if message_date_instead_of_event_date:
+        date = utilities.format_datetime(event.message_date, format_str="msg date: %d/%m/%Y")
+    else:
+        date = event.pretty_date()
+
+    # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
+    title_with_link = f"<b><a href=\"{event.message_link()}\">{title_escaped}</a></b>"
+    if event.discussion_group_message_id:
+        # add a link to the post in the discussion group
+        title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
+        entities_count += 1
+
+    text = f"{event.icon()}{region_icon} {title_with_link} • {date}"
+
+    return text, entities_count

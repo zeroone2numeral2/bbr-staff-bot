@@ -14,7 +14,7 @@ from telegram.constants import MessageLimit
 
 from emojis import Emoji, Flag
 from ext.filters import ChatFilter, Filter
-from .common import parse_message_entities, parse_message_text, drop_events_cache, add_event_message_metadata
+from .common import parse_message_entities, parse_message_text, drop_events_cache, add_event_message_metadata, format_event_string
 from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
 from database.queries import settings, events, chats, chat_members, private_chat_messages
 import decorators
@@ -82,40 +82,6 @@ def time_to_split(
 
     if entities_count >= MessageLimit.MESSAGE_ENTITIES:
         return True
-
-
-def format_event_string(event: Event, message_date_instead_of_event_date=False) -> Tuple[str, int]:
-    # telegram entities present in this text, useful to calculate how many
-    # of these strings to include in a single message
-    entities_count = 2
-
-    region_icon = ""
-    if event.region and event.region in REGIONS_DATA:
-        region_icon = REGIONS_DATA[event.region]["emoji"]
-
-    if event.event_title:
-        title_escaped = utilities.escape_html(event.event_title.upper())
-    else:
-        title_escaped = "unnamed party"
-
-    if event.canceled:
-        title_escaped = f"<s>{title_escaped}</s>"
-
-    if message_date_instead_of_event_date:
-        date = utilities.format_datetime(event.message_date, format_str="msg date: %d/%m/%Y")
-    else:
-        date = event.pretty_date()
-
-    # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
-    title_with_link = f"<b><a href=\"{event.message_link()}\">{title_escaped}</a></b>"
-    if event.discussion_group_message_id:
-        # add a link to the post in the discussion group
-        title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
-        entities_count += 1
-
-    text = f"{event.icon()}{region_icon} {title_with_link} • {date}"
-
-    return text, entities_count
 
 
 def split_messages(all_events: List[str], return_after_first_message=False) -> List[str]:
@@ -712,6 +678,9 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event {action}")
 
+    logger.info("setting flag to signal that the parties message list shoudl be updated...")
+    context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
+
     drop_events_cache(context)
 
 
@@ -781,6 +750,9 @@ async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     parse_message_text(message_to_parse.text or message_to_parse.caption, event)
 
     logger.info(f"re-parsed event: {event}")
+
+    logger.info("setting flag to signal that the parties message list shoudl be updated...")
+    context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
 
     event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event re-parsed")
