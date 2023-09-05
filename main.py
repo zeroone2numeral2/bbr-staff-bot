@@ -224,7 +224,7 @@ def main():
 
     logger.info(f"polling for updates...")
     app.run_polling(
-        drop_pending_updates=False,
+        drop_pending_updates=utilities.is_test_bot(),
         allowed_updates=[
             Update.MESSAGE,
             Update.CHANNEL_POST,
