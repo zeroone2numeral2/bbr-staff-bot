@@ -3,6 +3,8 @@ import logging
 import re
 from typing import List, Optional
 
+import pytz
+
 from sqlalchemy.orm import Session
 from telegram import Bot, Message
 from telegram.error import BadRequest, TelegramError
@@ -99,6 +101,8 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
 
     now = utilities.now()
+    now = now + datetime.timedelta(hours=2)
+
     it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
 
     # we will post a channel message for each of these filters
