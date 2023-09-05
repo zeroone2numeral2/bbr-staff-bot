@@ -8,10 +8,10 @@ from database.models import PartiesMessage
 
 
 def get_last_parties_message(session: Session, chat_id: int, events_type: str):
-    parties_message: Optional[PartiesMessage] = session.query(PartiesMessage).filter(
+    parties_message: Optional[PartiesMessage] = (session.query(PartiesMessage).filter(
         PartiesMessage.chat_id == chat_id,
         PartiesMessage.events_type == events_type
-    ).one_or_none()
+    ).order_by(PartiesMessage.message_date.desc()).first())
 
     return parties_message
 

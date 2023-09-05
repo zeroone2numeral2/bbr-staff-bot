@@ -1068,6 +1068,10 @@ class PartiesMessage(Base):
         self.discussion_group_received_on = message.date
         self.discussion_group_message_json = json.dumps(message.to_dict(), indent=2)
 
+    def message_link(self):
+        chat_id_link = str(self.chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id_link}/{self.message_id}"
+
     def save_events(self, events_list: List):
         self.events_list = json.dumps(events_list, indent=2)
 

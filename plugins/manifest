@@ -15,6 +15,7 @@ staff.private.diff
 
 [flytek]
 events.commands
+events.parties_message
 applications.users.request
 applications.staff.reset
 applications.staff.evaluation

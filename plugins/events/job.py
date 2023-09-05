@@ -94,6 +94,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     # this flag is set every time an event that edited the parties list is received
     # we need to get it before the for loop because it's valid for every filter
     update_existing_message = context.bot_data.pop(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
+    post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
 
     now = utilities.now()
     it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
@@ -112,7 +113,6 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         last_parties_message_isoweek = 53 if not last_parties_message else last_parties_message.isoweek()
 
         post_new_message = False
-        post_new_message_force = False  # we need this to populate PartiesMessage.force_posted
 
         today_is_post_weekday = now.weekday() == config.settings.parties_message_weekday  # whether today is the weekday we should post the message
         new_week = current_isoweek != last_parties_message_isoweek
@@ -124,7 +124,6 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             post_new_message = True
         elif TempDataKey.FORCE_POST_PARTIES_MESSAGE in context.bot_data:
             logger.info("force-post new message flag was true: time to post a new message")
-            context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
             post_new_message = True
             post_new_message_force = True
 
