@@ -1,25 +1,18 @@
-import datetime
-import json
 import logging
-import re
-from re import Match
-from typing import Optional, Tuple, List, Union
+from typing import Optional
 
-import telegram.constants
-from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
-from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser, Chat as TelegramChat
-from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext, CallbackQueryHandler
-from telegram.constants import MessageLimit
+from telegram import Update
+from telegram.ext import ContextTypes, CommandHandler
 
 from emojis import Emoji, Flag
 from ext.filters import ChatFilter, Filter
 from plugins.events.job import parties_message_job, FILTER_DESCRIPTION
-from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType, PartiesMessage
-from database.queries import settings, events, chats, chat_members, private_chat_messages, parties_messages
+from database.models import Chat, PartiesMessage
+from database.queries import chats, parties_messages
 import decorators
 import utilities
-from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
+from constants import Group,  TempDataKey
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -27,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_member()
 async def on_updatelists_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/updatelists {utilities.log(update)}")
 
@@ -48,7 +40,6 @@ async def on_updatelists_command(update: Update, context: ContextTypes.DEFAULT_T
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_member()
 async def on_sendlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/sendlists {utilities.log(update)}")
 
