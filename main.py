@@ -119,7 +119,11 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
         staff_chat_members = chat_members.get_chat_chat_members(session, Chat.is_staff_chat)
         chat_member: DbChatMember
         for chat_member in staff_chat_members:
-            await bot.set_my_commands(staff_commands_private, scope=BotCommandScopeChat(chat_member.user_id))
+            try:
+                await bot.set_my_commands(staff_commands_private, scope=BotCommandScopeChat(chat_member.user_id))
+            except BadRequest:
+                # maybe the suer never started the bot
+                pass
 
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
     if evaluation_chat:
