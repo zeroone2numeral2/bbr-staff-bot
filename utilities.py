@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 UTC_TIMEZONE = datetime.timezone.utc
 
+ROME_TIMEZONE = pytz.timezone("Europe/Rome")
+
 
 def load_logging_config(file_name='logging.json'):
     with open(file_name, 'r') as f:
@@ -42,17 +44,19 @@ def mention_escaped(user: User, full_name=True) -> str:
     return user.mention_html(name=escape_html(name))
 
 
-def now(tz: Optional[Union[str, StaticTzInfo, DstTzInfo]] = None):
+def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None):
     if not tz:
         return datetime.datetime.now(UTC_TIMEZONE)
 
-    if isinstance(tz, str):
+    if isinstance(tz, bool) and tz is True:
+        tz = ROME_TIMEZONE
+    elif isinstance(tz, str):
         tz = pytz.timezone(tz)
 
     return datetime.datetime.now(tz=tz)
 
 
-def now_str(format_str: Optional[str] = "%d/%m/%Y %H:%M:%S", tz: Optional[Union[str, StaticTzInfo, DstTzInfo]] = None):
+def now_str(format_str: Optional[str] = "%d/%m/%Y %H:%M:%S", tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None):
     return now(tz).strftime(format_str)
 
 
