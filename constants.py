@@ -302,7 +302,7 @@ class TempDataKey:
     FORCE_POST_PARTIES_MESSAGE = "force_post_parties_message"
 
 
-COMMAND_PREFIXES = ["/", "!", "."]
+COMMAND_PREFIXES = ["/", "!"]
 
 CACHE_TIME = 10
 
