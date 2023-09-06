@@ -49,7 +49,7 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
 
     event: Event
     for event in week_events:
-        event_string, _ = format_event_string(event)
+        event_string, _ = format_event_string(event, discussion_group_message_link=False)
         text += f"\n{event_string}"
 
     text += f"\n\n<i>Ultimo aggiornamento: {utilities.format_datetime(now, format_str='%d/%m %H:%M')}</i>"

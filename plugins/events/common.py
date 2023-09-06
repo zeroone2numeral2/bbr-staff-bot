@@ -333,7 +333,7 @@ def drop_events_cache(context: CallbackContext):
     return False
 
 
-def format_event_string(event: Event, message_date_instead_of_event_date=False) -> Tuple[str, int]:
+def format_event_string(event: Event, message_date_instead_of_event_date=False, discussion_group_message_link=True) -> Tuple[str, int]:
     # telegram entities present in this text, useful to calculate how many
     # of these strings to include in a single message
     entities_count = 2
@@ -357,7 +357,7 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False) 
 
     # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
     title_with_link = f"<b><a href=\"{event.message_link()}\">{title_escaped}</a></b>"
-    if event.discussion_group_message_id:
+    if discussion_group_message_link and event.discussion_group_message_id:
         # add a link to the post in the discussion group
         title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
         entities_count += 1
