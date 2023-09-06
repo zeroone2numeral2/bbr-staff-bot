@@ -100,7 +100,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     # we check whether the flag is set once for every filter
     post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
 
-    now = utilities.now(context.bot.defaults.tzinfo)
+    now = utilities.now(tz=True)
 
     it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
 
