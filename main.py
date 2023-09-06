@@ -210,6 +210,8 @@ async def post_init(application: Application) -> None:
 def main():
     utilities.load_logging_config('logging.json')
 
+    # persistence was initially added to make conversation statuses persistent,
+    # but we might use it also for temporary data in user_data and bot_data
     persistence = PicklePersistence(
         filepath='data.pickle',
         store_data=PersistenceInput(chat_data=False, user_data=True, bot_data=True)
