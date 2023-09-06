@@ -44,7 +44,7 @@ def mention_escaped(user: User, full_name=True) -> str:
     return user.mention_html(name=escape_html(name))
 
 
-def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None):
+def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None) -> datetime.datetime:
     """Returns the current datetime. A timezone can be passed as string, pytz.timezone(), or 'true' for Rome's timezone.
     If no argument is passed, the utc datetime is returned"""
 
