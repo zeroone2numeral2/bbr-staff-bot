@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session()
+async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/revoke (admin) {utilities.log(update)}")
 
     if update.message.reply_to_message.from_user.id == context.bot.id:
+        # do not accept replies to a bot's message
         await update.message.reply_text("⚠️ <i>please reply to the staff message you want "
                                         "to be deleted from the user's chat with the bot</i>")
         return
