@@ -15,23 +15,9 @@
             "maxBytes": 1048576,
             "filename": "logs/bot.log",
             "backupCount": 20
-        },
-        "file_conversation": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "formatter": "conversation_status",
-            "level": "DEBUG",
-            "encoding": "utf8",
-            "maxBytes": 1048576,
-            "filename": "logs/bot_conversations.log",
-            "backupCount": 20
         }
     },
     "loggers": {
-        "conversation": {
-            "handlers": ["console", "file_conversation"],
-            "propagate": false,
-            "level": "DEBUG"
-        },
         "": {
             "handlers": [
                 "console",
