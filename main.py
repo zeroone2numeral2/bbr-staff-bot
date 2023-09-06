@@ -212,7 +212,7 @@ def main():
 
     persistence = PicklePersistence(
         filepath='data.pickle',
-        store_data=PersistenceInput(chat_data=False, user_data=False, bot_data=False)
+        store_data=PersistenceInput(chat_data=False, user_data=True, bot_data=True)
     )
 
     app: Application = ApplicationBuilder() \
