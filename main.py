@@ -213,7 +213,7 @@ def main():
     # persistence was initially added to make conversation statuses persistent,
     # but we might use it also for temporary data in user_data and bot_data
     persistence = PicklePersistence(
-        filepath='data.pickle',
+        filepath='temp_data_persistence.pickle',
         store_data=PersistenceInput(chat_data=False, user_data=True, bot_data=True)
     )
 
