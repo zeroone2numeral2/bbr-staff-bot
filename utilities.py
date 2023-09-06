@@ -11,6 +11,8 @@ from re import Match
 from typing import Union, Optional, Tuple
 from typing import List
 
+import pytz
+from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, Bot, ChatMemberUpdated, \
     ChatMember
 from telegram.error import BadRequest
@@ -19,6 +21,9 @@ from config import config
 from constants import COMMAND_PREFIXES, Language, Regex, MediaType
 
 logger = logging.getLogger(__name__)
+
+
+UTC_TIMEZONE = datetime.timezone.utc
 
 
 def load_logging_config(file_name='logging.json'):
@@ -37,12 +42,18 @@ def mention_escaped(user: User, full_name=True) -> str:
     return user.mention_html(name=escape_html(name))
 
 
-def now():
-    return datetime.datetime.utcnow()
+def now(tz: Optional[Union[str, StaticTzInfo, DstTzInfo]] = None):
+    if not tz:
+        return datetime.datetime.now(UTC_TIMEZONE)
+
+    if isinstance(tz, str):
+        tz = pytz.timezone(tz)
+
+    return datetime.datetime.now(tz=tz)
 
 
-def now_str():
-    return now().strftime("%d/%m/%Y %H:%M")
+def now_str(format_str: Optional[str] = "%d/%m/%Y %H:%M:%S", tz: Optional[Union[str, StaticTzInfo, DstTzInfo]] = None):
+    return now(tz).strftime(format_str)
 
 
 def format_datetime(dt_object: datetime.datetime, if_none="-", format_str: str = "%d/%m/%Y %H:%M:%S"):
