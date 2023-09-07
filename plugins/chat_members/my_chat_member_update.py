@@ -8,7 +8,10 @@ from telegram.ext import ChatMemberHandler
 
 from constants import Group
 from database.models import Chat
-from .common import save_or_update_users_from_chat_member_update, save_chat_member
+from plugins.chat_members.common import (
+    save_or_update_users_from_chat_member_update,
+    save_chat_member
+)
 import decorators
 import utilities
 

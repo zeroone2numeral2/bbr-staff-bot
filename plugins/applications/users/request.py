@@ -2,26 +2,24 @@ import logging
 import re
 from typing import Optional, List
 
-import telegram.constants
 from sqlalchemy.orm import Session
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message, InputMediaPhoto
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message
 from telegram.constants import MessageLimit, MediaGroupLimit
-from telegram.ext import ContextTypes, CallbackQueryHandler, ConversationHandler, PrefixHandler, MessageHandler, \
-    CallbackContext
 from telegram.ext import CommandHandler
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, \
+    CallbackContext
 from telegram.ext import filters
 
+import decorators
+import utilities
+from constants import BotSettingKey, LocalizedTextKey, Group, Language, TempDataKey, Timeout
 from database.base import session_scope
 from database.models import User, ChatMember as DbChatMember, ApplicationRequest, DescriptionMessage, \
     DescriptionMessageType, Chat
-from database.queries import settings, texts, chat_members, chats, private_chat_messages, application_requests
-import decorators
-import utilities
+from database.queries import settings, texts, chat_members, chats, private_chat_messages
 from emojis import Emoji
 from replacements import replace_placeholders
-from constants import LANGUAGES, BotSettingKey, LocalizedTextKey, Group, Language, TempDataKey, COMMAND_PREFIXES, \
-    Timeout
 
 logger = logging.getLogger(__name__)
 

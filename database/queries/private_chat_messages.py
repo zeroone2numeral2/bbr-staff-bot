@@ -1,10 +1,9 @@
 import json
 import logging
-from typing import Optional, List, Tuple, Union
+from typing import Optional, List, Union
 
-from sqlalchemy import true, false, select
+from sqlalchemy import false, select
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
 from telegram import Message, Update
 
 from database.models import PrivateChatMessage

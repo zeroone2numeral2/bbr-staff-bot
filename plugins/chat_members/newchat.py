@@ -2,18 +2,18 @@ import logging
 from typing import Union, Iterable
 
 from sqlalchemy.orm import Session
+from telegram import ChatMemberAdministrator
 from telegram import Update, ChatMemberOwner
 from telegram import User as TelegramUser
-from telegram import ChatMemberAdministrator
 from telegram.ext import CallbackContext
-from telegram.ext import filters
 from telegram.ext import MessageHandler
+from telegram.ext import filters
 
-from constants import Group
-from database.models import User, Chat
-from database.queries import chat_members, users
 import decorators
 import utilities
+from constants import Group
+from database.models import User, Chat
+from database.queries import chat_members
 from emojis import Emoji
 
 logger = logging.getLogger(__name__)

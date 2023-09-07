@@ -2,20 +2,19 @@ import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, Message
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update
 from telegram.ext import ContextTypes
-from telegram.ext import filters
 from telegram.ext import MessageHandler, CallbackQueryHandler, PrefixHandler, ConversationHandler
+from telegram.ext import filters
 
-from database.models import User
-from database.models import BotSetting, ValueType
-from database.queries import settings
 import decorators
 import utilities
+from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group
+from database.models import BotSetting, ValueType
+from database.models import User
+from database.queries import settings
 from emojis import Emoji
-from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group, \
-    MediaType
 
 logger = logging.getLogger(__name__)
 

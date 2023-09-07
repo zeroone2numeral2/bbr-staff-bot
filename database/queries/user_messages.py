@@ -1,12 +1,9 @@
-from typing import Optional, List, Tuple, Union
+from typing import Optional
 
-from sqlalchemy import true, false
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
-from telegram import ChatMemberAdministrator, ChatMemberOwner, Message, Update
+from telegram import Update
 
-from database.models import UserMessage, Chat, chat_members_to_dict
-from constants import Language
+from database.models import UserMessage
 
 
 def get_user_message_by_id(session: Session, message_id: int) -> Optional[UserMessage]:

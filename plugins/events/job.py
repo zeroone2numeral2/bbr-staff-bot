@@ -3,22 +3,18 @@ import logging
 import re
 from typing import List, Optional
 
-import pytz
-
 from sqlalchemy.orm import Session
 from telegram import Bot, Message
+from telegram.constants import MessageLimit
 from telegram.error import BadRequest, TelegramError
 from telegram.ext import ContextTypes
-from telegram.constants import MessageLimit
 
-from database.base import get_session
-from database.models import Chat, Event, PartiesMessage
-from database.models import BotSetting
-from database.queries import chats, events, settings, parties_messages
-import utilities
 import decorators
-from constants import Language, BOT_SETTINGS_DEFAULTS, BotSettingKey, RegionName, TempDataKey
+import utilities
 from config import config
+from constants import BotSettingKey, RegionName, TempDataKey
+from database.models import Chat, Event, PartiesMessage
+from database.queries import chats, events, settings, parties_messages
 from emojis import Flag, Emoji
 from plugins.events.common import format_event_string
 

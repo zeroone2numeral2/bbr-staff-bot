@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 from telegram import ChatMember
 from telegram import Chat as TelegramChat
 
-from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict, User
+from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
 from database.queries import users
 
 
 def get_chat(session: Session, chat_filter) -> Optional[Chat]:
-    chat: Chat = session.query(Chat).filter(chat_filter == true()).one_or_none()
+    chat: Optional[Chat] = session.query(Chat).filter(chat_filter == true()).one_or_none()
     return chat
 
 

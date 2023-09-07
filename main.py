@@ -3,24 +3,24 @@ from typing import Union, Iterable
 
 import pytz
 from sqlalchemy.orm import Session
-from telegram import Update, BotCommandScopeChat, ChatMemberOwner, ChatInviteLink, BotCommandScopeDefault
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMember, ChatMemberAdministrator
+from telegram import Update, BotCommandScopeChat, ChatMemberOwner, BotCommandScopeDefault
 from telegram.constants import ParseMode
-from telegram.error import BadRequest, TelegramError
-from telegram.ext import ApplicationBuilder, Application, ContextTypes, PicklePersistence, PersistenceInput
+from telegram.error import BadRequest
+from telegram.ext import ApplicationBuilder, Application, PicklePersistence, PersistenceInput
 from telegram.ext import Defaults
 from telegram.ext import ExtBot
 
-from loader import load_modules
-from database.base import get_session, Base, engine, session_scope
-from database.models import ChatMember as DbChatMember, Chat, Event
-from database.models import BotSetting
-from database.queries import chats, chat_members, events
-from plugins.events.job import parties_message_job
 import utilities
-from constants import Language, BOT_SETTINGS_DEFAULTS
 from config import config
+from constants import Language, BOT_SETTINGS_DEFAULTS
+from database.base import get_session, Base, engine
+from database.models import BotSetting
+from database.models import ChatMember as DbChatMember, Chat, Event
+from database.queries import chats, chat_members, events
+from loader import load_modules
+from plugins.events.job import parties_message_job
 
 logger = logging.getLogger(__name__)
 

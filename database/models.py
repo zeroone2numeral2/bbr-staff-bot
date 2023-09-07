@@ -1,11 +1,10 @@
 import datetime
 import json
 import logging
-from typing import List, Optional, Union, Tuple, Iterable, ClassVar
+from typing import List, Optional, Union, Iterable
 
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
-from sqlalchemy.orm import relationship, mapped_column, backref, Mapped
-from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
     ChatMemberLeft, ChatMemberBanned, ChatMemberMember, Message, InputMediaPhoto, InputMediaVideo
@@ -14,7 +13,7 @@ from telegram.helpers import mention_html
 import utilities
 from constants import Language
 from emojis import Emoji
-from .base import Base, engine
+from .base import Base
 
 logger = logging.getLogger(__name__)
 

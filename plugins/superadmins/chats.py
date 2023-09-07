@@ -1,17 +1,15 @@
 import logging
-import re
-from typing import Optional, List, Iterable
+from typing import Iterable
 
 from sqlalchemy.orm import Session
-from telegram import Update, Chat as TelegramChat
-from telegram.ext import ContextTypes, CommandHandler, filters
+from telegram import Update
+from telegram.ext import ContextTypes, CommandHandler
 
 from database.models import User, Chat
-from database.queries import users, chats
+from database.queries import chats
 import decorators
 import utilities
 from constants import Group
-from emojis import Emoji
 from ext.filters import Filter, ChatFilter
 
 logger = logging.getLogger(__name__)

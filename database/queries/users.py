@@ -1,7 +1,7 @@
 from typing import Optional
 
+from sqlalchemy import true, update
 from sqlalchemy.orm import Session
-from sqlalchemy import true, false, select, null, update
 from telegram import User as TelegramUser
 
 from database.models import User

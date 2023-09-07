@@ -41,7 +41,6 @@ async def on_set_language_button(update: Update, context: ContextTypes.DEFAULT_T
 
 
 
-
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_lang_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):

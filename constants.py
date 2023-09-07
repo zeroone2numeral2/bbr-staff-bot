@@ -1,6 +1,4 @@
 from emojis import Emoji, Flag
-from config import config
-
 
 MONTHS_IT = [
     "Gennaio",
@@ -416,7 +414,7 @@ class RegionHashtag:
     GREECE = "#greece"
     GRECIA = "#grecia"
     DENMARK = "#denmark"
-    DANIMARCA= "#danimarca"
+    DANIMARCA = "#danimarca"
     MOROCCO = "#morocco"
     MAROCCO = "#marocco"
     SWEDEN = "#sweden"

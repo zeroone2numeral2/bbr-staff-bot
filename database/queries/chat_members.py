@@ -4,7 +4,7 @@ from sqlalchemy import true
 from sqlalchemy.orm import Session
 from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
 
-from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict, User
+from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
 from database.queries import users
 
 CHAT_MEMBER_STATUS_ADMIN = [ChatMember.ADMINISTRATOR, ChatMember.OWNER]

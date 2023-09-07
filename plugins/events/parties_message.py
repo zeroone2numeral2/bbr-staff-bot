@@ -5,15 +5,13 @@ from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 
-from emojis import Emoji, Flag
-from ext.filters import ChatFilter, Filter
-from plugins.events.job import parties_message_job, FILTER_DESCRIPTION
-from database.models import Chat, PartiesMessage
-from database.queries import chats, parties_messages
 import decorators
 import utilities
-from constants import Group,  TempDataKey
-from config import config
+from constants import Group, TempDataKey
+from database.models import Chat, PartiesMessage
+from database.queries import chats, parties_messages
+from ext.filters import ChatFilter, Filter
+from plugins.events.job import parties_message_job, FILTER_DESCRIPTION
 
 logger = logging.getLogger(__name__)
 

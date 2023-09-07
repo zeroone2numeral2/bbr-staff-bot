@@ -1,10 +1,9 @@
 from typing import Optional
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from sqlalchemy import true, false, select, null
 
 from database.models import LocalizedText
-from constants import LocalizedTextKey, Language
 
 
 def get_localized_text(

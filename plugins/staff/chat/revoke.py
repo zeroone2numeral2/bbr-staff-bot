@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import filters, PrefixHandler, ContextTypes
 
-from database.models import AdminMessage, User
-from database.queries import admin_messages
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
+from database.models import AdminMessage
+from database.queries import admin_messages
 from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)

@@ -1,4 +1,4 @@
-import json
+import logging
 import logging
 import pathlib
 from typing import Optional
@@ -7,14 +7,19 @@ from sqlalchemy.orm import Session
 from telegram import Update, Message
 from telegram.ext import ContextTypes, filters, MessageHandler
 
-from .common import add_event_message_metadata, parse_message_text, parse_message_entities, drop_events_cache
-from ext.filters import ChatFilter, Filter
-from database.models import Chat, Event, PartiesMessage
-from database.queries import events, chats, parties_messages
 import decorators
 import utilities
-from constants import Group, TempDataKey
 from config import config
+from constants import Group, TempDataKey
+from database.models import Chat, Event, PartiesMessage
+from database.queries import events, parties_messages
+from ext.filters import ChatFilter, Filter
+from plugins.events.common import (
+    add_event_message_metadata,
+    parse_message_text,
+    parse_message_entities,
+    drop_events_cache
+)
 
 logger = logging.getLogger(__name__)
 

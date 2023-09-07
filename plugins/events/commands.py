@@ -1,25 +1,29 @@
 import datetime
 import json
 import logging
-import re
-from re import Match
-from typing import Optional, Tuple, List, Union
+from typing import Optional, List
 
 import telegram.constants
 from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
-from telegram import Update, Message, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser, Chat as TelegramChat
-from telegram.ext import ContextTypes, filters, MessageHandler, CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat
+from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.constants import MessageLimit
 
 from emojis import Emoji, Flag
-from ext.filters import ChatFilter, Filter
-from .common import parse_message_entities, parse_message_text, drop_events_cache, add_event_message_metadata, format_event_string
-from database.models import Chat, Event, EventTypeHashtag, EVENT_TYPE, User, BotSetting, EventType
-from database.queries import settings, events, chats, chat_members, private_chat_messages
+from ext.filters import Filter
+from plugins.events.common import (
+    parse_message_entities,
+    parse_message_text,
+    drop_events_cache,
+    add_event_message_metadata,
+    format_event_string
+)
+from database.models import Chat, Event, User, BotSetting, EventType
+from database.queries import settings, events, chat_members, private_chat_messages
 import decorators
 import utilities
-from constants import BotSettingKey, Group, Regex, REGIONS_DATA, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
+from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
 from config import config
 
 logger = logging.getLogger(__name__)

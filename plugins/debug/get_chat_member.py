@@ -3,7 +3,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler, filters, CallbackQueryHandler
+from telegram.ext import ContextTypes, CommandHandler
 
 import decorators
 import utilities

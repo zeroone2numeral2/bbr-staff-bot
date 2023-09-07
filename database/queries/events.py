@@ -1,11 +1,10 @@
 import datetime
 from typing import Optional, List, Any, Tuple
 
-from sqlalchemy import select, false, and_, null
+from sqlalchemy import select, false, null
 from sqlalchemy.orm import Session
 
 import utilities
-from constants import RegionName
 from database.models import Event
 
 

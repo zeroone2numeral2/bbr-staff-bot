@@ -6,13 +6,11 @@ from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler
 from telegram.ext import filters
 
-from database.models import User, UserMessage, Chat, ChatMember as DbChatMember
-from database.queries import settings, chats, texts, private_chat_messages, chat_members
 import decorators
 import utilities
 from constants import BotSettingKey, LocalizedTextKey, Group, Language
-from emojis import Emoji
-from ext.filters import Filter
+from database.models import User, UserMessage, Chat, ChatMember as DbChatMember
+from database.queries import settings, chats, texts, private_chat_messages, chat_members
 
 logger = logging.getLogger(__name__)
 

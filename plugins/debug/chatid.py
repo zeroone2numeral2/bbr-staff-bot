@@ -1,7 +1,7 @@
 import logging
 
 from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler, filters, CallbackQueryHandler
+from telegram.ext import ContextTypes, CommandHandler
 
 from constants import Group
 

@@ -1,8 +1,7 @@
 from typing import Optional
 
+from sqlalchemy import false
 from sqlalchemy.orm import Session
-from sqlalchemy import true, false, select, null, update
-from telegram import User as TelegramUser
 
 from database.models import PartiesMessage
 

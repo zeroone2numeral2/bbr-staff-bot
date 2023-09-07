@@ -3,13 +3,13 @@ from typing import Tuple
 
 from sqlalchemy.orm import Session
 from telegram import Update, ChatMember
-from telegram.ext import filters, PrefixHandler
+from telegram.ext import PrefixHandler
 
-from database.models import Chat
-from database.queries import chats
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
+from database.models import Chat
+from database.queries import chats
 from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)

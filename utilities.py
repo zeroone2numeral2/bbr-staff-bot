@@ -8,12 +8,12 @@ import re
 import sys
 from html import escape
 from re import Match
-from typing import Union, Optional, Tuple
 from typing import List
+from typing import Union, Optional, Tuple
 
 import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
-from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, Bot, ChatMemberUpdated, \
+from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
     ChatMember
 from telegram.error import BadRequest
 
@@ -118,7 +118,7 @@ def is_service_account(user: User):
 
 
 def is_forward_from_user(message: Message, exclude_service=True, exclude_bots=True):
-    """Returns True if the original sender of the message was an user accunt. Will exlcude service account"""
+    """Returns True if the original sender of the message was an user account. Will exlcude service account"""
 
     if message.forward_from and exclude_service and is_service_account(message.forward_from):
         return False
@@ -312,7 +312,7 @@ async def delete_messages_safe(messages: Union[Message, List[Message]]):
     for message in messages:
         try:
             await message.delete()
-        except BadRequest as e:
+        except BadRequest:
             pass
 
 
