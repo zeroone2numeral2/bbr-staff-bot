@@ -889,6 +889,8 @@ class Event(Base):
 
     deleted = Column(Boolean, default=False)  # != Event.canceled
 
+    chat: Chat = relationship("Chat")
+
     def __init__(self, chat_id: int, message_id: int):
         self.message_id = message_id
         self.chat_id = chat_id
@@ -917,6 +919,12 @@ class Event(Base):
     def discussion_group_message_link(self):
         chat_id_link = str(self.discussion_group_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id_link}/{self.discussion_group_message_id}"
+
+    def discussion_group_message_link_html(self, text: str):
+        """will html-escape the provided text"""
+
+        message_link = self.discussion_group_message_link()
+        return f"<a href=\"{message_link}\">{utilities.escape_html(text)}</a>"
 
     def save_discussion_group_message(self, message: Message):
         self.discussion_group_chat_id = message.chat.id

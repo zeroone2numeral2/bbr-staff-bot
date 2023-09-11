@@ -689,7 +689,8 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
 
     if command in ("deleventmsg", "dem"):
         deletion_result = await utilities.delete_messages_by_id_safe(context.bot, event.chat_id, event.message_id)
-        await update.message.reply_html(f"{event.message_link_html('message')} deleted: {str(deletion_result).lower()}")
+        await update.message.reply_html(f"{event.message_link_html('message')} deleted: {str(deletion_result).lower()}"
+                                        f" (can delete messages: {str(event.chat.can_delete_messages).lower()})")
 
 
 @decorators.catch_exception()

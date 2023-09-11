@@ -325,9 +325,13 @@ async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[
     success = None
     for message_id in message_ids:
         try:
+            # delete_message will return true even when the message has already been deleted from the chat
+            # (even by someone else)
             success = await bot.delete_message(chat_id, message_id)
-        except BadRequest:
-            pass
+        except BadRequest as e:
+            logger.debug(f"error while deleting message {message_id} in chat {chat_id}: {e}")
+            if "message can't be deleted" in e.message.lower():
+                success = False
 
     if len(message_ids) == 1:
         return success
