@@ -23,6 +23,7 @@ from loader import load_modules
 from plugins.events.job import parties_message_job
 
 logger = logging.getLogger(__name__)
+logger_startup = logging.getLogger("startup")
 
 defaults = Defaults(
     parse_mode=ParseMode.HTML,
@@ -43,7 +44,7 @@ async def set_bbr_commands(session: Session, bot: ExtBot):
         BotCommand("lang", "set your language")
     ]
 
-    logger.info("setting bbr commands...")
+    logger_startup.info("setting bbr commands...")
     await bot.set_my_commands(
         default_english_commands,
         scope=BotCommandScopeAllPrivateChats()
@@ -72,19 +73,19 @@ async def set_bbr_commands(session: Session, bot: ExtBot):
     staff_chat_member = chat_members.get_chat_chat_members(session, Chat.is_staff_chat)
     chat_member: DbChatMember
     for chat_member in staff_chat_member:
-        logger.info(f"setting admin commands for {chat_member.user.user_id}...")
+        logger_startup.info(f"setting admin commands for {chat_member.user.user_id}...")
         try:
             await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
         except BadRequest as e:
             # maybe the suer never started the bot
-            logger.warning(f"...failed: {e}")
+            logger_startup.warning(f"...failed: {e}")
 
 
 async def set_flytek_commands(session: Session, bot: ExtBot):
     # first: reset all commands
     await bot.set_my_commands([], scope=BotCommandScopeDefault())
 
-    logger.info("setting flytek commands...")
+    logger_startup.info("setting flytek commands...")
 
     users_commands_private = [
         BotCommand("start", "chiedi 👀"),
@@ -127,7 +128,7 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
                 await bot.set_my_commands(staff_commands_private, scope=BotCommandScopeChat(chat_member.user_id))
             except BadRequest as e:
                 # maybe the suer never started the bot
-                logger.warning(f"...failed: {e}")
+                logger_startup.warning(f"...failed: {e}")
 
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
     if evaluation_chat:
@@ -139,7 +140,7 @@ async def post_init(application: Application) -> None:
 
     session: Session = get_session()
 
-    logger.info("populating default settings...")
+    logger_startup.info("populating default settings...")
     for bot_setting_key, bot_setting_data in BOT_SETTINGS_DEFAULTS.items():
         setting = session.query(BotSetting).filter(BotSetting.key == bot_setting_key).one_or_none()
         if not setting:
@@ -152,7 +153,7 @@ async def post_init(application: Application) -> None:
 
     session.commit()
 
-    logger.info("fixing events dates...")
+    logger_startup.info("fixing events dates...")
     all_events = events.get_all_events(session)
     event: Event
     for event in all_events:
@@ -164,15 +165,15 @@ async def post_init(application: Application) -> None:
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
     for chat in [staff_chat, users_chat, evaluation_chat]:
         if not chat:
-            logger.info("chat is none, next chat...")
+            logger_startup.info("chat is none, next chat...")
             continue
 
         try:
             staff_chat_chat_member: ChatMember = await bot.get_chat_member(chat.chat_id, bot.id)
         except BadRequest as e:
-            logger.error(f"error while getting {chat.title}'s ChatMember: {e}")
+            logger_startup.error(f"error while getting {chat.title}'s ChatMember: {e}")
             if "chat not found" in e.message.lower():
-                logger.warning(f"{chat.title} {chat.chat_id} not found: resetting that type of chat...")
+                logger_startup.warning(f"{chat.title} {chat.chat_id} not found: resetting that type of chat...")
                 if chat.is_staff_chat:
                     chats.reset_staff_chat(session)
                 elif chat.is_users_chat:
@@ -184,10 +185,10 @@ async def post_init(application: Application) -> None:
             continue
 
         if not isinstance(staff_chat_chat_member, ChatMemberAdministrator):
-            logger.info(f"not an admin in {chat.title} {chat.chat_id}, current status: {staff_chat_chat_member.status}")
+            logger_startup.info(f"not an admin in {chat.title} {chat.chat_id}, current status: {staff_chat_chat_member.status}")
             chat.unset_as_administrator()
         else:
-            logger.info(f"admin in {chat.title} {chat.chat_id}, can_delete_messages: {staff_chat_chat_member.can_delete_messages}")
+            logger_startup.info(f"admin in {chat.title} {chat.chat_id}, can_delete_messages: {staff_chat_chat_member.can_delete_messages}")
             chat.set_as_administrator(
                 can_delete_messages=staff_chat_chat_member.can_delete_messages,
                 can_invite_users=staff_chat_chat_member.can_invite_users
@@ -196,7 +197,7 @@ async def post_init(application: Application) -> None:
         session.add(chat)
         session.commit()
 
-        logger.info(f"updating {chat.title} administrators...")
+        logger_startup.info(f"updating {chat.title} administrators...")
         # noinspection PyTypeChecker
         administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]] = await bot.get_chat_administrators(chat.chat_id)
         chat_members.save_administrators(session, chat.chat_id, administrators)
@@ -235,7 +236,7 @@ def main():
 
     drop_pending_updates = utilities.is_test_bot()
 
-    logger.info(f"polling for updates (drop_pending_updates={drop_pending_updates})...")
+    logger_startup.info(f"polling for updates (drop_pending_updates={drop_pending_updates})...")
     app.run_polling(
         drop_pending_updates=drop_pending_updates,
         allowed_updates=[

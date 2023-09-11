@@ -15,9 +15,23 @@
             "maxBytes": 1048576,
             "filename": "logs/bot.log",
             "backupCount": 20
+        },
+        "file_startup": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "standard",
+            "level": "DEBUG",
+            "encoding": "utf8",
+            "maxBytes": 1048576,
+            "filename": "logs/startup.log",
+            "backupCount": 20
         }
     },
     "loggers": {
+         "startup": {
+            "handlers": ["console", "file_startup"],
+            "propagate": false,
+            "level": "DEBUG"
+        },
         "": {
             "handlers": [
                 "console",
