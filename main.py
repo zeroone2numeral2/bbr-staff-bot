@@ -230,7 +230,8 @@ def main():
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
-    app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency * 60, first=20)
+    if config.handlers.mode == "flytek":
+        app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency * 60, first=20)
 
     logger.info(f"polling for updates...")
     app.run_polling(
