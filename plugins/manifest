@@ -23,6 +23,7 @@ applications.staff.evaluation
 [bbr]
 help
 users.start
+users.lang
 
 [+]
 users.revoke
