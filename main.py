@@ -73,7 +73,11 @@ async def set_bbr_commands(session: Session, bot: ExtBot):
     chat_member: DbChatMember
     for chat_member in staff_chat_member:
         logger.info(f"setting admin commands for {chat_member.user.user_id}...")
-        await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
+        try:
+            await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
+        except BadRequest as e:
+            # maybe the suer never started the bot
+            logger.warning(f"...failed: {e}")
 
 
 async def set_flytek_commands(session: Session, bot: ExtBot):
@@ -121,9 +125,9 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
         for chat_member in staff_chat_members:
             try:
                 await bot.set_my_commands(staff_commands_private, scope=BotCommandScopeChat(chat_member.user_id))
-            except BadRequest:
+            except BadRequest as e:
                 # maybe the suer never started the bot
-                pass
+                logger.warning(f"...failed: {e}")
 
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
     if evaluation_chat:
