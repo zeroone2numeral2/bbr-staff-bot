@@ -47,6 +47,11 @@ LANGUAGES = {
 }
 
 
+class HandlersMode:
+    FLYTEK = "flytek"
+    BBR = "bbr"
+
+
 class MediaType:
     PHOTO = "photo"
     VIDEO = "video"

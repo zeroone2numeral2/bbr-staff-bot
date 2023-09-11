@@ -14,7 +14,7 @@ from telegram.ext import ExtBot
 
 import utilities
 from config import config
-from constants import Language, BOT_SETTINGS_DEFAULTS
+from constants import Language, HandlersMode, BOT_SETTINGS_DEFAULTS
 from database.base import get_session, Base, engine
 from database.models import BotSetting
 from database.models import ChatMember as DbChatMember, Chat, Event
@@ -202,7 +202,7 @@ async def post_init(application: Application) -> None:
         chat_members.save_administrators(session, chat.chat_id, administrators)
         session.commit()
 
-    if config.handlers.mode == "bbr":
+    if config.handlers.mode == HandlersMode.BBR:
         await set_bbr_commands(session, bot)
     else:
         await set_flytek_commands(session, bot)
@@ -230,7 +230,7 @@ def main():
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
-    if config.handlers.mode == "flytek":
+    if config.handlers.mode == HandlersMode.FLYTEK:
         app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency * 60, first=20)
 
     logger.info(f"polling for updates...")
