@@ -908,6 +908,12 @@ class Event(Base):
         chat_id_link = str(self.chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id_link}/{self.message_id}"
 
+    def message_link_html(self, text: str):
+        """will html-escape the provided text"""
+
+        message_link = self.message_link()
+        return f"<a href=\"{message_link}\">{utilities.escape_html(text)}</a>"
+
     def discussion_group_message_link(self):
         chat_id_link = str(self.discussion_group_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id_link}/{self.discussion_group_message_id}"

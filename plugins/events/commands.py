@@ -672,7 +672,7 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
 
     # session.delete(event)
     command = utilities.get_command(update.message.text)
-    if command in ("delevent", "de"):
+    if command in ("delevent", "de", "deleventmsg", "dem"):
         event.deleted = True
         action = "deleted"
     else:
@@ -682,10 +682,14 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event {action}")
 
-    logger.info("setting flag to signal that the parties message list shoudl be updated...")
+    logger.info("setting flag to signal that the parties message list should be updated...")
     context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
 
     drop_events_cache(context)
+
+    if command in ("deleventmsg", "dem"):
+        deletion_result = await utilities.delete_messages_by_id_safe(context.bot, event.chat_id, event.message_id)
+        await update.message.reply_html(f"{event.message_link_html('message')} deleted: {str(deletion_result).lower()}")
 
 
 @decorators.catch_exception()
@@ -772,7 +776,7 @@ HANDLERS = (
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["delevent", "de", "resevent", "re"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["delevent", "de", "deleventmsg", "dem", "resevent", "re"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     # superadmins

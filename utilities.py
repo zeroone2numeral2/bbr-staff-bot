@@ -14,7 +14,7 @@ from typing import Union, Optional, Tuple
 import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
-    ChatMember
+    ChatMember, Bot
 from telegram.error import BadRequest
 
 from config import config
@@ -314,6 +314,23 @@ async def delete_messages_safe(messages: Union[Message, List[Message]]):
             await message.delete()
         except BadRequest:
             pass
+
+
+async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[List[int], int]) -> Optional[bool]:
+    """returns the request result if only one message_id was passed, otherwise None"""
+
+    if not isinstance(message_ids, list):
+        message_ids = [message_ids]
+
+    success = None
+    for message_id in message_ids:
+        try:
+            success = await bot.delete_message(chat_id, message_id)
+        except BadRequest:
+            pass
+
+    if len(message_ids) == 1:
+        return success
 
 
 async def edit_text_safe(update: Update, *args, **kwargs):
