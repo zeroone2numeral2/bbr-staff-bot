@@ -233,9 +233,11 @@ def main():
     if config.handlers.mode == HandlersMode.FLYTEK:
         app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency * 60, first=20)
 
-    logger.info(f"polling for updates...")
+    drop_pending_updates = utilities.is_test_bot()
+
+    logger.info(f"polling for updates (drop_pending_updates={drop_pending_updates})...")
     app.run_polling(
-        drop_pending_updates=utilities.is_test_bot(),
+        drop_pending_updates=drop_pending_updates,
         allowed_updates=[
             Update.MESSAGE,
             Update.CHANNEL_POST,
