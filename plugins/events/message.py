@@ -261,10 +261,21 @@ async def on_disable_notifications_button(update: Update, context: ContextTypes.
 
         return
 
+    if not event.send_validity_notifications:
+        logger.info("notifications were already muted")  # just remove the inline markup
+
+        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
+        return
+
     event.send_validity_notifications = False
     session.commit()
-    await update.callback_query.answer("Non verranno più inviate notifiche riguardo a quel messaggio", show_alert=True)
-    await update.effective_message.delete()
+
+    user_mention_html = update.effective_user.mention_html(utilities.escape_html(update.effective_user.full_name))
+    new_text = f"{update.effective_message.text}\n\n<b><i>{user_mention_html} ha silenziato le notifiche per questo messaggio</i></b>"
+    await update.callback_query.answer("Non verranno più inviate notifiche riguardo al messaggio in questione", show_alert=True)
+    await update.callback_query.edit_message_text(new_text, reply_markup=None)
+    # await update.effective_message.delete()
 
     context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
     
