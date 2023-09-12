@@ -898,13 +898,13 @@ class Event(Base):
     def updated(self):
         self.updated_on = utilities.now()
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         """an event is valid either if
         - it has a title and a start month/year
         - it has a title and is marked as soon"""
 
         # we basically save any channel post that has a text/caption as an Event
-        return (self.event_title and self.start_month and self.start_year) or (self.event_title and self.soon)  # and self.get_hashtags()
+        return bool((self.event_title and self.start_month and self.start_year) or (self.event_title and self.soon))  # and self.get_hashtags()
 
     def message_link(self):
         chat_id_link = str(self.chat_id).replace("-100", "")
@@ -1008,6 +1008,17 @@ class Event(Base):
             self.start_date = self.start_date_as_date()
         if self.end_year and self.end_month and self.end_day:
             self.end_date = self.end_date_as_date()
+
+    def reset_date_fields(self):
+        self.start_day = None
+        self.start_month = None
+        self.start_year = None
+        self.start_date = None
+
+        self.end_day = None
+        self.end_month = None
+        self.end_year = None
+        self.end_date = None
 
     def pretty_date(self) -> str:
         if not self.start_month or not self.start_year:

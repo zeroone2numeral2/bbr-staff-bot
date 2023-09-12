@@ -313,6 +313,7 @@ def parse_message_text(message_text: str, event: Event):
 
     if not parsing_success:
         logger.info("couldn't parse any date with any regex")
+        event.reset_date_fields()
     else:
         event.start_day = start_date.day
         event.start_month = start_date.month
