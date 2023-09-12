@@ -229,7 +229,6 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
 
     # DATES
     # enter this only if dates are not already filled
-    # they will be overwritten when the text is parsed
     if not event.start_month and not event.start_year:
         for i, month_hashtag in enumerate(MONTHS):
             if month_hashtag not in hashtags_list:
@@ -245,6 +244,8 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
 
             event.end_month = month
             event.end_year = year
+
+            event.dates_from_hashtags = True
 
 
 def parse_message_entities(message: Message, event: Event):
@@ -323,6 +324,7 @@ def parse_message_text(message_text: str, event: Event):
         event.end_year = end_date.year
 
         event.populate_date_fields()
+        event.dates_from_hashtags = False
 
 
 def drop_events_cache(context: CallbackContext):
