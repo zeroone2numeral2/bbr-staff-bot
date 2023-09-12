@@ -1,10 +1,7 @@
 [telegram]
 token = "" # your bot's token from @BotFather
 # list of super admins, place your Telegram ID here
-admins = [
-    23646077, # riccardo
-    1159605359 # flytek mod
-]
+admins = []
 
 [settings]
 broadcast_message_edits = true # whether to broadcast message edits from the staff to the user chat
