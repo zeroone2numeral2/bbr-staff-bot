@@ -182,6 +182,20 @@ class User(Base):
         self.last_request_id = None
         self.conversate_with_staff_override = False
 
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.started_on:
+            self.started_on = utilities.naive_to_aware(self.started_on, force_utc=force_utc)
+        if self.stopped_on:
+            self.stopped_on = utilities.naive_to_aware(self.stopped_on, force_utc=force_utc)
+        if self.banned_on:
+            self.banned_on = utilities.naive_to_aware(self.banned_on, force_utc=force_utc)
+        if self.invited_on:
+            self.invited_on = utilities.naive_to_aware(self.invited_on, force_utc=force_utc)
+        if self.last_message:
+            self.last_message = utilities.naive_to_aware(self.last_message, force_utc=force_utc)
+        if self.first_seen:
+            self.first_seen = utilities.naive_to_aware(self.first_seen, force_utc=force_utc)
+
 
 class Chat(Base):
     __tablename__ = 'chats'
@@ -296,6 +310,12 @@ class Chat(Base):
 
     def is_special_chat(self):
         return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat or self.is_events_chat or self.is_log_chat
+
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.first_seen:
+            self.first_seen = utilities.naive_to_aware(self.first_seen, force_utc=force_utc)
+        if self.last_administrators_fetch:
+            self.last_administrators_fetch = utilities.naive_to_aware(self.last_administrators_fetch, force_utc=force_utc)
 
 
 chat_member_union_type = Union[
@@ -475,6 +495,14 @@ class ChatMember(Base):
         else:
             return self.status
 
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.until_date:
+            self.until_date = utilities.naive_to_aware(self.until_date, force_utc=force_utc)
+        if self.created_on:
+            self.created_on = utilities.naive_to_aware(self.created_on, force_utc=force_utc)
+        if self.updated_on:
+            self.updated_on = utilities.naive_to_aware(self.updated_on, force_utc=force_utc)
+
     def __repr__(self):
         return f"ChatMember(user_id={self.chat_id}, chat_id={self.user_id}, status=\"{self.status}\")"
 
@@ -518,6 +546,14 @@ class UserMessage(Base):
         # we convert manually because Message.to_json() doesn't indent
         self.message_json = json.dumps(message.to_dict(), indent=2)
 
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.forwarded_on:
+            self.forwarded_on = utilities.naive_to_aware(self.forwarded_on, force_utc=force_utc)
+        if self.created_on:
+            self.created_on = utilities.naive_to_aware(self.created_on, force_utc=force_utc)
+        if self.revoked_on:
+            self.revoked_on = utilities.naive_to_aware(self.revoked_on, force_utc=force_utc)
+
 
 class AdminMessage(Base):
     __tablename__ = 'admin_messages'
@@ -556,6 +592,16 @@ class AdminMessage(Base):
     def save_message_json(self, message: Message):
         self.message_json = json.dumps(message.to_dict(), indent=2)
 
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.reply_datetime:
+            self.reply_datetime = utilities.naive_to_aware(self.reply_datetime, force_utc=force_utc)
+        if self.message_datetime:
+            self.message_datetime = utilities.naive_to_aware(self.message_datetime, force_utc=force_utc)
+        if self.updated_on:
+            self.updated_on = utilities.naive_to_aware(self.updated_on, force_utc=force_utc)
+        if self.revoked_on:
+            self.revoked_on = utilities.naive_to_aware(self.revoked_on, force_utc=force_utc)
+
 
 class LocalizedText(Base):
     __tablename__ = 'localized_texts'
@@ -592,6 +638,10 @@ class LocalizedText(Base):
         if not self.show_if_true:
             return True
         return self.show_if_true.value_bool
+
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.updated_on:
+            self.updated_on = utilities.naive_to_aware(self.updated_on, force_utc=force_utc)
 
 
 class ValueType:
@@ -725,6 +775,14 @@ class BotSetting(Base):
             return True
         return self.show_if_true.value_bool
 
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.value_datetime:
+            self.value_datetime = utilities.naive_to_aware(self.value_datetime, force_utc=force_utc)
+        if self.value_date:
+            self.value_date = utilities.naive_to_aware(self.value_date, force_utc=force_utc)
+        if self.updated_on:
+            self.updated_on = utilities.naive_to_aware(self.updated_on, force_utc=force_utc)
+
     def __repr__(self):
         return f"BotSetting(key=\"{self.key}\", value_type=\"{self.value_type}\", value={self.value()})"
 
@@ -796,6 +854,14 @@ class PrivateChatMessage(Base):
             return self.saved_on > (now_dt - timedelta_48_hours_ago)
 
         return False
+
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.date:
+            self.date = utilities.naive_to_aware(self.date, force_utc=force_utc)
+        if self.saved_on:
+            self.saved_on = utilities.naive_to_aware(self.saved_on, force_utc=force_utc)
+        if self.revoked_on:
+            self.revoked_on = utilities.naive_to_aware(self.revoked_on, force_utc=force_utc)
 
 
 # https://t.me/c/1289562489/569
@@ -1032,6 +1098,22 @@ class Event(Base):
     def to_dict(self):
         return {field.name: getattr(self, field.name) for field in self.__table__.c}
 
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.discussion_group_received_on:
+            self.discussion_group_received_on = utilities.naive_to_aware(self.discussion_group_received_on, force_utc=force_utc)
+        if self.start_date:
+            self.start_date = utilities.naive_to_aware(self.start_date, force_utc=force_utc)
+        if self.end_date:
+            self.end_date = utilities.naive_to_aware(self.end_date, force_utc=force_utc)
+        if self.message_date:
+            self.message_date = utilities.naive_to_aware(self.message_date, force_utc=force_utc)
+        if self.message_edit_date:
+            self.message_edit_date = utilities.naive_to_aware(self.message_edit_date, force_utc=force_utc)
+        if self.created_on:
+            self.created_on = utilities.naive_to_aware(self.created_on, force_utc=force_utc)
+        if self.updated_on:
+            self.updated_on = utilities.naive_to_aware(self.updated_on, force_utc=force_utc)
+
     def __repr__(self):
         return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
 
@@ -1097,6 +1179,18 @@ class PartiesMessage(Base):
 
     def isoweek(self):
         return self.message_date.isocalendar()[1]
+
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.discussion_group_received_on:
+            self.discussion_group_received_on = utilities.naive_to_aware(self.discussion_group_received_on, force_utc=force_utc)
+        if self.message_date:
+            self.message_date = utilities.naive_to_aware(self.message_date, force_utc=force_utc)
+        if self.message_edit_date:
+            self.message_edit_date = utilities.naive_to_aware(self.message_edit_date, force_utc=force_utc)
+        if self.created_on:
+            self.created_on = utilities.naive_to_aware(self.created_on, force_utc=force_utc)
+        if self.updated_on:
+            self.updated_on = utilities.naive_to_aware(self.updated_on, force_utc=force_utc)
 
 
 class ApplicationRequest(Base):
@@ -1233,6 +1327,22 @@ class ApplicationRequest(Base):
     def sent_to_staff(self):
         return bool(self.staff_message_message_id)
 
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.status_changed_on:
+            self.status_changed_on = utilities.naive_to_aware(self.status_changed_on, force_utc=force_utc)
+        if self.other_members_received_on:
+            self.other_members_received_on = utilities.naive_to_aware(self.other_members_received_on, force_utc=force_utc)
+        if self.social_received_on:
+            self.social_received_on = utilities.naive_to_aware(self.social_received_on, force_utc=force_utc)
+        if self.log_message_posted_on:
+            self.log_message_posted_on = utilities.naive_to_aware(self.log_message_posted_on, force_utc=force_utc)
+        if self.staff_message_posted_on:
+            self.staff_message_posted_on = utilities.naive_to_aware(self.staff_message_posted_on, force_utc=force_utc)
+        if self.created_on:
+            self.created_on = utilities.naive_to_aware(self.created_on, force_utc=force_utc)
+        if self.updated_on:
+            self.updated_on = utilities.naive_to_aware(self.updated_on, force_utc=force_utc)
+
 
 class DescriptionMessageType:
     OTHER_MEMBERS = "other_members"
@@ -1353,3 +1463,9 @@ class DescriptionMessage(Base):
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
+
+    def datetime_naive_to_utc(self, force_utc=False):
+        if self.datetime:
+            self.datetime = utilities.naive_to_aware(self.datetime, force_utc=force_utc)
+        if self.edited_on:
+            self.edited_on = utilities.naive_to_aware(self.edited_on, force_utc=force_utc)

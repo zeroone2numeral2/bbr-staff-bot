@@ -28,7 +28,7 @@ logger_startup = logging.getLogger("startup")
 defaults = Defaults(
     parse_mode=ParseMode.HTML,
     disable_web_page_preview=True,
-    tzinfo=pytz.timezone('Europe/Rome'),
+    # tzinfo=pytz.utc,  # pytz.utc is the default
     quote=False
 )
 
