@@ -97,7 +97,6 @@ async def notify_event_validity(
                     f"e vada modificata)")
             await bot.send_message(staff_chat.chat_id, text)
         elif was_valid_before_parsing and not is_valid_after_parsing:
-            # do not notify invalid edited messages, as they have been notified already
             logger.info("event is no longer valid after message edit")
             text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
                     f"identificarla dopo che il messaggio è stato modificato :(")
