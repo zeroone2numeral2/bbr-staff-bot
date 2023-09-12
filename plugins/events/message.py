@@ -80,7 +80,11 @@ async def notify_event_validity(
 ):
     logger.debug(f"is_edited_message: {is_edited_message}; "
                  f"was_valid_before_parsing: {was_valid_before_parsing}; "
-                 f"is_valid_after_parsing: {is_valid_after_parsing}")
+                 f"is_valid_after_parsing: {is_valid_after_parsing}; "
+                 f"Event.send_validity_notifications: {event.send_validity_notifications}")
+
+    if not event.send_validity_notifications:
+        return
 
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
     if not staff_chat:
