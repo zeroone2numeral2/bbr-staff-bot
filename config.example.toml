@@ -19,5 +19,5 @@ parties_message_pin = true # pin parties messages when they are sent (the servic
 [handlers]
 # which handlers manifest to use, depending on what the bot should do
 manifest = "manifest"
-# which modules to import from the manifest, will load modules in the `[mode]` or `[+]` section
+# which modules to import from the manifest, will load modules in the `[mode]` or `[+]` sections
 mode = "bbr"
