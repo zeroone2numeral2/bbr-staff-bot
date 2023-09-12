@@ -12,7 +12,7 @@ import utilities
 from config import config
 from constants import Group, TempDataKey
 from database.models import Chat, Event, PartiesMessage
-from database.queries import events, parties_messages
+from database.queries import events, parties_messages, chats
 from ext.filters import ChatFilter, Filter
 from plugins.events.common import (
     add_event_message_metadata,
@@ -95,6 +95,14 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     drop_events_cache(context)
 
     session.commit()
+
+    if not event.is_valid() and config.settings.notify_invalid_events:
+        staff_chat = chats.get_chat(session, Chat.is_staff_chat)
+        if staff_chat:
+            text = (f"Non è stato possibile identificare la data di {event.message_link_html('questo messaggio')} "
+                    f"nel canale, e non è stato taggato come #soon (può essere che la data sia scritta in modo strano "
+                    f"e vada modificata)")
+            await context.bot.send_message(staff_chat.chat_id, text)
 
     if config.settings.backup_events:
         await backup_event_media(update, event)
