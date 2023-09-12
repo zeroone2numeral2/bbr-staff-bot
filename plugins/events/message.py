@@ -272,7 +272,7 @@ async def on_disable_notifications_button(update: Update, context: ContextTypes.
     session.commit()
 
     user_mention_html = update.effective_user.mention_html(utilities.escape_html(update.effective_user.full_name))
-    new_text = f"{update.effective_message.text}\n\n<b><i>{user_mention_html} ha silenziato le notifiche per questo messaggio</i></b>"
+    new_text = f"{update.effective_message.text_html}\n\n<b><i>{user_mention_html} ha silenziato le notifiche per questo messaggio</i></b>"
     await update.callback_query.answer("Non verranno più inviate notifiche riguardo al messaggio in questione", show_alert=True)
     await update.callback_query.edit_message_text(new_text, reply_markup=None)
     # await update.effective_message.delete()
