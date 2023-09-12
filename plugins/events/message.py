@@ -81,9 +81,6 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     message_id = update.effective_message.message_id
 
     event: Event = events.get_or_create(session, chat_id, message_id)
-    if event.deleted:
-        logger.debug(f"event ({event.chat_id}; {event.message_id}) was deleted: skipping update")
-        return
 
     add_event_message_metadata(update.effective_message, event)
     parse_message_entities(update.effective_message, event)
