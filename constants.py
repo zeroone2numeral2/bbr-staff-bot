@@ -303,6 +303,7 @@ class TempDataKey:
     FIRST_DIFF_TEXT = "first_diff_text"
     UPDATE_PARTIES_MESSAGE = "update_parties_message"
     FORCE_POST_PARTIES_MESSAGE = "force_post_parties_message"
+    MUTE_EVENT_MESSAGE_BUTTON_ONCE = "mute_event_message_button_once"
 
 
 COMMAND_PREFIXES = ["/", "!"]

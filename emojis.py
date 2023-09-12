@@ -36,6 +36,7 @@ class Emoji:
     HANDSHAKE = "🤝"
     PEACE = "🖖"
     BELL = "🛎"
+    BELL_MUTED = "🔕"
     CAMERA = "📷"
     ALIEN = "👽"
     CANCEL = "❌"

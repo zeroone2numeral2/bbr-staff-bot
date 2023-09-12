@@ -4,8 +4,8 @@ import pathlib
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, Message, Bot
-from telegram.ext import ContextTypes, filters, MessageHandler
+from telegram import Update, Message, Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes, filters, MessageHandler, CallbackQueryHandler
 
 import decorators
 import utilities
@@ -70,6 +70,14 @@ async def backup_event_media(update: Update, event: Event):
         return False
 
 
+def disable_notifications_reply_markup(event_chat_id: int, event_message_id: int):
+    keyboard = [[
+        InlineKeyboardButton(f"{Emoji.BELL_MUTED} silenzia", callback_data=f"mutemsg:{event_chat_id}:{event_message_id}")
+    ]]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
 async def notify_event_validity(
         session: Session,
         event: Event,
@@ -90,23 +98,24 @@ async def notify_event_validity(
     if not staff_chat:
         return
 
+    reply_markup = disable_notifications_reply_markup(event.chat_id, event.message_id)
     if not was_valid_before_parsing and is_valid_after_parsing:
         logger.info("event wasn't valid but is now valid after message edit")
         text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
                 f"adesso è apposto {Emoji.DONE}")
-        await bot.send_message(staff_chat.chat_id, text)
+        await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
     elif not is_valid_after_parsing and not is_edited_message:
         # do not notify invalid edited messages, as they have been notified already
         logger.info("new event is not valid, notifying chat")
         text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
                 f"nel canale, e non è stata taggata come #soon (può essere che la data sia scritta in modo strano "
                 f"e vada modificata)")
-        await bot.send_message(staff_chat.chat_id, text)
+        await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
     elif was_valid_before_parsing and not is_valid_after_parsing:
         logger.info("event is no longer valid after message edit")
         text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
                 f"identificarla dopo che il messaggio è stato modificato :(")
-        await bot.send_message(staff_chat.chat_id, text)
+        await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
 
 
 @decorators.catch_exception(silent=True)
@@ -213,10 +222,56 @@ async def on_events_chat_pinned_message(update: Update, context: ContextTypes.DE
 
     logger.info("deleting \"pinned message\" service message...")
     await utilities.delete_messages_safe(update.effective_message)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_disable_notifications_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"disable notifications button {utilities.log(update)}")
+    chat_id = int(context.matches[0].group("chat_id"))
+    message_id = int(context.matches[0].group("message_id"))
+
+    # we add also the current message's message_id because multiple messages for the same Event have the
+    # same callback_data, and if we use the same user_data key for taps coming from different messages,
+    # we can't distinguish when the user tapped on a message instead of another
+    tap_key = f"{update.effective_message.message_id}:{chat_id}:{message_id}"
+
+    if TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE not in context.user_data:
+        context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE] = {}
+
+    if tap_key not in context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE]:
+        logger.info(f"first time tap for key {tap_key}, showing alert...")
+        await update.callback_query.answer(
+            f"Così facendo non verranno più inviate notifiche quando il messaggio in questione viene modificato. "
+            f"Usa di nuovo il tasto \"{Emoji.BELL_MUTED} silenzia\" per confermare",
+            show_alert=True
+        )
+        context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE][tap_key] = True
+        return
+
+    event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
+    if not event:
+        logger.info(f"no Event found for tap key {tap_key}")
+        await update.callback_query.answer("Ooops, qualcosa è andato storto. "
+                                           "Impossibile trovare il messaggio nel database", show_alert=True)
+        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+
+        # pop the key, no reason to keep it
+        context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
+
+        return
+
+    event.send_validity_notifications = False
+    session.commit()
+    await update.callback_query.answer("Non verranno più inviate notifiche riguardo a quel messaggio", show_alert=True)
+    await update.effective_message.delete()
+
+    context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
     
 
 HANDLERS = (
     (MessageHandler(ChatFilter.EVENTS & Filter.MESSAGE_OR_EDIT & Filter.WITH_TEXT, on_event_message), Group.PREPROCESS),
     (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
     (MessageHandler(ChatFilter.EVENTS & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
+    (CallbackQueryHandler(on_disable_notifications_button, rf"mutemsg:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
 )
