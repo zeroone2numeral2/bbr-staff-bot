@@ -18,7 +18,7 @@ radar_enabled = [] # always enable /radar23 for these user ids
 parties_message_weekday = 0 # weekday when to post new messages, 0 = Monday
 parties_message_hour = 9 # hour when to post new messages, 24h format
 parties_message_job_frequency = 60 # in minutes
-parties_message_pin = true
+parties_message_pin = true # pin parties messages when they are sent (the service message will be deleted)
 
 [handlers]
 # which handlers manifest to use, depending on what the bot should do
