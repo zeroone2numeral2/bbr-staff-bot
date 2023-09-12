@@ -97,6 +97,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     session.commit()
 
     if not event.is_valid() and config.settings.notify_invalid_events:
+        logger.info("event is not valid, notifying staff (if staff chat is set)...")
         staff_chat = chats.get_chat(session, Chat.is_staff_chat)
         if staff_chat:
             text = (f"Non è stato possibile identificare la data di {event.message_link_html('questo messaggio')} "
