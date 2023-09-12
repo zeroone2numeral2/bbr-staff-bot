@@ -44,6 +44,21 @@ def mention_escaped(user: User, full_name=True) -> str:
     return user.mention_html(name=escape_html(name))
 
 
+def naive_to_aware(unaware: [datetime.datetime, datetime.date], force_utc=False):
+    """returns the timezone-aware utc version of that datetime if naive or 'force_utc' is true,
+    otherwise return the datetime itself"""
+
+    # https://stackoverflow.com/a/41624199
+    # https://www.skytowner.com/explore/python_datetime_timezone_aware_and_naive
+
+    if unaware.tzinfo is not None and not force_utc:
+        # the datetime object is timezone-aware
+        return unaware
+
+    # or: return unaware.replace(tzinfo=pytz.UTC)
+    return pytz.utc.localize(unaware)
+
+
 def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None) -> datetime.datetime:
     """Returns the current datetime. A timezone can be passed as string, pytz.timezone(), or 'true' for Rome's timezone.
     If no argument is passed, the utc datetime is returned"""
