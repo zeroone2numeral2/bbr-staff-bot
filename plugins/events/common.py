@@ -230,9 +230,12 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
     # DATES
     # enter this only if dates are not already filled
     if not event.start_month and not event.start_year:
+        month_hashtag_found = False
         for i, month_hashtag in enumerate(MONTHS):
             if month_hashtag not in hashtags_list:
                 continue
+
+            month_hashtag_found = True
 
             month = i + 1
             year = utilities.now().year
@@ -246,6 +249,10 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
             event.end_year = year
 
             event.dates_from_hashtags = True
+
+        if not month_hashtag_found:
+            # set to false if no month hashtag was found
+            event.dates_from_hashtags = False
 
 
 def parse_message_entities(message: Message, event: Event):

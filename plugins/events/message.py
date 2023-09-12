@@ -83,24 +83,26 @@ async def notify_event_validity(
                  f"is_valid_after_parsing: {is_valid_after_parsing}")
 
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
-    if staff_chat:
-        if not was_valid_before_parsing and is_valid_after_parsing:
-            logger.info("event wasn't valid but is now valid after message edit")
-            text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
-                    f"adesso è apposto {Emoji.DONE}")
-            await bot.send_message(staff_chat.chat_id, text)
-        elif not is_valid_after_parsing and not is_edited_message:
-            # do not notify invalid edited messages, as they have been notified already
-            logger.info("new event is not valid, notifying chat")
-            text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
-                    f"nel canale, e non è stata taggata come #soon (può essere che la data sia scritta in modo strano "
-                    f"e vada modificata)")
-            await bot.send_message(staff_chat.chat_id, text)
-        elif was_valid_before_parsing and not is_valid_after_parsing:
-            logger.info("event is no longer valid after message edit")
-            text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
-                    f"identificarla dopo che il messaggio è stato modificato :(")
-            await bot.send_message(staff_chat.chat_id, text)
+    if not staff_chat:
+        return
+
+    if not was_valid_before_parsing and is_valid_after_parsing:
+        logger.info("event wasn't valid but is now valid after message edit")
+        text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
+                f"adesso è apposto {Emoji.DONE}")
+        await bot.send_message(staff_chat.chat_id, text)
+    elif not is_valid_after_parsing and not is_edited_message:
+        # do not notify invalid edited messages, as they have been notified already
+        logger.info("new event is not valid, notifying chat")
+        text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
+                f"nel canale, e non è stata taggata come #soon (può essere che la data sia scritta in modo strano "
+                f"e vada modificata)")
+        await bot.send_message(staff_chat.chat_id, text)
+    elif was_valid_before_parsing and not is_valid_after_parsing:
+        logger.info("event is no longer valid after message edit")
+        text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
+                f"identificarla dopo che il messaggio è stato modificato :(")
+        await bot.send_message(staff_chat.chat_id, text)
 
 
 @decorators.catch_exception(silent=True)
