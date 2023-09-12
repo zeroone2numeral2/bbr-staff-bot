@@ -883,6 +883,9 @@ class Event(Base):
 
     hashtags = Column(String, default=None)  # hashtag entities as json string
 
+    dates_from_hashtags = Column(Boolean, default=False)
+    send_validity_notifications = Column(Boolean, default=True)
+
     created_on = Column(DateTime, default=utilities.now)
     updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     message_json = Column(String, default=None)
