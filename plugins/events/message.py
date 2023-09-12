@@ -4,7 +4,7 @@ import pathlib
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, Message
+from telegram import Update, Message, Bot
 from telegram.ext import ContextTypes, filters, MessageHandler
 
 import decorators
@@ -70,6 +70,40 @@ async def backup_event_media(update: Update, event: Event):
         return False
 
 
+async def notify_event_validity(
+        session: Session,
+        event: Event,
+        bot: Bot,
+        is_edited_message: bool,
+        was_valid_before_parsing: bool,
+        is_valid_after_parsing: bool
+):
+    logger.debug(f"is_edited_message: {is_edited_message}; "
+                 f"was_valid_before_parsing: {was_valid_before_parsing}; "
+                 f"is_valid_after_parsing: {is_valid_after_parsing}")
+
+    staff_chat = chats.get_chat(session, Chat.is_staff_chat)
+    if staff_chat:
+        if not was_valid_before_parsing and is_valid_after_parsing:
+            logger.info("event wasn't valid but is now valid after message edit")
+            text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
+                    f"adesso è apposto {Emoji.DONE}")
+            await bot.send_message(staff_chat.chat_id, text)
+        elif not is_valid_after_parsing and not is_edited_message:
+            # do not notify invalid edited messages, as they have been notified already
+            logger.info("new event is not valid, notifying chat")
+            text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
+                    f"nel canale, e non è stata taggata come #soon (può essere che la data sia scritta in modo strano "
+                    f"e vada modificata)")
+            await bot.send_message(staff_chat.chat_id, text)
+        elif was_valid_before_parsing and not is_valid_after_parsing:
+            # do not notify invalid edited messages, as they have been notified already
+            logger.info("event is no longer valid after message edit")
+            text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
+                    f"identificarla dopo che il messaggio è stato modificato :(")
+            await bot.send_message(staff_chat.chat_id, text)
+
+
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
@@ -112,30 +146,14 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     session.commit()
 
     if config.settings.notify_events_validity:
-        logger.debug(f"is_edited_message: {is_edited_message}; "
-                     f"was_valid_before_parsing: {was_valid_before_parsing}; "
-                     f"is_valid_after_parsing: {is_valid_after_parsing}")
-
-        staff_chat = chats.get_chat(session, Chat.is_staff_chat)
-        if staff_chat:
-            if not was_valid_before_parsing and is_valid_after_parsing:
-                logger.info("event wasn't valid but is now valid after message edit")
-                text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
-                        f"adesso è apposto {Emoji.DONE}")
-                await context.bot.send_message(staff_chat.chat_id, text)
-            elif not is_valid_after_parsing and not is_edited_message:
-                # do not notify invalid edited messages, as they have been notified already
-                logger.info("new event is not valid, notifying chat")
-                text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
-                        f"nel canale, e non è stata taggata come #soon (può essere che la data sia scritta in modo strano "
-                        f"e vada modificata)")
-                await context.bot.send_message(staff_chat.chat_id, text)
-            elif was_valid_before_parsing and not is_valid_after_parsing:
-                # do not notify invalid edited messages, as they have been notified already
-                logger.info("event is no longer valid after message edit")
-                text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
-                        f"identificarla dopo che il messaggio è stato modificato :(")
-                await context.bot.send_message(staff_chat.chat_id, text)
+        await notify_event_validity(
+            session=session,
+            event=event,
+            bot=context.bot,
+            is_edited_message=is_edited_message,
+            was_valid_before_parsing=was_valid_before_parsing,
+            is_valid_after_parsing=is_valid_after_parsing
+        )
 
     if config.settings.backup_events:
         await backup_event_media(update, event)
