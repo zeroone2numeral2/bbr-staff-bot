@@ -549,8 +549,8 @@ class UserMessage(Base):
     def datetime_naive_to_utc(self, force_utc=False):
         if self.forwarded_on:
             self.forwarded_on = utilities.naive_to_aware(self.forwarded_on, force_utc=force_utc)
-        if self.created_on:
-            self.created_on = utilities.naive_to_aware(self.created_on, force_utc=force_utc)
+        if self.message_datetime:
+            self.message_datetime = utilities.naive_to_aware(self.message_datetime, force_utc=force_utc)
         if self.revoked_on:
             self.revoked_on = utilities.naive_to_aware(self.revoked_on, force_utc=force_utc)
 
@@ -1101,10 +1101,6 @@ class Event(Base):
     def datetime_naive_to_utc(self, force_utc=False):
         if self.discussion_group_received_on:
             self.discussion_group_received_on = utilities.naive_to_aware(self.discussion_group_received_on, force_utc=force_utc)
-        if self.start_date:
-            self.start_date = utilities.naive_to_aware(self.start_date, force_utc=force_utc)
-        if self.end_date:
-            self.end_date = utilities.naive_to_aware(self.end_date, force_utc=force_utc)
         if self.message_date:
             self.message_date = utilities.naive_to_aware(self.message_date, force_utc=force_utc)
         if self.message_edit_date:

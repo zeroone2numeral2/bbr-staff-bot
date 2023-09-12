@@ -2,9 +2,10 @@ import logging
 from typing import Union, Iterable
 
 import pytz
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
-from telegram import ChatMember, ChatMemberAdministrator
+from telegram import ChatMemberAdministrator
 from telegram import Update, BotCommandScopeChat, ChatMemberOwner, BotCommandScopeDefault
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
@@ -16,7 +17,8 @@ import utilities
 from config import config
 from constants import Language, HandlersMode, BOT_SETTINGS_DEFAULTS
 from database.base import get_session, Base, engine
-from database.models import BotSetting
+from database.models import BotSetting, User, UserMessage, AdminMessage, PartiesMessage, PrivateChatMessage, \
+    LocalizedText, ApplicationRequest, DescriptionMessage, ChatMember
 from database.models import ChatMember as DbChatMember, Chat, Event
 from database.queries import chats, chat_members, events
 from loader import load_modules
@@ -207,6 +209,16 @@ async def post_init(application: Application) -> None:
         await set_bbr_commands(session, bot)
     else:
         await set_flytek_commands(session, bot)
+
+    logger_startup.info("updating db datetime fields...")
+    models = [User, Chat, ChatMember, UserMessage, AdminMessage, LocalizedText, BotSetting, PrivateChatMessage, Event, PartiesMessage, ApplicationRequest, DescriptionMessage]
+    for model in models:
+        logger_startup.info(f"updating {model}...")
+        instances = session.scalars(select(model).where())
+        for instance in instances:
+            instance.datetime_naive_to_utc(force_utc=True)
+        session.commit()
+    logger_startup.info("...done")
 
     session.commit()
     session.close()
