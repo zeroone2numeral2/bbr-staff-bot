@@ -100,8 +100,8 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.info("event is not valid, notifying staff (if staff chat is set)...")
         staff_chat = chats.get_chat(session, Chat.is_staff_chat)
         if staff_chat:
-            text = (f"Non è stato possibile identificare la data di {event.message_link_html('questo messaggio')} "
-                    f"nel canale, e non è stato taggato come #soon (può essere che la data sia scritta in modo strano "
+            text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
+                    f"nel canale, e non è stato taggata come #soon (può essere che la data sia scritta in modo strano "
                     f"e vada modificata)")
             await context.bot.send_message(staff_chat.chat_id, text)
 
