@@ -210,16 +210,6 @@ async def post_init(application: Application) -> None:
     else:
         await set_flytek_commands(session, bot)
 
-    logger_startup.info("updating db datetime fields...")
-    models = [User, Chat, ChatMember, UserMessage, AdminMessage, LocalizedText, BotSetting, PrivateChatMessage, Event, PartiesMessage, ApplicationRequest, DescriptionMessage]
-    for model in models:
-        logger_startup.info(f"updating {model}...")
-        instances = session.scalars(select(model).where())
-        for instance in instances:
-            instance.datetime_naive_to_utc(force_utc=True)
-        session.commit()
-    logger_startup.info("...done")
-
     session.commit()
     session.close()
 
