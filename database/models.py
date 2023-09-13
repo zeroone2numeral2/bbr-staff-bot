@@ -884,7 +884,12 @@ class Event(Base):
     hashtags = Column(String, default=None)  # hashtag entities as json string
 
     dates_from_hashtags = Column(Boolean, default=False)
+
     send_validity_notifications = Column(Boolean, default=True)
+    validity_notification_chat_id = Column(Integer, default=None)
+    validity_notification_message_id = Column(Integer, default=None)
+    validity_notification_sent_on = Column(DateTime, default=None)
+    validity_notification_message_json = Column(String, default=None)
 
     created_on = Column(DateTime, default=utilities.now)
     updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
@@ -934,6 +939,12 @@ class Event(Base):
         self.discussion_group_message_id = message.message_id
         self.discussion_group_received_on = message.date
         self.discussion_group_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def save_validity_notification_message(self, message: Message):
+        self.validity_notification_chat_id = message.chat.id
+        self.validity_notification_message_id = message.message_id
+        self.validity_notification_sent_on = message.date
+        self.validity_notification_message_json = json.dumps(message.to_dict(), indent=2)
 
     def icon(self):
         if not self.event_type:

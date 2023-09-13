@@ -100,22 +100,27 @@ async def notify_event_validity(
 
     reply_markup = disable_notifications_reply_markup(event.chat_id, event.message_id)
     if not was_valid_before_parsing and is_valid_after_parsing:
-        logger.info("event wasn't valid but is now valid after message edit")
-        text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
-                f"adesso è apposto {Emoji.DONE}")
-        await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
+        logger.info("event wasn't valid but is now valid after message edit: deleting staff notification")
+        # text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
+        #         f"adesso è apposto {Emoji.DONE}")
+        # await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
+        if event.validity_notification_chat_id and event.validity_notification_message_id:
+            # delete if now ok
+            await utilities.delete_messages_by_id_safe(bot, event.validity_notification_chat_id, event.validity_notification_message_id)
     elif not is_valid_after_parsing and not is_edited_message:
         # do not notify invalid edited messages, as they have been notified already
         logger.info("new event is not valid, notifying chat")
         text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
                 f"nel canale, e non è stata taggata come #soon (può essere che la data sia scritta in modo strano "
                 f"e vada modificata)")
-        await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
+        sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
+        event.save_validity_notification_message(sent_message)
     elif was_valid_before_parsing and not is_valid_after_parsing:
         logger.info("event is no longer valid after message edit")
         text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
                 f"identificarla dopo che il messaggio è stato modificato :(")
-        await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
+        sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
+        event.save_validity_notification_message(sent_message)
 
 
 @decorators.catch_exception(silent=True)
