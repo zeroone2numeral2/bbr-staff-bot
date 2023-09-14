@@ -110,15 +110,14 @@ async def notify_event_validity(
     elif not is_valid_after_parsing and not is_edited_message:
         # do not notify invalid edited messages, as they have been notified already
         logger.info("new event is not valid, notifying chat")
-        text = (f"Non sono riuscito ad identificare la data di {event.message_link_html('questa festa')} postata "
-                f"nel canale, e non è stata taggata come #soon (può essere che la data sia scritta in modo strano "
-                f"e vada modificata)")
+        text = (f"Non sono riuscito ad identificare la data di \"{event.title_escaped()}\", e non è stata "
+                f"taggata come #soon (può essere che la data sia scritta in modo strano e vada modificata)")
         sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
         event.save_validity_notification_message(sent_message)
     elif was_valid_before_parsing and not is_valid_after_parsing:
         logger.info("event is no longer valid after message edit")
-        text = (f"{event.message_link_html('Questa festa')} aveva una data ma non è più possibile "
-                f"identificarla dopo che il messaggio è stato modificato :(")
+        text = (f"\"{event.title_escaped()}\" aveva una data ma non è più possibile identificarla "
+                f"dopo che il messaggio è stato modificato :(")
         sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
         event.save_validity_notification_message(sent_message)
 
@@ -140,8 +139,9 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     # we need this flag to notify the admins when an invalid event becomes valid, and we do not notify
     # them when a new event is posted, because for new events, Event.is_valid() will
     # of course return false (text hasn't been parsed yet)
+    # Also, for an event to be valid, the dates must *not* come from the hashtag
     is_edited_message = bool(update.effective_message.edit_date)
-    was_valid_before_parsing = event.is_valid() or not is_edited_message
+    was_valid_before_parsing = (event.is_valid() and not event.dates_from_hashtags) or not is_edited_message
 
     add_event_message_metadata(update.effective_message, event)
 
@@ -154,7 +154,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     logger.info(f"parsed event: {event}")
 
-    is_valid_after_parsing = event.is_valid()
+    is_valid_after_parsing = event.is_valid() and not event.dates_from_hashtags
 
     logger.info("setting flag to signal that the parties message list should be updated...")
     context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
