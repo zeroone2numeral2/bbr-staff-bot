@@ -913,12 +913,19 @@ class Event(Base):
         return self.message_link_html(self.event_title)
 
     def is_valid(self) -> bool:
-        """an event is valid either if
-        - it has a title and a start month/year
-        - it has a title and is marked as soon"""
+        """an event is valid if it has a title and either:
+        - has a start month/year
+        - is marked as soon"""
 
-        # we basically save any channel post that has a text/caption as an Event
-        return bool((self.event_title and self.start_month and self.start_year) or (self.event_title and self.soon))  # and self.get_hashtags()
+        # we basically save any channel post that has a text/caption as an Event, so there might be non-valid Event
+        valid = self.event_title and ((self.start_month and self.start_year) or self.soon)  # and self.get_hashtags()
+        return bool(valid)
+
+    def is_valid_from_parsing(self):
+        """returns true if the event is_valid() and its dates do not come from the month hashtag,
+        but from parsing the text"""
+
+        return self.is_valid() and not self.dates_from_hashtags
 
     def message_link(self):
         chat_id_link = str(self.chat_id).replace("-100", "")
