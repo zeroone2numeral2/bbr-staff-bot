@@ -909,6 +909,9 @@ class Event(Base):
     def title_escaped(self):
         return f"{utilities.escape_html(self.event_title)}"
 
+    def title_link_html(self):
+        return self.message_link_html(self.event_title)
+
     def is_valid(self) -> bool:
         """an event is valid either if
         - it has a title and a start month/year
