@@ -331,7 +331,7 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
 
         return
 
-    if not event.not_a_party:
+    if event.not_a_party:
         logger.info("event was already marked a not a party")  # just remove the inline markup
 
         context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
