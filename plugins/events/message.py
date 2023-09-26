@@ -312,8 +312,8 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
         logger.info(f"first time tap for key {tap_key}, showing alert...")
         await update.callback_query.answer(
             f"Usa questo tasto se il post nel canale non fa riferimento ad una festa.\n"
-            f"In questo modo non verranno più inviate notifiche relative a questo post nel gruppo staff.\n"
-            f"Premi nuovamente questo tasto per confermare",
+            f"In questo modo non verranno più inviate notifiche riguardo la data.\n"
+            f"Usa nuovamente questo tasto per confermare",
             show_alert=True
         )
         context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE][tap_key] = True
@@ -334,8 +334,8 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
     if not event.not_a_party:
         logger.info("event was already marked a not a party")  # just remove the inline markup
 
-        await update.callback_query.edit_message_reply_markup(reply_markup=None)
         context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
+        await update.effective_message.delete()
         return
 
     event.not_a_party = True
