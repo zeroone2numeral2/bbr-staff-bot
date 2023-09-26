@@ -155,6 +155,14 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     logger.info(f"parsed event: {event}")
 
+    if event.not_a_party:
+        # if the event is marked as 'not a party', we stop here
+        # we parse the medtadata & text anyway because that flag might be turned to false: in that case,
+        # the message data should be up-to-date
+        # anyway we can avoid to drop the cache, set the UPDATE_PARTIES_MESSAGE flag, and send validity notifications
+        logger.debug("event is marked as \"not a party\": nothing to do, returning")
+        return
+
     is_valid_after_parsing = event.is_valid_from_parsing()
 
     logger.info("setting flag to signal that the parties message list should be updated...")
@@ -240,7 +248,7 @@ async def on_disable_notifications_button(update: Update, context: ContextTypes.
     # we add also the current message's message_id because multiple messages for the same Event have the
     # same callback_data, and if we use the same user_data key for taps coming from different messages,
     # we can't distinguish when the user tapped on a message instead of another
-    tap_key = f"{update.effective_message.message_id}:{chat_id}:{message_id}"
+    tap_key = f"mute:{update.effective_message.message_id}:{chat_id}:{message_id}"
 
     if TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE not in context.user_data:
         context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE] = {}
@@ -285,6 +293,62 @@ async def on_disable_notifications_button(update: Update, context: ContextTypes.
     # await update.effective_message.delete()
 
     context.user_data[TempDataKey.MUTE_EVENT_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"not a party button {utilities.log(update)}")
+    chat_id = int(context.matches[0].group("chat_id"))
+    message_id = int(context.matches[0].group("message_id"))
+
+    # see this same comment in 'on_disable_notifications_button()'
+    tap_key = f"notaparty:{update.effective_message.message_id}:{chat_id}:{message_id}"
+
+    if TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE not in context.user_data:
+        context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE] = {}
+
+    if tap_key not in context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE]:
+        logger.info(f"first time tap for key {tap_key}, showing alert...")
+        await update.callback_query.answer(
+            f"Usa questo tasto se il post nel canale non fa riferimento ad una festa.\n"
+            f"In questo modo non verranno più inviate notifiche relative a questo post nel gruppo staff.\n"
+            f"Premi nuovamente questo tasto per confermare",
+            show_alert=True
+        )
+        context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE][tap_key] = True
+        return
+
+    event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
+    if not event:
+        logger.info(f"no Event found for tap key {tap_key}")
+        await update.callback_query.answer("Ooops, qualcosa è andato storto. "
+                                           "Impossibile trovare il messaggio nel database", show_alert=True)
+        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+
+        # pop the key, no reason to keep it
+        context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
+
+        return
+
+    if not event.not_a_party:
+        logger.info("event was already marked a not a party")  # just remove the inline markup
+
+        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
+        return
+
+    event.not_a_party = True
+    session.commit()
+
+    await update.callback_query.answer(
+        "Ok, non tratterò questo post come fosse una festa. "
+        "Non verranno più inviate notifiche a riguardo",
+        show_alert=True
+    )
+    await update.effective_message.delete()
+
+    context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
     
 
 HANDLERS = (
@@ -292,4 +356,5 @@ HANDLERS = (
     (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
     (MessageHandler(ChatFilter.EVENTS & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
     (CallbackQueryHandler(on_disable_notifications_button, rf"mutemsg:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_not_a_party_button, rf"notaparty:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
 )

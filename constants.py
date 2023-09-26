@@ -304,6 +304,7 @@ class TempDataKey:
     UPDATE_PARTIES_MESSAGE = "update_parties_message"
     FORCE_POST_PARTIES_MESSAGE = "force_post_parties_message"
     MUTE_EVENT_MESSAGE_BUTTON_ONCE = "mute_event_message_button_once"
+    NOT_A_PARTY_MESSAGE_BUTTON_ONCE = "notaparty_event_message_button_once"
 
 
 COMMAND_PREFIXES = ["/", "!"]
