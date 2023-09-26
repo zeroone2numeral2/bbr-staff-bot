@@ -896,6 +896,7 @@ class Event(Base):
     message_json = Column(String, default=None)
 
     deleted = Column(Boolean, default=False)  # != Event.canceled
+    not_a_party = Column(Boolean, default=False)
 
     chat: Chat = relationship("Chat")
 
@@ -918,7 +919,7 @@ class Event(Base):
         - is marked as soon"""
 
         # we basically save any channel post that has a text/caption as an Event, so there might be non-valid Event
-        valid = self.event_title and ((self.start_month and self.start_year) or self.soon)  # and self.get_hashtags()
+        valid = self.event_title and not self.not_a_party and ((self.start_month and self.start_year) or self.soon)  # and self.get_hashtags()
         return bool(valid)
 
     def is_valid_from_parsing(self):
