@@ -662,8 +662,8 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 @decorators.staff_member()
-async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"/delevent or /resevent {utilities.log(update)}")
+async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"event action {utilities.log(update)}")
 
     event: Event = await event_from_link(update, context, session)
     if not event:
@@ -675,16 +675,25 @@ async def on_delete_event_command(update: Update, context: ContextTypes.DEFAULT_
     if command in ("delevent", "de", "deleventmsg", "dem"):
         event.deleted = True
         action = "deleted"
-    else:
+    elif command in ("resevent", "re"):
         event.deleted = False
         action = "restored"
+    elif command in ("notparty",):
+        event.not_a_party = True
+        action = "marked as not a party"
+    elif command in ("isparty",):
+        event.not_a_party = False
+        action = "marked as party"
+    else:
+        raise ValueError(f"invalid command: {command}")
 
     event_str, _ = format_event_string(event)
     await update.effective_message.reply_text(f"{event_str}\n\n^event {action}")
 
-    logger.info("setting flag to signal that the parties message list should be updated...")
+    # set the flag and drop the cache always, even when the command is /isparty or /notparty, as the command
+    # does not originate from an "invalid date" notification, and the Event might be recognized as a valid party
+    logger.info("setting flag to signal that the parties message list should be updated and dropping events cache...")
     context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
-
     drop_events_cache(context)
 
     if command in ("deleventmsg", "dem"):
@@ -777,7 +786,7 @@ HANDLERS = (
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["delevent", "de", "deleventmsg", "dem", "resevent", "re"], on_delete_event_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["delevent", "de", "deleventmsg", "dem", "resevent", "re", "isparty", "notparty"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     # superadmins
