@@ -32,6 +32,7 @@ def get_events(
         filters = []
 
     filters.append(Event.deleted == false())
+    filters.append(Event.not_a_party == false())
 
     if chat_id:
         filters.append(Event.chat_id == chat_id)
