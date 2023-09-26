@@ -7,6 +7,7 @@ class Emoji:
     COMPASS = "🧭"
     COMRADE = "✊"
     EVIL = "😈"
+    EXCLAMATION_MARK = "❗️"
     EYES = "👀"
     GREEN = "🟢"
     HASHTAG = "#️⃣"

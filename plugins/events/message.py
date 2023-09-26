@@ -70,9 +70,10 @@ async def backup_event_media(update: Update, event: Event):
         return False
 
 
-def disable_notifications_reply_markup(event_chat_id: int, event_message_id: int):
+def date_notifications_reply_markup(event_chat_id: int, event_message_id: int):
     keyboard = [[
-        InlineKeyboardButton(f"{Emoji.BELL_MUTED} silenzia", callback_data=f"mutemsg:{event_chat_id}:{event_message_id}")
+        InlineKeyboardButton(f"{Emoji.BELL_MUTED} silenzia", callback_data=f"mutemsg:{event_chat_id}:{event_message_id}"),
+        InlineKeyboardButton(f"{Emoji.EXCLAMATION_MARK} non una festa", callback_data=f"notaparty:{event_chat_id}:{event_message_id}")
     ]]
 
     return InlineKeyboardMarkup(keyboard)
@@ -98,7 +99,7 @@ async def notify_event_validity(
     if not staff_chat:
         return
 
-    reply_markup = disable_notifications_reply_markup(event.chat_id, event.message_id)
+    reply_markup = date_notifications_reply_markup(event.chat_id, event.message_id)
     if not was_valid_before_parsing and is_valid_after_parsing:
         logger.info("event wasn't valid but is now valid after message edit: deleting staff notification")
         # text = (f"{event.message_link_html('Questa festa')} non aveva una data ed è stata modificata, "
