@@ -4,12 +4,16 @@ import re
 from re import Match
 from typing import Optional, List, Union, Tuple
 
+from sqlalchemy import true, null
+from sqlalchemy.orm import Session
 from telegram import Message, MessageEntity
+from telegram.constants import MessageLimit
 from telegram.ext import CallbackContext
 
 import utilities
-from constants import Regex, REGIONS_DATA, TempDataKey
-from database.models import Event, EVENT_TYPE
+from constants import Regex, RegionName, REGIONS_DATA, TempDataKey
+from database.models import Event, EVENT_TYPE, EventType
+from database.queries import events
 from emojis import Emoji
 
 logger = logging.getLogger(__name__)
@@ -374,3 +378,209 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
     text = f"{event.icon()}{region_icon} {title_with_link} • {date}"
 
     return text, entities_count
+
+
+def time_to_split(
+        text_lines: List[str],
+        initial_message_length: int = 0,
+        initial_entities_count: int = 0
+) -> bool:
+    # message_length = len("\n\naggiornato al xx/xx/xxxx xx:xx")
+
+    # we do this thing to avoid to create references
+    message_length = 0
+    message_length += initial_message_length
+    entities_count = 0
+    entities_count += initial_entities_count
+
+    for line in text_lines:
+        message_length += len(line)
+        entities_count += utilities.count_html_entities(line)
+
+    if message_length >= MessageLimit.MAX_TEXT_LENGTH:
+        return True
+
+    if entities_count >= MessageLimit.MESSAGE_ENTITIES:
+        return True
+
+
+def split_messages(all_events: List[str], return_after_first_message=False) -> List[str]:
+    messages_to_send = []
+    next_message_events = []
+    for events_string in all_events:
+        if time_to_split(next_message_events):
+            new_message_to_send = "\n".join(next_message_events)
+            messages_to_send.append(new_message_to_send)
+
+            # logger.debug(f"time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
+            if return_after_first_message:
+                return messages_to_send
+
+            next_message_events = [events_string]
+        else:
+            # logger.debug(f"no time to split, messages: {len(messages_to_send)}, lines: {len(text_lines)}")
+            next_message_events.append(events_string)
+
+    if next_message_events:
+        last_message_text = "\n".join(next_message_events)
+        messages_to_send.append(last_message_text)
+
+    return messages_to_send
+
+
+async def send_events_messages(message: Message, all_events_strings: List[str], protect_content: bool = True) -> List[Message]:
+    sent_messages = []
+
+    messages_to_send = split_messages(all_events_strings, return_after_first_message=False)
+
+    if not messages_to_send:
+        sent_message = await message.reply_text("vuoto :(", protect_content=protect_content)
+        return [sent_message]
+
+    total_messages = len(messages_to_send)
+    for i, text_to_send in enumerate(messages_to_send):
+        logger.debug(f"sending message {i + 1}/{total_messages}")
+        # if i + 1 == total_messages:
+        #     text_to_send += f"\n\nUsa /soon per gli eventi con data da programmare"
+
+        sent_message = await message.reply_text(text_to_send, protect_content=protect_content)
+        sent_messages.append(sent_message)
+
+    return sent_messages
+
+
+class EventFilter:
+    # region
+    IT = "it"
+    NOT_IT = "notit"
+
+    # type
+    LEGAL = "legal"
+    FREE = "free"
+    NOT_FREE = "notfree"
+
+    # time
+    WEEK = "week"
+    WEEK_2 = "week2"
+    MONTH_AND_NEXT_MONTH = "monthnext"
+    MONTH_FUTURE_AND_NEXT_MONTH = "monthfuturenext"
+    ALL = "all"
+    SOON = "soon"
+
+
+def extract_query_filters(args: List[str], today: Optional[datetime.date] = None) -> List:
+    query_filters = []
+    args = [arg.lower() for arg in args]
+
+    # EVENT TYPE
+    if EventFilter.NOT_FREE in args or EventFilter.LEGAL in args:
+        # legal = anything that is not a free party
+        query_filters.append(Event.event_type != EventType.FREE)
+    elif EventFilter.FREE in args:
+        query_filters.append(Event.event_type == EventType.FREE)
+
+    # EVENT DATE
+    today = today or datetime.date.today()
+    if EventFilter.WEEK in args or EventFilter.WEEK_2 in args:
+        additional_days = 0
+        if EventFilter.WEEK_2 in args:
+            # events of this week + events of the next week
+            additional_days = 7
+
+        last_monday = utilities.previous_weekday(today=today, weekday=0)
+        next_monday = utilities.next_weekday(today=today, weekday=0, additional_days=additional_days)
+
+        logger.debug(f"week filter: {last_monday} <= start/end date < {next_monday}")
+
+        query_filters.extend([
+            # start date is between last monday and next monday...
+            (
+                (Event.start_date >= last_monday)
+                & (Event.start_date < next_monday)
+            )
+            # ...or end date exists and is between last monday and next monday (extract also
+            # events which end during the week/weeks)
+            | (
+                Event.end_date.is_not(null())
+                & (Event.end_date >= last_monday)
+                & (Event.end_date < next_monday)
+            )
+        ])
+    elif EventFilter.ALL in args:
+        # all events >= this month
+        query_filters.extend([
+            Event.start_year >= today.year,
+            Event.start_month >= today.month,
+        ])
+    elif EventFilter.SOON in args:
+        query_filters.extend([Event.soon == true()])
+    elif EventFilter.MONTH_FUTURE_AND_NEXT_MONTH in args:
+        this_day = today.day
+        this_month = today.month
+        this_month_year = today.year
+        prev_month = today.month - 1 if today.month != 1 else 12
+        prev_month_year = today.year if prev_month != 1 else today.year - 1
+        next_month = today.month + 1 if today.month != 12 else 1
+        next_month_year = today.year if next_month != 12 else today.year + 1
+
+        # we need this date to extract all events that do not have an end date, but
+        # that started recently in the past. The party might last several days, so we
+        # decide to extract all events started within n days ago
+        no_end_tolerance_date = today + datetime.timedelta(days=-7)
+
+        query_filters.extend([
+            # all events that start next month
+            ((Event.start_month == next_month) & (Event.start_year == next_month_year))
+            | (
+                # all events starting this month...
+                (Event.start_month == this_month) & (Event.start_year == this_month_year)
+                & (
+                    (Event.start_day.is_(null()))  # ...and they don't have a start date
+                    | (this_day <= Event.start_day)  # ...or they start today/in the future
+                    | (this_day <= Event.end_day)  # ...or they end today/in the future
+                 )
+            )
+            | (
+                # events that do not have an end day, but
+                # their start date is between `no_end_tolerance_date` and today
+                (Event.end_day.is_(null())) & (Event.start_day.is_not(null()))
+                & (Event.start_date >= no_end_tolerance_date)
+                & (Event.start_date <= today)
+            )
+        ])
+    else:
+        # no other time filter: this month + next month
+        this_month = today.month
+        next_month = today.month + 1 if today.month != 12 else 1
+
+        query_filters.extend([
+            Event.start_year >= today.year,
+            Event.start_month.in_([this_month, next_month]),
+        ])
+
+    # EVENT REGION
+    it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
+    if EventFilter.IT in args:
+        query_filters.append(Event.region.in_(it_regions))
+    elif EventFilter.NOT_IT in args:
+        query_filters.append(Event.region.not_in(it_regions))
+
+    return query_filters
+
+
+def get_all_events_strings_from_db(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
+    query_filters = extract_query_filters(args, today=date_override)
+    events_list: List[Event] = events.get_events(session, filters=query_filters)
+
+    all_events_strings = []
+    total_entities_count = 0  # total number of telegram entities for the list of events
+    for i, event in enumerate(events_list):
+        if not event.is_valid():
+            logger.info(f"skipping invalid event: {event}")
+            continue
+
+        text_line, event_entities_count = format_event_string(event)
+        all_events_strings.append(text_line)
+        total_entities_count += event_entities_count  # not used yet, find something to do with this
+
+    return all_events_strings
