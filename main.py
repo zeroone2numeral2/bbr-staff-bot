@@ -26,6 +26,8 @@ from plugins.events.job import parties_message_job
 logger = logging.getLogger(__name__)
 logger_startup = logging.getLogger("startup")
 
+Base.metadata.create_all(engine)
+
 defaults = Defaults(
     parse_mode=ParseMode.HTML,
     disable_web_page_preview=True,
@@ -33,7 +35,17 @@ defaults = Defaults(
     quote=False
 )
 
-Base.metadata.create_all(engine)
+# persistence was initially added to make conversation statuses persistent,
+# but we might use it also for temporary data in user_data and bot_data
+persistence = PicklePersistence(
+    filepath='temp_data_persistence.pickle',
+    store_data=PersistenceInput(chat_data=False, user_data=True, bot_data=True)
+)
+
+builder = ApplicationBuilder()
+builder.token(config.telegram.token)
+builder.defaults(defaults)
+builder.persistence(persistence)
 
 
 async def set_bbr_commands(session: Session, bot: ExtBot):
@@ -213,22 +225,12 @@ async def post_init(application: Application) -> None:
     session.close()
 
 
+builder.post_init(post_init)
+app: Application = builder.build()
+
+
 def main():
     utilities.load_logging_config('logging.json')
-
-    # persistence was initially added to make conversation statuses persistent,
-    # but we might use it also for temporary data in user_data and bot_data
-    persistence = PicklePersistence(
-        filepath='temp_data_persistence.pickle',
-        store_data=PersistenceInput(chat_data=False, user_data=True, bot_data=True)
-    )
-
-    app: Application = ApplicationBuilder() \
-        .token(config.telegram.token) \
-        .defaults(defaults) \
-        .persistence(persistence) \
-        .post_init(post_init) \
-        .build()
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 

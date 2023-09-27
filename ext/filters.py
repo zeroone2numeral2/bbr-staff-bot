@@ -2,13 +2,34 @@ import logging
 
 from sqlalchemy.orm import Session
 from telegram.ext import filters
+from telegram.ext.filters import MessageFilter
 
 from config import config
 from database.base import session_scope
 from database.models import Chat
 from database.queries import chats
+from main import app
 
 logger = logging.getLogger(__name__)
+
+
+class FilterReplyToBot(MessageFilter):
+    def filter(self, message):
+        if (message.reply_to_message
+                and message.reply_to_message.from_user
+                and message.reply_to_message.from_user.id == app.bot.id):
+            return True
+
+        return False
+
+
+class FilterReplyTopicsAware(MessageFilter):
+    def filter(self, message):
+        if message.reply_to_message and message.reply_to_message.forum_topic_created:
+            # ignore reply messages that are sent to the "topic created" service message
+            return False
+
+        return bool(message.reply_to_message)
 
 
 class Filter:
@@ -18,6 +39,8 @@ class Filter:
     MESSAGE_OR_EDIT = filters.UpdateType.MESSAGE | filters.UpdateType.EDITED_MESSAGE | filters.UpdateType.CHANNEL_POST | filters.UpdateType.EDITED_CHANNEL_POST
     NEW_MESSAGE = filters.UpdateType.MESSAGE | filters.UpdateType.CHANNEL_POST
     WITH_TEXT = filters.TEXT | filters.CAPTION
+    REPLY_TO_BOT = FilterReplyToBot()
+    REPLY_TOPICS_AWARE = FilterReplyTopicsAware()
 
 
 class ChatFilter:

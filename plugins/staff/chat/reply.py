@@ -15,22 +15,10 @@ from database.queries import user_messages, admin_messages, users, private_chat_
 import decorators
 import utilities
 from emojis import Emoji
-from ext.filters import ChatFilter
+from ext.filters import ChatFilter, Filter
 from config import config
 
 logger = logging.getLogger(__name__)
-
-
-class FilterReplyTopicsAware(MessageFilter):
-    def filter(self, message):
-        if message.reply_to_message and message.reply_to_message.forum_topic_created:
-            # ignore reply messages that are sent to the "topic created" service message
-            return False
-
-        return bool(message.reply_to_message)
-
-
-reply_topics_aware = FilterReplyTopicsAware()
 
 
 @decorators.catch_exception()
@@ -99,10 +87,6 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 @decorators.pass_session(pass_chat=True)
 async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"reply to a message {utilities.log(update)}")
-
-    if update.message.reply_to_message.from_user and update.message.reply_to_message.from_user.id != context.bot.id:
-        logger.debug("reply to a non-bot message: ignoring")
-        return
 
     text = update.message.text or update.message.caption
     if text and text.startswith("."):
@@ -182,6 +166,6 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
-    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & reply_topics_aware, on_message_reply), Group.NORMAL),
+    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & Filter.REPLY_TOPICS_AWARE & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
+    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & Filter.REPLY_TO_BOT, on_message_reply), Group.NORMAL),
 )
