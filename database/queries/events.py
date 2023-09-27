@@ -32,7 +32,8 @@ def get_events(
         filters = []
 
     filters.append(Event.deleted == false())
-    filters.append(Event.not_a_party == false())
+    # even if not_a_party's defualt is False, we have to explicitly select also NULL values
+    filters.append(((Event.not_a_party == false()) | Event.not_a_party.is_(None)))
 
     if chat_id:
         filters.append(Event.chat_id == chat_id)
