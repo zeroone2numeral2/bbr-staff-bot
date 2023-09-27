@@ -3,7 +3,7 @@ import json
 import logging
 from typing import List, Optional, Union, Iterable
 
-from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date
+from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date, Index
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
@@ -1424,6 +1424,10 @@ class StaffChatMessage(Base):
     updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
 
     chat: Chat = relationship("Chat")
+
+    Index('index_text_md5', text_md5)
+    Index('index_text_sha1', text_sha1)
+    Index('index_media_file_unique_id', media_file_unique_id)
 
     def __init__(self, message: Message):
         self.update_message_metadata(message)
