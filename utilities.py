@@ -1,5 +1,6 @@
 import datetime
 import difflib
+import hashlib
 import json
 import logging
 import logging.config
@@ -218,7 +219,7 @@ def is_reply_to_forwarded_channel_message(message: Message) -> bool:
     return message.reply_to_message.forward_from_chat and message.reply_to_message.forward_from_chat.type == Chat.CHANNEL
 
 
-def detect_media_type(message: Message) -> str:
+def detect_media_type(message: Message, raise_on_unknown_type=True) -> Optional[str]:
     if message.photo:
         return MediaType.PHOTO
     elif message.video:
@@ -237,7 +238,10 @@ def detect_media_type(message: Message) -> str:
     elif message.sticker:
         return MediaType.STICKER
 
-    raise ValueError("message contains unknown media type or doesn't contain a media")
+    if raise_on_unknown_type:
+        raise ValueError("message contains unknown media type or doesn't contain a media")
+
+    return
 
 
 async def reply_media(message: Message, media_type: str, file_id: str, caption: Optional[str] = None, quote: Optional[bool] = None) -> Message:
@@ -284,6 +288,14 @@ def get_user_id_from_text(text: str) -> Optional[int]:
         return
 
     return int(match.group("user_id"))
+
+
+def generate_text_hash(text: str) -> str:
+    # https://stackoverflow.com/a/3739928
+    text_no_whitespaces = re.sub(r'(\s|\u180B|\u200B|\u200C|\u200D|\u2060|\uFEFF)+', '', text)
+    md5_string = hashlib.md5(text_no_whitespaces).hexdigest()
+
+    return md5_string
 
 
 def get_argument(commands: Union[List, str], text: str, remove_user_id_hashtag=False) -> str:

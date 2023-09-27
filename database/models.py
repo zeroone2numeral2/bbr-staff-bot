@@ -1392,3 +1392,69 @@ class DescriptionMessage(Base):
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
+
+
+class NormalizationVersion:
+    CURRENT = 1
+
+
+class StaffChatMessage(Base):
+    __tablename__ = 'staff_chat_messages'
+    __allow_unmapped__ = True
+
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    message_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'), default=None)
+    is_topic_message = Column(Boolean, default=False)
+    message_thread_id = Column(Integer, default=None)
+    message_date = Column(DateTime, default=None)
+    message_edit_date = Column(DateTime, default=None)
+
+    text_sha1 = Column(String, default=None)
+    text_md5 = Column(String, default=None)
+    text_normalization_version = Column(Integer, default=None)
+
+    media_file_id = Column(String, default=None)
+    media_file_unique_id = Column(String, default=None)
+    media_group_id = Column(Integer, default=None)
+    media_type = Column(String, default=None)
+
+    message_json = Column(String, default=None)
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
+
+    chat: Chat = relationship("Chat")
+
+    def __init__(self, message: Message):
+        self.update_message_metadata(message)
+
+    def update_message_metadata(self, message: Message):
+        self.chat_id = message.chat.id
+        self.message_id = self.message_id
+        self.message_thread_id = message.message_thread_id
+        self.is_topic_message = message.is_topic_message
+        self.message_date = message.date
+        self.message_edit_date = message.edit_date
+        self.message_json = json.dumps(message.to_dict(), indent=2)
+
+        text = message.text or message.caption
+        if text:
+            text_md5, text_normalization_version = utilities.generate_text_hash(text)
+            self.text_md5 = text_md5
+            self.text_normalization_version = NormalizationVersion.CURRENT
+
+        if utilities.contains_media_with_file_id(message):
+            media_file_id, media_file_unique_id, media_group_id = utilities.get_media_ids(message)
+            self.media_file_id = media_file_id
+            self.media_file_unique_id = media_file_unique_id
+            self.media_group_id = media_group_id
+            self.media_type = utilities.detect_media_type(message, raise_on_unknown_type=False)
+
+    def message_link(self):
+        chat_id = str(self.chat_id).replace("-100", "")
+        base_link = f"https://t.me/c/{chat_id}/{self.message_id}"
+
+        if self.is_topic_message and self.message_thread_id:
+            base_link = f"{base_link}?thread={self.message_thread_id}"
+
+        return base_link
