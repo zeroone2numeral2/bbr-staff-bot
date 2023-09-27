@@ -42,16 +42,17 @@ def find_duplicates(session: Session, message: Message):
     if message.text and len(message.text) > MinLength.TEXT:
         text_hash = utilities.generate_text_hash(message.text)
         filters.append(StaffChatMessage.text_hash == text_hash)
-    elif (not message.caption or len(message.caption) <= MinLength.CAPTION) and utilities.contains_media_with_file_id(message):
-        # if no caption or caption is too chort, just check the file_unique_id
-        _, media_file_unique_id, _ = utilities.get_media_ids(message)
-        filters.append(StaffChatMessage.media_file_unique_id == media_file_unique_id)
     elif message.caption and len(message.caption) > MinLength.CAPTION and utilities.contains_media_with_file_id(message):
         _, media_file_unique_id, _ = utilities.get_media_ids(message)
         caption_text_hash = utilities.generate_text_hash(message.caption)
+
         filters.append(
             ((StaffChatMessage.media_file_unique_id == media_file_unique_id) | (StaffChatMessage.text_hash == caption_text_hash))
         )
+    elif utilities.contains_media_with_file_id(message):
+        # if no caption or caption is too chort, just check the file_unique_id
+        _, media_file_unique_id, _ = utilities.get_media_ids(message)
+        filters.append(StaffChatMessage.media_file_unique_id == media_file_unique_id)
     else:
         return []
 
