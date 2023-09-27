@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 class FilterReplyTopicsAware(MessageFilter):
     def filter(self, message):
         if message.reply_to_message and message.reply_to_message.forum_topic_created:
+            # ignore reply messages that are sent to the "topic created" service message
             return False
 
         return bool(message.reply_to_message)
