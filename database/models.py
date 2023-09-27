@@ -1429,10 +1429,10 @@ class StaffChatMessage(Base):
     Index('index_text_hash', text_hash)
     Index('index_media_file_unique_id', media_file_unique_id)
 
-    def __init__(self, message: Message, text_hash: Optional[str] = None):
-        self.update_message_metadata(message, text_hash)
+    def __init__(self, message: Message):
+        self.update_message_metadata(message)
 
-    def update_message_metadata(self, message: Message, text_hash: Optional[str] = None):
+    def update_message_metadata(self, message: Message):
         self.chat_id = message.chat.id
         self.message_id = message.message_id
 
@@ -1444,9 +1444,7 @@ class StaffChatMessage(Base):
 
         text = message.text or message.caption
         if text:
-            if not text_hash:
-                text_hash = utilities.generate_text_hash(text)
-            self.text_hash = text_hash
+            self.text_hash = utilities.generate_text_hash(text)
             self.text_hashing_version = HashingVersion.CURRENT
 
         if utilities.contains_media_with_file_id(message):
