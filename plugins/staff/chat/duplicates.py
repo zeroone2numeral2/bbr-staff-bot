@@ -11,7 +11,7 @@ from database.models import User, PrivateChatMessage, StaffChatMessage
 import decorators
 import utilities
 from constants import Group
-from database.queries import private_chat_messages, staff_chat_messages
+from database.queries import staff_chat_messages
 from ext.filters import ChatFilter, Filter
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,6 @@ logger = logging.getLogger(__name__)
 async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"saving/updating staff chat message {utilities.log(update)}")
     message = update.effective_message
-
-    if message.reply_to_message and message.reply_to_message.from_user.id == context.bot.id:
-        logger.debug("ignoring reply to bot's message")
-        return
 
     staff_chat_message = staff_chat_messages.get_or_create(session, message, commit=True)
     if message.edit_date:
@@ -38,7 +34,7 @@ async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     logger.info(f"found {len(duplicates)} duplicates")
-    duplicates_links = [d.message_link_html(f"{utilities.format_datetime(d.message_date, format_str='%d/%m')}") for d in duplicates]
+    duplicates_links = [d.message_link_html(f"{utilities.format_datetime(d.message_date, format_str='%d/%m alle %H:%M')}") for d in duplicates]
     text = f"Sembra che questo messaggio sia già stato inviato in passato: {', '.join(duplicates_links)}"
     await update.message.reply_text(text, quote=True)
 
