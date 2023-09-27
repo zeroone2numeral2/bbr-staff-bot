@@ -1410,6 +1410,7 @@ class StaffChatMessage(Base):
     message_thread_id = Column(Integer, default=None)
     message_date = Column(DateTime, default=None)
     message_edit_date = Column(DateTime, default=None)
+    deleted = Column(Boolean, default=False)
 
     text_hash = Column(String, default=None)
     text_normalization_version = Column(Integer, default=None)
