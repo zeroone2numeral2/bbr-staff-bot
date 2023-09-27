@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"saving/updating staff chat message {utilities.log(update)}")
     message = update.effective_message
+    text = message.text or message.caption
+    if text and len(text) < 60:
+        logger.info("text too short")
+        return
 
     staff_chat_message = staff_chat_messages.get_or_create(session, message, commit=True)
     if message.edit_date:
