@@ -79,7 +79,7 @@ async def set_bbr_commands(session: Session, bot: ExtBot):
             await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_member.user_id))
         except BadRequest as e:
             # maybe the suer never started the bot
-            logger_startup.warning(f"...failed: {e}")
+            logger_startup.warning(f"...failed for {chat_member.user_id}: {e}")
 
 
 async def set_flytek_commands(session: Session, bot: ExtBot):
@@ -129,7 +129,7 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
                 await bot.set_my_commands(staff_commands_private, scope=BotCommandScopeChat(chat_member.user_id))
             except BadRequest as e:
                 # maybe the suer never started the bot
-                logger_startup.warning(f"...failed: {e}")
+                logger_startup.warning(f"...failed for {chat_member.user_id}: {e}")
 
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
     if evaluation_chat:
