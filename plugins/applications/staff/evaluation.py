@@ -48,7 +48,7 @@ async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Op
                 users_chat.chat_id,
                 member_limit=1,
                 name=f"user {user.user_id}",
-                creates_join_request=config.setting.invite_link_join_request
+                creates_join_request=config.settings.invite_link_join_request
             )
             invite_link = chat_invite_link.invite_link
 
