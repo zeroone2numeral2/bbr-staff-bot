@@ -1394,7 +1394,7 @@ class DescriptionMessage(Base):
         return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
 
 
-class NormalizationVersion:
+class HashingVersion:
     CURRENT = 1
 
 
@@ -1413,7 +1413,7 @@ class StaffChatMessage(Base):
     deleted = Column(Boolean, default=False)
 
     text_hash = Column(String, default=None)
-    text_normalization_version = Column(Integer, default=None)
+    text_hashing_version = Column(Integer, default=None)
 
     media_file_id = Column(String, default=None)
     media_file_unique_id = Column(String, default=None)
@@ -1447,7 +1447,7 @@ class StaffChatMessage(Base):
             if not text_hash:
                 text_hash = utilities.generate_text_hash(text)
             self.text_hash = text_hash
-            self.text_normalization_version = NormalizationVersion.CURRENT
+            self.text_hashing_version = HashingVersion.CURRENT
 
         if utilities.contains_media_with_file_id(message):
             media_file_id, media_file_unique_id, media_group_id = utilities.get_media_ids(message)

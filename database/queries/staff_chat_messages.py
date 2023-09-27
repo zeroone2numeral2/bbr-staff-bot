@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from telegram import Message, Update
 
 import utilities
-from database.models import StaffChatMessage
+from database.models import StaffChatMessage, HashingVersion
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +28,11 @@ def get_or_create(session: Session, message: Message, create_if_missing=True, co
 
 
 def find_duplicates(session: Session, message: Message):
-    filters = list()
-    filters.append(StaffChatMessage.chat_id == message.chat.id)
-    filters.append(StaffChatMessage.message_id != message.message_id)  # we already saved this message
+    filters = [
+        StaffChatMessage.chat_id == message.chat.id,
+        StaffChatMessage.message_id != message.message_id,  # we already saved this message when the function is called
+        # StaffChatMessage.text_hashing_version == HashingVersion.CURRENT
+    ]
 
     if message.text:
         text_hash = utilities.generate_text_hash(message.text)
