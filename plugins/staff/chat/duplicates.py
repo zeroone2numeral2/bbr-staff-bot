@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_chat=True, pass_down_db_instances=True)
-async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+@decorators.pass_session(pass_down_db_instances=True)
+async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"saving/updating staff chat message {utilities.log(update)}")
     message = update.effective_message
 
