@@ -7,7 +7,7 @@ from telegram.error import BadRequest
 from telegram.ext import ContextTypes, MessageHandler, CommandHandler
 from telegram.ext import filters
 
-from database.models import User, PrivateChatMessage, StaffChatMessage
+from database.models import User, StaffChatMessage
 import decorators
 import utilities
 from constants import Group
