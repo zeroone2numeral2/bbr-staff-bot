@@ -17,8 +17,7 @@ import utilities
 from config import config
 from constants import Language, HandlersMode, BOT_SETTINGS_DEFAULTS
 from database.base import get_session, Base, engine
-from database.models import BotSetting, User, UserMessage, AdminMessage, PartiesMessage, PrivateChatMessage, \
-    LocalizedText, ApplicationRequest, DescriptionMessage, ChatMember
+from database.models import BotSetting, ChatMember
 from database.models import ChatMember as DbChatMember, Chat, Event
 from database.queries import chats, chat_members, events
 from loader import load_modules
