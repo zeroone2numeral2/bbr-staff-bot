@@ -293,7 +293,7 @@ def get_user_id_from_text(text: str) -> Optional[int]:
 def generate_text_hash(text: str) -> str:
     # https://stackoverflow.com/a/3739928
     text_no_whitespaces = re.sub(r'(\s|\u180B|\u200B|\u200C|\u200D|\u2060|\uFEFF)+', '', text)
-    md5_string = hashlib.md5(text_no_whitespaces).hexdigest()
+    md5_string = hashlib.md5(text_no_whitespaces.encode('utf-8')).hexdigest()
 
     return md5_string
 

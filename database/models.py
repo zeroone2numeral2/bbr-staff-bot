@@ -1404,14 +1404,14 @@ class StaffChatMessage(Base):
 
     chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     message_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'), default=None)
+
+    user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
     is_topic_message = Column(Boolean, default=False)
     message_thread_id = Column(Integer, default=None)
     message_date = Column(DateTime, default=None)
     message_edit_date = Column(DateTime, default=None)
 
-    text_sha1 = Column(String, default=None)
-    text_md5 = Column(String, default=None)
+    text_hash = Column(String, default=None)
     text_normalization_version = Column(Integer, default=None)
 
     media_file_id = Column(String, default=None)
@@ -1425,16 +1425,16 @@ class StaffChatMessage(Base):
 
     chat: Chat = relationship("Chat")
 
-    Index('index_text_md5', text_md5)
-    Index('index_text_sha1', text_sha1)
+    Index('index_text_hash', text_hash)
     Index('index_media_file_unique_id', media_file_unique_id)
 
-    def __init__(self, message: Message):
-        self.update_message_metadata(message)
+    def __init__(self, message: Message, text_hash: Optional[str] = None):
+        self.update_message_metadata(message, text_hash)
 
-    def update_message_metadata(self, message: Message):
+    def update_message_metadata(self, message: Message, text_hash: Optional[str] = None):
         self.chat_id = message.chat.id
-        self.message_id = self.message_id
+        self.message_id = message.message_id
+
         self.message_thread_id = message.message_thread_id
         self.is_topic_message = message.is_topic_message
         self.message_date = message.date
@@ -1443,8 +1443,9 @@ class StaffChatMessage(Base):
 
         text = message.text or message.caption
         if text:
-            text_md5, text_normalization_version = utilities.generate_text_hash(text)
-            self.text_md5 = text_md5
+            if not text_hash:
+                text_hash = utilities.generate_text_hash(text)
+            self.text_hash = text_hash
             self.text_normalization_version = NormalizationVersion.CURRENT
 
         if utilities.contains_media_with_file_id(message):
@@ -1462,3 +1463,9 @@ class StaffChatMessage(Base):
             base_link = f"{base_link}?thread={self.message_thread_id}"
 
         return base_link
+
+    def message_link_html(self, text: str):
+        """will html-escape the provided text"""
+
+        message_link = self.message_link()
+        return f"<a href=\"{message_link}\">{utilities.escape_html(text)}</a>"
