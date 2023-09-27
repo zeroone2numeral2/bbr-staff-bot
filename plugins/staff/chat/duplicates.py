@@ -7,7 +7,7 @@ from telegram.error import BadRequest
 from telegram.ext import ContextTypes, MessageHandler, CommandHandler
 from telegram.ext import filters
 
-from database.models import User, StaffChatMessage
+from database.models import StaffChatMessage
 import decorators
 import utilities
 from constants import Group
@@ -23,11 +23,12 @@ async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TY
     logger.info(f"saving/updating staff chat message {utilities.log(update)}")
     message = update.effective_message
 
-    staff_chat_message = staff_chat_messages.get_or_create(session, message, commit=True)
+    staff_chat_message: StaffChatMessage = staff_chat_messages.get_or_create(session, message, commit=True)
     if message.edit_date:
         logger.debug("edited message: updating message metadata")
         staff_chat_message.update_message_metadata(message)
 
+    # will also check the text length (and return an empty list if too short and no media)
     duplicates = staff_chat_messages.find_duplicates(session, message)
 
     if not duplicates:
