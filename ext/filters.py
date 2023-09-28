@@ -25,11 +25,9 @@ class FilterReplyToBot(MessageFilter):
 
 class FilterReplyTopicsAware(MessageFilter):
     def filter(self, message):
-        if message.reply_to_message and message.reply_to_message.forum_topic_created:
-            # ignore reply messages that are sent to the "topic created" service message
-            return False
-
-        return bool(message.reply_to_message)
+        # messages sent in a topic, when they are *not* a reply to a message, are sent as reply
+        # to the "forum_topic_created" service message, so we need to ignore this case
+        return message.reply_to_message and not message.reply_to_message.forum_topic_created
 
 
 class Filter:
