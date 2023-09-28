@@ -469,13 +469,6 @@ class EventFilter:
     FUTURE_AND_UNKNOWN_THIS_MONTH = "futm"
 
 
-class OrderBy:
-    DATE = "obd"
-    TITLE = "obet"
-    TYPE = "obt"
-    REGION = "obr"
-
-
 FILTER_DESCRIPTION = {
     # region
     EventFilter.IT: f"{Flag.ITALY} in italia",
@@ -596,9 +589,51 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
     return query_filters
 
 
+class OrderBy:
+    DATE = "od"
+    TITLE = "oet"
+    TYPE = "ot"
+    REGION = "or"
+
+
+ORDER_BY_DESCRIPTION = {
+    OrderBy.DATE: "per data inizio",
+    OrderBy.TITLE: "per nome festa",
+    OrderBy.TYPE: "per tipo festa",
+    OrderBy.REGION: "per stato/regione",
+}
+
+
+def extract_order_by(args: List[str]) -> List:
+    # for now, this is only used for /events so the args order is preserved
+    # and we can safely assume it from the args list
+
+    order_by = []
+    for arg in args:
+        arg = arg.lower()
+
+        if arg == OrderBy.DATE:
+            order_by.extend([
+                Event.start_year,
+                Event.start_month,
+                Event.start_day
+            ])
+        elif arg == OrderBy.TYPE:
+            order_by.append(Event.event_type)
+        elif arg == OrderBy.TITLE:
+            order_by.append(Event.event_title)
+        elif arg == OrderBy.REGION:
+            order_by.append(Event.region)
+
+    return order_by
+
+
 def get_all_events_strings_from_db(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
     query_filters = extract_query_filters(args, today=date_override)
-    events_list: List[Event] = events.get_events(session, filters=query_filters)
+    order_by = extract_order_by(args)  # empty list if no oder by arg is provided
+    print(args, order_by)
+
+    events_list: List[Event] = events.get_events(session, filters=query_filters, order_by=order_by)
 
     all_events_strings = []
     total_entities_count = 0  # total number of telegram entities for the list of events

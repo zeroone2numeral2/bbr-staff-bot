@@ -20,7 +20,7 @@ from plugins.events.common import (
     extract_query_filters,
     get_all_events_strings_from_db,
     send_events_messages,
-    format_event_string, FILTER_DESCRIPTION
+    format_event_string, FILTER_DESCRIPTION, ORDER_BY_DESCRIPTION
 )
 from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages
@@ -259,12 +259,20 @@ async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TY
     for filter_key, description in FILTER_DESCRIPTION.items():
         text += f"\n<code>{filter_key}</code> ➜ {description}"
 
-    text += f"\n\nUsa <code>/events [elenco filtri separati da uno spazio]</code> per filtrare le feste"
+    text += "\n\n<b>Filtri ordinamento disponibili:</b>"
+    for filter_key, description in ORDER_BY_DESCRIPTION.items():
+        text += f"\n<code>{filter_key}</code> ➜ {description}"
+
+    text += (f"\n\nUsa <code>/feste [elenco filtri separati da uno spazio]</code> per filtrare le feste\n"
+             f"E' possibile combinare più filtri, i filtri per l'ordinamento verranno applicati nell'ordine in cui "
+             f"sono elencati\n\n"
+             f"Ad esempio, \"<code>/feste ni or od</code>\" restituirà tutte le feste all'estero (\"ni\"), "
+             f"ordinate prima per stato/regione (\"or\") e poi per data (\"od\")")
     await update.message.reply_html(text)
 
 
 HANDLERS = (
-    (CommandHandler(["events"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["events", "feste", "e"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de", "deleventmsg", "dem"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["resevent", "re"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
