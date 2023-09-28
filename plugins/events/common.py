@@ -534,12 +534,6 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
                 & (Event.end_date < next_monday)
             )
         ])
-    elif EventFilter.ALL in args:
-        # all events >= this month
-        query_filters.extend([
-            Event.start_year >= today.year,
-            Event.start_month >= today.month,
-        ])
     elif EventFilter.SOON in args:
         query_filters.extend([Event.soon == true()])
     elif EventFilter.MONTH_FUTURE_AND_NEXT_MONTH in args:
@@ -576,7 +570,7 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
                 & (Event.start_date <= today)
             )
         ])
-    else:
+    elif EventFilter.MONTH_AND_NEXT_MONTH in args:
         # no other time filter: this month + next month
         this_month = today.month
         next_month = today.month + 1 if today.month != 12 else 1
@@ -584,6 +578,12 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
         query_filters.extend([
             Event.start_year >= today.year,
             Event.start_month.in_([this_month, next_month]),
+        ])
+    else:  # default: EventFilter.ALL
+        # all events >= this month
+        query_filters.extend([
+            Event.start_year >= today.year,
+            Event.start_month >= today.month,
         ])
 
     # EVENT REGION
