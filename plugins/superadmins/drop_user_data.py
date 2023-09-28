@@ -12,8 +12,6 @@ from ext.filters import Filter
 
 logger = logging.getLogger(__name__)
 
-PICKLE_FILE_PATH = r"temp_data_persistence.pickle"
-
 
 @decorators.catch_exception()
 async def on_drop_persistence_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
