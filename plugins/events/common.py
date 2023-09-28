@@ -469,6 +469,13 @@ class EventFilter:
     FUTURE_AND_UNKNOWN_THIS_MONTH = "futm"
 
 
+class OrderBy:
+    DATE = "obd"
+    TITLE = "obet"
+    TYPE = "obt"
+    REGION = "obr"
+
+
 def extract_query_filters(args: List[str], today: Optional[datetime.date] = None) -> List:
     query_filters = []
     args = [arg.lower() for arg in args]
