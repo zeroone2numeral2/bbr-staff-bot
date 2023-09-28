@@ -6,6 +6,7 @@ events.message # preprocess
 superadmins.chats
 superadmins.save_chat_members
 superadmins.senddb
+superadmins.drop_user_data
 staff.chat.edits # preprocess
 staff.private.placeholders
 staff.private.settings_manual
