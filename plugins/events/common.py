@@ -451,21 +451,22 @@ async def send_events_messages(message: Message, all_events_strings: List[str], 
 
 class EventFilter:
     # region
-    IT = "it"
-    NOT_IT = "notit"
+    IT = "i"
+    NOT_IT = "ni"
 
     # type
-    LEGAL = "legal"
-    FREE = "free"
-    NOT_FREE = "notfree"
+    LEGAL = "l"
+    FREE = "f"
+    NOT_FREE = "nf"
 
     # time
-    WEEK = "week"
-    WEEK_2 = "week2"
-    MONTH_AND_NEXT_MONTH = "monthnext"
-    MONTH_FUTURE_AND_NEXT_MONTH = "monthfuturenext"
-    ALL = "all"
-    SOON = "soon"
+    WEEK = "w"
+    WEEK_2 = "w2"
+    MONTH_AND_NEXT_MONTH = "mn"
+    MONTH_FUTURE_AND_NEXT_MONTH = "mfn"
+    ALL = "a"
+    SOON = "s"
+    FUTURE_AND_UNKNOWN_THIS_MONTH = "futm"
 
 
 def extract_query_filters(args: List[str], today: Optional[datetime.date] = None) -> List:
