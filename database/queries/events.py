@@ -45,6 +45,7 @@ def get_events(
         Event.start_month,
         Event.start_day,
         Event.region,
+        Event.event_title,
         Event.message_id
     ]
 
