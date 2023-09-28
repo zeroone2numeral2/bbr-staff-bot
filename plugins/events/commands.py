@@ -63,7 +63,7 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
     events_list: List[Event] = events.get_events(
         session,
         filters=[Event.soon == false()],
-        order_by_override=[Event.message_id]
+        order_by=[Event.message_id]
     )
     all_events_strings = []
     total_entities_count = 0
