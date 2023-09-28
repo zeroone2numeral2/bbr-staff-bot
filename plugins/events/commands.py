@@ -264,6 +264,7 @@ async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 HANDLERS = (
+    (CommandHandler(["events"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de", "deleventmsg", "dem"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["resevent", "re"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
@@ -272,7 +273,6 @@ HANDLERS = (
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     # superadmins
-    (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )
