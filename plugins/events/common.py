@@ -14,7 +14,7 @@ import utilities
 from constants import Regex, RegionName, REGIONS_DATA, TempDataKey
 from database.models import Event, EVENT_TYPE, EventType
 from database.queries import events
-from emojis import Emoji
+from emojis import Emoji, Flag
 
 logger = logging.getLogger(__name__)
 
@@ -464,8 +464,8 @@ class EventFilter:
     WEEK_2 = "w2"
     MONTH_AND_NEXT_MONTH = "mn"
     MONTH_FUTURE_AND_NEXT_MONTH = "mfn"
-    ALL = "a"
     SOON = "s"
+    ALL = "a"
     FUTURE_AND_UNKNOWN_THIS_MONTH = "futm"
 
 
@@ -474,6 +474,26 @@ class OrderBy:
     TITLE = "obet"
     TYPE = "obt"
     REGION = "obr"
+
+
+FILTER_DESCRIPTION = {
+    # region
+    EventFilter.IT: f"{Flag.ITALY} in italia",
+    EventFilter.NOT_IT: f"{Emoji.EARTH} all'estero",
+
+    # type
+    EventFilter.LEGAL: f"{Emoji.TICKET} eventi legali",
+    EventFilter.FREE: f"{Emoji.PIRATE} freeparty",
+    EventFilter.NOT_FREE: f"{Flag.BLACK} eventi legali, cs, squat, street parade, altro",
+
+    # time
+    EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
+    EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
+    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutte) o il prossimo",
+    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"{Emoji.FORWARD} questo mese (in corso/futuri/senza data), o il prossimo",
+    EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)",
+    EventFilter.ALL: f"{Emoji.CLOCK} questo mese + futuri"
+}
 
 
 def extract_query_filters(args: List[str], today: Optional[datetime.date] = None) -> List:

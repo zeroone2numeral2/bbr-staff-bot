@@ -14,6 +14,7 @@ from emojis import Emoji, Flag
 from ext.filters import Filter
 from plugins.events.common import (
     EventFilter,
+    FILTER_DESCRIPTION,
     get_all_events_strings_from_db,
     send_events_messages
 )
@@ -25,19 +26,6 @@ from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, Te
 from config import config
 
 logger = logging.getLogger(__name__)
-
-
-FILTER_DESCRIPTION = {
-    EventFilter.IT: f"{Flag.ITALY} in italia",
-    EventFilter.NOT_IT: f"{Emoji.EARTH} all'estero",
-    EventFilter.FREE: f"{Emoji.PIRATE} freeparty",
-    EventFilter.NOT_FREE: f"{Flag.BLACK} eventi legali, cs, squat, street parade, altro",
-    EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
-    EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
-    EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutte) o il prossimo",
-    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"{Emoji.FORWARD} questo mese (in corso/futuri/senza data), o il prossimo",
-    EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)"
-}
 
 
 DEFAULT_FILTERS = [EventFilter.IT, EventFilter.NOT_FREE, EventFilter.WEEK]

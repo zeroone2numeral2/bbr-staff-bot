@@ -20,7 +20,7 @@ from plugins.events.common import (
     extract_query_filters,
     get_all_events_strings_from_db,
     send_events_messages,
-    format_event_string
+    format_event_string, FILTER_DESCRIPTION
 )
 from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages
@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.staff_member()
 async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/events {utilities.log(update)}")
 
@@ -248,12 +249,27 @@ async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     session.commit()
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+@decorators.staff_member()
+async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"/getfilters {utilities.log(update)}")
+
+    text = "<b>Filtri disponibili:</b>"
+    for filter_key, description in FILTER_DESCRIPTION.items():
+        text += f"\n<code>{filter_key}</code> ➜ {description}"
+
+    text += f"\n\nUsa <code>/events [elenco filtri separati da uno spazio]</code> per filtrare le feste"
+    await update.message.reply_html(text)
+
+
 HANDLERS = (
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de", "deleventmsg", "dem"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["resevent", "re"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["isparty", "notparty"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     # superadmins
     (CommandHandler(["events"], on_events_command, filters=Filter.SUPERADMIN), Group.NORMAL),
