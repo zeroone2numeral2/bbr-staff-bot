@@ -35,7 +35,7 @@ def get_or_create(session: Session, message: Message, create_if_missing=True, co
 def find_duplicates(session: Session, message: Message):
     filters = [
         StaffChatMessage.chat_id == message.chat.id,
-        StaffChatMessage.message_id != message.message_id,  # we already saved this message when the function is called
+        StaffChatMessage.message_id != message.message_id,  # we already saved 'message' when the function is called
         # StaffChatMessage.text_hashing_version == HashingVersion.CURRENT
     ]
 
