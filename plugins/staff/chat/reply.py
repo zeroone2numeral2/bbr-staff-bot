@@ -85,8 +85,8 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
-async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
-    logger.info(f"reply to a message {utilities.log(update)}")
+async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"reply to a bot message {utilities.log(update)}")
 
     text = update.message.text or update.message.caption
     if text and text.startswith("."):
@@ -167,5 +167,5 @@ async def on_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 HANDLERS = (
     (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & Filter.REPLY_TOPICS_AWARE & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
-    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & Filter.REPLY_TO_BOT, on_message_reply), Group.NORMAL),
+    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & Filter.REPLY_TO_BOT, on_bot_message_reply), Group.NORMAL),
 )
