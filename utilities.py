@@ -95,7 +95,7 @@ def elapsed_str(from_dt: datetime.datetime) -> str:
 
     elapsed_seconds = int(total_seconds - (elapsed_minutes * SecondsQt.MINUTE))
 
-    print(f"{elapsed_days} d, {elapsed_hours} h, {elapsed_minutes} m, {elapsed_seconds} s")
+    # print(f"{elapsed_days} d, {elapsed_hours} h, {elapsed_minutes} m, {elapsed_seconds} s")
 
     # "n hours ago" if hours > 0, else "n minutes ago"
     string = ""
