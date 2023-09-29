@@ -630,8 +630,7 @@ def extract_order_by(args: List[str]) -> List:
 
 def get_all_events_strings_from_db(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
     query_filters = extract_query_filters(args, today=date_override)
-    order_by = extract_order_by(args)  # empty list if no oder by arg is provided
-    print(args, order_by)
+    order_by = extract_order_by(args)  # returns an empty list if no order by arg is provided
 
     events_list: List[Event] = events.get_events(session, filters=query_filters, order_by=order_by)
 
