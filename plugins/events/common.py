@@ -626,13 +626,13 @@ def extract_order_by(args: List[str]) -> List:
             order_by.append(Event.region)
 
     if not order_by:
-        # We might want to adjust the records' sorting based on some events filter
-        # that is *not* an order by filter
-        # For example, for EventFilter.WEEK we might want to order the events by
-        # region and then by date
+        # We might want to adjust the records' sorting for some EventFilter
+        # that is *not* an OrderBy filter
+        # For example, for EventFilter.WEEK we might want to order the events first by region and then by date
         # We do this only if no order by filter is provided (that is, 'order_by' is empty)
+
         if EventFilter.WEEK in args:
-            # week filter: we order by region first
+            # week filter: we sort by region first
             order_by = [
                 Event.region,
                 Event.start_year,
