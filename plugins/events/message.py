@@ -57,9 +57,9 @@ async def download_event_media(message: Message):
     await new_file.download_to_drive(file_path)
 
 
-async def backup_event_media(update: Update, event: Event):
+async def backup_event_media(update: Update, event: Optional[Event] = None):
     # edited_messages: do not download the media if it was not modified
-    if update.edited_message:
+    if update.edited_message and event:
         m = update.edited_message
         new_file_unique_id = m.photo[-1].file_unique_id if m.photo else m.effective_attachment.file_unique_id
         if new_file_unique_id == event.media_file_unique_id:
@@ -126,6 +126,17 @@ async def notify_event_validity(
                 f"dopo che il messaggio è stato modificato :(")
         sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
         event.save_validity_notification_message(sent_message)
+
+
+@decorators.catch_exception(silent=True)
+@decorators.pass_session(pass_chat=True)
+async def on_album_message_no_text(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"events chat message (album message but no text) {utilities.log(update)}")
+
+    # we need to catch updates that do not have a text/caption, but that are part of an album
+
+    if config.settings.backup_events:
+        await backup_event_media(update)
 
 
 @decorators.catch_exception(silent=True)
@@ -357,7 +368,8 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
     
 
 HANDLERS = (
-    (MessageHandler(ChatFilter.EVENTS & Filter.MESSAGE_OR_EDIT & Filter.WITH_TEXT, on_event_message), Group.PREPROCESS),
+    (MessageHandler(ChatFilter.EVENTS & Filter.WITH_TEXT & Filter.MESSAGE_OR_EDIT, on_event_message), Group.PREPROCESS),
+    (MessageHandler(ChatFilter.EVENTS & ~Filter.WITH_TEXT & Filter.ALBUM_MESSAGE & Filter.FLY_MEDIA_DOWNLOAD, on_album_message_no_text), Group.PREPROCESS),
     (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
     (MessageHandler(ChatFilter.EVENTS & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
     (CallbackQueryHandler(on_disable_notifications_button, rf"mutemsg:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),

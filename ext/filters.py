@@ -30,6 +30,12 @@ class FilterReplyTopicsAware(MessageFilter):
         return message.reply_to_message and not message.reply_to_message.forum_topic_created
 
 
+class FilterAlbumMessage(MessageFilter):
+    def filter(self, message):
+        # message is part of an album
+        return bool(message.media_group_id)
+
+
 class Filter:
     SUPERADMIN = filters.User(config.telegram.admins)
     SUPERADMIN_AND_GROUP = filters.ChatType.GROUPS & filters.User(config.telegram.admins)
@@ -39,6 +45,8 @@ class Filter:
     WITH_TEXT = filters.TEXT | filters.CAPTION
     REPLY_TO_BOT = FilterReplyToBot()
     REPLY_TOPICS_AWARE = FilterReplyTopicsAware()
+    ALBUM_MESSAGE = FilterAlbumMessage()
+    FLY_MEDIA_DOWNLOAD = filters.PHOTO | filters.VIDEO | filters.ANIMATION  # media we can consider as fly, for backups
 
 
 class ChatFilter:
