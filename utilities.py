@@ -82,6 +82,7 @@ class SecondsQt:
 
 
 SECONDS_REDUCTION = {
+    "anno": {"seconds": 365 * 24 * 60 * 60, "singular": "un ", "plural": "i", "short": "w", "skip": True},
     "settimana": {"seconds": 7 * 24 * 60 * 60, "singular": "una ", "plural": "e", "short": "w", "skip": True},
     "giorno": {"seconds": 24 * 60 * 60, "singular": "un ", "plural": "i", "short": "d", "skip": False},
     "ora": {"seconds": 60 * 60, "singular": "un'", "plural": "e", "short": "h", "skip": False},
