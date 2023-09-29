@@ -5,6 +5,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update, Message, Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.constants import FileSizeLimit
 from telegram.ext import ContextTypes, filters, MessageHandler, CallbackQueryHandler
 
 import decorators
@@ -28,6 +29,10 @@ logger = logging.getLogger(__name__)
 async def download_event_media(message: Message):
     if not message.photo and not message.video and not message.animation:
         logger.debug(f"no media to backup")
+        return
+
+    if not message.photo and message.effective_attachment.file_size > FileSizeLimit.FILESIZE_DOWNLOAD:
+        logger.info(f"file too large: {message.effective_attachment.file_size} bytes")
         return
 
     if not message.edit_date:
