@@ -75,6 +75,47 @@ def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None) -> datet
     return datetime.datetime.now(tz=tz)
 
 
+class SecondsQt:
+    DAY = 24 * 60 * 60
+    HOUR = 60 * 60
+    MINUTE = 60
+
+
+def elapsed_str(from_dt: datetime.datetime) -> str:
+    from_dt_utc = naive_to_aware(from_dt, force_utc=True)
+    total_seconds = (now() - from_dt_utc).total_seconds()
+
+    elapsed_days = math.floor(total_seconds / SecondsQt.DAY)
+    total_seconds -= elapsed_days * SecondsQt.DAY
+
+    elapsed_hours = math.floor(total_seconds / SecondsQt.HOUR)
+    total_seconds -= elapsed_hours * SecondsQt.HOUR
+
+    elapsed_minutes = math.floor(total_seconds / SecondsQt.MINUTE)
+
+    elapsed_seconds = int(total_seconds - (elapsed_minutes * SecondsQt.MINUTE))
+
+    print(f"{elapsed_days} d, {elapsed_hours} h, {elapsed_minutes} m, {elapsed_seconds} s")
+
+    # "n hours ago" if hours > 0, else "n minutes ago"
+    string = ""
+    if elapsed_days >= 1:
+        string += f"{math.floor(elapsed_days)} giorn{'i' if elapsed_days > 1 else 'o'}"
+
+    if elapsed_hours >= 1:
+        if string:
+            string += ", "
+        string += f"{math.floor(elapsed_hours)} or{'e' if elapsed_hours > 1 else 'a'}"
+
+    if elapsed_days == 0 and elapsed_hours == 0 and elapsed_minutes:
+        # include minutes only if no hour and day
+        if string:
+            string += ", "
+        string += f"{math.floor(elapsed_minutes)} minut{'1' if elapsed_minutes > 1 else 'o'}"
+
+    return string
+
+
 def now_str(format_str: Optional[str] = "%d/%m/%Y %H:%M:%S", tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None):
     return now(tz).strftime(format_str)
 
@@ -603,6 +644,6 @@ if __name__ == "__main__":
     # print(convert_string_to_value("29/02/32 10:59"))
     # test_keyboard = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
     # list_to_keyboard(test_keyboard, max_rows=4)
-    today_date = datetime.date(2023, 4, 30)
-    print(previous_weekday(today_date), next_weekday(today_date))
+    past_dt = datetime.datetime(2023, 9, 27, 11 - 2, 30)
+    print(elapsed_str(past_dt))
 
