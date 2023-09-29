@@ -625,12 +625,29 @@ def extract_order_by(args: List[str]) -> List:
         elif arg == OrderBy.REGION:
             order_by.append(Event.region)
 
+    if not order_by:
+        # We might want to adjust the records' sorting based on some events filter
+        # that is *not* an order by filter
+        # For example, for EventFilter.WEEK we might want to order the events by
+        # region and then by date
+        # We do this only if no order by filter is provided (that is, 'order_by' is empty)
+        if EventFilter.WEEK in args:
+            # week filter: we order by region first
+            order_by = [
+                Event.region,
+                Event.start_year,
+                Event.start_month,
+                Event.start_day,
+                Event.event_title,
+                Event.message_id
+            ]
+
     return order_by
 
 
 def get_all_events_strings_from_db(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
     query_filters = extract_query_filters(args, today=date_override)
-    order_by = extract_order_by(args)  # returns an empty list if no order by arg is provided
+    order_by = extract_order_by(args)  # returns an empty list if no elegible arg is provided
 
     events_list: List[Event] = events.get_events(session, filters=query_filters, order_by=order_by)
 
