@@ -231,7 +231,7 @@ async def on_events_chat_pinned_message(update: Update, context: ContextTypes.DE
 
     parties_message: Optional[PartiesMessage] = parties_messages.get_parties_message(session, chat_id, message_id)
     if not parties_message:
-        logger.warning(f"no PartiesMessage was found for message {message_id} in chat {chat_id}")
+        logger.warning(f"no PartiesMessage was found for pinned message {message_id} in chat {chat_id}")
         return
 
     logger.info("deleting \"pinned message\" service message...")
