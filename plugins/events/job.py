@@ -89,11 +89,12 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         logger.debug("parties list disabled from settings")
         return
 
-    # this flag is set every time an event that edited the parties list is received
-    # we need to get it before the for loop because it's valid for every filter
+    # this flag is set every time something that edits the parties list happens (new/edited event, /delevent...)
+    # we need to get it before the for loop because it should be valid for every filter
     update_existing_message = context.bot_data.pop(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
 
     # we check whether the flag is set once for every filter
+    # it is set manually
     post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
 
     now = utilities.now(tz=True)
@@ -117,9 +118,13 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
         today_is_post_weekday = now.weekday() == config.settings.parties_message_weekday  # whether today is the weekday we should post the message
         new_week = current_isoweek != last_parties_message_isoweek
-        logger.info(f"current isoweek: {current_isoweek}, last post isoweek: {last_parties_message_isoweek}, weekday: {now.weekday()}, hour: {now.hour}")
+        logger.info(f"current isoweek: {current_isoweek}, "
+                    f"last post isoweek: {last_parties_message_isoweek}, "
+                    f"weekday: {now.weekday()}, "
+                    f"hour: {now.hour}")
+
         if today_is_post_weekday and new_week and now.hour >= config.settings.parties_message_hour:
-            # post a new message only if it's a different weekn than the last message's isoweek
+            # post a new message only if it's a different week than the last message's isoweek
             # even if no parties message was posted yet, wait for the correct day and hour
             logger.info(f"it's time to post")
             post_new_message = True
@@ -128,6 +133,8 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             post_new_message = True
 
         if not post_new_message and not update_existing_message:
+            # if it's not time to post a new message and nothing happened that edited
+            # the parties list ('update_existing_message'), simply skip this filter
             logger.info("no need to post new message or update the existing one: continuing to next filter...")
             continue
 
