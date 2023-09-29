@@ -81,7 +81,41 @@ class SecondsQt:
     MINUTE = 60
 
 
+SECONDS_REDUCTION = {
+    "settimana": {"seconds": 7 * 24 * 60 * 60, "singular": "una ", "plural": "e", "short": "w", "skip": True},
+    "giorno": {"seconds": 24 * 60 * 60, "singular": "un ", "plural": "i", "short": "d", "skip": False},
+    "ora": {"seconds": 60 * 60, "singular": "un'", "plural": "e", "short": "h", "skip": False},
+    "minuto": {"seconds": 60, "singular": "un ", "plural": "i", "short": "m", "skip": True},
+    "secondo": {"seconds": 1, "singular": "un ", "plural": "i", "short": "s", "skip": True},
+}
+
+
 def elapsed_str(from_dt: datetime.datetime) -> str:
+    from_dt_utc = naive_to_aware(from_dt, force_utc=True)
+    total_seconds = (now() - from_dt_utc).total_seconds()
+
+    string = ""
+    for period, period_data in SECONDS_REDUCTION.items():
+        if period_data["skip"]:
+            continue
+
+        elapsed_time = math.floor(total_seconds / period_data["seconds"])
+        total_seconds -= elapsed_time * period_data["seconds"]
+
+        if elapsed_time == 0:
+            continue
+
+        if string:
+            string += ", "
+
+        period_string = period if elapsed_time < 2 else period[:-1] + period_data["plural"]
+        elapsed_time_str = f"{elapsed_time} " if elapsed_time > 1 else period_data["singular"]
+        string += f"{elapsed_time_str}{period_string}"
+
+    return string
+
+
+def elapsed_str_old(from_dt: datetime.datetime) -> str:
     from_dt_utc = naive_to_aware(from_dt, force_utc=True)
     total_seconds = (now() - from_dt_utc).total_seconds()
 
@@ -644,6 +678,7 @@ if __name__ == "__main__":
     # print(convert_string_to_value("29/02/32 10:59"))
     # test_keyboard = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
     # list_to_keyboard(test_keyboard, max_rows=4)
-    past_dt = datetime.datetime(2023, 9, 27, 11 - 2, 30)
+    past_dt = datetime.datetime(2023, 9, 28, 11 - 2, 30)
     print(elapsed_str(past_dt))
+    print(elapsed_str_new(past_dt))
 
