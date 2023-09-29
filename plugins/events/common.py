@@ -632,6 +632,8 @@ def extract_order_by(args: List[str]) -> List:
         # We do this only if no order by filter is provided (that is, 'order_by' is empty)
 
         if EventFilter.WEEK in args:
+            logger.info(f"overriding order_by for event filter <{EventFilter.WEEK}>")
+
             # week filter: we sort by region first
             order_by = [
                 Event.region,
