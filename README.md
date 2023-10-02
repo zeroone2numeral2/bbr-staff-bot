@@ -1,23 +1,23 @@
-### Installazione
+### Running the bot
 
-È necessario avere Python 3.6+ installato sulla propria macchina.  
+You need Python 3.6+ installed on your machine. 
 
-Per eseguire il bot:
+To run the bot:
 
 ```bash
-# 1. installare le librerie utilizzate dal bot
+# 1. install the required packages from pip
 pip install -r requirements.txt
 
-# 2. creare una copia del file di configurazione di esempio e rinominarla in 'config.toml'
+# 2. create a copy of the config file and rename it to 'config.toml'
 cp config.example.toml config.toml
 
-# 3. modificare i valori delle variabili in 'config.toml' così come descritto nei commenti del file
+# 3. open 'config.toml' and change the config values as described by the comments
 
-# 4. avviare il processo
+# 4. run the script
 python main.py
 ```
 
-Dopo ogni pull/sync, è necessario aggiornare la struttra del database all'ultima versione disponibile con:
+After every git pull/merge, it is highly suggested to upgrdae the database structure:
 
 ```bash
 alembic upgrade head
