@@ -423,13 +423,14 @@ async def delete_messages_safe(messages: Union[Message, List[Message]]):
             pass
 
 
-async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[List[int], int]) -> Optional[bool]:
+async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[List[int], int]) -> Optional[Tuple[bool, str]]:
     """returns the request result if only one message_id was passed, otherwise None"""
 
     if not isinstance(message_ids, list):
         message_ids = [message_ids]
 
     success = None
+    succes_description = "success"
     for message_id in message_ids:
         try:
             # delete_message will return true even when the message has already been deleted from the chat
@@ -439,9 +440,10 @@ async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[
             logger.debug(f"error while deleting message {message_id} in chat {chat_id}: {e}")
             # if "message can't be deleted" in e.message.lower():
             success = False
+            succes_description = e.message.lower()
 
     if len(message_ids) == 1:
-        return success
+        return success, succes_description
 
 
 async def edit_text_safe(update: Update, *args, **kwargs):

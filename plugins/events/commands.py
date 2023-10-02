@@ -165,8 +165,8 @@ async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_
     drop_events_cache(context)
 
     if command in ("deleventmsg", "dem"):
-        deletion_result = await utilities.delete_messages_by_id_safe(context.bot, event.chat_id, event.message_id)
-        await update.message.reply_html(f"{event.message_link_html('message')} deleted: {str(deletion_result).lower()}\n"
+        result, result_description = await utilities.delete_messages_by_id_safe(context.bot, event.chat_id, event.message_id)
+        await update.message.reply_html(f"{event.message_link_html('message')} deleted: {str(result).lower()} ({result_description})\n"
                                         f"Can delete messages in {event.chat.title}: {str(event.chat.can_delete_messages).lower()})")
 
 
