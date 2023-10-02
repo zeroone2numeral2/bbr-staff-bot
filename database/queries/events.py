@@ -77,6 +77,7 @@ def get_week_events(session: Session, now: datetime.datetime, filters: List) -> 
         Event.start_year,
         Event.start_month,
         Event.start_day,
+        Event.event_title,
         Event.message_id
     )
 
