@@ -159,6 +159,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     # Also, for an event to be valid, the dates must *not* come from the hashtag
     is_edited_message = bool(update.effective_message.edit_date)
     was_valid_before_parsing = event.is_valid_from_parsing() or not is_edited_message
+    had_hashtags = bool(event.get_hashtags())
 
     add_event_message_metadata(update.effective_message, event)
 
@@ -180,6 +181,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return
 
     is_valid_after_parsing = event.is_valid_from_parsing()
+    has_hashtags = bool(event.get_hashtags())
 
     logger.info("setting flag to signal that the parties message list should be updated...")
     context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
