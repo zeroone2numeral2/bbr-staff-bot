@@ -347,10 +347,6 @@ def drop_events_cache(context: CallbackContext):
 
 
 def format_event_string(event: Event, message_date_instead_of_event_date=False, discussion_group_message_link=True) -> Tuple[str, int]:
-    # telegram entities present in this text, useful to calculate how many
-    # of these strings to include in a single message
-    entities_count = 2
-
     region_icon = ""
     if event.region and event.region in REGIONS_DATA:
         region_icon = REGIONS_DATA[event.region]["emoji"]
@@ -373,11 +369,10 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
     if discussion_group_message_link and event.discussion_group_message_id:
         # add a link to the post in the discussion group
         title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
-        entities_count += 1
 
     text = f"{event.icon()}{region_icon} {title_with_link} • {date}"
 
-    return text, entities_count
+    return text, utilities.count_html_entities(text)
 
 
 def time_to_split(
