@@ -12,7 +12,7 @@
             "formatter": "standard",
             "level": "DEBUG",
             "encoding": "utf8",
-            "maxBytes": 1048576,
+            "maxBytes": 3145728,
             "filename": "logs/bot.log",
             "backupCount": 20
         },
@@ -21,16 +21,16 @@
             "formatter": "standard",
             "level": "DEBUG",
             "encoding": "utf8",
-            "maxBytes": 1048576,
+            "maxBytes": 3145728,
             "filename": "logs/startup.log",
-            "backupCount": 20
+            "backupCount": 5
         },
         "file_jobs": {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "standard",
             "level": "DEBUG",
             "encoding": "utf8",
-            "maxBytes": 1048576,
+            "maxBytes": 3145728,
             "filename": "logs/jobs.log",
             "backupCount": 20
         }
