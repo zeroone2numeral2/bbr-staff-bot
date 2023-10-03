@@ -681,7 +681,8 @@ if __name__ == "__main__":
     # print(convert_string_to_value("29/02/32 10:59"))
     # test_keyboard = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
     # list_to_keyboard(test_keyboard, max_rows=4)
-    past_dt = datetime.datetime(2023, 9, 28, 11 - 2, 30)
-    print(elapsed_str(past_dt))
-    print(elapsed_str_new(past_dt))
-
+    # past_dt = datetime.datetime(2023, 9, 28, 11 - 2, 30)
+    # print(elapsed_str(past_dt))
+    # print(elapsed_str_old(past_dt))
+    # print(datetime.datetime(2023, 1, 1).isocalendar()[1])
+    pass
