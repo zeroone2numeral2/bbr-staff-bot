@@ -166,13 +166,6 @@ async def post_init(application: Application) -> None:
 
     session.commit()
 
-    logger_startup.info("fixing events dates...")
-    all_events = events.get_all_events(session)
-    event: Event
-    for event in all_events:
-        event.populate_date_fields()
-    session.commit()
-
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
     users_chat = chats.get_chat(session, Chat.is_users_chat)
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
