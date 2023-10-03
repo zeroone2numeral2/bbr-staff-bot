@@ -2,7 +2,7 @@ import datetime
 import logging
 import re
 from re import Match
-from typing import Optional, List, Union, Tuple
+from typing import Optional, List, Union, Tuple, Sequence, Dict
 
 from sqlalchemy import true, null
 from sqlalchemy.orm import Session
@@ -11,7 +11,7 @@ from telegram.constants import MessageLimit
 from telegram.ext import CallbackContext
 
 import utilities
-from constants import Regex, RegionName, REGIONS_DATA, TempDataKey
+from constants import Regex, RegionName, REGIONS_DATA, TempDataKey, MONTHS_IT
 from database.models import Event, EVENT_TYPE, EventType
 from database.queries import events
 from emojis import Emoji, Flag
@@ -646,7 +646,70 @@ def extract_order_by(args: List[str]) -> List:
     return order_by
 
 
+class GroupBy:
+    WEEK_NUMBER = "gbw"
+    MONTH = "gbm"
+    REGION = "gbr"
+
+
+GROUP_BY_DESCRIPTION = {
+    GroupBy.WEEK_NUMBER: "per settimana inizio",
+    GroupBy.MONTH: "per mese",
+    GroupBy.REGION: "per stato/regione",
+}
+
+
+def extract_group_by(args: List[str]) -> str:
+    # for now, this is only used for /events so the args order is preserved
+    # we return the first group by key that is found
+
+    for arg in args:
+        arg = arg.lower()
+
+        if arg in (GroupBy.WEEK_NUMBER, GroupBy.MONTH, GroupBy.REGION):
+            return arg
+
+
+def events_to_dict(events_list: Sequence[Event], group_by_key: Optional[str] = None) -> Dict[str, List]:
+    events_group_by_week = {}
+
+    event: Event
+    for event in events_list:
+        if not event.is_valid():
+            logger.info(f"skipping invalid event: {event}")
+            continue
+
+        if group_by_key == GroupBy.WEEK_NUMBER:
+            if event.start_date:
+                week_start, week_end = utilities.get_week_start_end(event.start_date)
+                monday_str = utilities.format_datetime(week_start, format_str='%d/%m')
+                sunday_str = utilities.format_datetime(week_end, format_str='%d/%m')
+                key = f"Settimana dal {monday_str} al {sunday_str}:"  # ➜
+            else:
+                key = f"{MONTHS_IT[event.start_month - 1]} {event.start_year}, senza data:"
+        elif group_by_key == GroupBy.MONTH:
+            key = f"{MONTHS_IT[event.start_month - 1]} {event.start_year}:"
+        elif group_by_key == GroupBy.REGION:
+            if event.region:
+                emoji = REGIONS_DATA[event.region]["emoji"]
+                key = f"{emoji} {event.region}:"
+            else:
+                key = f"Ignota:"
+        else:
+            # unknown or empty group_by_key: do not group by items
+            key = f""
+
+        if key in events_group_by_week:
+            events_group_by_week[key].append(event)
+        else:
+            events_group_by_week[key] = [event]
+
+    return events_group_by_week
+
+
 def get_all_events_strings_from_db(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
+    logger.debug("getting events from db...")
+
     query_filters = extract_query_filters(args, today=date_override)
     order_by = extract_order_by(args)  # returns an empty list if no elegible arg is provided
 
@@ -662,5 +725,34 @@ def get_all_events_strings_from_db(session: Session, args: List[str], date_overr
         text_line, event_entities_count = format_event_string(event)
         all_events_strings.append(text_line)
         total_entities_count += event_entities_count  # not used yet, find something to do with this
+
+    return all_events_strings
+
+
+def get_all_events_strings_from_db_group_by(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
+    logger.debug("getting events from db...")
+
+    query_filters = extract_query_filters(args, today=date_override)
+    order_by = extract_order_by(args)  # returns an empty list if no elegible arg is provided
+    group_by_key = extract_group_by(args)
+
+    events_list: List[Event] = events.get_events(session, filters=query_filters, order_by=order_by)
+    events_dict = events_to_dict(events_list, group_by_key)
+
+    all_events_strings = []
+    total_entities_count = 0  # total number of telegram entities for the list of events
+    for group_by, events_list in events_dict.items():
+        if group_by:
+            # 'group_by' might be an empty string: do not apply grouping headers
+
+            header_line = f"\n<b>{group_by}</b>"
+            all_events_strings.append(header_line)
+            total_entities_count += utilities.count_html_entities(header_line)
+
+        event: Event
+        for event in events_list:
+            text_line, event_entities_count = format_event_string(event)
+            all_events_strings.append(text_line)
+            total_entities_count += event_entities_count  # not used yet, find something to do with this
 
     return all_events_strings

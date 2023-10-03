@@ -20,7 +20,7 @@ from plugins.events.common import (
     extract_query_filters,
     get_all_events_strings_from_db,
     send_events_messages,
-    format_event_string, FILTER_DESCRIPTION, ORDER_BY_DESCRIPTION
+    format_event_string, FILTER_DESCRIPTION, ORDER_BY_DESCRIPTION, get_all_events_strings_from_db_group_by
 )
 from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages
@@ -39,7 +39,7 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     logger.info(f"/events {utilities.log(update)}")
 
     args = context.args if context.args else []
-    all_events_strings = get_all_events_strings_from_db(session, args)
+    all_events_strings = get_all_events_strings_from_db_group_by(session, args)
 
     # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 

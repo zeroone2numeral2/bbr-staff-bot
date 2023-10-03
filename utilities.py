@@ -155,7 +155,7 @@ def now_str(format_str: Optional[str] = "%d/%m/%Y %H:%M:%S", tz: Optional[Union[
     return now(tz).strftime(format_str)
 
 
-def format_datetime(dt_object: datetime.datetime, if_none="-", format_str: str = "%d/%m/%Y %H:%M:%S"):
+def format_datetime(dt_object: Union[datetime.datetime, datetime.date], if_none="-", format_str: str = "%d/%m/%Y %H:%M:%S"):
     if not dt_object:
         return if_none
 
@@ -190,6 +190,13 @@ def previous_weekday(today: Optional[datetime.date] = None, weekday=0):
         days_behind += 7
 
     return today - datetime.timedelta(days_behind)
+
+
+def get_week_start_end(dt: datetime.date) -> Tuple[datetime.date, datetime.date]:
+    monday = dt - datetime.timedelta(days=dt.weekday())
+    sunday = monday + datetime.timedelta(days=6)
+
+    return monday, sunday
 
 
 def is_superadmin(user: User) -> bool:
@@ -685,4 +692,5 @@ if __name__ == "__main__":
     # print(elapsed_str(past_dt))
     # print(elapsed_str_old(past_dt))
     # print(datetime.datetime(2023, 1, 1).isocalendar()[1])
+    # print(week_start_end(datetime.date(2023, 10, 8)))
     pass
