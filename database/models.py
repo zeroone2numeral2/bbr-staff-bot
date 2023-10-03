@@ -858,14 +858,18 @@ class Event(Base):
 
     event_id = Column(Integer, default=None)
     event_title = Column(String, default=None)
+
     start_date = Column(Date, default=None)  # just a convenience Date column that should be used for queries
+    start_week = Column(Integer, default=None)  # also a convenience column that should be used for queries
     start_day = Column(Integer, default=None)
     start_month = Column(Integer, default=None)
     start_year = Column(Integer, default=None)
+
     end_date = Column(Date, default=None)  # just a convenience Date column that should be used for queries
     end_day = Column(Integer, default=None)
     end_month = Column(Integer, default=None)
     end_year = Column(Integer, default=None)
+
     soon = Column(Boolean, default=False)
     region = Column(String, default=None)
     event_type = Column(String, default=None)
@@ -1034,6 +1038,7 @@ class Event(Base):
 
         if self.start_year and self.start_month and self.start_day:
             self.start_date = self.start_date_as_date()
+            self.start_week = self.start_date.isocalendar()[1]
         if self.end_year and self.end_month and self.end_day:
             self.end_date = self.end_date_as_date()
 
