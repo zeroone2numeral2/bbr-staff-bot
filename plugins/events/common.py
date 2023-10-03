@@ -362,7 +362,7 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
     if message_date_instead_of_event_date:
         date = utilities.format_datetime(event.message_date, format_str="msg date: %d/%m/%Y")
     else:
-        date = event.pretty_date()
+        date = event.pretty_date(week_number=True)
 
     # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
     title_with_link = f"<b><a href=\"{event.message_link()}\">{title_escaped}</a></b>"
