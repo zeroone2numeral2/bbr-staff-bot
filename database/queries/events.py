@@ -43,7 +43,8 @@ def get_events(
         order_by = [
             Event.start_year,
             Event.start_month,
-            Event.start_day,
+            # Event.start_day,  # ignore if we also sort by week
+            Event.start_week,
             Event.region,
             Event.event_title,
             Event.message_id
