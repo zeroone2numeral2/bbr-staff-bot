@@ -586,6 +586,7 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
 
 class OrderBy:
     DATE = "od"
+    WEEK_NUMBER = "ow"
     TITLE = "oet"
     TYPE = "ot"
     REGION = "or"
@@ -593,6 +594,7 @@ class OrderBy:
 
 ORDER_BY_DESCRIPTION = {
     OrderBy.DATE: "per data inizio",
+    OrderBy.WEEK_NUMBER: "per settimana inizio",
     OrderBy.TITLE: "per nome festa",
     OrderBy.TYPE: "per tipo festa",
     OrderBy.REGION: "per stato/regione",
@@ -613,6 +615,8 @@ def extract_order_by(args: List[str]) -> List:
                 Event.start_month,
                 Event.start_day
             ])
+        elif arg == OrderBy.WEEK_NUMBER:
+            order_by.append(Event.start_week)
         elif arg == OrderBy.TYPE:
             order_by.append(Event.event_type)
         elif arg == OrderBy.TITLE:
