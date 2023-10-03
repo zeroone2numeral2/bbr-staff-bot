@@ -575,7 +575,7 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
         ])
 
     # EVENT REGION
-    it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
+    it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA, RegionName.SICILIA, RegionName.SARDEGNA]
     if EventFilter.IT in args:
         query_filters.append(Event.region.in_(it_regions))
     elif EventFilter.NOT_IT in args:
