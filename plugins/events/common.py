@@ -478,7 +478,7 @@ FILTER_DESCRIPTION = {
     EventFilter.WEEK: f"{Emoji.CALENDAR} questa settimana (da lunedì a domenica)",
     EventFilter.WEEK_2: f"{Emoji.CALENDAR} questa settimana (lun-dom) o la prossima",
     EventFilter.MONTH_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese (tutte) o il prossimo",
-    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"{Emoji.FORWARD} questo mese (in corso/futuri/senza data), o il prossimo",
+    EventFilter.MONTH_FUTURE_AND_NEXT_MONTH: f"{Emoji.CALENDAR} questo mese o il prossimo",
     EventFilter.SOON: f"{Emoji.CLOCK} senza una data precisa (#soon)",
     EventFilter.ALL: f"{Emoji.CLOCK} questo mese + futuri"
 }
@@ -558,15 +558,15 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
                 & (Event.start_date <= today)
             )
         ])
-    elif EventFilter.MONTH_AND_NEXT_MONTH in args:
-        # no other time filter: this month + next month
-        this_month = today.month
-        next_month = today.month + 1 if today.month != 12 else 1
-
-        query_filters.extend([
-            Event.start_year >= today.year,
-            Event.start_month.in_([this_month, next_month]),
-        ])
+    # elif EventFilter.MONTH_AND_NEXT_MONTH in args:
+    #     # no other time filter: this month + next month
+    #     this_month = today.month
+    #     next_month = today.month + 1 if today.month != 12 else 1
+    #
+    #     query_filters.extend([
+    #         Event.start_year >= today.year,
+    #         Event.start_month.in_([this_month, next_month]),
+    #     ])
     else:  # default: EventFilter.ALL
         # all events >= this month
         query_filters.extend([
