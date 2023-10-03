@@ -1053,17 +1053,18 @@ class Event(Base):
         self.end_year = None
         self.end_date = None
 
-    def pretty_date(self) -> str:
+    def pretty_date(self, week_number=False) -> str:
         if not self.start_month or not self.start_year:
             return "??.??.????"
 
         start_day = f"{self.start_day:02}" if self.start_day else "??"
+        week_number = "" if not week_number or not self.start_week else f" (W{self.start_week})"
 
         if not self.single_day():
             end_day = f"{self.end_day:02}" if self.end_day else "??"
-            return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}"
+            return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}{week_number}"
 
-        return f"{start_day}.{self.start_month:02}.{self.start_year}"
+        return f"{start_day}.{self.start_month:02}.{self.start_year}{week_number}"
 
     def save_hashtags(self, hashtags_list: List):
         self.hashtags = json.dumps(hashtags_list, indent=2)
