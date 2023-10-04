@@ -284,7 +284,10 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
         logger.debug(f"date override detected: {date_override}")
         args.append(date_override.strftime("%Y%m%d"))
 
-    args.append(GroupBy.WEEK_NUMBER)  # always group by week for radar
+    if EventFilter.WEEK not in args:
+        # always group by week for radar23, but only if the temporal filter is not EventFilter.WEEK
+        args.append(GroupBy.WEEK_NUMBER)
+
     args.sort()  # it's important to sort the args, see #82
     args_cache_key = "+".join(args)
     logger.debug(f"cache key: {args_cache_key}")
