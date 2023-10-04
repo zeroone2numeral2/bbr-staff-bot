@@ -585,11 +585,11 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
 
 
 class OrderBy:
-    DATE = "od"
-    WEEK_NUMBER = "ow"
-    TITLE = "oet"
-    TYPE = "ot"
-    REGION = "or"
+    DATE = "obd"
+    WEEK_NUMBER = "obw"
+    TITLE = "obet"
+    TYPE = "obt"
+    REGION = "obr"
 
 
 ORDER_BY_DESCRIPTION = {
@@ -605,10 +605,10 @@ def extract_order_by(args: List[str]) -> List:
     # for now, this is only used for /events so the args order is preserved
     # and we can safely assume it from the args list
 
+    args = [a.lower() for a in args]
     order_by = []
-    for arg in args:
-        arg = arg.lower()
 
+    for arg in args:
         if arg == OrderBy.DATE:
             order_by.extend([
                 Event.start_year,
@@ -625,13 +625,14 @@ def extract_order_by(args: List[str]) -> List:
             order_by.append(Event.region)
 
     if not order_by:
+        # If no OrderBy arg, return the default ordering, based on EventFilter
         # We might want to adjust the records' sorting for some EventFilter
         # that is *not* an OrderBy filter
         # For example, for EventFilter.WEEK we might want to order the events first by region and then by date
         # We do this only if no order by filter is provided (that is, 'order_by' is empty)
 
         if EventFilter.WEEK in args:
-            logger.info(f"overriding order_by for event filter <{EventFilter.WEEK}>")
+            logger.info(f"default ordering for event filter <{EventFilter.WEEK}>")
 
             # week filter: we sort by region first
             order_by = [
@@ -642,8 +643,35 @@ def extract_order_by(args: List[str]) -> List:
                 Event.event_title,
                 Event.message_id
             ]
+        else:
+            logger.debug("default ordering")
+            order_by = [
+                Event.start_year,
+                Event.start_month,
+                # Event.start_day,  # ignore if we also sort by week
+                Event.start_week,
+                Event.region,
+                Event.event_title,
+                Event.message_id
+            ]
 
-    return order_by
+    # if we group by a specific Event property, we need the records to be ordered by that property *first*
+    order_by_from_group_by = []
+    for arg in args:
+        if arg in (GroupBy.WEEK_NUMBER, GroupBy.MONTH, GroupBy.REGION):
+            if arg == GroupBy.WEEK_NUMBER:
+                order_by_from_group_by = [Event.start_year, Event.start_month, Event.start_week]
+            elif arg == GroupBy.MONTH:
+                order_by_from_group_by = [Event.start_year, Event.start_month]
+            elif arg == GroupBy.REGION:
+                order_by_from_group_by = [Event.region]
+            else:
+                order_by_from_group_by = []
+
+            # exit the loop after the firsr occurrence
+            break
+
+    return order_by_from_group_by + order_by  # duplicates don't break the query
 
 
 class GroupBy:
@@ -668,6 +696,8 @@ def extract_group_by(args: List[str]) -> str:
 
         if arg in (GroupBy.WEEK_NUMBER, GroupBy.MONTH, GroupBy.REGION):
             return arg
+
+    return ""
 
 
 def events_to_dict(events_list: Sequence[Event], group_by_key: Optional[str] = None) -> Dict[str, List]:
@@ -733,8 +763,9 @@ def get_all_events_strings_from_db_group_by(session: Session, args: List[str], d
     logger.debug("getting events from db...")
 
     query_filters = extract_query_filters(args, today=date_override)
-    order_by = extract_order_by(args)  # returns an empty list if no elegible arg is provided
+    order_by = extract_order_by(args)  # returns the default ordering if no elegible arg is provided
     group_by_key = extract_group_by(args)
+    logger.info(f"group by key: {group_by_key}")
 
     events_list: List[Event] = events.get_events(session, filters=query_filters, order_by=order_by)
     events_dict = events_to_dict(events_list, group_by_key)

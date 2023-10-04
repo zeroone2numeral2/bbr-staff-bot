@@ -17,10 +17,12 @@ from plugins.events.common import (
     parse_message_text,
     drop_events_cache,
     add_event_message_metadata,
-    extract_query_filters,
     get_all_events_strings_from_db,
+    get_all_events_strings_from_db_group_by,
     send_events_messages,
-    format_event_string, FILTER_DESCRIPTION, ORDER_BY_DESCRIPTION, get_all_events_strings_from_db_group_by
+    format_event_string,
+    FILTER_DESCRIPTION,
+    ORDER_BY_DESCRIPTION
 )
 from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages

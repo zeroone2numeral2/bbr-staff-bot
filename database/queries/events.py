@@ -40,17 +40,10 @@ def get_events(
         filters.append(Event.canceled == false())
 
     if not order_by:
-        order_by = [
-            Event.start_year,
-            Event.start_month,
-            # Event.start_day,  # ignore if we also sort by week
-            Event.start_week,
-            Event.region,
-            Event.event_title,
-            Event.message_id
-        ]
+        order_by = []
 
     query = select(Event).filter(*filters).order_by(*order_by)
+    print(query)
 
     return session.scalars(query)
 

@@ -14,8 +14,10 @@ from emojis import Emoji, Flag
 from ext.filters import Filter
 from plugins.events.common import (
     EventFilter,
+    GroupBy,
     FILTER_DESCRIPTION,
     get_all_events_strings_from_db,
+    get_all_events_strings_from_db_group_by,
     send_events_messages
 )
 from database.models import Chat, Event, User, BotSetting, EventType
@@ -282,12 +284,13 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
         logger.debug(f"date override detected: {date_override}")
         args.append(date_override.strftime("%Y%m%d"))
 
+    args.append(GroupBy.WEEK_NUMBER)  # always group by week for radar
     args.sort()  # it's important to sort the args, see #82
     args_cache_key = "+".join(args)
     logger.debug(f"cache key: {args_cache_key}")
 
     if not args_key_in_cache(context, args_cache_key):
-        all_events_strings = get_all_events_strings_from_db(session, args, date_override=date_override)
+        all_events_strings = get_all_events_strings_from_db_group_by(session, args, date_override=date_override)
 
         logger.info(f"caching query result for key {args_cache_key}...")
         cache_all_events_strings_for_cache_key(context, args_cache_key, all_events_strings)
