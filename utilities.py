@@ -91,7 +91,7 @@ SECONDS_REDUCTION = {
 }
 
 
-def elapsed_str(from_dt: datetime.datetime) -> str:
+def elapsed_str(from_dt: datetime.datetime, if_empty: Optional[str] = None) -> str:
     from_dt_utc = naive_to_aware(from_dt, force_utc=True)
     total_seconds = (now() - from_dt_utc).total_seconds()
 
@@ -112,6 +112,9 @@ def elapsed_str(from_dt: datetime.datetime) -> str:
         period_string = period if elapsed_time < 2 else period[:-1] + period_data["plural"]
         elapsed_time_str = f"{elapsed_time} " if elapsed_time > 1 else period_data["singular"]
         string += f"{elapsed_time_str}{period_string}"
+
+    if not string and if_empty:
+        return if_empty
 
     return string
 
