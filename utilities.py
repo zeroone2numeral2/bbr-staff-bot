@@ -114,6 +114,7 @@ def elapsed_str(from_dt: datetime.datetime, if_empty: Optional[str] = None) -> s
         string += f"{elapsed_time_str}{period_string}"
 
     if not string and if_empty:
+        # eg. a few seconds of difference and SECONDS_REDUCTION["secondo"]["skip"] is true
         return if_empty
 
     return string
