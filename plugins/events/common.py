@@ -712,11 +712,11 @@ def events_to_dict(events_list: Sequence[Event], group_by_key: Optional[str] = N
         if group_by_key == GroupBy.WEEK_NUMBER:
             if event.start_date:
                 week_start, week_end = utilities.get_week_start_end(event.start_date)
-                monday_str = utilities.format_datetime(week_start, format_str='%-d ') + MONTHS_IT[week_start.month - 1][:3].lower()
-                sunday_str = utilities.format_datetime(week_end, format_str='%-d ') + MONTHS_IT[week_end.month - 1][:3].lower()
-                key = f"➜ settimana dal {monday_str} al {sunday_str}:"  # ➜
+                monday_str = utilities.format_datetime(week_start, format_str='%d ') + MONTHS_IT[week_start.month - 1][:3].lower()
+                sunday_str = utilities.format_datetime(week_end, format_str='%d ') + MONTHS_IT[week_end.month - 1][:3].lower()
+                key = f"Settimana {monday_str.lstrip('0')} ➜ {sunday_str.lstrip('0')}:"  # ➜
             else:
-                key = f"{MONTHS_IT[event.start_month - 1]} {event.start_year}, senza data:"
+                key = f"{MONTHS_IT[event.start_month - 1].lower()} {event.start_year}, senza data:"
         elif group_by_key == GroupBy.MONTH:
             key = f"{MONTHS_IT[event.start_month - 1]} {event.start_year}:"
         elif group_by_key == GroupBy.REGION:
