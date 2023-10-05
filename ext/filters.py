@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from telegram.ext import filters
 from telegram.ext.filters import MessageFilter
 
+import utilities
 from config import config
 from database.base import session_scope
 from database.models import Chat
@@ -14,10 +15,17 @@ logger = logging.getLogger(__name__)
 
 
 class FilterReplyToBot(MessageFilter):
+    def __init__(self):
+        super().__init__()
+        if utilities.is_test_bot():
+            self.bot_id = 6217274130
+        else:
+            self.bot_id = 6171174621
+
     def filter(self, message):
         if (message.reply_to_message
                 and message.reply_to_message.from_user
-                and message.reply_to_message.from_user.id == app.bot.id):
+                and message.reply_to_message.from_user.id == self.bot_id):
             return True
 
         return False

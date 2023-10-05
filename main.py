@@ -220,6 +220,8 @@ async def post_init(application: Application) -> None:
 
 builder.post_init(post_init)
 app: Application = builder.build()
+app.bot.initialize()
+bot_info = app.bot
 
 
 def main():
