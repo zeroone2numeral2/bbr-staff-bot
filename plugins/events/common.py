@@ -201,7 +201,14 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
             break
 
     # CANCELED
-    if "#annullata" in hashtags_list or "#annullato" in hashtags_list:
+    if (
+        "#annullata" in hashtags_list
+        or "#annullato" in hashtags_list
+        or "#canceled" in hashtags_list
+        or "#cancelled" in hashtags_list
+        or "#rimandata" in hashtags_list
+        or "#rimandato" in hashtags_list
+    ):
         event.canceled = True
     else:
         # un-cancel events that do not have these hashtags
