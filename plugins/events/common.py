@@ -215,7 +215,7 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
         event.canceled = False
 
     # SOON
-    if "#soon" in hashtags_list or "#comingsoon" in hashtags_list:
+    if "#soon" in hashtags_list or "#comingsoon" in hashtags_list or "#moreinfosoon" in hashtags_list:
         event.soon = True
     else:
         # un-soon events that do not have these hashtags
