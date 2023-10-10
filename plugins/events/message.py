@@ -116,14 +116,14 @@ async def notify_event_validity(
     elif not is_valid_after_parsing and not is_edited_message:
         # do not notify invalid edited messages, as they have been notified already
         logger.info("new event is not valid, notifying chat")
-        text = (f"Non sono riuscito ad identificare la data di \"{event.title_link_html()}\", e non è stata "
-                f"taggata come #soon (può essere che la data sia scritta in modo strano e vada modificata)")
+        text = (f"Non sono riuscito ad identificare la data di \"{event.title_link_html()}\", può essere che sia"
+                f" scritta in modo strano e vada modificata (#nodata)")
         sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
         event.save_validity_notification_message(sent_message)
     elif was_valid_before_parsing and not is_valid_after_parsing:
         logger.info("event is no longer valid after message edit")
         text = (f"\"{event.title_link_html()}\" aveva una data ma non è più possibile identificarla "
-                f"dopo che il messaggio è stato modificato :(")
+                f"dopo che il messaggio è stato modificato :( (#nodata)")
         sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
         event.save_validity_notification_message(sent_message)
 
