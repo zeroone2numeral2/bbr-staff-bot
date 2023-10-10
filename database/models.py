@@ -802,6 +802,7 @@ class PrivateChatMessage(Base):
 class EventTypeHashtag:
     FREE = "#freeparty"
     TEKNIVAL = "#teknival"
+    LEGAL = "#legal"
     LEGAL_PARTY = "#legalparty"
     LEGAL_PLACE = "#legalplace"
     CS = "#cs"
@@ -831,6 +832,7 @@ EVENT_TYPE = {
     # if a message has more the one hashtag in this dict, the first one will be used
     EventTypeHashtag.FREE: EventType.FREE,
     EventTypeHashtag.TEKNIVAL: EventType.FREE,
+    EventTypeHashtag.LEGAL: EventType.LEGAL,
     EventTypeHashtag.LEGAL_PARTY: EventType.LEGAL,
     EventTypeHashtag.LEGAL_PLACE: EventType.LEGAL,
     EventTypeHashtag.FESTIVAL: EventType.LEGAL,
