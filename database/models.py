@@ -809,7 +809,9 @@ class EventTypeHashtag:
     CSOA = "#csoa"
     SQUAT_PARTY = "#squatparty"
     SQUAT = "#squat"
+    TAZ = "#taz"
     MANIFESTAZIONE = "#manifestazione"
+    CORTEO = "#corteo"
     STREET_PARADE = "#streetparade"
     PRIVATE_PARTY = "#privateparty"
     FESTIVAL = "#festival"
@@ -837,9 +839,11 @@ EVENT_TYPE = {
     EventTypeHashtag.CSOA: EventType.CS_OR_SQUAT,
     EventTypeHashtag.SQUAT: EventType.CS_OR_SQUAT,
     EventTypeHashtag.SQUAT_PARTY: EventType.CS_OR_SQUAT,
+    EventTypeHashtag.TAZ: EventType.CS_OR_SQUAT,
     EventTypeHashtag.PRIVATE_PARTY: EventType.PRIVATE,
     EventTypeHashtag.STREET_PARADE: EventType.STREET_PARADE,
     EventTypeHashtag.MANIFESTAZIONE: EventType.OTHER,
+    EventTypeHashtag.CORTEO: EventType.OTHER,
 }
 
 
