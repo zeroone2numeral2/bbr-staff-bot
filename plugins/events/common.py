@@ -19,6 +19,9 @@ from emojis import Emoji, Flag
 logger = logging.getLogger(__name__)
 
 
+MAX_EVENT_TITLE_LEN = 100
+
+
 class EventDate:
     SEP = "/"
 
@@ -359,7 +362,11 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
         region_icon = REGIONS_DATA[event.region]["emoji"]
 
     if event.event_title:
-        title_escaped = utilities.escape_html(event.event_title.upper())
+        if len(event.event_title) > MAX_EVENT_TITLE_LEN:
+            title = event.event_title[:MAX_EVENT_TITLE_LEN] + "..."
+        else:
+            title = event.event_title
+        title_escaped = utilities.escape_html(title.upper())
     else:
         title_escaped = "unnamed party"
 
