@@ -25,8 +25,17 @@ async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TY
 
     staff_chat_message: StaffChatMessage = staff_chat_messages.get_or_create(session, message, commit=True)
     if message.edit_date:
-        logger.debug("edited message: updating message metadata")
+        logger.debug("edited message: updating message metadata and returning")
         staff_chat_message.update_message_metadata(message)
+
+        # We return just because there's a bug in teh API that will send to the bot and edited_message update when
+        # someone reacts to an old message, without it being actually edited
+        # This means that if we receave such an update, and a duplicate of this message was already sent to the group,
+        # the bot will reply to the edited (not really) message saying it is a duplicate of that duplicate message
+        # that was sent later
+        # It is preferable to simply ignore edited messages: after all, in the staff chat, info messages & flyers
+        # are usually not edited
+        return
 
     # will also check the text length (and return an empty list if too short and no media)
     duplicates = staff_chat_messages.find_duplicates(session, message)
