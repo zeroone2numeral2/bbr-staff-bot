@@ -808,6 +808,7 @@ class EventTypeHashtag:
     CS = "#cs"
     CSO = "#cso"
     CSOA = "#csoa"
+    CSOA_PARTY = "#csoaparty"
     SQUAT_PARTY = "#squatparty"
     SQUAT = "#squat"
     TAZ = "#taz"
@@ -839,6 +840,7 @@ EVENT_TYPE = {
     EventTypeHashtag.CS: EventType.CS_OR_SQUAT,
     EventTypeHashtag.CSO: EventType.CS_OR_SQUAT,
     EventTypeHashtag.CSOA: EventType.CS_OR_SQUAT,
+    EventTypeHashtag.CSOA_PARTY: EventType.CS_OR_SQUAT,
     EventTypeHashtag.SQUAT: EventType.CS_OR_SQUAT,
     EventTypeHashtag.SQUAT_PARTY: EventType.CS_OR_SQUAT,
     EventTypeHashtag.TAZ: EventType.CS_OR_SQUAT,
