@@ -1,4 +1,5 @@
 import logging
+import re
 
 from sqlalchemy.orm import Session
 from telegram.ext import filters
@@ -44,6 +45,14 @@ class FilterAlbumMessage(MessageFilter):
         return bool(message.media_group_id)
 
 
+class FilterRadarPassword(MessageFilter):
+    def filter(self, message):
+        if not config.settings.radar_password or not message.text:
+            return False
+
+        return bool(re.search(config.settings.radar_password, message.text, re.I))
+
+
 class Filter:
     SUPERADMIN = filters.User(config.telegram.admins)
     SUPERADMIN_AND_GROUP = filters.ChatType.GROUPS & filters.User(config.telegram.admins)
@@ -54,6 +63,7 @@ class Filter:
     REPLY_TO_BOT = FilterReplyToBot()
     REPLY_TOPICS_AWARE = FilterReplyTopicsAware()
     ALBUM_MESSAGE = FilterAlbumMessage()
+    RADAR_PASSWORD = FilterRadarPassword()
     FLY_MEDIA_DOWNLOAD = filters.PHOTO | filters.VIDEO | filters.ANIMATION  # media we can consider as fly, for backups
 
 

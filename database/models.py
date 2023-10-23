@@ -36,6 +36,9 @@ class User(Base):
     stopped = Column(Boolean, default=False)
     stopped_on = Column(DateTime, default=None)
 
+    # radar
+    can_use_radar = Column(Boolean, default=False)  # applies only if settings.radar_password is set
+
     # langauge
     language_code = Column(String, default=None)
     selected_language = Column(String, default=None)

@@ -7,7 +7,7 @@ import telegram.constants
 from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
 from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat
-from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
 from telegram.constants import MessageLimit
 
 from emojis import Emoji, Flag
@@ -90,18 +90,18 @@ def radar_save_date_override_to_user_data(context: ContextTypes.DEFAULT_TYPE):
     return today_object
 
 
-def can_use_radar(user_id: int):
-    return user_id in config.settings.radar_enabled
-
-
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 @decorators.check_ban()
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/radar23 {utilities.log(update)}")
 
-    if not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat) and not can_use_radar(update.effective_user.id):
-        logger.info("user is not a member of the users chat and can't use the command")
+    if not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
+        logger.info("forbidden: user is not a member of the users chat")
+        return
+
+    if config.settings.radar_password and not user.can_use_radar:
+        logger.info("forbidden: a password is set, and the user hasn't unlocked /radar yet")
         return
 
     command = utilities.get_command(update.message.text)
@@ -334,8 +334,21 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     cache_message_id_for_cache_key(context, args_cache_key, sent_messages[0].message_id)
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+@decorators.check_ban()
+async def on_radar_password(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"radar password ({update.message.text}) {utilities.log(update)}")
+
+    user.can_use_radar = True
+    session.commit()
+
+    await update.message.reply_html(f"Ora puoi usare /radar23 ;)")
+
+
 HANDLERS = (
     (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (MessageHandler(filters.ChatType.PRIVATE & Filter.RADAR_PASSWORD, on_radar_password), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
 )
