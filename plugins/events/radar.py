@@ -128,7 +128,7 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     # override in case there was no existing filter
     context.user_data[TempDataKey.EVENTS_FILTERS] = args
 
-    text = f"{Emoji.COMPASS} Usa i tasti qui sotto per cambiare i filtri della ricerca, poi usa conferma per vedere gli eventi"
+    text = f"{Emoji.COMPASS} Usa i tasti qui sotto per cambiare i filtri della ricerca, poi usa conferma per vedere le feste"
     if date_override:
         text = f"{text} (data di riferimento: {date_override.strftime('%d/%m/%Y')})"
 
