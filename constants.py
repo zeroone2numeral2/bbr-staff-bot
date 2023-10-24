@@ -385,6 +385,7 @@ class RegionHashtag:
     SARDEGNA = "#sardegna"
     SICILIA = "#sicilia"
     FRANCE = "#france"
+    FRANCIA = "#francia"
     GERMANY = "#germany"
     GERMANIA = "#germania"
     SWISS = "#swiss"
@@ -494,7 +495,7 @@ REGIONS_DATA = {
     RegionName.CROAZIA: dict(hashtags=[RegionHashtag.CROATIA, RegionHashtag.CROAZIA], emoji=Flag.CROATIA),
     RegionName.DANIMARCA: dict(hashtags=[RegionHashtag.DENMARK, RegionHashtag.DANIMARCA], emoji=Flag.DENMARK),
     RegionName.FINLANDIA: dict(hashtags=[RegionHashtag.FINLAND, RegionHashtag.FINLANDIA], emoji=Flag.FINLAND),
-    RegionName.FRANCIA: dict(hashtags=[RegionHashtag.FRANCE], emoji=Flag.FRANCE),
+    RegionName.FRANCIA: dict(hashtags=[RegionHashtag.FRANCE, RegionHashtag.FRANCIA], emoji=Flag.FRANCE),
     RegionName.GERMANIA: dict(hashtags=[RegionHashtag.GERMANY, RegionHashtag.GERMANIA], emoji=Flag.GERMANY),
     RegionName.GRECIA: dict(hashtags=[RegionHashtag.GRECIA, RegionHashtag.GREECE], emoji=Flag.GREECE),
     RegionName.INGHILTERRA: dict(hashtags=[RegionHashtag.UK, RegionHashtag.ENGLAND], emoji=Flag.ENGLAND),
