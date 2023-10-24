@@ -22,7 +22,7 @@ from plugins.events.common import (
     send_events_messages,
     format_event_string,
     FILTER_DESCRIPTION,
-    ORDER_BY_DESCRIPTION
+    ORDER_BY_DESCRIPTION, GROUP_BY_DESCRIPTION
 )
 from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages
@@ -261,8 +261,12 @@ async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TY
     for filter_key, description in FILTER_DESCRIPTION.items():
         text += f"\n<code>{filter_key}</code> ➜ {description}"
 
-    text += "\n\n<b>Filtri ordinamento disponibili:</b>"
+    text += "\n\n<b>Ordinamento disponibili:</b>"
     for filter_key, description in ORDER_BY_DESCRIPTION.items():
+        text += f"\n<code>{filter_key}</code> ➜ {description}"
+
+    text += "\n\n<b>Raggruppamenti disponibili:</b>"
+    for filter_key, description in GROUP_BY_DESCRIPTION.items():
         text += f"\n<code>{filter_key}</code> ➜ {description}"
 
     text += (f"\n\nUsa <code>/feste [elenco filtri separati da uno spazio]</code> per filtrare le feste\n"
