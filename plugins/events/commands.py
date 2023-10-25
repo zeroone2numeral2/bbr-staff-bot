@@ -168,8 +168,9 @@ async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_
 
     if command in ("deleventmsg", "dem"):
         result, result_description = await utilities.delete_messages_by_id_safe(context.bot, event.chat_id, event.message_id)
-        text = f"{event.message_link_html('message')} deleted: {str(result).lower()} ({result_description})\n"
+        text = f"{event.message_link_html('message')} deleted: {str(result).lower()} ({result_description})"
         if not result and event.message_date:
+            # messages cannot be deleted by a bot if they were sent > 48 hours ago
             text += f"\nThe post was sent {utilities.elapsed_str(event.message_date)} ago"
         await update.message.reply_html(text)
 
