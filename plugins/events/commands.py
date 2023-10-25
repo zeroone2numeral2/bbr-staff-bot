@@ -304,7 +304,11 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
         )
         message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
-        await update.message.reply_html(f"<a href=\"{message_link}\">Messaggio inviato</a>", quote=True)
+        event_title_link = event.title_link_html()
+        await update.message.reply_html(
+            f"<a href=\"{message_link}\">Messaggio inviato</a> come commento a \"{event_title_link}\"",
+            quote=True
+        )
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while copying message: {e.message}")
         if e.message.lower() == "replied message not found":
