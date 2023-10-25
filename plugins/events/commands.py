@@ -6,12 +6,13 @@ from typing import Optional, List
 import telegram.constants
 from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
-from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat
+from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat, MessageId
+from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram.constants import MessageLimit
 
 from emojis import Emoji, Flag
-from ext.filters import Filter
+from ext.filters import Filter, ChatFilter
 from plugins.events.common import (
     parse_message_entities,
     parse_message_text,
@@ -25,7 +26,7 @@ from plugins.events.common import (
     ORDER_BY_DESCRIPTION, GROUP_BY_DESCRIPTION
 )
 from database.models import Chat, Event, User, BotSetting, EventType
-from database.queries import settings, events, chat_members, private_chat_messages
+from database.queries import settings, events, chat_members, private_chat_messages, chats
 import decorators
 import utilities
 from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
@@ -112,18 +113,19 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
     message_link = context.args[0]
     chat_id, message_id = utilities.unpack_message_link(message_link)
     if not chat_id:
-        await update.message.reply_text("cannot detect the message link pointing to the event")
+        await update.message.reply_text("Il link utilizzato non è valido")
         return
 
     if isinstance(chat_id, str):
-        await update.message.reply_text("this command doesn't work with public chats")
+        await update.message.reply_text("Questo comando non funziona con chat pubbliche (che hanno uno username)")
         return
 
-    event_ids_str = f"chat id: <code>{chat_id}</code>; message id: <code>{message_id}</code>"
+    event_ids_str = f"{chat_id}</code>/<code>{message_id}</code>"
 
     event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
     if not event:
-        await update.effective_message.reply_text(f"No event saved for this message ({event_ids_str})")
+        await update.effective_message.reply_text(f"Nessuna festa salvata per <a href=\"{message_link}\">"
+                                                  f"questo messaggio</a> ({event_ids_str})")
         return
 
     return event
@@ -280,6 +282,39 @@ async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TY
     await update.message.reply_html(text)
 
 
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/comment {utilities.log(update)}")
+
+    event: Event = await event_from_link(update, context, session)
+    if not event:
+        # event_from_link() will also answer in case of error
+        return
+
+    if not event.discussion_group_chat_id or not event.discussion_group_message_id:
+        logger.info(f"no discussion group message saved for {event}")
+        await update.message.reply_text(f"Il messaggio nel gruppo a cui rispondere non è stato salvato")
+        return
+
+    try:
+        comment_message_id: MessageId = await update.message.reply_to_message.copy(
+            chat_id=event.discussion_group_chat_id,
+            reply_to_message_id=event.discussion_group_message_id,
+            allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
+        )
+        message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
+        await update.message.reply_html(f"<a href=\"{message_link}\">Messaggio inviato</a>", quote=True)
+    except (TelegramError, BadRequest) as e:
+        logger.error(f"error while copying message: {e.message}")
+        if e.message.lower() == "replied message not found":
+            discussion_message_link = event.discussion_group_message_link()
+            await update.message.reply_html(f"Invio fallito: impossibile trovare <a href=\"{discussion_message_link}\">"
+                                            f"il messaggio nel gruppo</a> a cui rispondere", quote=True)
+        else:
+            raise e
+
+
 HANDLERS = (
     (CommandHandler(["events", "feste", "e"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
@@ -289,6 +324,7 @@ HANDLERS = (
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["comment", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
     # superadmins
     (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),

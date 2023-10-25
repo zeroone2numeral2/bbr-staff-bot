@@ -641,6 +641,16 @@ def extract_entity(text: str, offset: int, length: int) -> str:
     return entity_text.decode("utf-16-le")
 
 
+def tme_link(chat_id: int, message_id: int, thread_id: Optional[int] = None):
+    chat_id = re.sub(r"^-(?:100)?", "", str(chat_id))
+    link = f"https://t.me/c/{chat_id}/{message_id}"
+
+    if thread_id:
+        link = f"{link}?thread={thread_id}"
+
+    return link
+
+
 def unpack_message_link(message_link: str) -> Tuple[Optional[Union[int, str]], Optional[int]]:
     match = re.search(
         Regex.MESSAGE_LINK,
