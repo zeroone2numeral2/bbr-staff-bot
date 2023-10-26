@@ -30,6 +30,7 @@ async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TY
 
         # We return just because there's a bug in teh API that will send to the bot and edited_message update when
         # someone reacts to an old message, without it being actually edited
+        # https://t.me/tdlibchat/124993
         # https://t.me/BotTalk/813907
         # https://t.me/BotTalk/813909
         # https://t.me/tdlibchat/47242
