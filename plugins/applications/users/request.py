@@ -441,7 +441,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
         if description_message.type == DescriptionMessageType.VOICE:
             sent_message = await bot.send_voice(description_message.media_file_id, caption=description_message.caption_html)
         elif description_message.type == DescriptionMessageType.VIDEO_MESSAGE:
-            sent_message = await bot.send_video_note(description_message.media_file_id, caption=description_message.caption_html)
+            sent_message = await bot.send_video_note(description_message.media_file_id)
         else:
             continue
 
