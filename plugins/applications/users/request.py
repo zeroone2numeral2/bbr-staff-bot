@@ -355,8 +355,8 @@ async def on_done_button(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 
 async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
-    # we will save the whole list just in case we will need to link them, but we actually need just the first one
-    # because it's the message we reply to
+    # we will save the whole list of attachments we sent just in case we will need to link them,
+    # but we actually need just the first one (because it's the message we reply to)
     sent_attachment_messages: List[Message] = []
 
     messages_to_send_as_album: List[DescriptionMessage] = []
