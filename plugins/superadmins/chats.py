@@ -2,17 +2,50 @@ import logging
 from typing import Iterable
 
 from sqlalchemy.orm import Session
-from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler
+from telegram import Update, InlineKeyboardMarkup, KeyboardButtonRequestChat, InlineKeyboardButton, ReplyKeyboardMarkup, \
+    KeyboardButton, ReplyKeyboardRemove
+from telegram.ext import filters
+from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler
 
-from database.models import User, Chat
-from database.queries import chats
+from database.models import User, Chat, ChatDestination
+from database.queries import chats, chat_members
 import decorators
 import utilities
 from constants import Group
+from emojis import Emoji
 from ext.filters import Filter, ChatFilter
 
 logger = logging.getLogger(__name__)
+
+
+class RequestId:
+    STAFF = 1
+    USERS = 2
+    EVALUATION = 3
+    EVENTS = 4
+    LOG = 5
+
+REQUEST_ID_TO_DESTINATION = {
+    RequestId.STAFF: ChatDestination.STAFF,
+    RequestId.USERS: ChatDestination.USERS,
+    RequestId.EVALUATION: ChatDestination.EVALUATION,
+    RequestId.EVENTS: ChatDestination.EVENTS,
+    RequestId.LOG: ChatDestination.LOG,
+}
+
+
+SET_CHAT_MARKUP = ReplyKeyboardMarkup([
+    [
+        KeyboardButton(f"{Emoji.PEOPLE} staff", request_chat=KeyboardButtonRequestChat(RequestId.STAFF, chat_is_channel=False, bot_is_member=True)),
+        KeyboardButton(f"{Emoji.PEOPLE} utenti", request_chat=KeyboardButtonRequestChat(RequestId.USERS, chat_is_channel=False, bot_is_member=True)),
+        KeyboardButton(f"{Emoji.PEOPLE} approvazioni", request_chat=KeyboardButtonRequestChat(RequestId.EVALUATION, chat_is_channel=True, bot_is_member=True))
+    ],
+    [
+        KeyboardButton(f"{Emoji.ANNOUNCEMENT} eventi", request_chat=KeyboardButtonRequestChat(RequestId.EVENTS, chat_is_channel=True, bot_is_member=True)),
+        KeyboardButton(f"{Emoji.ANNOUNCEMENT} log", request_chat=KeyboardButtonRequestChat(RequestId.LOG, chat_is_channel=True, bot_is_member=True))
+    ],
+    [KeyboardButton(f"{Emoji.CANCEL} annulla selezione")]
+], resize_keyboard=True)
 
 
 @decorators.catch_exception()
@@ -43,19 +76,19 @@ async def on_setchat_group_command(update: Update, context: ContextTypes.DEFAULT
 
     destination_type = context.args[0].lower()
 
-    if destination_type == "staff":
+    if destination_type == ChatDestination.STAFF:
         chats.reset_staff_chat(session)
         session.commit()
         chat.set_as_staff_chat()
 
         ChatFilter.STAFF.chat_ids = {chat.chat_id}
-    elif destination_type == "users":
+    elif destination_type == ChatDestination.USERS:
         chats.reset_users_chat(session)
         session.commit()
         chat.set_as_users_chat()
 
         ChatFilter.USERS.chat_ids = {chat.chat_id}
-    elif destination_type == "evaluation":
+    elif destination_type == ChatDestination.EVALUATION:
         chats.reset_evaluation_chat(session)
         session.commit()
         chat.set_as_evaluation_chat()
@@ -85,7 +118,7 @@ async def on_setchat_private_command(update: Update, context: ContextTypes.DEFAU
 
     chat = chats.get_safe(session, update.message.reply_to_message.forward_from_chat, commit=True)
 
-    if destination_type == "log":
+    if destination_type == ChatDestination.LOG:
         chats.reset_log_chat(session)
         session.commit()
         chat.set_as_log_chat()
@@ -100,8 +133,73 @@ async def on_setchat_private_command(update: Update, context: ContextTypes.DEFAU
     await update.effective_message.reply_text(f"{utilities.escape_html(chat.title)} impostata come chat {chat.type_pretty()}")
 
 
+@decorators.catch_exception()
+async def on_setchat_new_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"/scn {utilities.log(update)}")
+
+    await update.effective_message.reply_text(
+        f"Seleziona la chat he vuoi impostare:",
+        reply_markup=SET_CHAT_MARKUP
+    )
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_chat_shared_update(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"chat shared update {utilities.log(update)}")
+    logger.info(f"{update.message.chat_shared}")
+
+    chat_id = update.message.chat_shared.chat_id
+    request_id = update.message.chat_shared.request_id
+    bot_chat_member = chat_members.get_chat_member_by_id(session, context.bot.id, chat_id)
+    if not bot_chat_member or not bot_chat_member.is_member():
+        await update.message.reply_html(
+            f"Il bot non è membro di questa chat. Selezionane un'altra usando i tasti qui sotto, oppure usa il tasto per annullare"
+        )
+        return
+
+    destination_type = REQUEST_ID_TO_DESTINATION[request_id]
+
+    if destination_type == ChatDestination.STAFF:
+        chats.reset_staff_chat(session)
+        session.commit()
+        bot_chat_member.chat.set_as_staff_chat()
+
+        ChatFilter.STAFF.chat_ids = {bot_chat_member.chat_id}
+    elif destination_type == ChatDestination.USERS:
+        chats.reset_users_chat(session)
+        session.commit()
+        bot_chat_member.chat.set_as_users_chat()
+
+        ChatFilter.USERS.chat_ids = {bot_chat_member.chat_id}
+    elif destination_type == ChatDestination.EVALUATION:
+        chats.reset_evaluation_chat(session)
+        session.commit()
+        bot_chat_member.chat.set_as_evaluation_chat()
+
+        ChatFilter.EVALUATION.chat_ids = {bot_chat_member.chat_id}
+    elif destination_type == ChatDestination.EVENTS:
+        chats.reset_events_chat(session)
+        session.commit()
+        bot_chat_member.chat.set_as_events_chat()
+
+        ChatFilter.EVENTS.chat_ids = {bot_chat_member.chat_id}
+    elif destination_type == ChatDestination.LOG:
+        chats.reset_log_chat(session)
+        session.commit()
+
+        bot_chat_member.chat.set_as_log_chat()
+
+    await update.effective_message.reply_text(
+        f"{utilities.escape_html(bot_chat_member.chat.title)} impostata come {bot_chat_member.chat.type_pretty()}",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+
 HANDLERS = (
     (CommandHandler(["chats"], on_chats_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["setchat"], on_setchat_group_command, filters=Filter.SUPERADMIN_AND_GROUP), Group.NORMAL),
     (CommandHandler(["setchat"], on_setchat_private_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    # (CommandHandler(["scn"], on_setchat_new_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (MessageHandler(filters.StatusUpdate.CHAT_SHARED, on_chat_shared_update), Group.NORMAL),
 )

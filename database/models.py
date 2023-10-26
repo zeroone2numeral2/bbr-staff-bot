@@ -186,11 +186,19 @@ class User(Base):
         self.conversate_with_staff_override = False
 
 
+class ChatDestination:
+    STAFF = "staff"
+    USERS = "users"
+    EVALUATION = "evaluation"
+    LOG = "log"
+    EVENTS = "venets"
+
+
 class Chat(Base):
     __tablename__ = 'chats'
 
-    DESTINATION_TYPES_GROUP = ("staff", "users", "evaluation")
-    DESTINATION_TYPES_CHANNEL = ("log", "events")
+    DESTINATION_TYPES_GROUP = (ChatDestination.STAFF, ChatDestination.USERS, ChatDestination.EVALUATION)
+    DESTINATION_TYPES_CHANNEL = (ChatDestination.LOG, ChatDestination.EVENTS)
 
     chat_id = Column(Integer, primary_key=True)
     title = Column(String, default=None)
