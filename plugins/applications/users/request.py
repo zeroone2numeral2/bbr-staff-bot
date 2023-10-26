@@ -363,6 +363,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     text_messages_to_merge: List[DescriptionMessage] = []
     single_media_messages: List[DescriptionMessage] = []
 
+    # in this loop we populate the lists we initialized above
     description_message: DescriptionMessage
     for description_message in request.description_messages:
         if description_message.is_social_message() or description_message.is_other_members_message():
@@ -387,6 +388,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     # no idea why but we *need* large timeouts
     timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
 
+    # merge and send all DescriptionMessage that contain the text the user sent as presentation
     merged_text = f"•• <b>presentazione</b> ••"
     merged_text_includes = []  # list of indexes of the DescriptionMessage that have been merged into the current merged_text
     for i, description_message in enumerate(text_messages_to_merge):
@@ -403,14 +405,15 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
             merged_text += f"\n\n{description_message.text_html}"
             merged_text_includes.append(i)
 
+    # send what's left, if anything
     if merged_text:
-        # send what's left
         sent_message = await bot.send_message(log_chat_id, merged_text, **timeouts)
         sent_attachment_messages.append(sent_message)
         for i in merged_text_includes:
             # save the message we just sent as the log message for each one of the DescriptionMessage that were merged into it
             text_messages_to_merge[i].set_log_message(sent_message)
 
+    # merge into an album and send all DescriptionMessage that can be grouped into an album
     input_medias = []
     for i, description_message in enumerate(messages_to_send_as_album):
         input_medias.append(description_message.get_input_media())
@@ -427,9 +430,9 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
 
             input_medias = []
 
+    # send what's left, if anything
     medias_count = len(input_medias)
     if input_medias:
-        # send what's left
         sent_messages = await bot.send_media_group(log_chat_id, media=input_medias, **timeouts)
         sent_attachment_messages.append(sent_messages[0])  # we will link just the first one
         for i, sent_message in enumerate(sent_messages):
@@ -437,6 +440,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
             logger.debug(f"saving log message with index {index}...")
             messages_to_send_as_album[index].set_log_message(sent_message)
 
+    # send all DescriptionMessage that are a media and cannot be grouped
     for description_message in single_media_messages:
         if description_message.type == DescriptionMessageType.VOICE:
             sent_message = await bot.send_voice(description_message.media_file_id, caption=description_message.caption_html)
@@ -448,6 +452,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
         description_message.set_log_message(sent_message)
         sent_attachment_messages.append(sent_message)
 
+    # create and send the main log message with user info, social, other members, and links to attachments
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "non impostato"
     base_text = f"nuova #richiesta [#rid{request.id}][#pendente]\n\n" \
