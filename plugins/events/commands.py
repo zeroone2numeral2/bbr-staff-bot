@@ -294,7 +294,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     if not event.discussion_group_chat_id or not event.discussion_group_message_id:
         logger.info(f"no discussion group message saved for {event}")
-        await update.message.reply_text(f"Il messaggio nel gruppo a cui rispondere non è stato salvato")
+        await update.message.reply_text(f"Il messaggio nel gruppo a cui rispondere non è stato salvato", quote=True)
         return
 
     try:
