@@ -38,16 +38,19 @@ SET_CHAT_MARKUP = ReplyKeyboardMarkup([
     # bot_is_member will *NOT* force the client to show just the groups it is already member of
     # the user will be able to pick *ANY* group, and the bot will be added to the group if not already a member
     # if bot_is_member is false, the bot will not be added to the group
+    # should be true just for channels
     [
         KeyboardButton(f"{Emoji.PEOPLE} staff", request_chat=KeyboardButtonRequestChat(RequestId.STAFF, chat_is_channel=False, bot_is_member=False)),
         KeyboardButton(f"{Emoji.PEOPLE} utenti", request_chat=KeyboardButtonRequestChat(RequestId.USERS, chat_is_channel=False, bot_is_member=False)),
-        KeyboardButton(f"{Emoji.PEOPLE} approvazioni", request_chat=KeyboardButtonRequestChat(RequestId.EVALUATION, chat_is_channel=True, bot_is_member=False))
     ],
     [
-        KeyboardButton(f"{Emoji.ANNOUNCEMENT} eventi", request_chat=KeyboardButtonRequestChat(RequestId.EVENTS, chat_is_channel=True, bot_is_member=False)),
-        KeyboardButton(f"{Emoji.ANNOUNCEMENT} log", request_chat=KeyboardButtonRequestChat(RequestId.LOG, chat_is_channel=True, bot_is_member=False))
+        KeyboardButton(f"{Emoji.PEOPLE} approvazioni", request_chat=KeyboardButtonRequestChat(RequestId.EVALUATION, chat_is_channel=True, bot_is_member=False)),
+        KeyboardButton(f"{Emoji.ANNOUNCEMENT} log", request_chat=KeyboardButtonRequestChat(RequestId.LOG, chat_is_channel=True, bot_is_member=True))
     ],
-    [KeyboardButton(f"{Emoji.CANCEL} annulla selezione")]
+    [
+        KeyboardButton(f"{Emoji.ANNOUNCEMENT} eventi", request_chat=KeyboardButtonRequestChat(RequestId.EVENTS, chat_is_channel=True, bot_is_member=True)),
+        KeyboardButton(f"{Emoji.CANCEL} annulla selezione")
+    ]
 ], resize_keyboard=True)
 
 
