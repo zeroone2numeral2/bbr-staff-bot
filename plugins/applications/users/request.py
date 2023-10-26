@@ -532,9 +532,9 @@ approval_mode_conversation_handler = ConversationHandler(
             MessageHandler(filters.TEXT & ~filters.Regex(Re.CANCEL), on_waiting_other_members_received),
         ],
         State.WAITING_SOCIAL: [
-            MessageHandler(~filters.TEXT, on_waiting_social_unexpected_message_received),
+            MessageHandler(~filters.TEXT & ~filters.CAPTION, on_waiting_social_unexpected_message_received),
             MessageHandler(filters.TEXT & filters.Regex(Re.SKIP), on_waiting_socials_skip),
-            MessageHandler(filters.TEXT & ~filters.Regex(Re.CANCEL), on_waiting_social_received),
+            MessageHandler((filters.TEXT | filters.CAPTION) & ~filters.Regex(Re.CANCEL), on_waiting_social_received),
         ],
         State.WAITING_DESCRIBE_SELF: [
             # make this handler blocking: forwarding many messages to a chat may require some time

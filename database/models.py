@@ -1236,7 +1236,7 @@ class ApplicationRequest(Base):
         self.other_members_received_on = utilities.now()
 
     def save_social(self, message: Message):
-        self.social_text = message.text_html
+        self.social_text = message.text_html or message.caption_html
         self.social_message_id = message.message_id
         self.social_received_on = utilities.now()
 
