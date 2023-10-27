@@ -102,7 +102,7 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
 
     users_commands_private = [
         BotCommand("start", "chiedi 👀"),
-        BotCommand("radar23", "feste")
+        # BotCommand("radar23", "feste")
     ]
     staff_commands_private = [
         BotCommand("radar23", "elenco feste"),
