@@ -82,8 +82,10 @@ def get_events_text_test(session: Session, filter_key: str, now: datetime.dateti
     all_events = get_all_events_strings_from_db_group_by(session, args)
 
     events_text = "\n".join(all_events)
-    text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n{events_text}"
+    # if we ask for two weeks + group by, the first group by line will start by \n
+    events_text = events_text.strip()
 
+    text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n{events_text}"
     text += f"\n\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
 
     entities_count = utilities.count_html_entities(text)
