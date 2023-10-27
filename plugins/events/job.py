@@ -48,7 +48,8 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
         event_string, _ = format_event_string(event, discussion_group_message_link=False)
         text += f"\n{event_string}"
 
-    text += f"\n\n<i>Ultimo aggiornamento: {utilities.format_datetime(now, format_str='%d/%m %H:%M')}</i>"
+    # text += f"\n\n<i>Ultimo aggiornamento: {utilities.format_datetime(now, format_str='%d/%m %H:%M')}</i>"
+    text += f"\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
 
     entities_count = utilities.count_html_entities(text)
     logger.debug(f"entities count: {entities_count}")

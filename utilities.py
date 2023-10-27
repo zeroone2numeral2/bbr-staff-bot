@@ -28,6 +28,13 @@ UTC_TIMEZONE = datetime.timezone.utc
 
 ROME_TIMEZONE = pytz.timezone("Europe/Rome")
 
+SUPERSCRIPT = str.maketrans(
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_",
+    "⁰¹²³⁴⁵⁶⁷⁸⁹ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖᵠʳˢᵗᵘᵛʷˣʸᶻᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖᵠʳˢᵗᵘᵛʷˣʸᶻ‾"
+)
+
+SUBSCRIPT = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+
 
 def load_logging_config(file_name='logging.json'):
     with open(file_name, 'r') as f:
@@ -89,6 +96,14 @@ SECONDS_REDUCTION = {
     "minuto": {"seconds": 60, "singular": "un ", "plural": "i", "short": "m", "skip": True},
     "secondo": {"seconds": 1, "singular": "un ", "plural": "i", "short": "s", "skip": True},
 }
+
+
+def subscript(string: str) -> str:
+    return string.translate(SUBSCRIPT)
+
+
+def superscript(string: str) -> str:
+    return string.translate(SUPERSCRIPT)
 
 
 def elapsed_str(from_dt: datetime.datetime, if_empty: Optional[str] = None) -> str:
