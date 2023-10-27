@@ -69,6 +69,8 @@ def get_week_events(session: Session, now: datetime.datetime, filters: List, wee
         )
     ])
 
+    filters.append(((Event.not_a_party == false()) | Event.not_a_party.is_(None)))
+
     statement = select(Event).filter(*filters).order_by(
         Event.start_year,
         Event.start_month,
