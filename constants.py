@@ -73,6 +73,7 @@ class BotSettingKey:
     RABBIT_FILE = "rabbit_file"
     RADAR_FILE = "radar_file"
     PARTIES_LIST = "parties_list"
+    PARTIES_LIST_WEEKS = "parties_list_weeks"
 
 
 class LocalizedTextKey:
@@ -255,6 +256,14 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list",
         emoji=Emoji.PIRATE,
         description="every week, send a message in the events channel listing the parties of the week",
+        show_if_true_key=None,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_WEEKS: dict(
+        default=1,
+        label="parties list weeks",
+        emoji=Emoji.PIRATE,
+        description="how many weeks should be included in the list, 0 or 1 for current week",
         show_if_true_key=None,
         telegram_media=False
     ),

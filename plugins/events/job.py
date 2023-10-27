@@ -44,7 +44,8 @@ PARTIES_MESSAGE_FILTERS = {
 def get_events_text(session: Session, filter_key: str, now: datetime.datetime, filters: List) -> str:
     logger.info(f"getting events of type \"{filter_key}\"...")
 
-    week_events, from_date, next_monday = events.get_week_events(session, now, filters)
+    weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
+    week_events, from_date, next_monday = events.get_week_events(session, now, filters, weeks=weeks)
     to_date = next_monday + datetime.timedelta(-1)  # remove the monday
 
     from_str = utilities.format_datetime(from_date, format_str='%d/%m')
