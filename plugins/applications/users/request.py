@@ -443,9 +443,9 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     # send all DescriptionMessage that are a media and cannot be grouped
     for description_message in single_media_messages:
         if description_message.type == DescriptionMessageType.VOICE:
-            sent_message = await bot.send_voice(description_message.media_file_id, caption=description_message.caption_html)
+            sent_message = await bot.send_voice(log_chat_id, description_message.media_file_id, caption=description_message.caption_html)
         elif description_message.type == DescriptionMessageType.VIDEO_MESSAGE:
-            sent_message = await bot.send_video_note(description_message.media_file_id)
+            sent_message = await bot.send_video_note(log_chat_id, description_message.media_file_id)
         else:
             continue
 
