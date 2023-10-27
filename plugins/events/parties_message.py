@@ -11,7 +11,9 @@ from constants import Group, TempDataKey
 from database.models import Chat, PartiesMessage
 from database.queries import chats, parties_messages
 from ext.filters import ChatFilter, Filter
-from plugins.events.job import parties_message_job, FILTER_DESCRIPTION, PARTIES_MESSAGE_FILTERS, get_events_text
+from plugins.events.common import EventFilter, get_all_events_strings_from_db_group_by
+from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, PARTIES_MESSAGE_TYPES, get_events_text, \
+    ListTypeKey, get_events_text_test
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ async def on_updatelists_command(update: Update, context: ContextTypes.DEFAULT_T
     context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
 
     message_links = []
-    for events_type, _ in FILTER_DESCRIPTION.items():
+    for events_type, _ in LIST_TYPE_DESCRIPTION.items():
         parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type)
         if parties_message:
             message_links.append(parties_message.message_link())
@@ -55,10 +57,14 @@ async def on_sendlists_command(update: Update, context: ContextTypes.DEFAULT_TYP
 async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/getlists {utilities.log(update)}")
 
+    PARTIES_MESSAGE_TYPES_ARGS = {
+        ListTypeKey.ITALY: [EventFilter.IT],
+        ListTypeKey.ABROAD: [EventFilter.NOT_IT]
+    }
+
     now = utilities.now(tz=True)
-    for filter_key, filters in PARTIES_MESSAGE_FILTERS.items():
-        logger.info(f"filter: {filter_key}")
-        text = get_events_text(session, filter_key, now, filters)
+    for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
+        text = get_events_text_test(session, filter_key, now, args)
 
         await update.message.reply_html(f"{text}")
 

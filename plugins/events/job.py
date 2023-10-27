@@ -16,28 +16,28 @@ from constants import BotSettingKey, RegionName, TempDataKey
 from database.models import Chat, Event, PartiesMessage
 from database.queries import chats, events, settings, parties_messages
 from emojis import Flag, Emoji
-from plugins.events.common import format_event_string
+from plugins.events.common import format_event_string, EventFilter, get_all_events_strings_from_db_group_by, GroupBy
 
 logger = logging.getLogger(__name__)
 
 
-class FilterKey:
+class ListTypeKey:
     ITALY = "italy"
     ABROAD = "abroad"
 
 
-FILTER_DESCRIPTION = {
-    FilterKey.ITALY: f"{Flag.ITALY} Feste in Italia",
-    FilterKey.ABROAD: f"{Emoji.EARTH} Feste all'estero"
+LIST_TYPE_DESCRIPTION = {
+    ListTypeKey.ITALY: f"{Flag.ITALY} Feste in Italia",
+    ListTypeKey.ABROAD: f"{Emoji.EARTH} Feste all'estero"
 }
 
 
 IT_REGIONS = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
 
-# we will post a channel message for each of these filters
-PARTIES_MESSAGE_FILTERS = {
-    FilterKey.ITALY: [Event.region.in_(IT_REGIONS)],
-    FilterKey.ABROAD: [Event.region.not_in(IT_REGIONS)]
+# we will post a channel message for each of these lists types
+PARTIES_MESSAGE_TYPES = {
+    ListTypeKey.ITALY: [Event.region.in_(IT_REGIONS)],
+    ListTypeKey.ABROAD: [Event.region.not_in(IT_REGIONS)]
 }
 
 
@@ -51,14 +51,39 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
     from_str = utilities.format_datetime(from_date, format_str='%d/%m')
     to_str = utilities.format_datetime(to_date, format_str='%d/%m')
 
-    text = f"<b>{FILTER_DESCRIPTION[filter_key]}, dal {from_str} al {to_str}:</b>\n"
+    text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}, dal {from_str} al {to_str}:</b>\n"
 
     event: Event
     for event in week_events:
         event_string, _ = format_event_string(event, discussion_group_message_link=False)
         text += f"\n{event_string}"
 
-    # text += f"\n\n<i>Ultimo aggiornamento: {utilities.format_datetime(now, format_str='%d/%m %H:%M')}</i>"
+    text += f"\n\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
+
+    entities_count = utilities.count_html_entities(text)
+    logger.debug(f"entities count: {entities_count}")
+    if entities_count > MessageLimit.MESSAGE_ENTITIES:
+        # remove bold entities if we cross the limit
+        text = re.sub(r"</?b>", "", text)
+
+    return text
+
+
+def get_events_text_test(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> str:
+    logger.info(f"(test) getting events of type \"{filter_key}\"...")
+
+    weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
+    if weeks <= 1:
+        args.append(EventFilter.WEEK)
+    else:
+        args.append(EventFilter.WEEK_2)
+        args.append(GroupBy.WEEK_NUMBER)
+
+    all_events = get_all_events_strings_from_db_group_by(session, args)
+
+    events_text = "\n".join(all_events)
+    text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n{events_text}"
+
     text += f"\n\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
 
     entities_count = utilities.count_html_entities(text)
@@ -110,7 +135,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
     now = utilities.now(tz=True)
 
-    for filter_key, filters in PARTIES_MESSAGE_FILTERS.items():
+    for filter_key, filters in PARTIES_MESSAGE_TYPES.items():
         logger.info(f"filter: {filter_key}")
 
         current_isoweek = now.isocalendar()[1]
