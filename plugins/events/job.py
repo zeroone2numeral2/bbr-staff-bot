@@ -91,6 +91,7 @@ def get_events_text_test(session: Session, filter_key: str, now: datetime.dateti
     if entities_count > MessageLimit.MESSAGE_ENTITIES:
         # remove bold entities if we cross the limit
         text = re.sub(r"</?b>", "", text)
+        logger.debug(f"entities count (no bold): {utilities.count_html_entities(text)}")
 
     return text
 
