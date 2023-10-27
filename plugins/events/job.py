@@ -72,7 +72,7 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
 def get_events_text_test(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> str:
     logger.info(f"(test) getting events of type \"{filter_key}\"...")
 
-    # always group by, even if just a week is required
+    # always group by, even if just a week is requested
     args.append(GroupBy.WEEK_NUMBER)
 
     weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
