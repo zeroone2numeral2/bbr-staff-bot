@@ -32,6 +32,15 @@ FILTER_DESCRIPTION = {
 }
 
 
+IT_REGIONS = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
+
+# we will post a channel message for each of these filters
+PARTIES_MESSAGE_FILTERS = {
+    FilterKey.ITALY: [Event.region.in_(IT_REGIONS)],
+    FilterKey.ABROAD: [Event.region.not_in(IT_REGIONS)]
+}
+
+
 def get_events_text(session: Session, filter_key: str, now: datetime.datetime, filters: List) -> str:
     logger.info(f"getting events of type \"{filter_key}\"...")
 
@@ -49,7 +58,7 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
         text += f"\n{event_string}"
 
     # text += f"\n\n<i>Ultimo aggiornamento: {utilities.format_datetime(now, format_str='%d/%m %H:%M')}</i>"
-    text += f"\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
+    text += f"\n\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
 
     entities_count = utilities.count_html_entities(text)
     logger.debug(f"entities count: {entities_count}")
@@ -100,15 +109,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
     now = utilities.now(tz=True)
 
-    it_regions = [RegionName.ITALIA, RegionName.CENTRO_ITALIA, RegionName.NORD_ITALIA, RegionName.SUD_ITALIA]
-
-    # we will post a channel message for each of these filters
-    parties_message_filters = {
-        FilterKey.ITALY: [Event.region.in_(it_regions)],
-        FilterKey.ABROAD: [Event.region.not_in(it_regions)]
-    }
-
-    for filter_key, filters in parties_message_filters.items():
+    for filter_key, filters in PARTIES_MESSAGE_FILTERS.items():
         logger.info(f"filter: {filter_key}")
 
         current_isoweek = now.isocalendar()[1]

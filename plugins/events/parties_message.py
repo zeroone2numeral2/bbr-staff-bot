@@ -11,7 +11,7 @@ from constants import Group, TempDataKey
 from database.models import Chat, PartiesMessage
 from database.queries import chats, parties_messages
 from ext.filters import ChatFilter, Filter
-from plugins.events.job import parties_message_job, FILTER_DESCRIPTION
+from plugins.events.job import parties_message_job, FILTER_DESCRIPTION, PARTIES_MESSAGE_FILTERS, get_events_text
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,21 @@ async def on_sendlists_command(update: Update, context: ContextTypes.DEFAULT_TYP
     context.job_queue.run_once(parties_message_job, when=1)
 
 
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/getlists {utilities.log(update)}")
+
+    now = utilities.now(tz=True)
+    for filter_key, filters in PARTIES_MESSAGE_FILTERS.items():
+        logger.info(f"filter: {filter_key}")
+        text = get_events_text(session, filter_key, now, filters)
+
+        await update.message.reply_html(f"{text}")
+
+
 HANDLERS = (
     (CommandHandler(["updatelists", "ul"], on_updatelists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["sendlists", "sl"], on_sendlists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["getlists", "gl"], on_getlists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )

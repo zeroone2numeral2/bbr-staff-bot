@@ -48,9 +48,11 @@ def get_events(
     return session.scalars(query)
 
 
-def get_week_events(session: Session, now: datetime.datetime, filters: List) -> Tuple[Any, datetime.datetime, datetime.datetime]:
+def get_week_events(session: Session, now: datetime.datetime, filters: List, weeks: int = 1) -> Tuple[Any, datetime.datetime, datetime.datetime]:
+    additional_days = 0 if weeks <= 1 else 7 * weeks
+
     last_monday = utilities.previous_weekday(today=now.date(), weekday=0)
-    next_monday = utilities.next_weekday(today=now.date(), weekday=0)
+    next_monday = utilities.next_weekday(today=now.date(), weekday=0, additional_days=additional_days)
 
     filters.extend([
         # start date is between last monday and next monday...
