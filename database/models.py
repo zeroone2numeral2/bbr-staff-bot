@@ -862,6 +862,21 @@ EVENT_TYPE = {
 }
 
 
+class DeletionReason:
+    DUPLICATE = 10
+    MESSAGE_DELETED = 20
+    NOT_A_PARTY = 30
+    OTHER = 100
+
+
+DELETION_REASON_DESC = {
+    DeletionReason.DUPLICATE: "duplicato",
+    DeletionReason.MESSAGE_DELETED: "il messaggio è stato eliminato",
+    DeletionReason.NOT_A_PARTY: "il messaggio non riguadrava una festa",
+    DeletionReason.OTHER: "altro"
+}
+
+
 class Event(Base):
     __tablename__ = 'events'
     __allow_unmapped__ = True
@@ -919,7 +934,9 @@ class Event(Base):
     message_json = Column(String, default=None)
 
     deleted = Column(Boolean, default=False)  # != Event.canceled
+    # deleted_on = Column(DateTime, default=None)
     not_a_party = Column(Boolean, default=False)
+    # deletion_reason = Column(Integer, default=DeletionReason.OTHER)
 
     chat: Chat = relationship("Chat")
 
@@ -935,6 +952,12 @@ class Event(Base):
 
     def title_link_html(self):
         return self.message_link_html(self.event_title)
+
+    def delete(self, reason: Optional[int] = None):
+        self.deleted = True
+        self.deleted_on = utilities.now()
+        if reason:
+            self.deletion_reason = reason
 
     def is_valid(self) -> bool:
         """an event is valid if it has a title and either:
