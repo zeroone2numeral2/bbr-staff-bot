@@ -438,15 +438,19 @@ def get_language_code(selected_language_code, telegram_language_code):
     return telegram_language_code or Language.EN
 
 
-async def delete_messages_safe(messages: Union[Message, List[Message]]):
+async def delete_messages_safe(messages: Union[Message, List[Message]]) -> Optional[bool]:
     if not isinstance(messages, list):
         messages = [messages]
 
+    success = False
     for message in messages:
         try:
-            await message.delete()
+            success = await message.delete()
         except BadRequest:
             pass
+
+    if len(messages) == 1:
+        return success
 
 
 async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[List[int], int]) -> Optional[Tuple[bool, str]]:

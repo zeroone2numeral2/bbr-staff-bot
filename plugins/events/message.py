@@ -350,10 +350,13 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     if event.not_a_party:
-        logger.info("event was already marked a not a party")  # just remove the inline markup
+        logger.info("event was already marked a not a party")
 
         context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
-        await update.effective_message.delete()
+        succes = await utilities.delete_messages_safe(update.effective_message)
+        if not succes:
+            await update.callback_query.answer("Ok, ho salvato il messaggio come \"non festa\", "
+                                               "ma non posso eliminare questo messaggio perchè troppo vecchio")
         return
 
     event.not_a_party = True
