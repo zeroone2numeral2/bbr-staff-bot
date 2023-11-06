@@ -455,22 +455,24 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     # create and send the main log message with user info, social, other members, and links to attachments
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "non impostato"
-    base_text = f"nuova #richiesta [#rid{request.id}][#pendente]\n\n" \
-                f"•• <b>utente</b> ••\n" \
-                f"{user_mention} [{user_username}][#id{user.id}]"
+    base_text = f"{Emoji.SPARKLE} <b>nuova #richiesta</b> • #rid{request.id} • #pendente\n\n" \
+                f"{Emoji.PERSON} <b>utente</b>\n" \
+                f"• {user_mention}\n" \
+                f"• {user_username}\n" \
+                f"• #id{user.id}"
 
     other_members_text = utilities.escape_html(request.other_members_text or "non forniti")
-    base_text += f"\n\n•• <b>utenti garanti</b> ••\n{other_members_text}"
+    base_text += f"\n\n{Emoji.PEOPLE} <b>utenti garanti</b>\n{other_members_text}"
 
     social_text = utilities.escape_html(request.social_text or "non forniti")
-    base_text += f"\n\n•• <b>social</b> ••\n{social_text}"
+    base_text += f"\n\n{Emoji.PHONE} <b>social</b>\n{social_text}"
 
     logger.debug("sending log message...")
     log_message: Message = await sent_attachment_messages[0].reply_html(base_text, quote=True, **timeouts)
     request.set_log_message(log_message)
 
     logger.debug("sending staff message...")
-    staff_message_text = f"{base_text}\n\n• <b>presentazione ed allegati</b> ••\n<a href=\"{request.log_message_link()}\">vai al log</a>"
+    staff_message_text = f"{base_text}\n\n{Emoji.SHEET} <b>presentazione ed allegati</b>\n<a href=\"{request.log_message_link()}\">vai al log</a>"
     staff_message_reply_markup = get_evaluation_keyboard(request.user_id, request.id)
     staff_message: Message = await bot.send_message(evaluation_chat_id, staff_message_text, reply_markup=staff_message_reply_markup, **timeouts)
     request.set_staff_message(staff_message)
