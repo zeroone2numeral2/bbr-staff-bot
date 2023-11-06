@@ -56,7 +56,7 @@ def catch_exception(silent=False, ignore_message_not_modified_exception=False):
                 logger.error('error while running handler callback: %s', str(e), exc_info=True)
 
                 if not silent:
-                    text = f'{Emoji.BOT} Oops, something went wrong: <code>{utilities.escape_html(str(e))}</code>'
+                    text = f'{Emoji.BOT} Oops, qualcosa è andato storto: <code>{utilities.escape_html(str(e))}</code> (#bug)'
                     if update.callback_query:
                         sent_message = await update.callback_query.message.reply_html(text)
                     else:
