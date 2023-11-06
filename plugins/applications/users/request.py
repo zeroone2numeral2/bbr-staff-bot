@@ -389,7 +389,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
 
     # merge and send all DescriptionMessage that contain the text the user sent as presentation
-    merged_text = f"•• <b>presentazione</b> ••"
+    merged_text = f"{Emoji.SHEET} <b>presentazione</b>"
     merged_text_includes = []  # list of indexes of the DescriptionMessage that have been merged into the current merged_text
     for i, description_message in enumerate(text_messages_to_merge):
         if len(merged_text) + len(description_message.text_html) > MessageLimit.MAX_TEXT_LENGTH:
