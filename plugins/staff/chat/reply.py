@@ -132,7 +132,16 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # if the admin message is a reply to a request message in the evaluation chat, reply to the message we sent the user
     # when we told them their request was sent to the staff
-    user_chat_reply_to_message_id = user_message.message_id if user_message else user.pending_request.request_sent_message_message_id
+    user_chat_reply_to_message_id = None
+    if user_message:
+        user_chat_reply_to_message_id = user_message.message_id
+    elif user.last_request:
+        # the evalutation chat's reply might be a reply to a request that was already accepted/rejected...
+        user_chat_reply_to_message_id = user.last_request.request_sent_message_message_id
+    elif user.pending_request:
+        # ...or to a pending request
+        user_chat_reply_to_message_id = user.pending_request.request_sent_message_message_id
+
     sent_message: MessageId = await update.message.copy(
         chat_id=user.user_id,
         reply_to_message_id=user_chat_reply_to_message_id,
