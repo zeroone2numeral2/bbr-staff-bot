@@ -96,11 +96,19 @@ def radar_save_date_override_to_user_data(context: ContextTypes.DEFAULT_TYPE):
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/radar23 {utilities.log(update)}")
 
-    if not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
+    skip_password_and_membership_check = False
+    if update.message.text.lower() == "/start radar1":
+        # if the deeplink param is "radar1", do not check for membership
+        # for some reason, context.args will not contain the deeplink param
+        logger.info("radar1 deeplink received, skipping membership check")
+        skip_password_and_membership_check = True
+
+    if not skip_password_and_membership_check and not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
         logger.info("forbidden: user is not a member of the users chat")
         return
 
-    if config.settings.radar_password and not user.can_use_radar:
+    if not skip_password_and_membership_check and config.settings.radar_password and not user.can_use_radar:
+        # if radar1 deeplink, do not check for password
         logger.info("forbidden: a password is set, and the user hasn't unlocked /radar yet")
         return
 
@@ -348,6 +356,7 @@ async def on_radar_password(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 HANDLERS = (
     (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (MessageHandler(filters.ChatType.PRIVATE & filters.Regex(r"^/start radar1?$"), on_radar_command), Group.NORMAL),
     (MessageHandler(filters.ChatType.PRIVATE & Filter.RADAR_PASSWORD, on_radar_password), Group.NORMAL),
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
