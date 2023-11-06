@@ -98,9 +98,9 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     skip_password_and_membership_check = False
     if update.message.text.lower() == "/start radar1":
-        # if the deeplink param is "radar1", do not check for membership
+        # if the deeplink param is "radar1", do not check for membership/password
         # for some reason, context.args will not contain the deeplink param
-        logger.info("radar1 deeplink received, skipping membership check")
+        logger.info("radar1 deeplink received, skipping membership/password check")
         skip_password_and_membership_check = True
 
     if not skip_password_and_membership_check and not chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat):
