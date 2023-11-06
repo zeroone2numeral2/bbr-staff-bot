@@ -25,20 +25,20 @@ logger = logging.getLogger(__name__)
 def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUser, user: User):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     admin_mention = utilities.mention_escaped(admin)
-    return f"Richiesta #rid{request_id} {result}\n" \
-           f"• admin: {admin_mention} [#admin{admin.id}]\n" \
-           f"• utente: {user.mention()} [#id{user.user_id}]"
+    return f"<b>Richiesta #rid{request_id} {result}</b>\n" \
+           f"• admin: {admin_mention} #admin{admin.id}\n" \
+           f"• utente: {user.mention()} #id{user.user_id}"
 
 
 async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
     logger.info("generating invite link...")
     users_chat = chats.get_chat(session, Chat.is_users_chat)
 
-    use_default_invite_link = True
+    use_default_invite_link = True  # we set this to False if the invite link generation succeeds
     can_be_revoked = False
 
     if not users_chat.can_invite_users:
-        logger.info("we don't have the permission to invite members in the users chat")
+        logger.info("we don't have the permission to generate invite links for the users chat")
     else:
         # try to generate a one-time invite link
         # if we fail, use the default one
