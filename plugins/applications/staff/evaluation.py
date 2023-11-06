@@ -159,7 +159,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     edited_log_chat_message = await bot.edit_message_text(
         chat_id=user.last_request.log_message_chat_id,
         message_id=user.last_request.log_message_message_id,
-        text=f"{user.last_request.log_message_text_html.replace('[#pendente]', '')}",
+        text=f"{user.last_request.log_message_text_html.replace(' • #pendente', '')}",
         reply_markup=None
     )
     user.last_request.update_log_chat_message(edited_log_chat_message)
