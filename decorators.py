@@ -60,7 +60,7 @@ def catch_exception(silent=False, ignore_message_not_modified_exception=False):
                     if update.callback_query:
                         sent_message = await update.callback_query.message.reply_html(text)
                     else:
-                        sent_message = await update.effective_message.reply_html(text)
+                        sent_message = await update.effective_message.reply_html(text, quote=True, allow_sending_without_reply=True)
 
                     if sent_message.chat.id > 0:
                         # only save if we sent the message in a private chat
