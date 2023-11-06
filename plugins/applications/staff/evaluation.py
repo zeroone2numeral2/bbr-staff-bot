@@ -138,7 +138,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     # we attach it at the end of the original message
     evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, admin, user)
     # we have to remove the #pendente hashtag
-    original_message_without_pending_hashtag = user.last_request.staff_message_text_html.replace("[#pendente]", "")
+    original_message_without_pending_hashtag = user.last_request.staff_message_text_html.replace(" • #pendente", "")
     edited_staff_message = await bot.edit_message_text(
         chat_id=user.last_request.staff_message_chat_id,
         message_id=user.last_request.staff_message_message_id,
