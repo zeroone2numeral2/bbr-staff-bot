@@ -367,7 +367,8 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
         else:
             title = event.event_title
 
-        title_escaped = utilities.escape_html(title.upper())
+        # https://stackoverflow.com/q/12410242
+        title_escaped = utilities.escape_html(title.title())
     else:
         title_escaped = "unnamed party"
 
