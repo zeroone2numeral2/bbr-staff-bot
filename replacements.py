@@ -15,7 +15,7 @@ PLACEHOLDER_REPLACEMENTS_TELEGRAM_USER = {
     "{USERNAME}": lambda u: f"@{u.username}" if u.username else "-",
     "{MENTION}": lambda u: helpers.mention_html(u.id, utilities.escape_html(u.first_name)),
     "{LANG}": lambda u: LANGUAGES[u.language_code]["desc"] if u.language_code and u.language_code in LANGUAGES else LANGUAGES[Language.EN]["desc"],
-    "{LANGEMOJI}": lambda u: LANGUAGES[u.language_code]["emoji"] if u.language_code else LANGUAGES[Language.EN]["emoji"]
+    "{LANGEMOJI}": lambda u: LANGUAGES[u.language_code]["emoji"] if u.language_code and u.language_code in LANGUAGES else LANGUAGES[Language.EN]["emoji"]
 }
 
 
