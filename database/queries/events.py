@@ -1,11 +1,12 @@
 import datetime
 from typing import Optional, List, Any, Tuple
 
-from sqlalchemy import select, false, null
+from sqlalchemy import select, false, null, true
 from sqlalchemy.orm import Session
 
 import utilities
-from database.models import Event
+from database.models import Event, Chat
+from config import config
 
 
 def get_or_create(session: Session, chat_id: int, message_id: int, create_if_missing=True, commit=False) -> Optional[Event]:
@@ -22,7 +23,6 @@ def get_or_create(session: Session, chat_id: int, message_id: int, create_if_mis
 
 def get_events(
         session: Session,
-        chat_id: Optional[int] = None,
         skip_canceled: bool = False,
         filters: Optional[List] = None,
         order_by: Optional[List] = None  # list of Event class property to use as order_by
@@ -30,20 +30,21 @@ def get_events(
     if not filters:
         filters = []
 
+    if not config.settings.allow_events_from_any_chat:
+        filters.append(Chat.is_events_chat == true())
+
     filters.append(Event.deleted == false())
     # even if not_a_party's defualt is False, we have to explicitly select also NULL values
     filters.append(((Event.not_a_party == false()) | Event.not_a_party.is_(None)))
 
-    if chat_id:
-        filters.append(Event.chat_id == chat_id)
     if skip_canceled:
         filters.append(Event.canceled == false())
 
     if not order_by:
         order_by = []
 
-    query = select(Event).filter(*filters).order_by(*order_by)
-    print(query)
+    query = select(Event).join(Chat).filter(*filters).order_by(*order_by)
+    # print(query)
 
     return session.scalars(query)
 
