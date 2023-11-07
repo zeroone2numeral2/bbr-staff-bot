@@ -26,8 +26,8 @@ def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUs
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     admin_mention = utilities.mention_escaped(admin)
     return f"<b>Richiesta #rid{request_id} {result}</b>\n" \
-           f"• admin: {admin_mention} #admin{admin.id}\n" \
-           f"• utente: {user.mention()} #id{user.user_id}"
+           f"admin: {admin_mention} • #admin{admin.id}\n" \
+           f"utente: {user.mention()} • #id{user.user_id}"
 
 
 async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
