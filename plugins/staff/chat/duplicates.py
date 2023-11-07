@@ -2,19 +2,24 @@ import logging
 from typing import List
 
 from sqlalchemy.orm import Session
-from telegram import Update, Chat
+from telegram import Update, Chat, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import BadRequest
-from telegram.ext import ContextTypes, MessageHandler, CommandHandler
+from telegram.ext import ContextTypes, MessageHandler, CommandHandler, CallbackQueryHandler
 from telegram.ext import filters
 
 from database.models import StaffChatMessage
 import decorators
 import utilities
-from constants import Group
+from constants import Group, TempDataKey
 from database.queries import staff_chat_messages
+from emojis import Emoji
 from ext.filters import ChatFilter, Filter
 
 logger = logging.getLogger(__name__)
+
+DUPLICATE_MESSAGE_REPLY_MARKUP = InlineKeyboardMarkup([[
+    InlineKeyboardButton(f"{Emoji.SIGN} elimina questo messaggio", callback_data=f"deldup")
+]])
 
 
 @decorators.catch_exception()
@@ -51,9 +56,32 @@ async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TY
     logger.info(f"found {len(duplicates)} duplicates")
     duplicates_links = [d.message_link_html(f"{utilities.elapsed_str(d.message_date, 'poco')} fa") for d in duplicates]
     text = f"Sembra che questo messaggio sia già stato inviato {'; '.join(duplicates_links)}"
-    await update.effective_message.reply_text(text, quote=True)
+    await update.effective_message.reply_text(text, reply_markup=DUPLICATE_MESSAGE_REPLY_MARKUP, quote=True)
+
+
+@decorators.catch_exception()
+async def on_delete_message_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"delete duplicate notification button {utilities.log(update)}")
+
+    tap_key = f"deldup:{update.effective_chat.id}:{update.effective_message.message_id}"
+
+    if TempDataKey.DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE not in context.user_data:
+        context.user_data[TempDataKey.DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE] = {}
+
+    if tap_key not in context.user_data[TempDataKey.DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE]:
+        logger.info(f"first time tap for key {tap_key}, showing alert...")
+        await update.callback_query.answer(
+            f"usa di nuovo il tasto per eliminare il messaggio",
+            show_alert=False
+        )
+        context.user_data[TempDataKey.DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE][tap_key] = True
+        return
+
+    context.user_data[TempDataKey.DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
+    await utilities.delete_messages_safe(update.effective_message)
 
 
 HANDLERS = (
     (MessageHandler(ChatFilter.STAFF & Filter.MESSAGE_OR_EDIT, on_staff_chat_message), Group.NORMAL),
+    (CallbackQueryHandler(on_delete_message_button, rf"deldup$"), Group.NORMAL),
 )
