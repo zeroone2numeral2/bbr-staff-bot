@@ -22,3 +22,7 @@ After every git pull/merge, it is highly suggested to upgrade the database struc
 ```bash
 alembic upgrade head
 ```
+
+### Data this bot collects
+
+See `collected-data.md`
