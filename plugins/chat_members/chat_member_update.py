@@ -9,6 +9,7 @@ from telegram.ext import ChatMemberHandler, CallbackContext
 from constants import Group
 from database.models import User, Chat, ChatMember as DbChatMember
 from database.queries import users, chats
+from emojis import Emoji
 from plugins.chat_members.common import (
     save_or_update_users_from_chat_member_update,
     save_chat_member
@@ -61,7 +62,7 @@ async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_
         invite_link_id = utilities.extract_invite_link_id(chat_member_updated.invite_link.invite_link)
         created_by = chat_member_updated.invite_link.creator
         admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
-        text = f"<b>#JOIN_SENZA_RICHIESTA</b> di {user_mention} • #id{user.user_id}\n\n" \
+        text = f"{Emoji.LINK} <b>#JOIN_SENZA_RICHIESTA</b> di {user_mention} • #id{user.user_id}\n\n" \
                f"link: #link{invite_link_id} ({invite_link_name})\n" \
                f"generato da: {admin_mention} • #admin{created_by.id}"
 
