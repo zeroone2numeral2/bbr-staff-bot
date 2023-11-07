@@ -356,7 +356,7 @@ def drop_events_cache(context: CallbackContext):
     return False
 
 
-def format_event_string(event: Event, message_date_instead_of_event_date=False, discussion_group_message_link=True) -> Tuple[str, int]:
+def format_event_string(event: Event, message_date_instead_of_event_date=False, include_discussion_group_message_link=True) -> Tuple[str, int]:
     region_icon = ""
     if event.region and event.region in REGIONS_DATA:
         region_icon = REGIONS_DATA[event.region]["emoji"]
@@ -366,6 +366,7 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
             title = event.event_title[:MAX_EVENT_TITLE_LEN] + "..."
         else:
             title = event.event_title
+
         title_escaped = utilities.escape_html(title.upper())
     else:
         title_escaped = "unnamed party"
@@ -380,7 +381,7 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
 
     # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
     title_with_link = f"<b><a href=\"{event.message_link()}\">{title_escaped}</a></b>"
-    if discussion_group_message_link and event.discussion_group_message_id:
+    if include_discussion_group_message_link and event.discussion_group_message_id:
         # add a link to the post in the discussion group
         title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
 

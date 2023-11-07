@@ -55,7 +55,7 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
 
     event: Event
     for event in week_events:
-        event_string, _ = format_event_string(event, discussion_group_message_link=False)
+        event_string, _ = format_event_string(event, include_discussion_group_message_link=False)
         text += f"\n{event_string}"
 
     text += f"\n\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
