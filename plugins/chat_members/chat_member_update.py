@@ -54,16 +54,16 @@ async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_
         if chat_member_updated.invite_link.is_primary:
             invite_link_name = "link d'invito primario"
         elif chat_member_updated.invite_link.name:
-            invite_link_name = f"\"{chat_member_updated.invite_link.name}\""
+            invite_link_name = f"\"{utilities.escape_html(chat_member_updated.invite_link.name)}\""
         else:
             invite_link_name = "senza nome"
 
         invite_link_id = utilities.extract_invite_link_id(chat_member_updated.invite_link.invite_link)
         created_by = chat_member_updated.invite_link.creator
         admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
-        admin_string = f"{admin_mention} (#admin{created_by.id})"
-        text = f"#JOIN_SENZA_RICHIESTA di {user_mention} (#id{user.user_id})\n\n" \
-               f"#link{invite_link_id} ({invite_link_name}) generato da {admin_string}"
+        text = f"<b>#JOIN_SENZA_RICHIESTA</b> di {user_mention} • #id{user.user_id}\n\n" \
+               f"link: #link{invite_link_id} ({invite_link_name})\n" \
+               f"generato da: {admin_mention} • #admin{created_by.id}"
 
         await bot.send_message(log_chat.chat_id, text)
         return
