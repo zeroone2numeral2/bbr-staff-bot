@@ -335,8 +335,9 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
             data = dict(text=text, user_id=update.effective_user.id)
             context.job_queue.run_once(callback=send_waiting_for_more_message, when=3, name=job_name, data=data)
     else:
-        # this is actually needed if we want the "done" keyboard to appear after the user sends the message
-        sent_message = await update.message.reply_text(text, reply_markup=get_done_keyboard("Invia altri messaggi/media"), quote=True)
+        # sending this message is needed if we want the "done" keyboard to appear after the user sends the message
+        reply_markup = get_done_keyboard("Invia altri messaggi/media")
+        sent_message = await update.message.reply_text(text, reply_markup=reply_markup, quote=True)
         private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
