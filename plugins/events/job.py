@@ -40,9 +40,15 @@ PARTIES_MESSAGE_TYPES = {
     ListTypeKey.ABROAD: [Event.region.not_in(IT_REGIONS)]
 }
 
+# we will post a channel message for each of these lists types
+PARTIES_MESSAGE_TYPES_ARGS = {
+    ListTypeKey.ITALY: [EventFilter.IT],
+    ListTypeKey.ABROAD: [EventFilter.NOT_IT]
+}
 
-def get_events_text(session: Session, filter_key: str, now: datetime.datetime, filters: List) -> str:
-    logger.info(f"getting events of type \"{filter_key}\"...")
+
+def get_events_text_old(session: Session, filter_key: str, now: datetime.datetime, filters: List) -> str:
+    logger.info(f"(old) getting events of type \"{filter_key}\"...")
 
     weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
     week_events, from_date, next_monday = events.get_week_events(session, now, filters, weeks=weeks)
@@ -69,8 +75,8 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, f
     return text
 
 
-def get_events_text_test(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> str:
-    logger.info(f"(test) getting events of type \"{filter_key}\"...")
+def get_events_text(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> str:
+    logger.info(f"getting events of type \"{filter_key}\"...")
 
     # always group by, even if just a week is requested
     args.append(GroupBy.WEEK_NUMBER)
@@ -81,6 +87,7 @@ def get_events_text_test(session: Session, filter_key: str, now: datetime.dateti
     else:
         args.append(EventFilter.WEEK_2)
 
+    logger.info(f"args: {args}")
     all_events = get_all_events_strings_from_db_group_by(session, args)
 
     events_text = "\n".join(all_events)
@@ -88,7 +95,8 @@ def get_events_text_test(session: Session, filter_key: str, now: datetime.dateti
     events_text = events_text.strip()
 
     text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n{events_text}"
-    text += f"\n\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
+    now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
+    text += f"\n\n{utilities.subscript(now_str)}"
 
     entities_count = utilities.count_html_entities(text)
     logger.debug(f"entities count: {entities_count}/{MessageLimit.MESSAGE_ENTITIES}")
@@ -140,7 +148,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
     now = utilities.now(tz=True)
 
-    for filter_key, filters in PARTIES_MESSAGE_TYPES.items():
+    for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
         logger.info(f"filter: {filter_key}")
 
         current_isoweek = now.isocalendar()[1]
@@ -171,7 +179,8 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             logger.info("no need to post new message or update the existing one: continuing to next filter...")
             continue
 
-        text = get_events_text(session, filter_key, now, filters)
+        # text = get_events_text_old(session, filter_key, now, filters)
+        text = get_events_text(session, filter_key, now, args)
 
         if post_new_message:
             logger.info("posting new message...")

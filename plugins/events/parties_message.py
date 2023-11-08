@@ -12,8 +12,8 @@ from database.models import Chat, PartiesMessage
 from database.queries import chats, parties_messages
 from ext.filters import ChatFilter, Filter
 from plugins.events.common import EventFilter, get_all_events_strings_from_db_group_by
-from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, PARTIES_MESSAGE_TYPES, get_events_text, \
-    ListTypeKey, get_events_text_test
+from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, PARTIES_MESSAGE_TYPES, get_events_text_old, \
+    ListTypeKey, get_events_text, PARTIES_MESSAGE_TYPES_ARGS
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +57,9 @@ async def on_sendlists_command(update: Update, context: ContextTypes.DEFAULT_TYP
 async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/getlists {utilities.log(update)}")
 
-    PARTIES_MESSAGE_TYPES_ARGS = {
-        ListTypeKey.ITALY: [EventFilter.IT],
-        ListTypeKey.ABROAD: [EventFilter.NOT_IT]
-    }
-
     now = utilities.now(tz=True)
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
-        text = get_events_text_test(session, filter_key, now, args)
+        text = get_events_text(session, filter_key, now, args)
 
         await update.message.reply_html(f"{text}")
 
