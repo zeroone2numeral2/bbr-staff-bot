@@ -94,7 +94,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     user_message: Optional[UserMessage] = None
-    if chat.is_evaluation_chat and update.message.reply_to_message.text and update.message.reply_to_message.text.startswith("nuova #richiesta"):
+    if chat.is_evaluation_chat and update.message.reply_to_message.text and re.search(r"^.+nuova #richiesta", update.message.reply_to_message.text):
         logger.info("reply to an user request message sent by the bot in the evaluation chat")
         # get the User object from the db based on the #id hashtag
         user_id = utilities.get_user_id_from_text(update.message.reply_to_message.text)
