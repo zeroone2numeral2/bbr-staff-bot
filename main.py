@@ -1,4 +1,6 @@
+import json
 import logging
+import traceback
 from typing import Union, Iterable
 
 import pytz
@@ -8,8 +10,9 @@ from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMemberAdministrator
 from telegram import Update, BotCommandScopeChat, ChatMemberOwner, BotCommandScopeDefault
 from telegram.constants import ParseMode
-from telegram.error import BadRequest
-from telegram.ext import ApplicationBuilder, Application, PicklePersistence, PersistenceInput
+from telegram.error import BadRequest, NetworkError
+from telegram.ext import ApplicationBuilder, Application, PicklePersistence, PersistenceInput, ContextTypes, \
+    CommandHandler
 from telegram.ext import Defaults
 from telegram.ext import ExtBot
 
@@ -148,6 +151,43 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
         await bot.set_my_commands(evaluation_chat_commands, scope=BotCommandScopeChat(evaluation_chat.chat_id))
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # https://docs.python-telegram-bot.org/en/v20.6/examples.errorhandlerbot.html
+    if isinstance(context.error, NetworkError):
+        logger.error(f"NetworkError: {context.error}")
+        return
+
+    logger.error("uncaught exception while handling an update:", exc_info=context.error)
+
+    # traceback.format_exception returns the usual python message about an exception, but as a
+    # list of strings rather than a single string, so we have to join them together
+    # traceback_list = traceback.format_exception(None, context.error, context.error.__traceback__)
+    # traceback_string = "".join(traceback_list)
+
+    # might need to add some logic to deal with messages longer than the 4096 character limit
+    update_str = update.to_dict() if isinstance(update, Update) else str(update)
+    logger.error(f"update that caused the exception: {update_str}")
+    logger.error(f"context.chat_data: {context.chat_data}")
+    logger.error(f"context.user_data: {context.user_data}")
+
+    # text = (
+    #     "An exception was raised while handling an update\n"
+    #     f"<pre>update = {utilities.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
+    #     "</pre>\n\n"
+    #     f"<pre>context.chat_data = {utilities.escape(str(context.chat_data))}</pre>\n\n"
+    #     f"<pre>context.user_data = {utilities.escape(str(context.user_data))}</pre>\n\n"
+    #     f"<pre>{utilities.escape(traceback_string)}</pre>"
+    # )
+    text = f"#flytekbbr error: <code>{utilities.escape(str(context.error))}</code>"
+
+    await context.bot.send_message(config.telegram.admins[0], text)
+
+
+async def test_bad_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Raise an error to trigger the error handler."""
+    await context.bot.wrong_method_name()  # type: ignore[attr-defined]
+
+
 async def post_init(application: Application) -> None:
     bot: ExtBot = application.bot
 
@@ -231,6 +271,9 @@ def main():
 
     if config.handlers.mode == HandlersMode.FLYTEK:
         app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency * 60, first=20)
+
+    app.add_handler(CommandHandler("bad_command", test_bad_command))
+    app.add_error_handler(error_handler)
 
     drop_pending_updates = utilities.is_test_bot()
 

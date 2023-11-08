@@ -54,6 +54,9 @@ def catch_exception(silent=False, ignore_message_not_modified_exception=False):
                     return
 
                 logger.error('error while running handler callback: %s', str(e), exc_info=True)
+                logger.error(f"update that caused the exception: {update.to_dict()}")
+                logger.error(f"context.chat_data: {context.chat_data}")
+                logger.error(f"context.user_data: {context.user_data}")
 
                 if not silent:
                     text = f'{Emoji.BOT} Oops, qualcosa è andato storto: <code>{utilities.escape_html(str(e))}</code> (#bug)'
