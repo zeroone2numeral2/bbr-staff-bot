@@ -307,7 +307,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         event_title_link = event.title_link_html()
         await update.message.reply_html(
             f"<a href=\"{message_link}\">Messaggio inviato</a> come commento a \"{event_title_link}\"",
-            quote=True
+            reply_to_message_id=update.effective_message.reply_to_message.message_id
         )
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while copying message: {e.message}")
