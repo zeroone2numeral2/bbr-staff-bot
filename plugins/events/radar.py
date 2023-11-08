@@ -349,7 +349,7 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
 @decorators.pass_session(pass_user=True)
 @decorators.check_ban()
 async def on_radar_password(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"radar password ({update.message.text}) {utilities.log(update)}")
+    logger.info(f"radar password/deeplink ({update.message.text}) {utilities.log(update)}")
 
     user.can_use_radar = True
     session.commit()
