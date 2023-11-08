@@ -313,8 +313,10 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         logger.error(f"error while copying message: {e.message}")
         if e.message.lower() == "replied message not found":
             discussion_message_link = event.discussion_group_message_link()
-            await update.message.reply_html(f"Invio fallito: impossibile trovare <a href=\"{discussion_message_link}\">"
-                                            f"il messaggio nel gruppo</a> a cui rispondere", quote=True)
+            await update.message.reply_html(
+                f"Invio fallito: impossibile trovare <a href=\"{discussion_message_link}\">il messaggio nel gruppo</a> a cui rispondere",
+                reply_to_message_id=update.effective_message.reply_to_message.message_id
+            )
         else:
             raise e
 
