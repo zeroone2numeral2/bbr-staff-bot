@@ -547,7 +547,8 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
         prev_month = today.month - 1 if today.month != 1 else 12
         prev_month_year = today.year if prev_month != 1 else today.year - 1
         next_month = today.month + 1 if today.month != 12 else 1
-        next_month_year = today.year if next_month != 12 else today.year + 1
+        next_month_year = today.year if this_month != 12 else today.year + 1
+        # logger.info(f"this month: {this_month}/{this_month_year}; next month: {next_month}/{next_month_year}")
 
         # we need this date to extract all events that do not have an end date, but
         # that started recently in the past. The party might last several days, so we
