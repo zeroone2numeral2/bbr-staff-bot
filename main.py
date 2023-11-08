@@ -272,7 +272,7 @@ def main():
     if config.handlers.mode == HandlersMode.FLYTEK:
         app.job_queue.run_repeating(parties_message_job, interval=config.settings.parties_message_job_frequency * 60, first=20)
 
-    app.add_handler(CommandHandler("bad_command", test_bad_command))
+    # app.add_handler(CommandHandler("bad_command", test_bad_command))
     app.add_error_handler(error_handler)
 
     drop_pending_updates = utilities.is_test_bot()
