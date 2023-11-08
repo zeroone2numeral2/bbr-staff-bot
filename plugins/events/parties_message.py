@@ -12,7 +12,7 @@ from database.models import Chat, PartiesMessage
 from database.queries import chats, parties_messages
 from ext.filters import ChatFilter, Filter
 from plugins.events.common import EventFilter, get_all_events_strings_from_db_group_by
-from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, PARTIES_MESSAGE_TYPES, get_events_text_old, \
+from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, PARTIES_MESSAGE_TYPES, \
     ListTypeKey, get_events_text, PARTIES_MESSAGE_TYPES_ARGS
 
 logger = logging.getLogger(__name__)
