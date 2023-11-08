@@ -96,6 +96,9 @@ def radar_save_date_override_to_user_data(context: ContextTypes.DEFAULT_TYPE):
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/radar23 {utilities.log(update)}")
 
+    # set started, in case we entered this handler because of a deeplink
+    user.set_started()
+
     skip_password_and_membership_check = False
     if update.message.text.lower() == "/start radar1":
         # if the deeplink param is "radar1", do not check for membership/password
@@ -352,6 +355,7 @@ async def on_radar_password(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     logger.info(f"radar password/deeplink ({update.message.text}) {utilities.log(update)}")
 
     user.can_use_radar = True
+    user.set_started()
     session.commit()
 
     await update.message.reply_html(f"Ora puoi usare /radar23 ;)")
