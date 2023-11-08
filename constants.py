@@ -52,6 +52,11 @@ class HandlersMode:
     BBR = "bbr"
 
 
+class DeeplinkParam:
+    RADAR = "radar"
+    RADAR_UNLOCK = "radarunlock"
+
+
 class MediaType:
     PHOTO = "photo"
     VIDEO = "video"

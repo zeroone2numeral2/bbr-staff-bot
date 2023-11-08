@@ -24,7 +24,7 @@ from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages
 import decorators
 import utilities
-from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
+from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout, DeeplinkParam
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -358,10 +358,15 @@ async def on_radar_password(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 
 HANDLERS = (
+    # radar
     (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (MessageHandler(filters.ChatType.PRIVATE & filters.Regex(r"^/start radar$"), on_radar_command), Group.NORMAL),
-    # (MessageHandler(filters.ChatType.PRIVATE & filters.Regex(r"^/start radar1$"), on_radar_command), Group.NORMAL),
-    (MessageHandler(filters.ChatType.PRIVATE & (Filter.RADAR_PASSWORD | filters.Regex(r"^/start radarunlock$")), on_radar_password), Group.NORMAL),
+    (CommandHandler("start", on_radar_command, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR}$")), Group.NORMAL),
+
+    # unlocking radar
+    (MessageHandler(filters.ChatType.PRIVATE & Filter.RADAR_PASSWORD, on_radar_password), Group.NORMAL),
+    (CommandHandler("start", on_radar_password, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR_UNLOCK}$")), Group.NORMAL),
+
+    # radar callback queries
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_events_confirm_cb, pattern=r"eventsconfirm$"), Group.NORMAL),
 )
