@@ -47,34 +47,6 @@ PARTIES_MESSAGE_TYPES_ARGS = {
 }
 
 
-def get_events_text_old(session: Session, filter_key: str, now: datetime.datetime, filters: List) -> str:
-    logger.info(f"(old) getting events of type \"{filter_key}\"...")
-
-    weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
-    week_events, from_date, next_monday = events.get_week_events(session, now, filters, weeks=weeks)
-    to_date = next_monday + datetime.timedelta(-1)  # remove the monday
-
-    from_str = utilities.format_datetime(from_date, format_str='%d/%m')
-    to_str = utilities.format_datetime(to_date, format_str='%d/%m')
-
-    text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}, dal {from_str} al {to_str}:</b>\n"
-
-    event: Event
-    for event in week_events:
-        event_string, _ = format_event_string(event, include_discussion_group_message_link=False)
-        text += f"\n{event_string}"
-
-    text += f"\n\n{utilities.subscript(utilities.format_datetime(now, format_str='%Y%m%d %H%M'))}"
-
-    entities_count = utilities.count_html_entities(text)
-    logger.debug(f"entities count: {entities_count}")
-    if entities_count > MessageLimit.MESSAGE_ENTITIES:
-        # remove bold entities if we cross the limit
-        text = re.sub(r"</?b>", "", text)
-
-    return text
-
-
 def get_events_text(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> str:
     logger.info(f"getting events of type \"{filter_key}\"...")
 
@@ -179,7 +151,6 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             logger.info("no need to post new message or update the existing one: continuing to next filter...")
             continue
 
-        # text = get_events_text_old(session, filter_key, now, filters)
         text = get_events_text(session, filter_key, now, args)
 
         if post_new_message:
