@@ -317,6 +317,8 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
 
     if description_message.text:
         # mark as ready only when we receive at least a text
+        # if we decide to mark it as ready even if only a single voice message/media is received, make sure the
+        # fucntion that sends all the "describe self" messages in the log channel is updated too
         user.pending_request.ready = True
 
     # we commit now so request.description_messages will be updated with also the message we just received (not tested)
