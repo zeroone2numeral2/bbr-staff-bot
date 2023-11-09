@@ -104,7 +104,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
             logger.warning(f"couldn't find user {user_id} in the database")
             return
 
-        # set this flag to true so we know that the user's replies should be forwarded to the staff
+        # set this flag to true, so we know that the user's replies should be forwarded to the staff
         user.conversate_with_staff_override = True
     else:
         user_message: UserMessage = user_messages.get_user_message(session, update)
@@ -115,6 +115,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
             return
         user: User = user_message.user
 
+    user: User
     try:
         await context.bot.send_chat_action(user.user_id, ChatAction.TYPING)
         # time.sleep(3)
@@ -122,7 +123,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         if e.message.lower() == "forbidden: bot was blocked by the user":
             logger.warning("bot was blocked by the user")
             await update.message.reply_text(
-                f"{Emoji.WARNING} <i>coudln't send the message to the user: they blocked the bot</i>",
+                f"{Emoji.WARNING} <i>coudln't send the message to {user.mention()}: they blocked the bot</i>",
                 quote=True
             )
             user.set_stopped()
@@ -171,7 +172,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
     )
     session.add(admin_message)
 
-    await update.message.reply_html("<i>message sent to the user</i>", quote=True)
+    await update.message.reply_html(f"<i>message sent to {user.mention()}</i>", quote=True)
 
 
 HANDLERS = (
