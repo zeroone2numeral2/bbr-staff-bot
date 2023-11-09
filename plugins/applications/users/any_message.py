@@ -47,14 +47,18 @@ async def on_test_delhistory(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     now = utilities.now()
 
+    too_old_count = 0
     messages: List[PrivateChatMessage] = private_chat_messages.get_messages(session, update.effective_user.id)
     for message in messages:
         if not message.can_be_deleted(now):
+            too_old_count += 1
             continue
 
         logger.debug(f"deleting message {message.message_id} from chat {update.effective_user.id}")
         await context.bot.delete_message(update.effective_user.id, message.message_id)
         message.set_revoked(reason="/delhistory command")
+
+    logger.info(f"couldn't delete {too_old_count} messages because they are too old")
 
     if sent_message:
         # sending the gif might have failed
