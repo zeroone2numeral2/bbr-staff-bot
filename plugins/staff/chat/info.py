@@ -89,7 +89,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     text += f"\n• #id{user.user_id}"
 
-    await update.effective_message.reply_text(text)
+    await update.effective_message.reply_text(text, quote=True)
 
 
 @decorators.catch_exception()
