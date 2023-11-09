@@ -81,13 +81,13 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/listsinfo {utilities.log(update)}")
 
-    pl_settings = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.PARTIES_LIST)
-    enabled = pl_settings[BotSettingKey.PARTIES_LIST].value()
-    weeks = pl_settings[BotSettingKey.PARTIES_LIST_WEEKS].value()
-    weekday = pl_settings[BotSettingKey.PARTIES_LIST_WEEKDAY].value()
-    hour = pl_settings[BotSettingKey.PARTIES_LIST_HOUR].value()
-    pin = pl_settings[BotSettingKey.PARTIES_LIST_PIN].value()
-    group_messages_links = pl_settings[BotSettingKey.PARTIES_LIST_DISCUSSION_LINK].value()
+    pls_dict = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.PARTIES_LIST)
+    enabled = pls_dict[BotSettingKey.PARTIES_LIST].value()
+    weeks = pls_dict[BotSettingKey.PARTIES_LIST_WEEKS].value()
+    weekday = pls_dict[BotSettingKey.PARTIES_LIST_WEEKDAY].value()
+    hour = pls_dict[BotSettingKey.PARTIES_LIST_HOUR].value()
+    pin = pls_dict[BotSettingKey.PARTIES_LIST_PIN].value()
+    group_messages_links = pls_dict[BotSettingKey.PARTIES_LIST_DISCUSSION_LINK].value()
 
     list_was_updated = context.bot_data.get(TempDataKey.UPDATE_PARTIES_MESSAGE, False)  # do not pop
 
