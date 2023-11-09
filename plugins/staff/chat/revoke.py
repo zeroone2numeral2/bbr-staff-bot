@@ -44,7 +44,7 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
     )
 
     await update.message.reply_text(
-        "🚮 <i>message revoked successfully: it has been deleted from the user's chat</i>",
+        f"{Emoji.TRASH} <i>message revoked successfully: it has been deleted from {admin_message.target_user.mention()}'s chat</i>",
         reply_to_message_id=update.message.reply_to_message.message_id
     )
 
