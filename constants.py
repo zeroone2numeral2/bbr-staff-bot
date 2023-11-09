@@ -289,7 +289,7 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list",
         emoji=Emoji.PIRATE,
         description="every week, send a message in the events channel listing the parties of the week",
-        show_if_true_key=None,
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_WEEKS: dict(
@@ -298,7 +298,7 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list weeks",
         emoji=Emoji.PIRATE,
         description="how many weeks should be included in the list, 0 or 1 for current week",
-        show_if_true_key=None,
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_WEEKDAY: dict(
@@ -307,7 +307,7 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list weekday",
         emoji=Emoji.PIRATE,
         description="on which weekday to post the parties list (0: monday, ..., 6: sunday)",
-        show_if_true_key=None,
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_HOUR: dict(
@@ -316,7 +316,7 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list hour",
         emoji=Emoji.PIRATE,
         description="at which hour to post the parties list",
-        show_if_true_key=None,
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_PIN: dict(
@@ -325,7 +325,7 @@ BOT_SETTINGS_DEFAULTS = {
         label="pin parties list",
         emoji=Emoji.PIRATE,
         description="whether to pin or not the parties messages after they're sent",
-        show_if_true_key=None,
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_DISCUSSION_LINK: dict(
@@ -334,7 +334,7 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list group message",
         emoji=Emoji.PIRATE,
         description="whether to include or not a link to the channel's message posted in the group",
-        show_if_true_key=None,
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.APPROVAL_MODE: dict(
@@ -361,7 +361,7 @@ BOT_SETTINGS_DEFAULTS = {
         label="gif comando radar",
         emoji=Emoji.COMPASS,
         description="gif da mandare quando qualcuno usa /radar23",
-        show_if_true_key=None,
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=True
     ),
 }
