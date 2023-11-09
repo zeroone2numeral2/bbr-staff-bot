@@ -1,7 +1,7 @@
 import json
 import logging
 import traceback
-from typing import Union, Iterable
+from typing import Union, Iterable, Optional
 
 import pytz
 from sqlalchemy import select
@@ -195,14 +195,18 @@ async def post_init(application: Application) -> None:
 
     logger_startup.info("populating default settings...")
     for bot_setting_key, bot_setting_data in BOT_SETTINGS_DEFAULTS.items():
-        setting = session.query(BotSetting).filter(BotSetting.key == bot_setting_key).one_or_none()
+        setting: Optional[BotSetting] = session.query(BotSetting).filter(BotSetting.key == bot_setting_key).one_or_none()
         if not setting:
             setting = BotSetting(
-                bot_setting_key, bot_setting_data["default"],
+                key=bot_setting_key,
+                category=bot_setting_data["category"],
+                value=bot_setting_data["default"],
                 telegram_media=bot_setting_data["telegram_media"],
                 show_if_true_key=bot_setting_data["show_if_true_key"]
             )
             session.add(setting)
+        elif not setting.category:
+            setting.category = bot_setting_data["category"]
 
     session.commit()
 

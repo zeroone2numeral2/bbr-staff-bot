@@ -629,6 +629,7 @@ class BotSetting(Base):
     __tablename__ = 'bot_settings'
 
     key = Column(String, primary_key=True)
+    category = Column(String, default=None)
 
     value_bool = Column(Boolean, default=None)
     value_int = Column(Integer, default=None)
@@ -658,8 +659,9 @@ class BotSetting(Base):
         uselist=False
     )
 
-    def __init__(self, key, value=None, telegram_media=False, show_if_true_key=None):
+    def __init__(self, key: str, category: str, value=None, telegram_media=False, show_if_true_key=None):
         self.key = key.lower()
+        self.category = category.lower()
         self.update_value(value, telegram_media=telegram_media, raise_on_unknown_type=False)
         self.show_if_true_key = show_if_true_key
 

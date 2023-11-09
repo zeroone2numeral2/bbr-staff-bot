@@ -91,6 +91,14 @@ class BotSettingKey:
     PARTIES_LIST_WEEKS = "parties_list_weeks"
 
 
+class BotSettingCategory:
+    GENERAL = "general"
+    PARTIES_LIST = "parties_list"
+    REQUESTS = "requests"
+    RADAR = "radar"
+    USER_MESSAGES = "user_messages"
+
+
 class LocalizedTextKey:
     WELCOME = "welcome"
     SENT_TO_STAFF = "sent_to_staff"
@@ -227,6 +235,7 @@ LOCALIZED_TEXTS_TRIGGERS = {
 
 BOT_SETTINGS_DEFAULTS = {
     BotSettingKey.SENT_TO_STAFF: dict(
+        category=BotSettingCategory.USER_MESSAGES,
         default=True,
         label="\"sent to staff\" message",
         emoji=Emoji.ENVELOPE,
@@ -235,6 +244,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.BROADCAST_EDITS: dict(
+        category=BotSettingCategory.USER_MESSAGES,
         default=True,
         label="broadcast edits",
         emoji=Emoji.PENCIL,
@@ -243,6 +253,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.ALLOW_USER_REVOKE: dict(
+        category=BotSettingCategory.USER_MESSAGES,
         default=True,
         label="user messages revoke",
         emoji=Emoji.TRASH,
@@ -251,6 +262,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.CHAT_INVITE_LINK: dict(
+        category=BotSettingCategory.GENERAL,
         default=None,
         label="chat invite link",
         emoji=Emoji.LINK,
@@ -259,6 +271,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.FALLBACK_LANGAUGE: dict(
+        category=BotSettingCategory.GENERAL,
         default=Language.EN,
         label="fallback language",
         emoji=Emoji.EARTH,
@@ -267,6 +280,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST: dict(
+        category=BotSettingCategory.PARTIES_LIST,
         default=False,
         label="parties list",
         emoji=Emoji.PIRATE,
@@ -275,6 +289,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_WEEKS: dict(
+        category=BotSettingCategory.PARTIES_LIST,
         default=1,
         label="parties list weeks",
         emoji=Emoji.PIRATE,
@@ -283,6 +298,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.APPROVAL_MODE: dict(
+        category=BotSettingCategory.REQUESTS,
         default=False,
         label="approval mode",
         emoji=Emoji.LENS,
@@ -291,6 +307,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=False
     ),
     BotSettingKey.RABBIT_FILE: dict(
+        category=BotSettingCategory.REQUESTS,
         default=None,
         label="\"follow the rabbit\"",
         emoji=Emoji.RABBIT,
@@ -299,6 +316,7 @@ BOT_SETTINGS_DEFAULTS = {
         telegram_media=True
     ),
     BotSettingKey.RADAR_FILE: dict(
+        category=BotSettingCategory.RADAR,
         default=None,
         label="gif comando radar",
         emoji=Emoji.COMPASS,
