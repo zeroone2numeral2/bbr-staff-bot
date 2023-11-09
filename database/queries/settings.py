@@ -11,12 +11,20 @@ def get_settings(session: Session):
     return session.scalars(statement)
 
 
-def get_settings_as_dict(session: Session, categories: Optional[Union[List[str], str]] = None):
+def get_settings_as_dict(
+        session: Session,
+        include_categories: Optional[Union[List[str], str]] = None,
+        exclude_categories: Optional[Union[List[str], str]] = None
+):
     filters = []
-    if categories:
-        if isinstance(categories, str):
-            categories = [categories]
-        filters.append(BotSetting.category.in_(categories))
+    if include_categories:
+        if isinstance(include_categories, str):
+            include_categories = [include_categories]
+        filters.append(BotSetting.category.in_(include_categories))
+    if exclude_categories:
+        if isinstance(exclude_categories, str):
+            exclude_categories = [exclude_categories]
+        filters.append(BotSetting.category.not_in(exclude_categories))
 
     statement = select(BotSetting).filter(*filters)
     settings_dict = {}
