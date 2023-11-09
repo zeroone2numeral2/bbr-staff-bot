@@ -59,12 +59,12 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
            f"• <b>username</b>: @{user.username or '-'}\n" \
            f"• <b>first seen</b>: {utilities.format_datetime(user.first_seen)}\n" \
            f"• <b>last seen</b>: {utilities.format_datetime(user.last_message)}\n" \
-           f"• <b>started</b>: {user.started} (on: {utilities.format_datetime(user.started_on)})\n" \
-           f"• <b>stopped</b>: {user.stopped} (on: {utilities.format_datetime(user.stopped_on)})\n" \
+           f"• <b>started</b>: {str(user.started).lower()} (on: {utilities.format_datetime(user.started_on)})\n" \
+           f"• <b>stopped</b>: {str(user.stopped).lower()} (on: {utilities.format_datetime(user.stopped_on)})\n" \
            f"• <b>language code (telegram/selected)</b>: {user.language_code or '-'}/{user.selected_language or '-'}"
 
     if user.banned:
-        text += f"\n• <b>banned</b>: {user.banned} (shadowban: {user.shadowban})\n" \
+        text += f"\n• <b>banned</b>: {str(user.banned).lower()} (shadowban: {str(user.shadowban).lower()})\n" \
                 f"• <b>reason</b>: {user.banned_reason or '-'}\n" \
                 f"• <b>banned on</b>: {utilities.format_datetime(user.banned_on)}"
 
