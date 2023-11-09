@@ -81,6 +81,7 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/listsinfo {utilities.log(update)}")
 
+    # pls: Parties List Settings
     pls_dict = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.PARTIES_LIST)
     enabled = pls_dict[BotSettingKey.PARTIES_LIST].value()
     weeks = pls_dict[BotSettingKey.PARTIES_LIST_WEEKS].value()
