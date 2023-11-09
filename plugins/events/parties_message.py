@@ -78,7 +78,8 @@ async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYP
         f"Abilitato: {utilities.bool_to_str_it(parties_list_enabled, si_no=True)} ({parties_list_weeks} settimana/e)\n"
         f"Lista da aggiornare: {utilities.bool_to_str_it(list_was_updated, si_no=True)}\n"
         f"Giorno: {WEEKDAYS_IT[config.settings.parties_message_weekday]}\n"
-        f"Ora: {config.settings.parties_message_hour} (ora attuale: {now.hour}:{now.minute})"
+        f"Ora: {config.settings.parties_message_hour} (ora attuale: {now.hour}:{now.minute})\n"
+        f"Frequenza aggiornamento: {config.settings.parties_message_job_frequency} minuti"
     )
 
 
