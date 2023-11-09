@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from typing import Optional
@@ -155,7 +156,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         message_id=sent_message.message_id,
         user_id=user.user_id,
         from_self=True,
-        message_json=sent_message.to_json()
+        message_json=json.dumps(sent_message.to_dict(), indent=2)
     )
     session.add(private_chat_message)
 
