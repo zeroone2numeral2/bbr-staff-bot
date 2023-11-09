@@ -236,6 +236,29 @@ LOCALIZED_TEXTS_TRIGGERS = {
     "sts": LocalizedTextKey.SENT_TO_STAFF,
 }
 
+BOT_SETTINGS_CATEGORIES_METADATA = {
+    BotSettingCategory.GENERAL: dict(
+        emoji=Emoji.GEAR,
+        label="general"
+    ),
+    BotSettingCategory.USER_MESSAGES: dict(
+        emoji=Emoji.PERSON,
+        label="user messages"
+    ),
+    BotSettingCategory.REQUESTS: dict(
+        emoji=Emoji.PEACE,
+        label="richieste"
+    ),
+    BotSettingCategory.RADAR: dict(
+        emoji=Emoji.COMPASS,
+        label="radar"
+    ),
+    BotSettingCategory.PARTIES_LIST: dict(
+        emoji=Emoji.ANNOUNCEMENT,
+        label="lista feste"
+    ),
+}
+
 
 BOT_SETTINGS_DEFAULTS = {
     BotSettingKey.SENT_TO_STAFF: dict(
@@ -286,54 +309,54 @@ BOT_SETTINGS_DEFAULTS = {
     BotSettingKey.PARTIES_LIST: dict(
         category=BotSettingCategory.PARTIES_LIST,
         default=False,
-        label="parties list",
-        emoji=Emoji.PIRATE,
-        description="every week, send a message in the events channel listing the parties of the week",
+        label="on/off",
+        emoji=Emoji.DONE,
+        description="ogni settimana, invia un messaggio nel canale con la lista delle feste imminenti",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_WEEKS: dict(
         category=BotSettingCategory.PARTIES_LIST,
         default=1,
-        label="parties list weeks",
-        emoji=Emoji.PIRATE,
-        description="how many weeks should be included in the list, 0 or 1 for current week",
+        label="settimane",
+        emoji=Emoji.CRYSTAL_SPHERE,
+        description="quante settimane includere nella lista, 0 oppure 1 per la settimana corrente",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_WEEKDAY: dict(
         category=BotSettingCategory.PARTIES_LIST,
         default=3,  # 3: giovedì
-        label="parties list weekday",
-        emoji=Emoji.PIRATE,
-        description="on which weekday to post the parties list (0: monday, ..., 6: sunday)",
+        label="giorno settimana",
+        emoji=Emoji.CALENDAR,
+        description="che giorno della settimana re-inviare la lista, in numero (0: lunedì, ..., 6: domenica)",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_HOUR: dict(
         category=BotSettingCategory.PARTIES_LIST,
         default=20,
-        label="parties list hour",
-        emoji=Emoji.PIRATE,
-        description="at which hour to post the parties list",
+        label="ora",
+        emoji=Emoji.CLOCK,
+        description="a che ora inviare la lista",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_PIN: dict(
         category=BotSettingCategory.PARTIES_LIST,
         default=True,
-        label="pin parties list",
-        emoji=Emoji.PIRATE,
-        description="whether to pin or not the parties messages after they're sent",
+        label="fissa messaggi",
+        emoji=Emoji.PIN_2,
+        description="se fissare o meno i messaggi con la lista delle feste dopo che vengono inviati",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.PARTIES_LIST_DISCUSSION_LINK: dict(
         category=BotSettingCategory.PARTIES_LIST,
         default=False,
-        label="parties list group message",
-        emoji=Emoji.PIRATE,
-        description="whether to include or not a link to the channel's message posted in the group",
+        label="link messaggi gruppo",
+        emoji=Emoji.PEOPLE,
+        description="se i messaggi devono linkare, oltre ai post nel canale, anche il relativo post nel gruppo",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
@@ -388,6 +411,7 @@ class TempDataKey:
     MUTE_EVENT_MESSAGE_BUTTON_ONCE = "mute_event_message_button_once"
     NOT_A_PARTY_MESSAGE_BUTTON_ONCE = "notaparty_event_message_button_once"
     DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE = "delete_duplicate_message_button_once"
+    SETTINGS_MESSAGE_TYPE = "settings_message_type"
 
 
 COMMAND_PREFIXES = ["/", "!"]

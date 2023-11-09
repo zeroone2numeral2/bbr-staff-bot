@@ -11,7 +11,7 @@ from telegram.ext import filters
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group, \
-    BotSettingCategory
+    BotSettingCategory, BOT_SETTINGS_CATEGORIES_METADATA
 from database.models import BotSetting, ValueType
 from database.models import User
 from database.queries import settings
@@ -53,7 +53,7 @@ def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> I
         ])
 
     if back_button:
-        back_button = InlineKeyboardButton(f"🔙 back", callback_data=f"bs:list")
+        back_button = InlineKeyboardButton(f"🔙 back", callback_data=f"bs:category:{setting.category}")
         keyboard.append([back_button])
 
     return InlineKeyboardMarkup(keyboard)
@@ -62,10 +62,17 @@ def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> I
 def get_bot_settings_list_reply_markup(
         session: Session,
         include_category: Optional[str] = None,
-        exclude_category: Optional[str] = None
+        exclude_category: Optional[str] = None,
+        add_back_button=True
 ) -> InlineKeyboardMarkup:
     keyboard = []
-    settings_dict = settings.get_settings_as_dict(session)
+
+    settings_dict = settings.get_settings_as_dict(
+        session,
+        include_categories=include_category,
+        exclude_categories=exclude_category
+    )
+
     for setting_key, setting in settings_dict.items():
         if setting_key not in BOT_SETTINGS_DEFAULTS:
             logger.debug(f"ignoring setting <{setting_key}>")
@@ -77,6 +84,21 @@ def get_bot_settings_list_reply_markup(
             label = BOT_SETTINGS_DEFAULTS[setting_key]["label"]
             button = InlineKeyboardButton(f"{emoji} {label}", callback_data=f"bs:actions:{setting_key}")
             keyboard.append([button])
+
+    if add_back_button:
+        keyboard.append([InlineKeyboardButton(f"{Emoji.BACK} back", callback_data=f"bs:showcategories")])
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_bot_settings_categories_reply_markup() -> InlineKeyboardMarkup:
+    keyboard = []
+
+    for category_key, category_data in BOT_SETTINGS_CATEGORIES_METADATA.items():
+        emoji = category_data["emoji"]
+        label = category_data["label"]
+        button = InlineKeyboardButton(f"{emoji} {label}", callback_data=f"bs:category:{category_key}")
+        keyboard.append([button])
 
     return InlineKeyboardMarkup(keyboard)
 
@@ -91,11 +113,11 @@ def get_setting_text(setting: BotSetting):
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 @decorators.staff_member()
-async def on_settings_config_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/settings {utilities.log(update)}")
 
-    reply_markup = get_bot_settings_list_reply_markup(session)
-    text = f"Select the setting to edit:"
+    reply_markup = get_bot_settings_categories_reply_markup()
+    text = f"Select a category:"
     sent_message = await update.message.reply_text(text, reply_markup=reply_markup)
 
     # save this emssage's message_id and remove the last message's keyboard
@@ -107,11 +129,11 @@ async def on_settings_config_command(update: Update, context: ContextTypes.DEFAU
 
 @decorators.catch_exception()
 @decorators.pass_session()
-async def on_settings_list_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
-    logger.info(f"settings list button {utilities.log(update)}")
+async def on_settings_show_categories_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"settings categories button {utilities.log(update)}")
 
-    reply_markup = get_bot_settings_list_reply_markup(session)
-    text = f"Select the setting to edit:"
+    reply_markup = get_bot_settings_categories_reply_markup()
+    text = f"Select a category:"
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
 
@@ -124,6 +146,20 @@ async def on_bot_setting_show_setting_actions_button(update: Update, context: Co
     setting: BotSetting = settings.get_or_create(session, setting_key)
     reply_markup = get_setting_actions_reply_markup(setting)
     text = get_setting_text(setting)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_category_select_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"category button {utilities.log(update)}")
+    category_key = context.matches[0].group("cat_key")
+
+    reply_markup = get_bot_settings_list_reply_markup(session, include_category=category_key)
+    label = BOT_SETTINGS_CATEGORIES_METADATA[category_key]["label"]
+    emoji = BOT_SETTINGS_CATEGORIES_METADATA[category_key]["emoji"]
+    text = f"{emoji} <b>{label}</b>\nSelect the setting to edit:"
+
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
 
@@ -304,8 +340,9 @@ edit_nonbool_setting_conversation_handler = ConversationHandler(
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_config_command, filters.ChatType.PRIVATE), Group.NORMAL),
-    (CallbackQueryHandler(on_settings_list_button, rf"bs:list$"), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ['settings', 's'], on_settings_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    (CallbackQueryHandler(on_settings_show_categories_button, rf"bs:showcategories$"), Group.NORMAL),
+    (CallbackQueryHandler(on_category_select_button, rf"bs:category:(?P<cat_key>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_bot_setting_show_setting_actions_button, rf"bs:actions:(?P<key>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_bot_setting_switch_bool_button, rf"bs:setbool:(?P<value>\w+):(?P<key>\w+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_bot_setting_nullify_button, rf"bs:null:(?P<key>\w+)$"), Group.NORMAL),
