@@ -207,6 +207,8 @@ async def post_init(application: Application) -> None:
             session.add(setting)
         elif not setting.category:
             setting.category = bot_setting_data["category"]
+        if setting.show_if_true_key != bot_setting_data["show_if_true_key"]:
+            setting.show_if_true_key = bot_setting_data["show_if_true_key"]
 
     session.commit()
 
