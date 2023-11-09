@@ -13,7 +13,7 @@ from telegram.ext import ContextTypes
 import decorators
 import utilities
 from config import config
-from constants import BotSettingKey, RegionName, TempDataKey
+from constants import BotSettingKey, RegionName, TempDataKey, BotSettingCategory
 from database.models import Chat, Event, PartiesMessage
 from database.queries import chats, events, settings, parties_messages
 from emojis import Flag, Emoji
@@ -48,20 +48,24 @@ PARTIES_MESSAGE_TYPES_ARGS = {
 }
 
 
-def get_events_text(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> Optional[str]:
+def get_events_text(
+        session: Session,
+        filter_key: str,
+        now: datetime.datetime,
+        args: List[str],
+        discussion_group_messages_links=False
+) -> Optional[str]:
     logger.info(f"getting events of type \"{filter_key}\"...")
 
     # always group by, even if just a week is requested
     args.append(GroupBy.WEEK_NUMBER)
 
-    weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
-    if weeks <= 1:
-        args.append(EventFilter.WEEK)
-    else:
-        args.append(EventFilter.WEEK_2)
-
     logger.info(f"args: {args}")
-    all_events = get_all_events_strings_from_db_group_by(session, args, for_job=True)
+    all_events = get_all_events_strings_from_db_group_by(
+        session=session,
+        args=args,
+        discussion_group_messages_links=discussion_group_messages_links
+    )
     if not all_events:
         return
 
@@ -108,10 +112,17 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         logger.debug("no events chat set")
         return
 
-    parties_list_enabled = settings.get_or_create(session, BotSettingKey.PARTIES_LIST).value()
-    if not parties_list_enabled:
+    pl_settings = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.PARTIES_LIST)
+
+    if not pl_settings[BotSettingKey.PARTIES_LIST].value():
         logger.debug("parties list disabled from settings")
         return
+
+    parties_message_weekday = pl_settings[BotSettingKey.PARTIES_LIST_WEEKDAY].value()
+    parties_message_weeks = pl_settings[BotSettingKey.PARTIES_LIST_WEEKS].value()
+    parties_message_hour = pl_settings[BotSettingKey.PARTIES_LIST_HOUR].value()
+    parties_message_pin = pl_settings[BotSettingKey.PARTIES_LIST_PIN].value()
+    parties_message_group_messages_links = pl_settings[BotSettingKey.PARTIES_LIST_DISCUSSION_LINK].value()
 
     # this flag is set every time something that edits the parties list happens (new/edited event, /delevent...)
     # we need to get it before the for loop because it should be valid for every filter
@@ -140,14 +151,14 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
         post_new_message = False
 
-        today_is_post_weekday = now.weekday() == config.settings.parties_message_weekday  # whether today is the weekday we should post the message
+        today_is_post_weekday = now.weekday() == parties_message_weekday  # whether today is the weekday we should post the message
         new_week = current_isoweek != last_parties_message_isoweek
         logger.info(f"current isoweek: {current_isoweek}, "
                     f"last post isoweek: {last_parties_message_isoweek}, "
                     f"weekday: {now.weekday()} (today_is_post_weekday: {today_is_post_weekday}), "
-                    f"hour: {now.hour} (parties_message_hour: {config.settings.parties_message_hour})")
+                    f"hour: {now.hour} (parties_message_hour: {parties_message_hour})")
 
-        if today_is_post_weekday and new_week and now.hour >= config.settings.parties_message_hour:
+        if today_is_post_weekday and new_week and now.hour >= parties_message_hour:
             # post a new message only if it's a different week than the last message's isoweek
             # even if no parties message was posted yet, wait for the correct day and hour
             logger.info(f"it's time to post a new message")
@@ -162,7 +173,16 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             logger.info("no need to post new message or update the existing one: continuing to next filter...")
             continue
 
-        text = get_events_text(session, filter_key, now, args)
+        logger.info("adding arg to extract number of weeks...")
+        args.append(EventFilter.WEEK) if parties_message_weeks <= 1 else args.append(EventFilter.WEEK_2)
+
+        text = get_events_text(
+            session=session,
+            filter_key=filter_key,
+            now=now,
+            args=args,
+            discussion_group_messages_links=parties_message_group_messages_links
+        )
         if not text:
             logger.info("no events for this filter")
             continue
@@ -177,7 +197,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             session.add(new_parties_message)
             session.commit()
 
-            if config.settings.parties_message_pin:
+            if parties_message_pin:
                 await pin_message(context.bot, sent_message, last_parties_message)
         elif update_existing_message:
             logger.info(f"editing message {last_parties_message.message_id} in chat {last_parties_message.chat_id}...")

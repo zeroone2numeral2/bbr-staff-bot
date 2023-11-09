@@ -91,6 +91,7 @@ class BotSettingKey:
     PARTIES_LIST_WEEKS = "parties_list_weeks"
     PARTIES_LIST_WEEKDAY = "parties_list_weekday"
     PARTIES_LIST_HOUR = "parties_list_hour"
+    PARTIES_LIST_PIN = "parties_list_pin"
     PARTIES_LIST_DISCUSSION_LINK = "parties_list_discussion_link"
 
 
@@ -315,6 +316,15 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list hour",
         emoji=Emoji.PIRATE,
         description="at which hour to post the parties list",
+        show_if_true_key=None,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_PIN: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=True,
+        label="pin parties list",
+        emoji=Emoji.PIRATE,
+        description="whether to pin or not the parties messages after they're sent",
         show_if_true_key=None,
         telegram_media=False
     ),
