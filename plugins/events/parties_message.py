@@ -7,13 +7,12 @@ from telegram.ext import ContextTypes, CommandHandler
 
 import decorators
 import utilities
-from constants import Group, TempDataKey
+from constants import Group, TempDataKey, BotSettingKey, WEEKDAYS_IT
 from database.models import Chat, PartiesMessage
-from database.queries import chats, parties_messages
+from database.queries import chats, parties_messages, settings
 from ext.filters import ChatFilter, Filter
-from plugins.events.common import EventFilter, get_all_events_strings_from_db_group_by
-from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, PARTIES_MESSAGE_TYPES, \
-    ListTypeKey, get_events_text, PARTIES_MESSAGE_TYPES_ARGS
+from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, get_events_text, PARTIES_MESSAGE_TYPES_ARGS
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +63,28 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_html(f"{text}")
 
 
+@decorators.catch_exception()
+@decorators.pass_session()
+async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/listsinfo {utilities.log(update)}")
+
+    parties_list_enabled = settings.get_or_create(session, BotSettingKey.PARTIES_LIST).value()
+    parties_list_weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
+
+    list_was_updated = context.bot_data.get(TempDataKey.UPDATE_PARTIES_MESSAGE, False)  # do not pop
+
+    now = utilities.now()
+    await update.message.reply_html(
+        f"Abilitato: {utilities.bool_to_str_it(parties_list_enabled, si_no=True)} ({parties_list_weeks} settimana/e)\n"
+        f"Lista da aggiornare: {utilities.bool_to_str_it(list_was_updated, si_no=True)}\n"
+        f"Giorno: {WEEKDAYS_IT[config.settings.parties_message_weekday]}\n"
+        f"Ora: {config.settings.parties_message_hour} (ora attuale: {now.hour})"
+    )
+
+
 HANDLERS = (
     (CommandHandler(["updatelists", "ul"], on_updatelists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["sendlists", "sl"], on_sendlists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["getlists", "gl"], on_getlists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["listsinfo"], on_listsinfo_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )

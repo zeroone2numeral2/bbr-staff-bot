@@ -15,6 +15,16 @@ MONTHS_IT = [
     "Dicembre"
 ]
 
+WEEKDAYS_IT = [
+    "lunedì",
+    "martedì",
+    "mercoledì",
+    "giovedì",
+    "venerdì",
+    "sabato",
+    "domenica"
+]
+
 
 class Language:
     EN = "en"

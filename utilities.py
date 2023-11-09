@@ -181,6 +181,13 @@ def format_datetime(dt_object: Union[datetime.datetime, datetime.date], if_none=
     return dt_object.strftime(format_str)
 
 
+def bool_to_str_it(value, si_no=False) -> str:
+    if value:
+        return "si" if si_no else "vero"
+    else:
+        return "no" if si_no else "false"
+
+
 def is_test_bot():
     return "is_test_bot" in config.telegram and config.telegram.is_test_bot
 
