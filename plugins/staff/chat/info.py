@@ -61,7 +61,6 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
            f"• <b>last seen</b>: {utilities.format_datetime(user.last_message)}\n" \
            f"• <b>started</b>: {user.started} (on: {utilities.format_datetime(user.started_on)})\n" \
            f"• <b>stopped</b>: {user.stopped} (on: {utilities.format_datetime(user.stopped_on)})\n" \
-           f"• <b>is bot/is premium</b>: {user.is_bot}, {user.is_premium}\n" \
            f"• <b>language code (telegram)</b>: {user.language_code or '-'}\n" \
            f"• <b>selected language</b>: {user.selected_language or '-'}"
 
