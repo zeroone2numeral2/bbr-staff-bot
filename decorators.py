@@ -19,6 +19,7 @@ from config import config
 from emojis import Emoji
 
 logger = logging.getLogger(__name__)
+logger_job = logging.getLogger("plugins.events.job")
 
 
 class DatabaseInstanceKey:
@@ -80,18 +81,18 @@ def catch_exception(silent=False, ignore_message_not_modified_exception=False):
     return real_decorator
 
 
-def catch_exception_job(silent=True):
+def catch_exception_job(silent=False):
     def real_decorator(func):
         @wraps(func)
         async def wrapped(context: CallbackContext, *args, **kwargs):
             try:
                 return await func(context, *args, **kwargs)
             except Exception as e:
-                logger.error('error while running job: %s', str(e), exc_info=True)
+                logger_job.error(f"error while running job: {e}", exc_info=True)
 
                 if not silent:
-                    # what to do?
-                    pass
+                    text = f"#flytekbbr #ftbbrjob error: <code>{utilities.escape(str(e))}</code>"
+                    await context.bot.send_message(config.telegram.admins[0], text)
 
                 # return ConversationHandler.END
                 return
