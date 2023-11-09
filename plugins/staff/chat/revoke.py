@@ -37,9 +37,9 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
         )
         return
 
-    logger.info(f"revoking message_id {admin_message.reply_message_id} in chat_id {admin_message.user_message.user.user_id}")
+    logger.info(f"revoking message_id {admin_message.reply_message_id} in chat_id {admin_message.target_user_id}")
     await context.bot.delete_message(
-        chat_id=admin_message.user_message.user.user_id,
+        chat_id=admin_message.target_user_id,
         message_id=admin_message.reply_message_id
     )
 

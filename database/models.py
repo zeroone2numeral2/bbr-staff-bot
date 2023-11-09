@@ -68,7 +68,7 @@ class User(Base):
     # relationships
     chat_members = relationship("ChatMember", back_populates="user")
     user_messages = relationship("UserMessage", back_populates="user")
-    admin_messages = relationship("AdminMessage", back_populates="user")
+    admin_messages = relationship("AdminMessage", back_populates="staff_user")
     private_chat_messages = relationship("PrivateChatMessage", back_populates="user")
     # application_requests = relationship("ApplicationRequest", back_populates="user")
 
@@ -535,9 +535,10 @@ class AdminMessage(Base):
     __allow_unmapped__ = True
 
     message_id = Column(Integer, primary_key=True)
-    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
-    user_message_id = Column(Integer, ForeignKey('user_messages.message_id'))
-    user_id = Column(Integer, ForeignKey('users.user_id'))  # id of the admin
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)  # id of the admins chat
+    staff_user_id = Column(Integer, ForeignKey('users.user_id'))  # id of the staff user that replied
+    target_user_id = mapped_column(Integer, nullable=False)  # id of the user the staff is interacting with
+    user_message_id = Column(Integer, ForeignKey('user_messages.message_id'))  # id of the UserMessage
     reply_message_id = Column(Integer, nullable=False)  # forwarded reply sent to the user's private chat
     reply_datetime = Column(DateTime, default=utilities.now())
     message_datetime = Column(DateTime, default=None)
@@ -548,13 +549,22 @@ class AdminMessage(Base):
     message_json = Column(String, default=None)
 
     chat: Chat = relationship("Chat", back_populates="admin_messages")
-    user: User = relationship("User", back_populates="admin_messages")
+    staff_user: User = relationship("User", back_populates="admin_messages")
     user_message: UserMessage = relationship("UserMessage", back_populates="admin_messages")
 
-    def __init__(self, message_id, chat_id, user_id, user_message_id, reply_message_id, message_datetime):
+    target_user: Mapped['User'] = relationship(
+        "User",
+        foreign_keys=target_user_id,
+        primaryjoin="User.user_id == AdminMessage.target_user_id",
+        # remote_side=user_id,
+        uselist=False
+    )
+
+    def __init__(self, message_id, chat_id, staff_user_id, target_user_id, user_message_id, reply_message_id, message_datetime):
         self.message_id = message_id
         self.chat_id = chat_id
-        self.user_id = user_id
+        self.staff_user_id = staff_user_id
+        self.target_user_id = target_user_id
         self.user_message_id = user_message_id
         self.reply_message_id = reply_message_id
         self.message_datetime = message_datetime

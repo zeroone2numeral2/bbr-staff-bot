@@ -69,7 +69,8 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
     admin_message = AdminMessage(
         message_id=update.effective_message.id,
         chat_id=update.effective_chat.id,
-        user_id=update.effective_user.id,  # admin's user_id
+        staff_user_id=update.effective_user.id,  # admin's user_id
+        target_user_id=admin_message.target_user_id,
         user_message_id=admin_message.user_message.message_id,  # root user message that generated the admins' replies chain
         reply_message_id=sent_message.message_id,
         message_datetime=update.effective_message.date
@@ -165,7 +166,8 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
     admin_message = AdminMessage(
         message_id=update.effective_message.id,
         chat_id=update.effective_chat.id,
-        user_id=update.effective_user.id,
+        staff_user_id=update.effective_user.id,
+        target_user_id=user.user_id,
         user_message_id=user_chat_reply_to_message_id,  # the message_id of the message we replied to in ther user chat
         reply_message_id=sent_message.message_id,
         message_datetime=update.effective_message.date
