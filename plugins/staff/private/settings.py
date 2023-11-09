@@ -59,7 +59,11 @@ def get_setting_actions_reply_markup(setting: BotSetting, back_button=True) -> I
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_bot_settings_list_reply_markup(session: Session) -> InlineKeyboardMarkup:
+def get_bot_settings_list_reply_markup(
+        session: Session,
+        include_category: Optional[str] = None,
+        exclude_category: Optional[str] = None
+) -> InlineKeyboardMarkup:
     keyboard = []
     settings_dict = settings.get_settings_as_dict(session)
     for setting_key, setting in settings_dict.items():
