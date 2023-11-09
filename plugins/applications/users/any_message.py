@@ -25,6 +25,7 @@ async def on_private_chat_message(update: Update, context: ContextTypes.DEFAULT_
         message_id=update.message.message_id,
         user_id=update.effective_user.id,
         from_self=False,
+        date=update.message.date,
         message_json=json.dumps(update.message.to_dict(), indent=2)
     )
     session.add(private_chat_message)
