@@ -9,6 +9,7 @@ import utilities
 from constants import COMMAND_PREFIXES, Group
 from database.models import AdminMessage
 from database.queries import admin_messages
+from emojis import Emoji
 from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 
     if update.message.reply_to_message.from_user.id == context.bot.id:
         # do not accept replies to a bot's message
-        await update.message.reply_text("⚠️ <i>please reply to the staff message you want "
+        await update.message.reply_text(f"{Emoji.WARNING} <i>please reply to the staff message you want "
                                         "to be deleted from the user's chat with the bot</i>")
         return
 
@@ -31,7 +32,7 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
                        f"chat_id: {update.effective_chat.id}; "
                        f"message_id: {update.message.reply_to_message.message_id}")
         await update.message.reply_text(
-            "⚠️ <i>can't find the message to revoke in the database</i>",
+            f"{Emoji.WARNING} <i>cannot find the message to revoke in the database</i>",
             reply_to_message_id=update.message.reply_to_message.message_id
         )
         return
