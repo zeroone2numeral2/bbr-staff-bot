@@ -1,3 +1,5 @@
+from typing import Optional, Union, List
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -9,8 +11,14 @@ def get_settings(session: Session):
     return session.scalars(statement)
 
 
-def get_settings_as_dict(session: Session):
-    statement = select(BotSetting).where()
+def get_settings_as_dict(session: Session, categories: Optional[Union[List[str], str]] = None):
+    filters = []
+    if categories:
+        if isinstance(categories, str):
+            categories = [categories]
+        filters.append(BotSetting.category.in_(categories))
+
+    statement = select(BotSetting).filter(*filters)
     settings_dict = {}
     for setting in session.scalars(statement):
         settings_dict[setting.key] = setting

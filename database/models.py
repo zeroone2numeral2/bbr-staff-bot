@@ -660,8 +660,8 @@ class BotSetting(Base):
     )
 
     def __init__(self, key: str, category: str, value=None, telegram_media=False, show_if_true_key=None):
-        self.key = key.lower()
-        self.category = category.lower()
+        self.key = key
+        self.category = category
         self.update_value(value, telegram_media=telegram_media, raise_on_unknown_type=False)
         self.show_if_true_key = show_if_true_key
 
