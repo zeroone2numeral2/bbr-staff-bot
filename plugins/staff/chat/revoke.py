@@ -38,10 +38,12 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
         return
 
     logger.info(f"revoking message_id {admin_message.reply_message_id} in chat_id {admin_message.target_user_id}")
-    await context.bot.delete_message(
+    success = await utilities.delete_messages_by_id_safe(
+        context.bot,
         chat_id=admin_message.target_user_id,
-        message_id=admin_message.reply_message_id
+        message_ids=admin_message.reply_message_id
     )
+    logger.info(f"success: {success}")
 
     await update.message.reply_text(
         f"{Emoji.TRASH} <i>message revoked successfully: it has been deleted from {admin_message.target_user.mention()}'s chat</i>",
