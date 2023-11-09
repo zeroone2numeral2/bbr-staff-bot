@@ -81,7 +81,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
     admin_message.save_message_json(sent_message)
     admin_message.user_message.add_reply()
 
-    await update.message.reply_html("<i>message sent to the user</i>", quote=True)
+    await update.message.reply_html(f"<i>message sent to {admin_message.target_user.mention()}</i>", quote=True)
 
 
 @decorators.catch_exception()
