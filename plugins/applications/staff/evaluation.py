@@ -95,36 +95,52 @@ async def send_message_to_user(session: Session, bot: Bot, user: User):
     return sent_message
 
 
-async def delete_history(session: Session, bot: Bot, user: User):
-    # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
-    # rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
-    setting: BotSetting = settings.get_or_create(session, BotSettingKey.RABBIT_FILE)
+async def delete_history(session: Session, bot: Bot, user: User, delete_reason: str, send_rabbit=True):
+    sent_rabbit_message = None
+    if send_rabbit:
+        # send the rabbit message then delete (it will be less noticeable that messages are being deleted)
+        # rabbit_file_id = "AgACAgQAAxkBAAIF4WRCV9_H-H1tQHnA2443fXtcVy4iAAKkujEbkmDgUYIhRK-rWlZHAQADAgADeAADLwQ"
+        setting: BotSetting = settings.get_or_create(session, BotSettingKey.RABBIT_FILE)
 
-    sent_message = None
-    if setting.value():
-        try:
-            sent_message = await bot.send_photo(user.user_id, setting.value(), protect_content=True)
-        except BadRequest as e:
-            if "wrong file identifier/http url specified" in e.message.lower():
-                logger.error(f"cannot send file: {e.message}")
-            else:
-                raise e
+        if setting.value():
+            logger.info("sending rabbit file...")
+            try:
+                sent_rabbit_message = await bot.send_photo(user.user_id, setting.value(), protect_content=True)
+            except BadRequest as e:
+                if "wrong file identifier/http url specified" in e.message.lower():
+                    logger.error(f"cannot send file: {e.message}")
+                else:
+                    raise e
 
     now = utilities.now()
 
+    result = dict(deleted=0, too_old=0, failed=0)
+
     messages: List[PrivateChatMessage] = private_chat_messages.get_messages(session, user.user_id)
     for message in messages:
-        if not message.can_be_deleted(now):
+        if message.revoked:
             continue
 
-        logger.debug(f"deleting message {message.message_id} from chat {user.user_id}")
-        await bot.delete_message(user.user_id, message.message_id)
-        message.set_revoked(reason="user was rejected")
+        if not message.can_be_deleted(now):
+            result["too_old"] += 1
+            continue
+
+        logger.debug(f"deleting message {message.message_id} from chat {user.user_id}...")
+        success, _ = await utilities.delete_messages_by_id_safe(bot, user.user_id, message.message_id)
+        logger.debug(f"...success: {success}")
+        message.set_revoked(reason=delete_reason)
+
+        if not success:
+            result["failed"] += 1
+        else:
+            result["deleted"] += 1
 
     # we need to save it here after we're done with the cleanup, otherwise it would be deleted with all the other messages
-    if sent_message:
+    if sent_rabbit_message:
         # sending the gif might have failed
-        private_chat_messages.save(session, sent_message)
+        private_chat_messages.save(session, sent_rabbit_message)
+
+    return result
 
 
 async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: bool, admin: TelegramUser):
@@ -167,7 +183,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     if accepted:
         await send_message_to_user(session, bot, user)
     else:
-        await delete_history(session, bot, user)
+        await delete_history(session, bot, user, delete_reason="user was rejected")
 
 
 def can_evaluate_applications(session: Session, user: TelegramUser):
@@ -248,7 +264,40 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
     await update.message.reply_text(f"<i>fatto!</i>")
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True, pass_chat=True)
+async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+    logger.info(f"/delhistory command {utilities.log(update)}")
+
+    text = update.message.reply_to_message.text if update.message.reply_to_message else update.message.text
+
+    user_id = utilities.get_user_id_from_text(text)
+    if not user_id:
+        await update.message.reply_text(f"<i>impossibile rilevare hashtag con ID dell'utente</i>", quote=True)
+        return
+
+    logger.info(f"user_id: {user_id}")
+    user: User = users.get_or_create(session, user_id)
+
+    send_rabbit = False
+    if context.args and context.args[0].lower() == "rabbit":
+        send_rabbit = True
+
+    await update.message.reply_html(f"Elimino la cronologia dei messaggi per {user.mention()}...", quote=True)
+
+    result_dict = await delete_history(session, context.bot, user, delete_reason="/delhistory", send_rabbit=send_rabbit)
+
+    await update.message.reply_text(
+        f"Eliminati: {result_dict['deleted']}\n"
+        f"Messaggi non eliminati perchè troppo vecchi: {result_dict['too_old']}\n"
+        f"Messaggi non eliminati per altri motivi: {result_dict['failed']}\n"
+        f"File rabbit: {'inviato' if send_rabbit else 'non inviato'}",
+        quote=True
+    )
+
+
 HANDLERS = (
     (CallbackQueryHandler(on_reject_or_accept_button, rf"(?P<action>accept|reject):(?P<user_id>\d+):(?P<request_id>\d+)$"), Group.NORMAL),
     (PrefixHandler(COMMAND_PREFIXES, ["accetta", "rifiuta"], on_reject_or_accept_command, filters.REPLY & ChatFilter.EVALUATION), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ["delhistory"], on_delhistory_command, ChatFilter.EVALUATION), Group.NORMAL),
 )

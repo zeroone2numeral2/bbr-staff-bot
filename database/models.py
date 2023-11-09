@@ -816,7 +816,7 @@ class PrivateChatMessage(Base):
         if self.date:
             return utilities.naive_to_aware(self.date, force_utc=True) > (now_dt - timedelta_48_hours_ago)
         elif self.saved_on:
-            return self.saved_on > (now_dt - timedelta_48_hours_ago)
+            return utilities.naive_to_aware(self.saved_on, force_utc=True) > (now_dt - timedelta_48_hours_ago)
 
         return False
 
