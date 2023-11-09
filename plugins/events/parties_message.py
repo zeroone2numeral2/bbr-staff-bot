@@ -59,6 +59,8 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     now = utilities.now(tz=True)
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
         text = get_events_text(session, filter_key, now, args)
+        if not text:
+            text = f"nessuna festa per <code>{filter_key}</code>"
 
         await update.message.reply_html(f"{text}")
 

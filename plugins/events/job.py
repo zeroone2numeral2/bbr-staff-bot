@@ -48,7 +48,7 @@ PARTIES_MESSAGE_TYPES_ARGS = {
 }
 
 
-def get_events_text(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> str:
+def get_events_text(session: Session, filter_key: str, now: datetime.datetime, args: List[str]) -> Optional[str]:
     logger.info(f"getting events of type \"{filter_key}\"...")
 
     # always group by, even if just a week is requested
@@ -62,6 +62,8 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, a
 
     logger.info(f"args: {args}")
     all_events = get_all_events_strings_from_db_group_by(session, args, for_job=True)
+    if not all_events:
+        return
 
     events_text = "\n".join(all_events)
     # if we ask for two weeks + group by, the first group by line will start by \n
@@ -69,7 +71,7 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, a
 
     text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n{events_text}"
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
-    text += f"\n\n{utilities.subscript(now_str)}"
+    text += f"\n\n<i>questa lista si aggiorna in automatico ogni ora</i> {utilities.subscript(now_str)}"
 
     entities_count = utilities.count_html_entities(text)
     logger.debug(f"entities count: {entities_count}/{MessageLimit.MESSAGE_ENTITIES}")
@@ -161,6 +163,9 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             continue
 
         text = get_events_text(session, filter_key, now, args)
+        if not text:
+            logger.info("no events for this filter")
+            continue
 
         if post_new_message:
             logger.info("posting new message...")
