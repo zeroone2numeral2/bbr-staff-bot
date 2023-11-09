@@ -89,6 +89,9 @@ class BotSettingKey:
     RADAR_FILE = "radar_file"
     PARTIES_LIST = "parties_list"
     PARTIES_LIST_WEEKS = "parties_list_weeks"
+    PARTIES_LIST_WEEKDAY = "parties_list_weekday"
+    PARTIES_LIST_HOUR = "parties_list_hour"
+    PARTIES_LIST_DISCUSSION_LINK = "parties_list_discussion_link"
 
 
 class BotSettingCategory:
@@ -294,6 +297,33 @@ BOT_SETTINGS_DEFAULTS = {
         label="parties list weeks",
         emoji=Emoji.PIRATE,
         description="how many weeks should be included in the list, 0 or 1 for current week",
+        show_if_true_key=None,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_WEEKDAY: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=3,  # 3: giovedì
+        label="parties list weekday",
+        emoji=Emoji.PIRATE,
+        description="on which weekday to post the parties list (0: monday, ..., 6: sunday)",
+        show_if_true_key=None,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_HOUR: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=20,
+        label="parties list hour",
+        emoji=Emoji.PIRATE,
+        description="at which hour to post the parties list",
+        show_if_true_key=None,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_DISCUSSION_LINK: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=False,
+        label="parties list group message",
+        emoji=Emoji.PIRATE,
+        description="whether to include or not a link to the channel's message posted in the group",
         show_if_true_key=None,
         telegram_media=False
     ),

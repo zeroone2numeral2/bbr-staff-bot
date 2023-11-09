@@ -10,7 +10,8 @@ from telegram.ext import filters
 
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group
+from constants import COMMAND_PREFIXES, State, TempDataKey, BOT_SETTINGS_DEFAULTS, CONVERSATION_TIMEOUT, Group, \
+    BotSettingCategory
 from database.models import BotSetting, ValueType
 from database.models import User
 from database.queries import settings
