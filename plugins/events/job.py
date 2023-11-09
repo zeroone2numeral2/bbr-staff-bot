@@ -1,3 +1,4 @@
+import copy
 import datetime
 import logging
 import re
@@ -112,7 +113,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
     # this flag is set every time something that edits the parties list happens (new/edited event, /delevent...)
     # we need to get it before the for loop because it should be valid for every filter
-    update_existing_message = context.bot_data.pop(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
+    parties_list_changed = context.bot_data.pop(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
 
     # we check whether the flag is set once for every filter
     # it is set manually
@@ -125,7 +126,15 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
         current_isoweek = now.isocalendar()[1]
         last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
-        last_parties_message_isoweek = 53 if not last_parties_message else last_parties_message.isoweek()
+        if not last_parties_message:
+            logger.info(f"we never posted a message for filter key <{filter_key}>: setting the 'update_existing_message' value to false")
+            # if we never posted a parties list message, we should not try to update it
+            # later in the code, we check whether it is time to post a new message. If not, simply don't do anything
+            update_existing_message = False
+            last_parties_message_isoweek = 53
+        else:
+            update_existing_message = copy.deepcopy(parties_list_changed)  # create a copy, not a reference
+            last_parties_message_isoweek = last_parties_message.isoweek()
 
         post_new_message = False
 
@@ -133,13 +142,13 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         new_week = current_isoweek != last_parties_message_isoweek
         logger.info(f"current isoweek: {current_isoweek}, "
                     f"last post isoweek: {last_parties_message_isoweek}, "
-                    f"weekday: {now.weekday()}, "
-                    f"hour: {now.hour}")
+                    f"weekday: {now.weekday()} (today_is_post_weekday: {today_is_post_weekday}), "
+                    f"hour: {now.hour} (parties_message_hour: {config.settings.parties_message_hour})")
 
         if today_is_post_weekday and new_week and now.hour >= config.settings.parties_message_hour:
             # post a new message only if it's a different week than the last message's isoweek
             # even if no parties message was posted yet, wait for the correct day and hour
-            logger.info(f"it's time to post")
+            logger.info(f"it's time to post a new message")
             post_new_message = True
         elif post_new_message_force:
             logger.info("force-post new message flag was true: time to post a new message")
