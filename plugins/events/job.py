@@ -61,7 +61,7 @@ def get_events_text(session: Session, filter_key: str, now: datetime.datetime, a
         args.append(EventFilter.WEEK_2)
 
     logger.info(f"args: {args}")
-    all_events = get_all_events_strings_from_db_group_by(session, args)
+    all_events = get_all_events_strings_from_db_group_by(session, args, for_job=True)
 
     events_text = "\n".join(all_events)
     # if we ask for two weeks + group by, the first group by line will start by \n

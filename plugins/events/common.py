@@ -776,7 +776,7 @@ def get_all_events_strings_from_db(session: Session, args: List[str], date_overr
     return all_events_strings
 
 
-def get_all_events_strings_from_db_group_by(session: Session, args: List[str], date_override: Optional[datetime.date] = None) -> List[str]:
+def get_all_events_strings_from_db_group_by(session: Session, args: List[str], date_override: Optional[datetime.date] = None, for_job=False) -> List[str]:
     logger.debug("getting events from db...")
 
     query_filters = extract_query_filters(args, today=date_override)
@@ -799,7 +799,7 @@ def get_all_events_strings_from_db_group_by(session: Session, args: List[str], d
 
         event: Event
         for event in events_list:
-            text_line, event_entities_count = format_event_string(event)
+            text_line, event_entities_count = format_event_string(event, include_discussion_group_message_link=not for_job)
             all_events_strings.append(text_line)
             total_entities_count += event_entities_count  # not used yet, find something to do with this
 
