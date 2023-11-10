@@ -75,7 +75,7 @@ def get_events_text(
 
     text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n{events_text}"
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
-    text += f"\n\n➜ <i>questa lista si aggiorna in automatico ogni ora</i>\n" \
+    text += f"\n\n➜ <i>aggiornata in automatico ogni ora</i>\n" \
             f"{utilities.subscript(now_str)}"
 
     entities_count = utilities.count_html_entities(text)
