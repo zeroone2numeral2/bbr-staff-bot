@@ -97,7 +97,7 @@ def get_events_text(
         text += f"➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
                 f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a>" \
                 f"{radar_deeplink_part}</i>\n" \
-                f"➜ <i>liste vengono aggiornate in automatico ogni ora</i>\n"
+                f"➜ <i>aggiornato in automatico ogni ora</i>\n"
 
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
     text += f"{utilities.subscript(now_str)}"
@@ -107,7 +107,8 @@ def get_events_text(
     if entities_count > MessageLimit.MESSAGE_ENTITIES:
         # remove bold entities if we cross the limit
         # this will assume no nested <b> tags
-        replacements_count = (entities_count - MessageLimit.MESSAGE_ENTITIES) * 2
+        hashtags_count = 2
+        replacements_count = (entities_count - MessageLimit.MESSAGE_ENTITIES + hashtags_count) * 2
 
         # we want to remove the last <b> entities, but 'count' in re.sub() doesn't work in reverse
         # so we reverse the string (and also the regex, </b> becomes >b/<
