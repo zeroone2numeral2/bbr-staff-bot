@@ -165,18 +165,14 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         if not post_new_message:
             # we do these checks only if "force" flag was not set
             last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
-            if not last_parties_message:
-                # do not set 'post_new_message' to true: we need to check whether it is the correct weekday/hour anyway
-                logger.info(f"we never posted a message for filter key <{filter_key}>, we will check whether it is the weekday/hour to post anyway")
-                last_parties_message_isoweek = 53
-            else:
-                last_parties_message_isoweek = last_parties_message.isoweek()
 
             if not parties_message_update_only or not last_parties_message:
                 # we check whether it is time to post only if:
                 # - 'update only' mode is off, or
                 # - 'update only' mode is on, but we never posted a parties message for this filter
-                logger.info(f"'update only' mode is off, or we never sent a parties message for <{filter_key}>: checking whether it is time to post")
+                logger.info(f"'update only' mode is off OR we never sent a parties message for <{filter_key}>: checking whether it is time to post")
+
+                last_parties_message_isoweek = last_parties_message.isoweek() if last_parties_message else 53
                 if time_to_post(now_it, last_parties_message_isoweek, parties_message_weekday, parties_message_hour):
                     # post a new message only if it's a different week than the last message's isoweek
                     # even if no parties message was posted yet, wait for the correct day and hour
