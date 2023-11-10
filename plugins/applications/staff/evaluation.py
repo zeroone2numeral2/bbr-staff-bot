@@ -217,6 +217,7 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
 
     user: User = users.get_or_create(session, user_id)
     if not user.pending_request_id:
+        logger.info(f"user {user.user_id} has no pending request")
         await update.callback_query.answer(f"Questo utente non ha alcuna richiesta di ingresso pendente", show_alert=True)
         await update.callback_query.edit_message_reply_markup(reply_markup=None)
         return
