@@ -1309,9 +1309,13 @@ class ApplicationRequest(Base):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
 
-    def staff_message_link(self):
+    def staff_message_link(self, text: Optional[str] = None):
         chat_id = str(self.staff_message_chat_id).replace("-100", "")
-        return f"https://t.me/c/{chat_id}/{self.staff_message_message_id}"
+        link = f"https://t.me/c/{chat_id}/{self.staff_message_message_id}"
+        if not text:
+            return link
+
+        return f"<a href\"{link}\">{utilities.escape(text)}</a>"
 
     def accept(self, by_user_id: int, notes: Optional[str] = None):
         self.status = True

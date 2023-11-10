@@ -282,7 +282,7 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
     )
 
     await update.message.reply_text(
-        f"<i>fatto! <a href=\"{user.last_request.staff_message_link()}\">vai alla richiesta</a></i>",
+        f"<i>fatto! {user.last_request.staff_message_link('vai alla richiesta')}</i>",
         quote=True
     )
 
