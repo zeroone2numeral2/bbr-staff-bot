@@ -281,7 +281,10 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
         delete_history_if_rejected=delete_history_if_rejected
     )
 
-    await update.message.reply_text(f"<i>fatto!</i>")
+    await update.message.reply_text(
+        f"<i>fatto! <a href=\"{user.last_request.staff_message_link()}\">vai alla richiesta</a></i>",
+        quote=True
+    )
 
 
 @decorators.catch_exception()
