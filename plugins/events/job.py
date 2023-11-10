@@ -106,8 +106,10 @@ def get_events_text(
     logger.debug(f"entities count: {entities_count}/{MessageLimit.MESSAGE_ENTITIES}")
     if entities_count > MessageLimit.MESSAGE_ENTITIES:
         # remove bold entities if we cross the limit
-        text = re.sub(r"</?b>", "", text)
-        logger.debug(f"entities count (no bold): {utilities.count_html_entities(text)}/{MessageLimit.MESSAGE_ENTITIES}")
+        # this will assume no nested <b> tags
+        replacements_count = (entities_count - MessageLimit.MESSAGE_ENTITIES) * 2
+        text = re.sub(r"</?b>", "", text, count=replacements_count)
+        logger.debug(f"entities count (no bold, {replacements_count} replacements): {utilities.count_html_entities(text)}")
 
     return text
 
