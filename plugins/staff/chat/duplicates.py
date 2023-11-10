@@ -82,6 +82,6 @@ async def on_delete_message_button(update: Update, context: ContextTypes.DEFAULT
 
 
 HANDLERS = (
-    (MessageHandler(ChatFilter.STAFF & Filter.MESSAGE_OR_EDIT, on_staff_chat_message), Group.NORMAL),
+    (MessageHandler(ChatFilter.STAFF & Filter.MESSAGE_OR_EDIT & (filters.TEXT | filters.PHOTO), on_staff_chat_message), Group.NORMAL),
     (CallbackQueryHandler(on_delete_message_button, rf"deldup$"), Group.NORMAL),
 )
