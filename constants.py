@@ -65,6 +65,7 @@ class HandlersMode:
 class DeeplinkParam:
     RADAR = "radar"
     RADAR_UNLOCK = "radarunlock"
+    RADAR_UNLOCK_TRIGGER = "radargo"
 
 
 class MediaType:

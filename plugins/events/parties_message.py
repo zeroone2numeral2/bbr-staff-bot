@@ -68,6 +68,7 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             filter_key=filter_key,
             now=now,
             args=args,
+            bot_username=context.bot.username,
             discussion_group_messages_links=discussion_group_messages_links
         )
         if not text:

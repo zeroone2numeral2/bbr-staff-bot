@@ -100,11 +100,14 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     user.set_started()
 
     skip_password_and_membership_check = False
-    if update.message.text.lower() == "/start radar1":
+    if update.message.text == "/start radar1":
         # if the deeplink param is "radar1", do not check for membership/password
         # for some reason, context.args will not contain the deeplink param
         logger.info("radar1 deeplink received, skipping membership/password check")
         skip_password_and_membership_check = True
+    elif update.message.text == f"/start {DeeplinkParam.RADAR_UNLOCK_TRIGGER}":
+        logger.info(f"user unlocked /radar via \"{update.message.text}\"")
+        user.can_use_radar = True
 
     is_users_chat_member = chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat)
     is_staff_chat_member = chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat)
@@ -365,6 +368,7 @@ HANDLERS = (
     # radar
     (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler("start", on_radar_command, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR}$")), Group.NORMAL),
+    (CommandHandler("start", on_radar_command, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR_UNLOCK_TRIGGER}$")), Group.NORMAL),
 
     # unlocking radar
     (MessageHandler(filters.ChatType.PRIVATE & Filter.RADAR_PASSWORD, on_radar_password), Group.NORMAL),

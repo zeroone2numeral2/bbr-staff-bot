@@ -5,7 +5,7 @@ import re
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
-from telegram import Bot, Message
+from telegram import Bot, Message, helpers
 from telegram.constants import MessageLimit
 from telegram.error import BadRequest, TelegramError
 from telegram.ext import ContextTypes
@@ -13,7 +13,7 @@ from telegram.ext import ContextTypes
 import decorators
 import utilities
 from config import config
-from constants import BotSettingKey, RegionName, TempDataKey, BotSettingCategory
+from constants import BotSettingKey, RegionName, TempDataKey, BotSettingCategory, MONTHS_IT, DeeplinkParam
 from database.models import Chat, Event, PartiesMessage
 from database.queries import chats, events, settings, parties_messages
 from emojis import Flag, Emoji
@@ -53,6 +53,7 @@ def get_events_text(
         filter_key: str,
         now: datetime.datetime,
         args: List[str],
+        bot_username: str,
         discussion_group_messages_links=False
 ) -> Optional[str]:
     logger.info(f"getting events of type \"{filter_key}\"...")
@@ -73,9 +74,17 @@ def get_events_text(
     # if we ask for two weeks + group by, the first group by line will start by \n
     events_text = events_text.strip()
 
+    hashtag_current_month = f"#{MONTHS_IT[now.month - 1].lower()}"
+    hashtag_next_month = f"#{MONTHS_IT[now.month].lower() if now.month < 12 else MONTHS_IT[0].lower()}"
+
+    radar_deeplink = helpers.create_deep_linked_url(bot_username, payload=DeeplinkParam.RADAR_UNLOCK_TRIGGER)
+
     text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n{events_text}"
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
-    text += f"\n\n➜ <i>aggiornata in automatico ogni ora</i>\n" \
+    text += f"\n\n➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
+            f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a> - " \
+            f"oppure <a href=\"{radar_deeplink}\">&lt;&lt;{Emoji.COMPASS}&gt;&gt;</a></i> ;)\n" \
+            f"➜ <i>lista aggiornata in automatico ogni ora</i>\n" \
             f"{utilities.subscript(now_str)}"
 
     entities_count = utilities.count_html_entities(text)
@@ -200,6 +209,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             filter_key=filter_key,
             now=now_it,
             args=args,
+            bot_username=context.bot.username,
             discussion_group_messages_links=parties_message_group_messages_links
         )
         if not text:
