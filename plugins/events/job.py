@@ -167,7 +167,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
         post_new_message = copy.deepcopy(post_new_message_force)  # create a copy, not a reference
         if not post_new_message:
-            # we do these checks pnly if "force" flag was not set
+            # we do these checks only if "force" flag was not set
             last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
             if not last_parties_message:
                 # do not set 'post_new_message' to true: we need to check whether it is the correct weekday/hour anyway
@@ -195,7 +195,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             logger.info("no need to post new message, and the list didn't change: continuing to next filter...")
             continue
         elif not post_new_message and parties_list_changed and not last_parties_message:
-            logger.info(f"parties list changed, but there is no parties list message to update: continuing to next filter...")
+            logger.info(f"parties list changed, but there is no parties list message to update and it's not time to post: continuing to next filter...")
             continue
 
         logger.info("adding arg to extract number of weeks...")
