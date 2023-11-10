@@ -119,6 +119,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         logger.debug("parties list disabled from settings")
         return
 
+    parties_message_update_only = pl_settings[BotSettingKey.PARTIES_LIST_UPDATE_ONLY].value()  # whether to use the same messages instad of sending new ones
     parties_message_weekday = pl_settings[BotSettingKey.PARTIES_LIST_WEEKDAY].value()
     parties_message_weeks = pl_settings[BotSettingKey.PARTIES_LIST_WEEKS].value()
     parties_message_hour = pl_settings[BotSettingKey.PARTIES_LIST_HOUR].value()
@@ -131,47 +132,57 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
     # we check whether the flag is set once for every filter
     # it is set manually
-    post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, None)
+    post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, False)
+    logger.info(f"'post_new_message_force' from context.bot_data: {post_new_message_force}")
 
-    now = utilities.now(tz=True)
+    if not parties_list_changed and not post_new_message_force and parties_message_update_only:
+        logger.info(f"parties list is set on 'update only' mode, there was no change, and 'post_new_message_force' is not set: exiting...")
+        return
+
+    now_it = utilities.now(tz=True)
 
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
         logger.info(f"filter: {filter_key}")
 
-        current_isoweek = now.isocalendar()[1]
-        last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
-        if not last_parties_message:
-            logger.info(f"we never posted a message for filter key <{filter_key}>: setting the 'update_existing_message' value to false")
-            # if we never posted a parties list message, we should not try to update it
-            # later in the code, we check whether it is time to post a new message. If not, simply don't do anything
-            update_existing_message = False
-            last_parties_message_isoweek = 53
-        else:
-            update_existing_message = copy.deepcopy(parties_list_changed)  # create a copy, not a reference
-            last_parties_message_isoweek = last_parties_message.isoweek()
+        last_parties_message = None
 
-        post_new_message = False
+        post_new_message = copy.deepcopy(post_new_message_force)  # create a copy, not a reference
+        if not post_new_message and not parties_message_update_only:
+            # if no "force" flag was set, check whether it is time to post
+            # also, check whether it is time to post only if 'update only' mode is off. If on, there's no need to check this: we will simply edit the existing message
+            last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
+            if not last_parties_message:
+                # do not set 'post_new_message' to true: we need to check whether it is the correct weekday/hour anyway
+                logger.info(f"we never posted a message for filter key <{filter_key}>, we will check whether it is the weekday/hour to post anyway")
+                last_parties_message_isoweek = 53
+            else:
+                last_parties_message_isoweek = last_parties_message.isoweek()
 
-        today_is_post_weekday = now.weekday() == parties_message_weekday  # whether today is the weekday we should post the message
-        new_week = current_isoweek != last_parties_message_isoweek
-        logger.info(f"current isoweek: {current_isoweek}, "
-                    f"last post isoweek: {last_parties_message_isoweek}, "
-                    f"weekday: {now.weekday()} (today_is_post_weekday: {today_is_post_weekday}), "
-                    f"hour: {now.hour} (parties_message_hour: {parties_message_hour})")
+            current_isoweek = now_it.isocalendar()[1]
 
-        if today_is_post_weekday and new_week and now.hour >= parties_message_hour:
-            # post a new message only if it's a different week than the last message's isoweek
-            # even if no parties message was posted yet, wait for the correct day and hour
-            logger.info(f"it's time to post a new message")
-            post_new_message = True
-        elif post_new_message_force:
-            logger.info("force-post new message flag was true: time to post a new message")
-            post_new_message = True
+            today_is_post_weekday = now_it.weekday() == parties_message_weekday  # whether today is the weekday we should post the message
+            new_week = current_isoweek != last_parties_message_isoweek
 
-        if not post_new_message and not update_existing_message:
+            logger.info(f"current isoweek: {current_isoweek}, "
+                        f"last post isoweek: {last_parties_message_isoweek}, "
+                        f"weekday: {now_it.weekday()} (today_is_post_weekday: {today_is_post_weekday}), "
+                        f"hour: {now_it.hour} (parties_message_hour: {parties_message_hour})")
+
+            if today_is_post_weekday and new_week and now_it.hour >= parties_message_hour:
+                # post a new message only if it's a different week than the last message's isoweek
+                # even if no parties message was posted yet, wait for the correct day and hour
+                logger.info(f"it's time to post a new message")
+                post_new_message = True
+            else:
+                logger.info(f"it's not time to post a new message")
+
+        if not post_new_message and not parties_list_changed:
             # if it's not time to post a new message and nothing happened that edited
-            # the parties list ('update_existing_message'), simply skip this filter
-            logger.info("no need to post new message or update the existing one: continuing to next filter...")
+            # the parties list, simply skip this filter
+            logger.info("no need to post new message, and the list didn't change: continuing to next filter...")
+            continue
+        elif not post_new_message and parties_list_changed and not last_parties_message:
+            logger.info(f"parties list changed, but there is no parties list message to update: continuing to next filter...")
             continue
 
         logger.info("adding arg to extract number of weeks...")
@@ -180,12 +191,12 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         text = get_events_text(
             session=session,
             filter_key=filter_key,
-            now=now,
+            now=now_it,
             args=args,
             discussion_group_messages_links=parties_message_group_messages_links
         )
         if not text:
-            logger.info("no events for this filter")
+            logger.info("no events for this filter, continuing to next one...")
             continue
 
         if post_new_message:
@@ -200,7 +211,8 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
             if parties_message_pin:
                 await pin_message(context.bot, sent_message, last_parties_message)
-        elif update_existing_message:
+        elif parties_list_changed and last_parties_message:
+            # 'last_parties_message' should always be ok (not None) inside this 'if'
             logger.info(f"editing message {last_parties_message.message_id} in chat {last_parties_message.chat_id}...")
             edited_message = await context.bot.edit_message_text(text, last_parties_message.chat_id, last_parties_message.message_id)
             last_parties_message.save_edited_message(edited_message)

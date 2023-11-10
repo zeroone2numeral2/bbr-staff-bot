@@ -21,6 +21,7 @@ class Emoji:
     PERSON = "👤"
     PHONE = "📱"
     PLUS = "➕"
+    RECYCLE = "♻️"
     RED = "🔴"
     SHEET = "📝"
     SHRUG = "🤷"

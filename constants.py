@@ -89,6 +89,7 @@ class BotSettingKey:
     RADAR_FILE = "radar_file"
     PARTIES_LIST = "parties_list"
     PARTIES_LIST_WEEKS = "parties_list_weeks"
+    PARTIES_LIST_UPDATE_ONLY = "parties_list_update_only"
     PARTIES_LIST_WEEKDAY = "parties_list_weekday"
     PARTIES_LIST_HOUR = "parties_list_hour"
     PARTIES_LIST_PIN = "parties_list_pin"
@@ -321,6 +322,15 @@ BOT_SETTINGS_DEFAULTS = {
         label="settimane",
         emoji=Emoji.CRYSTAL_SPHERE,
         description="quante settimane includere nella lista, 0 oppure 1 per la settimana corrente",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_UPDATE_ONLY: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=True,
+        label="lista persistente",
+        emoji=Emoji.RECYCLE,
+        description="se abilitato, invece che inviare la lista delle feste ogni settimana, verranno aggiornati sempre gli stessi messaggi",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
