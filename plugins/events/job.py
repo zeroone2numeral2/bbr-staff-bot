@@ -180,6 +180,8 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
                     post_new_message = True
                 else:
                     logger.info(f"it's not time to post a new message")
+            else:
+                logger.info("'update only' mode is on and a 'last_parties_message' exists: if the parties list changed, we will update the existing message")
 
         if not post_new_message and not parties_list_changed:
             # if it's not time to post a new message and nothing happened that edited
