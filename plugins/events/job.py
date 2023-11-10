@@ -97,7 +97,7 @@ def get_events_text(
         text += f"➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
                 f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a>" \
                 f"{radar_deeplink_part}</i>\n" \
-                f"➜ <i>lista aggiornata in automatico ogni ora</i>\n"
+                f"➜ <i>liste vengono aggiornate in automatico ogni ora</i>\n"
 
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
     text += f"{utilities.subscript(now_str)}"
