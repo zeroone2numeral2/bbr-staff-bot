@@ -103,7 +103,7 @@ async def pin_message(bot: Bot, new_parties_message: Message, old_parties_messag
             logger.error(f"error while unpinning old parties message: {e}")
 
 
-def time_to_post(now_it: datetime.datetime, last_parties_message_isoweek: int, post_weekday: int):
+def time_to_post(now_it: datetime.datetime, last_parties_message_isoweek: int, post_weekday: int, post_hour: int):
     current_isoweek = now_it.isocalendar()[1]
 
     today_is_post_weekday = now_it.weekday() == post_weekday  # whether today is the weekday we should post the message
@@ -114,7 +114,7 @@ def time_to_post(now_it: datetime.datetime, last_parties_message_isoweek: int, p
                 f"weekday: {now_it.weekday()} (today_is_post_weekday: {today_is_post_weekday}), "
                 f"hour: {now_it.hour} (parties_message_hour: {post_weekday})")
 
-    if today_is_post_weekday and new_week and now_it.hour >= post_weekday:
+    if today_is_post_weekday and new_week and now_it.hour >= post_hour:
         # post a new message only if it's a different week than the last message's isoweek
         # even if no parties message was posted yet, wait for the correct day and hour
         return True
@@ -154,10 +154,6 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, False)
     logger.info(f"'post_new_message_force' from context.bot_data: {post_new_message_force}")
 
-    if not parties_list_changed and not post_new_message_force and parties_message_update_only:
-        logger.info(f"parties list is set on 'update only' mode, there was no change, and 'post_new_message_force' is not set: exiting...")
-        return
-
     now_it = utilities.now(tz=True)
 
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
@@ -181,7 +177,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
                 # - 'update only' mode is off, or
                 # - 'update only' mode is on, but we never posted a parties message for this filter
                 logger.info(f"'update only' mode is off, or we never sent a parties message for <{filter_key}>: checking whether it is time to post")
-                if time_to_post(now_it, last_parties_message_isoweek, parties_message_weekday):
+                if time_to_post(now_it, last_parties_message_isoweek, parties_message_weekday, parties_message_hour):
                     # post a new message only if it's a different week than the last message's isoweek
                     # even if no parties message was posted yet, wait for the correct day and hour
                     logger.info(f"it's time to post a new message")
