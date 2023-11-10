@@ -13,7 +13,7 @@ from telegram.ext import filters
 import decorators
 import utilities
 from config import config
-from constants import Group, BotSettingKey, Language, LocalizedTextKey, COMMAND_PREFIXES
+from constants import Group, BotSettingKey, Language, LocalizedTextKey, COMMAND_PREFIXES, TempDataKey
 from database.models import User, PrivateChatMessage, Chat, BotSetting
 from database.queries import texts, settings, users, chats, private_chat_messages, chat_members
 from emojis import Emoji
@@ -212,8 +212,19 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
         return
 
     user_id = int(context.matches[0].group("user_id"))
+    action = context.matches[0].group("action")
     # application_id = int(context.matches[0].group("request_id"))
-    accepted = context.matches[0].group("action") == "accept"
+
+    tap_key = f"request:{action}:{update.effective_message.message_id}"
+    if TempDataKey.EVALUATION_BUTTONS_ONCE not in context.user_data:
+        context.user_data[TempDataKey.EVALUATION_BUTTONS_ONCE] = {}
+    if not context.user_data[TempDataKey.EVALUATION_BUTTONS_ONCE].pop(tap_key, False):
+        logger.info(f"first button tap for <{action}>")
+        context.user_data[TempDataKey.EVALUATION_BUTTONS_ONCE][tap_key] = True
+        await update.callback_query.answer(f"usa di nuov il tasto per confermare")
+        return
+
+    accepted = action == "accept"
 
     user: User = users.get_or_create(session, user_id)
     if not user.pending_request_id:
