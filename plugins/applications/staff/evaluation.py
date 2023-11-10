@@ -268,7 +268,7 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
     accepted = bool(re.search(r"^/accetta", update.message.text, re.I))
 
     delete_history_if_rejected = True
-    if context.args and context.args[0].lower() == "nodel":
+    if context.args and "nodel" in context.args:
         logger.info("skipping history delete")
         delete_history_if_rejected=False
 
