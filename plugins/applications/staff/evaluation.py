@@ -143,7 +143,7 @@ async def delete_history(session: Session, bot: Bot, user: User, delete_reason: 
     return result
 
 
-async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: bool, admin: TelegramUser):
+async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: bool, admin: TelegramUser, delete_history_if_rejected=True):
     if accepted:
         user.accept(by_user_id=admin.id)
     else:
@@ -182,7 +182,9 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
 
     if accepted:
         await send_message_to_user(session, bot, user)
-    else:
+    elif not accepted and delete_history_if_rejected:
+        # make sure to only enter here if 'accepted' is false
+        logger.info("deleting history...")
         await delete_history(session, bot, user, delete_reason="user was rejected")
 
 
@@ -265,12 +267,18 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
 
     accepted = bool(re.search(r"^/accetta", update.message.text, re.I))
 
+    delete_history_if_rejected = True
+    if context.args and context.args[0].lower() == "nodel":
+        logger.info("skipping history delete")
+        delete_history_if_rejected=False
+
     await accept_or_reject(
         session=session,
         bot=context.bot,
         user=user,
         accepted=accepted,
-        admin=update.effective_user
+        admin=update.effective_user,
+        delete_history_if_rejected=delete_history_if_rejected
     )
 
     await update.message.reply_text(f"<i>fatto!</i>")
@@ -300,10 +308,10 @@ async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TY
     result_dict = await delete_history(session, context.bot, user, delete_reason="/delhistory", send_rabbit=send_rabbit)
 
     await update.message.reply_text(
-        f"Eliminati: {result_dict['deleted']}\n"
-        f"Messaggi non eliminati perchè troppo vecchi: {result_dict['too_old']}\n"
-        f"Messaggi non eliminati per altri motivi: {result_dict['failed']}\n"
-        f"File rabbit: {'inviato' if send_rabbit else 'non inviato'}",
+        f"• eliminati: {result_dict['deleted']}\n"
+        f"• non eliminati perchè troppo vecchi: {result_dict['too_old']}\n"
+        f"• non eliminati per altri motivi: {result_dict['failed']}\n"
+        f"• file rabbit: {'inviato (se impostato)' if send_rabbit else 'non inviato'}",
         quote=True
     )
 
