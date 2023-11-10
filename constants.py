@@ -1,4 +1,5 @@
 from emojis import Emoji, Flag
+from config import config
 
 MONTHS_IT = [
     "Gennaio",
@@ -87,6 +88,8 @@ class BotSettingKey:
     CHAT_INVITE_LINK = "chat_invite_link"
     APPROVAL_MODE = "approval_mode"
     RABBIT_FILE = "rabbit_file"
+    RADAR_ENABLED = "radar_enabled"
+    RADAR_PASSWORD_ENABLED = "radar_password_enabled"
     RADAR_FILE = "radar_file"
     PARTIES_LIST = "parties_list"
     PARTIES_LIST_WEEKS = "parties_list_weeks"
@@ -389,11 +392,30 @@ BOT_SETTINGS_DEFAULTS = {
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=True
     ),
+    BotSettingKey.RADAR_ENABLED: dict(
+        category=BotSettingCategory.RADAR,
+        default=True,
+        label="radar on/off",
+        emoji=Emoji.COMPASS,
+        description="se abilitare il comando radar o meno (sempre on per lo staff)",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=False
+    ),
+    BotSettingKey.RADAR_PASSWORD_ENABLED: dict(
+        category=BotSettingCategory.RADAR,
+        default=False,
+        label="password on/off",
+        emoji=Emoji.KEY,
+        description=f"se per usare /radar23 è necessario prima inviare al bot la password "
+                    f"(password attuale: \"{config.settings.radar_password}\")",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=False
+    ),
     BotSettingKey.RADAR_FILE: dict(
         category=BotSettingCategory.RADAR,
         default=None,
-        label="gif comando radar",
-        emoji=Emoji.COMPASS,
+        label="gif radar",
+        emoji=Emoji.TELEVISION,
         description="gif da mandare quando qualcuno usa /radar23",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=True

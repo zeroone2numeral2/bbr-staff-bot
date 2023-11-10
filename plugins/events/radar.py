@@ -24,7 +24,8 @@ from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages
 import decorators
 import utilities
-from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout, DeeplinkParam
+from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout, DeeplinkParam, \
+    BotSettingCategory
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -99,26 +100,28 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     # set started, in case we entered this handler because of a deeplink
     user.set_started()
 
-    skip_password_and_membership_check = False
-    if update.message.text == "/start radar1":
-        # if the deeplink param is "radar1", do not check for membership/password
-        # for some reason, context.args will not contain the deeplink param
-        logger.info("radar1 deeplink received, skipping membership/password check")
-        skip_password_and_membership_check = True
-    elif update.message.text == f"/start {DeeplinkParam.RADAR_UNLOCK_TRIGGER}":
+    if update.message.text == f"/start {DeeplinkParam.RADAR_UNLOCK_TRIGGER}":
         logger.info(f"user unlocked /radar via \"{update.message.text}\"")
         user.can_use_radar = True
+
+    radar_settings = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.RADAR)
+    radar_enabled = radar_settings[BotSettingKey.RADAR_ENABLED].value()
+    radar_password_protected = radar_settings[BotSettingKey.RADAR_PASSWORD_ENABLED].value()
 
     is_users_chat_member = chat_members.is_member(session, update.effective_user.id, Chat.is_users_chat)
     is_staff_chat_member = chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat)
 
-    if not skip_password_and_membership_check and not is_users_chat_member:
+    if not radar_enabled and not is_staff_chat_member:
+        logger.info("forbidden: /radar command is disabled from settings and user is not staff")
+        return
+
+    if not is_users_chat_member:
         logger.info("forbidden: user is not a member of the users chat")
         return
 
-    if not skip_password_and_membership_check and not is_staff_chat_member and (config.settings.radar_password and not user.can_use_radar):
+    if not is_staff_chat_member and radar_password_protected and not user.can_use_radar:
         # if radar1 deeplink, do not check for password
-        logger.info("forbidden: a password is set, and the user hasn't unlocked /radar yet")
+        logger.info("forbidden: radar's password is enabled, and the user hasn't unlocked it yet")
         return
 
     command = utilities.get_command(update.message.text)
@@ -149,9 +152,9 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if date_override:
         text = f"{text} (data di riferimento: {date_override.strftime('%d/%m/%Y')})"
 
-    setting: BotSetting = settings.get_or_create(session, BotSettingKey.RADAR_FILE)
-    if setting.value():
-        sent_message = await update.message.reply_animation(setting.value(), caption=text, reply_markup=reply_markup)
+    radar_gif = radar_settings[BotSettingKey.RADAR_FILE].value()
+    if radar_gif:
+        sent_message = await update.message.reply_animation(radar_gif, caption=text, reply_markup=reply_markup)
     else:
         sent_message = await update.message.reply_html(text, reply_markup=reply_markup)
     private_chat_messages.save(session, sent_message)
