@@ -104,8 +104,8 @@ def get_events_text(
 
     html_entities_count = utilities.count_html_entities(text)
     additional_entities = 2 if append_bottom_text else 0  # add hashtags to the count
+    additional_entities += 1  # just to make sure...
     entities_count = html_entities_count + additional_entities
-    entities_count += 1  # just to make sure...
     logger.debug(f"entities count: {entities_count}/{MessageLimit.MESSAGE_ENTITIES}")
     if entities_count > MessageLimit.MESSAGE_ENTITIES:
         # remove bold entities if we cross the limit
