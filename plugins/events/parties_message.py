@@ -84,6 +84,7 @@ async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYP
     # pls: Parties List Settings
     pls_dict = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.PARTIES_LIST)
     enabled = pls_dict[BotSettingKey.PARTIES_LIST].value()
+    update_only = pls_dict[BotSettingKey.PARTIES_LIST_UPDATE_ONLY].value()
     weeks = pls_dict[BotSettingKey.PARTIES_LIST_WEEKS].value()
     weekday = pls_dict[BotSettingKey.PARTIES_LIST_WEEKDAY].value()
     hour = pls_dict[BotSettingKey.PARTIES_LIST_HOUR].value()
@@ -92,12 +93,13 @@ async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
     list_was_updated = context.bot_data.get(TempDataKey.UPDATE_PARTIES_MESSAGE, False)  # do not pop
 
-    now = utilities.now()
+    now_it = utilities.now(tz=True)
+    now_it_hour = utilities.format_datetime(now_it, format_str="%H:%M")
     await update.message.reply_html(
         f"<b>Abilitato</b>: {utilities.bool_to_str_it(enabled, si_no=True)} ({weeks} settimana/e)\n"
         f"<b>Lista da aggiornare</b>: {utilities.bool_to_str_it(list_was_updated, si_no=True)}\n"
-        f"<b>Giorno</b>: {WEEKDAYS_IT[weekday]}\n"
-        f"<b>Ora</b>: {hour} (ora attuale: {now.hour}:{now.minute})\n"
+        f"<b>Invia lista settimanalmente (invece che aggiornare mex esistente)</b>: {utilities.bool_to_str_it(not update_only, si_no=True)}\n"
+        f"<b>Giorno</b>: {WEEKDAYS_IT[weekday]}, alle {hour} (ora attuale: {now_it_hour})\n"
         f"<b>Fissa messaggi</b>: {utilities.bool_to_str_it(pin, si_no=True)}\n"
         f"<b>Linka messaggi canale nel gruppo di discussione</b>: {utilities.bool_to_str_it(group_messages_links, si_no=True)}\n"
         f"<b>Frequenza aggiornamento</b>: {config.settings.parties_message_job_frequency} minuti"
