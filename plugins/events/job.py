@@ -54,6 +54,7 @@ def get_events_text(
         now: datetime.datetime,
         args: List[str],
         bot_username: str,
+        append_bottom_text=True,
         discussion_group_messages_links=False
 ) -> Optional[str]:
     logger.info(f"getting events of type \"{filter_key}\"...")
@@ -74,18 +75,32 @@ def get_events_text(
     # if we ask for two weeks + group by, the first group by line will start by \n
     events_text = events_text.strip()
 
-    hashtag_current_month = f"#{MONTHS_IT[now.month - 1].lower()}"
-    hashtag_next_month = f"#{MONTHS_IT[now.month].lower() if now.month < 12 else MONTHS_IT[0].lower()}"
+    text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n" \
+           f"{events_text}\n\n"
 
-    radar_deeplink = helpers.create_deep_linked_url(bot_username, payload=DeeplinkParam.RADAR_UNLOCK_TRIGGER)
+    if append_bottom_text:
+        # include all of this only if the filter_key (that is, the parties list message) is the last one we
+        # have to send/edit
 
-    text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n{events_text}"
+        hashtag_current_month = f"#{MONTHS_IT[now.month - 1].lower()}"
+        hashtag_next_month = f"#{MONTHS_IT[now.month].lower() if now.month < 12 else MONTHS_IT[0].lower()}"
+
+        radar_deeplink_part = ""
+        radar_settings = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.RADAR)
+        if radar_settings[BotSettingKey.RADAR_ENABLED].value():
+            if radar_settings[BotSettingKey.RADAR_PASSWORD_ENABLED].value():
+                radar_deeplink = helpers.create_deep_linked_url(bot_username, payload=DeeplinkParam.RADAR_UNLOCK_TRIGGER)
+            else:
+                radar_deeplink = helpers.create_deep_linked_url(bot_username, payload=DeeplinkParam.RADAR)
+            radar_deeplink_part = f" - oppure <a href=\"{radar_deeplink}\">&lt;&lt;{Emoji.COMPASS}&gt;&gt;</a> ;)"
+
+        text += f"➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
+                f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a>" \
+                f"{radar_deeplink_part}</i>\n" \
+                f"➜ <i>lista aggiornata in automatico ogni ora</i>\n"
+
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
-    text += f"\n\n➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
-            f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a> - " \
-            f"oppure <a href=\"{radar_deeplink}\">&lt;&lt;{Emoji.COMPASS}&gt;&gt;</a></i> ;)\n" \
-            f"➜ <i>lista aggiornata in automatico ogni ora</i>\n" \
-            f"{utilities.subscript(now_str)}"
+    text += f"{utilities.subscript(now_str)}"
 
     entities_count = utilities.count_html_entities(text)
     logger.debug(f"entities count: {entities_count}/{MessageLimit.MESSAGE_ENTITIES}")
@@ -165,6 +180,9 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
     now_it = utilities.now(tz=True)
 
+    # we need this so we can add the footer text just to the last message
+    last_filter_key = list(PARTIES_MESSAGE_TYPES_ARGS.keys())[-1]
+
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
         logger.info(f"filter: {filter_key}")
 
@@ -210,6 +228,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             now=now_it,
             args=args,
             bot_username=context.bot.username,
+            append_bottom_text=filter_key == last_filter_key,
             discussion_group_messages_links=parties_message_group_messages_links
         )
         if not text:

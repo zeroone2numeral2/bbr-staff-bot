@@ -60,6 +60,8 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     discussion_group_messages_links = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_DISCUSSION_LINK).value()
     weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
 
+    last_filter_key = list(PARTIES_MESSAGE_TYPES_ARGS.keys())[-1]
+
     now = utilities.now(tz=True)
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
         args.append(EventFilter.WEEK) if weeks <= 1 else args.append(EventFilter.WEEK_2)
@@ -69,6 +71,7 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             now=now,
             args=args,
             bot_username=context.bot.username,
+            append_bottom_text=filter_key == last_filter_key,
             discussion_group_messages_links=discussion_group_messages_links
         )
         if not text:
