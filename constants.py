@@ -327,10 +327,10 @@ BOT_SETTINGS_DEFAULTS = {
     ),
     BotSettingKey.PARTIES_LIST_UPDATE_ONLY: dict(
         category=BotSettingCategory.PARTIES_LIST,
-        default=True,
+        default=False,
         label="lista persistente",
         emoji=Emoji.RECYCLE,
-        description="se abilitato, invece che inviare la lista delle feste ogni settimana, verranno aggiornati sempre gli stessi messaggi",
+        description="se abilitato, invece che inviare la lista delle feste ogni settimana, verrà aggiornato sempre lo stesso messaggio",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
