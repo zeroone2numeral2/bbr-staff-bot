@@ -102,20 +102,22 @@ def get_events_text(
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
     text += f"{utilities.subscript(now_str)}"
 
-    entities_count = utilities.count_html_entities(text)
+    html_entities_count = utilities.count_html_entities(text)
+    additional_entities = 2 if append_bottom_text else 0  # add hashtags to the count
+    entities_count = html_entities_count + additional_entities
     logger.debug(f"entities count: {entities_count}/{MessageLimit.MESSAGE_ENTITIES}")
     if entities_count > MessageLimit.MESSAGE_ENTITIES:
         # remove bold entities if we cross the limit
         # this will assume no nested <b> tags
-        hashtags_count = 2
-        replacements_count = (entities_count - MessageLimit.MESSAGE_ENTITIES + hashtags_count) * 2
+        html_tags_to_remove = (entities_count - MessageLimit.MESSAGE_ENTITIES) * 2
 
         # we want to remove the last <b> entities, but 'count' in re.sub() doesn't work in reverse
         # so we reverse the string (and also the regex, </b> becomes >b/<
         text_reversed = text[::-1]
-        text_reversed = re.sub(r">b/?<", "", text_reversed, count=replacements_count)
+        text_reversed = re.sub(r">b/?<", "", text_reversed, count=html_tags_to_remove)
         text = text_reversed[::-1]
-        logger.debug(f"entities count (no bold, {replacements_count} replacements): {utilities.count_html_entities(text)}")
+
+        logger.debug(f"entities count (no bold, {html_tags_to_remove} html tags to remove): {utilities.count_html_entities(text) + additional_entities}")
 
     return text
 
