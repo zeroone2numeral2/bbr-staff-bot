@@ -828,6 +828,7 @@ class EventTypeHashtag:
     LEGAL = "#legal"
     LEGAL_PARTY = "#legalparty"
     LEGAL_PLACE = "#legalplace"
+    LOCALATA = "#localata"
     CS = "#cs"
     CSO = "#cso"
     CSOA = "#csoa"
@@ -859,6 +860,7 @@ EVENT_TYPE = {
     EventTypeHashtag.LEGAL: EventType.LEGAL,
     EventTypeHashtag.LEGAL_PARTY: EventType.LEGAL,
     EventTypeHashtag.LEGAL_PLACE: EventType.LEGAL,
+    EventTypeHashtag.LOCALATA: EventType.LEGAL,
     EventTypeHashtag.FESTIVAL: EventType.LEGAL,
     EventTypeHashtag.CS: EventType.CS_OR_SQUAT,
     EventTypeHashtag.CSO: EventType.CS_OR_SQUAT,
@@ -949,6 +951,8 @@ class Event(Base):
     # deleted_on = Column(DateTime, default=None)
     not_a_party = Column(Boolean, default=False)
     # deletion_reason = Column(Integer, default=DeletionReason.OTHER)
+
+    localata = Column(Boolean, default=False)
 
     chat: Chat = relationship("Chat")
 

@@ -12,7 +12,7 @@ from telegram.ext import CallbackContext
 
 import utilities
 from constants import Regex, RegionName, REGIONS_DATA, TempDataKey, MONTHS_IT
-from database.models import Event, EVENT_TYPE, EventType
+from database.models import Event, EVENT_TYPE, EventType, EventTypeHashtag
 from database.queries import events
 from emojis import Emoji, Flag
 
@@ -202,6 +202,12 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
         if hashtag in hashtags_list:
             event.event_type = event_type
             break
+
+    # LOCALATA
+    if EventTypeHashtag.LOCALATA in hashtags_list:
+        event.localata = True
+    else:
+        event.localata = False
 
     # CANCELED
     if (
