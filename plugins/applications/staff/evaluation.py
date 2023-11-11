@@ -18,6 +18,7 @@ from database.models import User, PrivateChatMessage, Chat, BotSetting
 from database.queries import texts, settings, users, chats, private_chat_messages, chat_members
 from emojis import Emoji
 from ext.filters import ChatFilter
+from plugins.applications.staff.common import can_evaluate_applications
 
 logger = logging.getLogger(__name__)
 
@@ -186,17 +187,6 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
         # make sure to only enter here if 'accepted' is false
         logger.info("deleting history...")
         await delete_history(session, bot, user, delete_reason="user was rejected")
-
-
-def can_evaluate_applications(session: Session, user: TelegramUser):
-    if utilities.is_superadmin(user):
-        return True
-
-    chat_member = chat_members.get_chat_member(session, user.id, Chat.is_evaluation_chat)
-    if chat_member:
-        return chat_member.is_administrator()
-
-    return False
 
 
 @decorators.catch_exception()

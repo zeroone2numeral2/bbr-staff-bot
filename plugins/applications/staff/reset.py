@@ -10,6 +10,8 @@ import utilities
 from constants import Group
 from database.models import User, Chat
 from database.queries import users, chats, chat_members
+from ext.filters import ChatFilter
+from plugins.applications.staff.common import can_evaluate_applications
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +21,8 @@ logger = logging.getLogger(__name__)
 async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/reset {utilities.log(update)}")
 
-    if not user.can_evaluate_applications and not utilities.is_superadmin(update.effective_user):
-        logger.debug("user is not allowed to use this command")
+    if not can_evaluate_applications(session, update.effective_user):
+        logger.info("user is not allowed to use this command")
         return
 
     user_id = utilities.get_user_id_from_text(update.message.text)
@@ -50,8 +52,8 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if not log_chat:
         return
 
-    log_text = f"#RESET da parte di {update.effective_user.mention_html()} (#admin{update.effective_user.id})\n\n" \
-               f"{user.mention()} (#id{user.user_id}) potrà richiedere di essere ammesso nuovamente nel gruppo"
+    log_text = f"<b>#RESET</b> da parte di {update.effective_user.mention_html()} • #admin{update.effective_user.id}\n\n" \
+               f"{user.mention()} (#id{user.user_id}) potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
 
     additional_context = utilities.get_argument(["resetkick", "reset"], update.message.text_html, remove_user_id_hashtag=True)
     if additional_context:
@@ -65,5 +67,5 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (CommandHandler(["reset", "resetkick"], on_reset_command), Group.NORMAL),
+    (CommandHandler(["reset", "resetkick"], on_reset_command, ChatFilter.EVALUATION), Group.NORMAL),
 )
