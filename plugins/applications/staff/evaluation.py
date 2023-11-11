@@ -288,8 +288,8 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+@decorators.pass_session()
+async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/delhistory command {utilities.log(update)}")
 
     text = update.message.reply_to_message.text if update.message.reply_to_message else update.message.text
