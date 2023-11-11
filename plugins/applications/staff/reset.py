@@ -11,7 +11,7 @@ from constants import Group
 from database.models import User, Chat
 from database.queries import users, chats, chat_members
 from ext.filters import ChatFilter
-from plugins.applications.staff.common import can_evaluate_applications
+from plugins.applications.staff.common import can_evaluate_applications, get_user_instance_from_message
 
 logger = logging.getLogger(__name__)
 
@@ -25,19 +25,17 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.info("user is not allowed to use this command")
         return
 
-    user_id = utilities.get_user_id_from_text(update.message.text)
-    if not user_id:
-        await update.message.reply_text("impossibile rilevare l'id dell'utente")
-        return
-
-    user: User = users.get_or_create(session, user_id, create_if_missing=False)
+    user: User = await get_user_instance_from_message(update, context, session)
     if not user:
-        await update.message.reply_text(f"impossibile trovare l'utente <code>{user_id}</code> nel database")
+        # the function will take care of sending the error message too
         return
 
     user.reset_evaluation()
-    await update.message.reply_text(f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
-                                    f"(eventuali richieste pendenti o rifiutate sono state dimenticate, se era bannato è stato sbannato)")
+    await update.message.reply_text(
+        f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
+        f"(eventuali richieste pendenti o rifiutate sono state dimenticate, se era bannato è stato sbannato)",
+        quote=True
+    )
 
     # unban the user so they can join again, just in case the user was removed manually before /reset was used
     only_if_banned = not utilities.get_command(update.message.text) == "resetkick"  # check whether to kick the user
