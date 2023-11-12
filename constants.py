@@ -456,6 +456,7 @@ CONVERSATION_TIMEOUT = 30 * 60
 
 
 class Timeout:
+    HOURS_3 = 60 * 60 * 3
     ONE_HOUR = 60 * 60
     MINUTES_30 = 60 * 30
     MINUTES_20 = 60 * 20
