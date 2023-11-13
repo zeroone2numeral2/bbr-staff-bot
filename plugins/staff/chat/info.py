@@ -9,7 +9,7 @@ import utilities
 from constants import COMMAND_PREFIXES, Group
 from database.models import ChatMember as DbChatMember, Chat, User
 from database.queries import chats, chat_members, common
-from ext.filters import ChatFilter
+from ext.filters import ChatFilter, Filter
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ async def on_userchats_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
-    (PrefixHandler(COMMAND_PREFIXES, 'userchats', on_userchats_command, ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, 'userchats', on_userchats_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
 )
 
