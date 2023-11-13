@@ -238,8 +238,8 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
     logger.info("PartiesMessage: saving discussion group's post info...")
     parties_message.save_discussion_group_message(update.effective_message)
 
-    # we delete the message because mirrored channel messages are not updated reliably
-    logger.info("trying to delete message in the group...")
+    # we delete the message because mirrored channel messages are not updated reliably when the channel post is edited
+    logger.info("trying to delete mirrored message in the group...")
     success = await utilities.delete_messages_safe(update.effective_message)
     if success:
         parties_message.discussion_group_message_deleted = True
