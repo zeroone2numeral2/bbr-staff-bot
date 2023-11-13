@@ -236,7 +236,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             else:
                 logger.info("'update only' mode is on and a 'last_parties_message' exists: if the parties list changed, we will update the existing message")
 
-        if not post_new_message and not parties_list_changed:
+        if not post_new_message and not parties_list_changed and last_parties_message:
             # if we don't have to post a new message and the parties list didn't change, we have to check whether it is
             # monday: if it's monday and the last time we updated the list was during the past week, we need to
             # force-update it, so it will contain the parties from the correct week
