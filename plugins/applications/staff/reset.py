@@ -9,9 +9,9 @@ import decorators
 import utilities
 from constants import Group
 from database.models import User, Chat
-from database.queries import users, chats, chat_members
+from database.queries import users, chats, chat_members, common
 from ext.filters import ChatFilter
-from plugins.applications.staff.common import can_evaluate_applications, get_user_instance_from_message
+from plugins.applications.staff.common import can_evaluate_applications
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.info("user is not allowed to use this command")
         return
 
-    user: User = await get_user_instance_from_message(update, context, session)
+    user: User = await common.get_user_instance_from_message(update, context, session)
     if not user:
         # the function will take care of sending the error message too
         return

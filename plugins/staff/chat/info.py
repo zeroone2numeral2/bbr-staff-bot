@@ -1,49 +1,17 @@
 import logging
-from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, Message
+from telegram import Update
 from telegram.ext import PrefixHandler, ContextTypes
 
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
-from database.models import UserMessage, ChatMember as DbChatMember, Chat, User
-from database.queries import chats, user_messages, chat_members, users
+from database.models import ChatMember as DbChatMember, Chat, User
+from database.queries import chats, chat_members, common
 from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
-
-
-async def get_user_instance_from_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session) -> Optional[User]:
-    message: Message = update.message
-
-    if message.reply_to_message and message.reply_to_message.from_user.id == context.bot.id:
-        user_message: UserMessage = user_messages.get_user_message(session, update)
-        if user_message:
-            user: User = user_message.user
-            return user
-        else:
-            logger.warning(f"couldn't find replied-to message in the database, message_id: {message.reply_to_message.message_id}")
-
-    user_id = utilities.get_user_id_from_text(message.text)
-    if not user_id and message.reply_to_message and (message.reply_to_message.text or message.reply_to_message.caption):
-        # try to search the hashtag in the replied-to message
-        text = message.reply_to_message.text or message.reply_to_message.caption
-        user_id = utilities.get_user_id_from_text(text)
-
-    if not user_id:
-        logger.info("can't find user id in text/replied-to message's text")
-        await update.message.reply_text("can't detect the user's id, reply to one of their forwarded message or include its id after the command")
-        return
-
-    user: User = users.get_or_create(session, user_id, create_if_missing=False)
-    if not user:
-        logger.info(f"can't find user <code>{user_id}</code> in the database")
-        await update.message.reply_text(f"can't find user <code>{user_id}</code> in the database")
-        return
-
-    return user
 
 
 @decorators.catch_exception()
@@ -51,7 +19,7 @@ async def get_user_instance_from_message(update: Update, context: ContextTypes.D
 async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/info {utilities.log(update)}")
 
-    user: User = await get_user_instance_from_message(update, context, session)
+    user: User = await common.get_user_instance_from_message(update, context, session)
     if not user:
         return
 
@@ -95,7 +63,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 async def on_userchats_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/userchats {utilities.log(update)}")
 
-    user = await get_user_instance_from_message(update, context, session)
+    user = await common.get_user_instance_from_message(update, context, session)
     if not user:
         return
 
