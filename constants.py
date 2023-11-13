@@ -441,6 +441,7 @@ class TempDataKey:
     FIRST_DIFF_TEXT = "first_diff_text"
     UPDATE_PARTIES_MESSAGE = "update_parties_message"
     FORCE_POST_PARTIES_MESSAGE = "force_post_parties_message"
+    FORCE_UPDATE_PARTIES_MESSAGE = "force_update_parties_message"
     MUTE_EVENT_MESSAGE_BUTTON_ONCE = "mute_event_message_button_once"
     NOT_A_PARTY_MESSAGE_BUTTON_ONCE = "notaparty_event_message_button_once"
     DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE = "delete_duplicate_message_button_once"

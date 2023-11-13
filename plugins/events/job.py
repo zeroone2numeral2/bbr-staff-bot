@@ -183,8 +183,12 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     # this flag is set every time something that edits the parties list happens (new/edited event, /delevent...)
     # we need to get it before the for loop because it should be valid for every filter
     parties_list_changed = context.bot_data.pop(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
+    if not parties_list_changed:
+        # this flag is set by the /updatelists command: when used, make sure to act as if there has been changes
+        parties_list_changed = context.bot_data.pop(TempDataKey.FORCE_UPDATE_PARTIES_MESSAGE, False)
+    logger.info(f"'parties_list_changed': {parties_list_changed}")
 
-    # we check whether the flag is set once for every filter
+    # we check whether the flag is set once for all filters
     # it is set manually
     post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, False)
     logger.info(f"'post_new_message_force' from context.bot_data: {post_new_message_force}")
