@@ -207,7 +207,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         post_new_message = copy.deepcopy(post_new_message_force)  # create a copy, not a reference
         if not post_new_message:
             # we do these checks only if "force" flag was not set
-            last_parties_message = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
+            last_parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
 
             if not parties_message_update_only or not last_parties_message:
                 # we check whether it is time to post only if:
@@ -225,6 +225,16 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
                     logger.info(f"it's not time to post a new message")
             else:
                 logger.info("'update only' mode is on and a 'last_parties_message' exists: if the parties list changed, we will update the existing message")
+
+        if not post_new_message and not parties_list_changed:
+            # if we don't have to post a new message and the parties list didn't change, we have to check whether it is
+            # monday: if it's monday and the last time we updated the list was during the past week, we need to
+            # force-update it, so it will contain the parties from the correct week
+            if now_it.weekday() == 0 and last_parties_message.message_edit_date.weekday() != 0:
+                logger.info("today is monday and the last time we updated the message was during the past week: "
+                            "acting as if the parties list was changed to \"force-update\" the message")
+                # this will be used for all filetrs keys, so changing this here will cause all following lists to be updated
+                parties_list_changed = True
 
         if not post_new_message and not parties_list_changed:
             # if it's not time to post a new message and nothing happened that edited
