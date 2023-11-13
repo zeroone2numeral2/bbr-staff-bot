@@ -160,17 +160,22 @@ def time_to_post(now_it: datetime.datetime, last_parties_message_isoweek: int, p
 @decorators.catch_exception_job()
 @decorators.pass_session_job()
 async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info("parties message job")
-
-    events_chat = chats.get_chat(session, Chat.is_events_chat)
-    if not events_chat:
-        logger.debug("no events chat set")
-        return
+    logger.info("parties message job: start")
 
     pl_settings = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.PARTIES_LIST)
 
     if not pl_settings[BotSettingKey.PARTIES_LIST].value():
         logger.debug("parties list disabled from settings")
+        return
+
+    if pl_settings[BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT].value():
+        logger.info("using users chat as target chat")
+        target_chat: Optional[Chat] = chats.get_chat(session, Chat.is_users_chat)
+    else:
+        target_chat: Optional[Chat] = chats.get_chat(session, Chat.is_events_chat)
+
+    if not target_chat:
+        logger.debug("no events/users chat set")
         return
 
     parties_message_update_only = pl_settings[BotSettingKey.PARTIES_LIST_UPDATE_ONLY].value()  # whether to use the same messages instad of sending new ones
@@ -207,7 +212,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         post_new_message = copy.deepcopy(post_new_message_force)  # create a copy, not a reference
         if not post_new_message:
             # we do these checks only if "force" flag was not set
-            last_parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type=filter_key)
+            last_parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, target_chat.chat_id, events_type=filter_key)
 
             if not parties_message_update_only or not last_parties_message:
                 # we check whether it is time to post only if:
@@ -266,7 +271,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
         if post_new_message:
             logger.info("posting new message...")
-            sent_message = await context.bot.send_message(events_chat.chat_id, text, **timeouts)
+            sent_message = await context.bot.send_message(target_chat.chat_id, text, **timeouts)
 
             logger.info("saving new PartiesMessage...")
             new_parties_message = PartiesMessage(sent_message, events_type=filter_key, force_sent=post_new_message_force)
