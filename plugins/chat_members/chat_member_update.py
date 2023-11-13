@@ -7,8 +7,8 @@ from telegram.error import TelegramError, BadRequest
 from telegram.ext import ChatMemberHandler, CallbackContext
 
 from constants import Group
-from database.models import User, Chat, ChatMember as DbChatMember
-from database.queries import users, chats
+from database.models import User, Chat, ChatMember as DbChatMember, Destination
+from database.queries import users, chats, invite_links
 from emojis import Emoji
 from plugins.chat_members.common import (
     save_or_update_users_from_chat_member_update,
@@ -37,7 +37,43 @@ def save_or_update_chat_from_chat_member_update(session: Session, update: Update
     return [chat]
 
 
-async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
+async def revoke_invite_link_safe(bot: Bot, chat_id: int, invite_link: str) -> bool:
+    logger.info(f"revoking invite link {invite_link}...")
+    try:
+        await bot.revoke_chat_invite_link(chat_id, invite_link)
+        return True
+    except (BadRequest, TelegramError) as e:
+        logger.error(f"error while revoking invite link: {e}")
+        return False
+
+
+async def handle_events_chat_join_via_bot_link(session: Session, bot: Bot, chat_member_updated: ChatMemberUpdated):
+    invite_link = invite_links.get_invite_link(session, chat_member_updated.invite_link.invite_link)
+    if not invite_link:
+        logger.info(f"couldn't find {chat_member_updated.invite_link.invite_link} in the database")
+        return
+
+    invite_link.used_by(chat_member_updated.new_chat_member.user, used_on=chat_member_updated.date)
+
+    if invite_link.destination == Destination.EVENTS_CHAT_DEEPLINK:
+        # do not revoke for other destinations
+        logger.info(f"link destination is {invite_link.destination}")
+        success = await revoke_invite_link_safe(bot, invite_link.chat_id, invite_link.invite_link)
+        if success:
+            invite_link.revoked()
+
+        message_ids_to_delete = invite_link.get_message_ids_to_delete()
+        if message_ids_to_delete:
+            logger.info("deleting messages...")
+            for message_id in message_ids_to_delete:
+                success = await utilities.delete_messages_by_id_safe(bot, invite_link.sent_to_user_user_id, message_id)
+                if success and message_id == invite_link.sent_to_user_message_id:
+                    # mark the invite link as removed from the user's chat if deleting the message with the link was successful
+                    logger.info("saving invite link removal from the user's chat...")
+                    invite_link.sent_to_user_link_removed = True
+
+
+async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
     if not user.last_request_id or user.last_request.is_pending() or user.last_request.status is False:
         # user joined the chat without going through the approval process, or their request was rejected
@@ -83,11 +119,8 @@ async def handle_new_member(session: Session, chat: Chat, bot: Bot, chat_member_
 
     if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
         logger.info(f"revoking invite link {user.last_request.invite_link}...")
-        try:
-            await bot.revoke_chat_invite_link(chat.chat_id, user.last_request.invite_link)
-            user.last_request.invite_link_revoked = True
-        except (BadRequest, TelegramError) as e:
-            logger.error(f"error while revoking invite link: {e}")
+        success = await revoke_invite_link_safe(bot, chat.chat_id, user.last_request.invite_link)
+        user.last_request.invite_link_revoked = success
 
 
 @decorators.catch_exception(silent=True)
@@ -119,7 +152,12 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
 
     if utilities.is_join_update(update.chat_member) and chat.is_users_chat:
         logger.info("user joined the users chat")
-        await handle_new_member(session, chat, context.bot, update.chat_member)
+        await handle_users_chat_join(session, chat, context.bot, update.chat_member)
+
+    if utilities.is_join_update(update.chat_member) and chat.is_events_chat:
+        if update.chat_member.invite_link and update.chat_member.invite_link.creator.id == context.bot.id:
+            logger.info("user joined events chat with a link created by the bot")
+            await handle_events_chat_join_via_bot_link(session, context.bot, update.chat_member)
 
 
 HANDLERS = (
