@@ -67,7 +67,7 @@ class DeeplinkParam:
     RADAR = "radar"
     RADAR_UNLOCK = "radarunlock"
     RADAR_UNLOCK_TRIGGER = "radargo"
-    GEN_EVENTS_CHAT_INVITE_LINK = "eventschatinvite"
+    EVENTS_CHAT_INVITE_LINK = "eventschatinvite"
 
 
 class MediaType:

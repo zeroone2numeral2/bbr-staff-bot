@@ -101,5 +101,5 @@ async def on_events_chat_invite_deeplink(update: Update, context: ContextTypes.D
 
 
 HANDLERS = (
-    (CommandHandler("start", on_events_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.GEN_EVENTS_CHAT_INVITE_LINK}$")), Group.NORMAL),
+    (CommandHandler("start", on_events_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.EVENTS_CHAT_INVITE_LINK}$")), Group.NORMAL),
 )
