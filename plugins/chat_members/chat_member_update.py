@@ -64,7 +64,7 @@ async def handle_events_chat_join_via_bot_link(session: Session, bot: Bot, chat_
 
         message_ids_to_delete = invite_link.get_message_ids_to_delete()
         if message_ids_to_delete:
-            logger.info("deleting messages...")
+            logger.info(f"deleting {len(message_ids_to_delete)} messages...")
             for message_id in message_ids_to_delete:
                 success = await utilities.delete_messages_by_id_safe(bot, invite_link.sent_to_user_user_id, message_id)
                 if success and message_id == invite_link.sent_to_user_message_id:

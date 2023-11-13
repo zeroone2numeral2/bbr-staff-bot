@@ -74,7 +74,7 @@ def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None) -> datet
     If no argument is passed, the utc datetime is returned"""
 
     if not tz:
-        return datetime.datetime.now(UTC_TIMEZONE)
+        return datetime.datetime.now(tz=UTC_TIMEZONE)
 
     if isinstance(tz, bool) and tz is True:
         tz = ROME_TIMEZONE

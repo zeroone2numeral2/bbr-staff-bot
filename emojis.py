@@ -34,6 +34,7 @@ class Emoji:
     SPIRAL = "🌀"
     TELEVISION = "📺"
     TICKET = "🎫"
+    UFO = "🛸"
     USER_ICON = "🚹"
     WARNING = "⚠️"
     LENS = "🔎"

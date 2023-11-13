@@ -1611,6 +1611,7 @@ class InviteLink(Base):
         self.member_limit = member_limit
         self.pending_join_request_count = pending_join_request_count
         self.created_on = utilities.now()
+        # print(self.created_on.tzinfo)
 
     @classmethod
     def from_chat_invite_link(cls, chat_id: int, chat_invite_link: ChatInviteLink, destination: Optional[str] = None):
@@ -1650,6 +1651,11 @@ class InviteLink(Base):
 
     def save_message_ids_to_delete(self, message_ids_to_delete: Iterable):
         self.sent_to_user_message_ids_to_delete = json.dumps(message_ids_to_delete, indent=2)
+
+    def extend_message_ids_to_delete(self, new_message_ids: Iterable):
+        existing_message_ids = self.get_message_ids_to_delete()
+        existing_message_ids.extend(new_message_ids)
+        self.save_message_ids_to_delete(existing_message_ids)
 
     def get_message_ids_to_delete(self):
         if not self.sent_to_user_message_ids_to_delete:

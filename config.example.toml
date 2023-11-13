@@ -13,6 +13,7 @@ invite_link_join_request = false # wether bot-generated invite links should crea
 notify_events_validity = true # notify the staff when an invalid event is posted, or when an invalid event becomes valid
 radar_password = "" # if not empty, only users who sent this regex will be able to use /radar, rgardles of their users chat's membership
 parties_message_job_frequency = 55 # in minutes, how often to run the job that will post the parties list in the events chat
+events_chat_deeplink_cooldown = 10800 # in minutes, 10800 = 3 hours. 0 to disable
 
 [handlers]
 # which handlers manifest to use, depending on what the bot should do
