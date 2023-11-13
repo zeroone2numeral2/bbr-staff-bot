@@ -407,14 +407,14 @@ def generate_text_hash(text: str) -> str:
     return md5_string
 
 
-def get_argument(commands: Union[List, str], text: str, remove_user_id_hashtag=False) -> str:
+def get_argument(commands: Union[List, str], text: str, bot_username="", remove_user_id_hashtag=False) -> str:
     if isinstance(commands, str):
         commands = [commands]
 
     prefixes = "".join(COMMAND_PREFIXES)
 
     for command in commands:
-        text = re.sub(rf"^[{prefixes}]{command}\s*", "", text, re.I)
+        text = re.sub(rf"^[{prefixes}]{command}(?:@{bot_username})?\s*", "", text, re.I)
 
     if remove_user_id_hashtag:
         text = re.sub(Regex.USER_ID_HASHTAG_SUB, "", text)

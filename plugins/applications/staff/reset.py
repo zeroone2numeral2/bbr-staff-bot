@@ -53,7 +53,12 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     log_text = f"<b>#RESET</b> da parte di {update.effective_user.mention_html()} • #admin{update.effective_user.id}\n\n" \
                f"{user.mention()} (#id{user.user_id}) potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
 
-    additional_context = utilities.get_argument(["resetkick", "reset"], update.message.text_html, remove_user_id_hashtag=True)
+    additional_context = utilities.get_argument(
+        ["resetkick", "reset"],
+        update.message.text_html,
+        bot_username=context.bot.username,
+        remove_user_id_hashtag=True
+    )
     if additional_context:
         log_text += f"\n<b>Contesto</b>: {additional_context}"
 
