@@ -35,7 +35,10 @@ async def on_updatelists_command(update: Update, context: ContextTypes.DEFAULT_T
 
     await update.message.reply_html(f"Aggiorno questi messaggi: {', '.join(message_links)}")
 
-    context.bot_data[TempDataKey.FORCE_UPDATE_PARTIES_MESSAGE] = True
+    if context.args and context.args[0].lower() == "force":
+        logger.info("saving flag to force-update the list")
+        context.bot_data[TempDataKey.FORCE_UPDATE_PARTIES_MESSAGE] = True
+
     context.job_queue.run_once(parties_message_job, when=1)
 
 
