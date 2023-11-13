@@ -239,9 +239,14 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
 
 
 @decorators.catch_exception(silent=True)
-@decorators.pass_session()
-async def on_events_chat_pinned_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"events chat: pinned message {utilities.log(update)}")
+@decorators.pass_session(pass_chat=True)
+async def on_events_chat_pinned_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"events/users chat: pinned message {utilities.log(update)}")
+
+    if chat.is_users_chat and update.effective_user and update.effective_user.id != context.bot.id:
+        # if it's a pinned message in the users chat, cotinue only if the pinned message was sent by the bot
+        logger.info("users chat message pinned by someone else: skipping update")
+        return
 
     # we check whether the pinned message is a parties message: in that case, we delete the service message
     chat_id = update.effective_chat.id
@@ -376,7 +381,7 @@ HANDLERS = (
     (MessageHandler(ChatFilter.EVENTS & Filter.WITH_TEXT & Filter.MESSAGE_OR_EDIT, on_event_message), Group.PREPROCESS),
     (MessageHandler(ChatFilter.EVENTS & ~Filter.WITH_TEXT & Filter.ALBUM_MESSAGE & Filter.FLY_MEDIA_DOWNLOAD, on_album_message_no_text), Group.PREPROCESS),
     (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
-    (MessageHandler(ChatFilter.EVENTS & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
+    (MessageHandler((ChatFilter.EVENTS | ChatFilter.USERS) & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
     (CallbackQueryHandler(on_disable_notifications_button, rf"mutemsg:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_not_a_party_button, rf"notaparty:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
 )
