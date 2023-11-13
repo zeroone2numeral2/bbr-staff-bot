@@ -97,6 +97,7 @@ class BotSettingKey:
     PARTIES_LIST_WEEKDAY = "parties_list_weekday"
     PARTIES_LIST_HOUR = "parties_list_hour"
     PARTIES_LIST_PIN = "parties_list_pin"
+    PARTIES_LIST_DELETE_OLD= "parties_list_delete_old"
     PARTIES_LIST_DISCUSSION_LINK = "parties_list_discussion_link"
     PARTIES_LIST_POST_TO_USERS_CHAT = "parties_list_post_to_users_chat"
 
@@ -363,6 +364,15 @@ BOT_SETTINGS_DEFAULTS = {
         label="fissa messaggi",
         emoji=Emoji.PIN_2,
         description="se fissare o meno i messaggi con la lista delle feste dopo che vengono inviati",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_DELETE_OLD: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=False,
+        label="elimina vecchio messaggio",
+        emoji=Emoji.TRASHBIN,
+        description="se eliminare o meno il messaggio con le feste precedentemente inviato quando se ne invia uno nuovo",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),

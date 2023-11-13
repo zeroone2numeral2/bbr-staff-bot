@@ -39,6 +39,7 @@ class Emoji:
     ENVELOPE = "✉️"
     PENCIL = "✏️"
     TRASH = "🚮"
+    TRASHBIN = "🗑"
     EARTH = "🌍"
     LINK = "🔗"
     PEOPLE = "👥"

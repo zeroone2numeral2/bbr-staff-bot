@@ -130,12 +130,20 @@ async def pin_message(bot: Bot, new_parties_message: Message, old_parties_messag
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while pinning new parties message: {e}")
 
-    if old_parties_message:
+    if old_parties_message and not old_parties_message.deleted:
         logger.info("unpinning old message...")
         try:
             await bot.unpin_chat_message(old_parties_message.chat_id, old_parties_message.message_id)
         except (TelegramError, BadRequest) as e:
             logger.error(f"error while unpinning old parties message: {e}")
+
+
+async def delete_old_message(bot: Bot, old_parties_message: PartiesMessage):
+    logger.info(f"deleting old parties message {old_parties_message.message_id} of type {old_parties_message.events_type}...")
+    success = await utilities.delete_messages_by_id_safe(bot, old_parties_message.chat_id, old_parties_message.message_id)
+    logger.info(f"success: {success}")
+
+    old_parties_message.deleted = True
 
 
 def time_to_post(now_it: datetime.datetime, last_parties_message_isoweek: int, post_weekday: int, post_hour: int):
@@ -188,6 +196,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     parties_message_weeks = pl_settings[BotSettingKey.PARTIES_LIST_WEEKS].value()
     parties_message_hour = pl_settings[BotSettingKey.PARTIES_LIST_HOUR].value()
     parties_message_pin = pl_settings[BotSettingKey.PARTIES_LIST_PIN].value()
+    parties_message_delete_old = pl_settings[BotSettingKey.PARTIES_LIST_DELETE_OLD].value()
     parties_message_group_messages_links = pl_settings[BotSettingKey.PARTIES_LIST_DISCUSSION_LINK].value()
 
     # this flag is set every time something that edits the parties list happens (new/edited event, /delevent...)
@@ -212,13 +221,11 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
         logger.info(f"filter: {filter_key}")
 
-        last_parties_message = None
+        last_parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, target_chat.chat_id, events_type=filter_key)
 
         post_new_message = copy.deepcopy(post_new_message_force)  # create a copy, not a reference
         if not post_new_message:
             # we do these checks only if "force" flag was not set
-            last_parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, target_chat.chat_id, events_type=filter_key)
-
             if not parties_message_update_only or not last_parties_message:
                 # we check whether it is time to post only if:
                 # - 'update only' mode is off, or
@@ -286,10 +293,13 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
 
             if parties_message_pin:
                 await pin_message(context.bot, sent_message, last_parties_message)
+            if parties_message_delete_old and last_parties_message:
+                await delete_old_message(context.bot, last_parties_message)
         elif parties_list_changed and last_parties_message:
             # 'last_parties_message' should always be ok (not None) inside this 'if'
             logger.info(f"editing message {last_parties_message.message_id} in chat {last_parties_message.chat_id}...")
             edited_message = await context.bot.edit_message_text(text, last_parties_message.chat_id, last_parties_message.message_id, **timeouts)
             last_parties_message.save_edited_message(edited_message)
-            session.commit()
+
+        session.commit()
 
