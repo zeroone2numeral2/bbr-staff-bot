@@ -246,9 +246,12 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             logger.info("no events for this filter, continuing to next one...")
             continue
 
+        # no idea why but we *need* large timeouts for these requests
+        timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
+
         if post_new_message:
             logger.info("posting new message...")
-            sent_message = await context.bot.send_message(events_chat.chat_id, text)
+            sent_message = await context.bot.send_message(events_chat.chat_id, text, **timeouts)
 
             logger.info("saving new PartiesMessage...")
             new_parties_message = PartiesMessage(sent_message, events_type=filter_key)
@@ -261,7 +264,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         elif parties_list_changed and last_parties_message:
             # 'last_parties_message' should always be ok (not None) inside this 'if'
             logger.info(f"editing message {last_parties_message.message_id} in chat {last_parties_message.chat_id}...")
-            edited_message = await context.bot.edit_message_text(text, last_parties_message.chat_id, last_parties_message.message_id)
+            edited_message = await context.bot.edit_message_text(text, last_parties_message.chat_id, last_parties_message.message_id, **timeouts)
             last_parties_message.save_edited_message(edited_message)
             session.commit()
 
