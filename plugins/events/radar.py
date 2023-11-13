@@ -6,7 +6,7 @@ from typing import Optional, List
 import telegram.constants
 from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
-from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat
+from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat, helpers
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
 from telegram.constants import MessageLimit
 
@@ -343,6 +343,13 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
     # context.user_data.pop(TempDataKey.EVENTS_FILTERS, None)
 
     await update.effective_message.delete()  # delete the message as we will send the new ones
+
+    if not protect_content_override:
+        # add a line with the link to join the events chat if /radar23 was used
+        deeplink = helpers.create_deep_linked_url(context.bot.username, payload=DeeplinkParam.EVENTS_CHAT_INVITE_LINK)
+        all_events_strings.append(
+            f"\n<i>non riesci ad aprire le feste linkate? usa <a href=\"{deeplink}\">questo link</a></i>"
+        )
 
     # protect_content = not utilities.is_superadmin(update.effective_user)
     protect_content = not protect_content_override
