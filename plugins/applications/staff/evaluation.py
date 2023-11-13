@@ -15,7 +15,7 @@ import utilities
 from config import config
 from constants import Group, BotSettingKey, Language, LocalizedTextKey, COMMAND_PREFIXES, TempDataKey
 from database.models import User, PrivateChatMessage, Chat, BotSetting
-from database.queries import texts, settings, users, chats, private_chat_messages, chat_members
+from database.queries import texts, settings, users, chats, private_chat_messages, chat_members, common
 from emojis import Emoji
 from ext.filters import ChatFilter
 from plugins.applications.staff.common import can_evaluate_applications
@@ -244,13 +244,10 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
         await update.message.reply_text(f"Non puoi gestire le richieste degli utenti")
         return
 
-    user_id = utilities.get_user_id_from_text(update.message.reply_to_message.text)
-    if not user_id:
-        await update.message.reply_text(f"<i>impossibile rilevare hashtag con ID dell'utente</i>", quote=True)
+    user: Optional[User] = await common.get_user_instance_from_message(update, context, session)
+    if not user:
         return
 
-    logger.info(f"user_id: {user_id}")
-    user: User = users.get_or_create(session, user_id)
     if not user.pending_request_id:
         await update.message.reply_text(f"Questo utente non ha alcuna richiesta di ingresso pendente")
         return
