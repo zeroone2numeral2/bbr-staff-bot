@@ -1165,11 +1165,12 @@ class PartiesMessage(Base):
     updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     message_json = Column(String, default=None)
 
-    def __init__(self, message: Message, events_type: str, events_list: Optional[List] = None):
+    def __init__(self, message: Message, events_type: str, events_list: Optional[List] = None, force_sent=False):
         self.message_id = message.message_id
         self.chat_id = message.chat.id
         self.message_date = message.date
         self.events_type = events_type
+        self.force_sent = force_sent
         self.message_json = json.dumps(message.to_dict(), indent=2)
         if events_list:
             self.save_events(events_list)

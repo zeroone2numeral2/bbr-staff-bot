@@ -269,7 +269,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             sent_message = await context.bot.send_message(events_chat.chat_id, text, **timeouts)
 
             logger.info("saving new PartiesMessage...")
-            new_parties_message = PartiesMessage(sent_message, events_type=filter_key)
+            new_parties_message = PartiesMessage(sent_message, events_type=filter_key, force_sent=post_new_message_force)
             new_parties_message.force_sent = post_new_message_force
             session.add(new_parties_message)
             session.commit()
