@@ -17,6 +17,7 @@ staff.private.diff
 [flytek]
 events.radar
 events.commands
+users.invite_links # must be placed before the request thing
 events.parties_message
 applications.users.request
 applications.staff.reset

@@ -35,6 +35,7 @@ def upgrade() -> None:
         sa.Column('creator_user_id', sa.Integer),
         sa.Column('creates_join_request', sa.Boolean),
         sa.Column('is_primary', sa.Boolean),
+        sa.Column('is_revoked', sa.Boolean),
         sa.Column('name', sa.String),
         sa.Column('expire_date', sa.DateTime),
         sa.Column('member_limit', sa.Integer),

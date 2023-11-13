@@ -1545,6 +1545,10 @@ class StaffChatMessage(Base):
         return f"<a href=\"{message_link}\">{utilities.escape_html(text)}</a>"
 
 
+class Destination:
+    EVENTS_CHAT_DEEPLINK = "events-chat-deeplink"
+
+
 class InviteLink(Base):
     __tablename__ = 'invite_links'
     __allow_unmapped__ = True

@@ -10,6 +10,7 @@ class Emoji:
     CRYSTAL_SPHERE = "🔮"
     EVIL = "😈"
     EXCLAMATION_MARK = "❗️"
+    EYE = "👁"
     EYES = "👀"
     GEAR = "⚙️"
     GREEN = "🟢"
