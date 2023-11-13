@@ -38,19 +38,19 @@ async def on_partiesjob_command(update: Update, context: ContextTypes.DEFAULT_TY
             message_descriptions.append(description)
 
     if message_descriptions:
-        text += f"\nUltimi messaggi inviati: {', '.join(message_descriptions)}"
+        text += f"\n\nUltimi messaggi inviati: {', '.join(message_descriptions)}"
     else:
-        text += f"\nUltimi messaggi inviati: nessuno (se il giorno e l'ora sono giusti, verranno postati dei nuovi messaggi)"
+        text += f"\n\nUltimi messaggi inviati: nessuno (se il giorno e l'ora sono giusti, verranno postati dei nuovi messaggi)"
 
     if context.args:
         if context.args[0].lower() == "forceupdate":
             logger.info("setting flag to force-update the list")
             context.bot_data[TempDataKey.FORCE_UPDATE_PARTIES_MESSAGE] = True
-            text += "\nIl bot agirà come se siano state pubblicate/modificate feste nel canale"
+            text += "\n\nIl bot agirà come se siano state pubblicate/modificate feste nel canale"
         elif context.args[0].lower() == "forcepost":
             logger.info("setting flag to force-post the list")
             context.bot_data[TempDataKey.FORCE_POST_PARTIES_MESSAGE] = True
-            text += "\nVerrà forzato l'invio di nuovi messaggi"
+            text += "\n\nVerrà forzato l'invio di nuovi messaggi"
 
     await update.message.reply_html(text)
 
