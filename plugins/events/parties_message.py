@@ -64,6 +64,7 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     discussion_group_messages_links = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_DISCUSSION_LINK).value()
     weeks = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_WEEKS).value()
+    send_to_group = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT).value()
 
     last_filter_key = list(PARTIES_MESSAGE_TYPES_ARGS.keys())[-1]
 
@@ -76,6 +77,7 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             now=now,
             args=args,
             bot_username=context.bot.username,
+            send_to_group=send_to_group,
             append_bottom_text=filter_key == last_filter_key,
             discussion_group_messages_links=discussion_group_messages_links
         )

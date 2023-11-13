@@ -54,6 +54,7 @@ def get_events_text(
         now: datetime.datetime,
         args: List[str],
         bot_username: str,
+        send_to_group=False,
         append_bottom_text=True,
         discussion_group_messages_links=False
 ) -> Optional[str]:
@@ -94,9 +95,15 @@ def get_events_text(
                 radar_deeplink = helpers.create_deep_linked_url(bot_username, payload=DeeplinkParam.RADAR)
             radar_deeplink_part = f" - oppure <a href=\"{radar_deeplink}\">&lt;&lt;{Emoji.COMPASS}&gt;&gt;</a> ;)"
 
+        request_channel_invite_link_part = ""
+        if send_to_group:
+            request_link_deeplink = helpers.create_deep_linked_url(bot_username, payload=DeeplinkParam.EVENTS_CHAT_INVITE_LINK)
+            request_channel_invite_link_part = f"➜ <i>non riesci ad accedere alle feste linkate? <a href=\"{request_link_deeplink}\">unisciti al canale</a></i>\n"
+
         text += f"➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
                 f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a>" \
                 f"{radar_deeplink_part}</i>\n" \
+                f"{request_channel_invite_link_part}" \
                 f"➜ <i>aggiornato in automatico ogni ora</i>\n"
 
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
@@ -176,7 +183,8 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         logger.debug("parties list disabled from settings")
         return
 
-    if not pl_settings[BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT].value():
+    parties_message_send_to_group = pl_settings[BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT].value()
+    if not parties_message_send_to_group:
         target_chat: Optional[Chat] = chats.get_chat(session, Chat.is_events_chat)
     else:
         logger.info("using users chat as target chat")
@@ -272,6 +280,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             args=args,
             bot_username=context.bot.username,
             append_bottom_text=filter_key == last_filter_key,
+            send_to_group=parties_message_send_to_group,
             discussion_group_messages_links=parties_message_group_messages_links
         )
         if not text:
