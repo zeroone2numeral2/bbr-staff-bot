@@ -223,7 +223,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
                 # we check whether it is time to post only if:
                 # - 'update only' mode is off, or
                 # - 'update only' mode is on, but we never posted a parties message for this filter
-                logger.info(f"'update only' mode is off OR we never sent a parties message for <{filter_key}>: checking whether it is time to post")
+                logger.info(f"'update only' mode is off OR we never sent a parties message for <{filter_key}> in {target_chat.chat_id}: checking whether it is time to post")
 
                 last_parties_message_isoweek = last_parties_message.isoweek() if last_parties_message else 53
                 if time_to_post(now_it, last_parties_message_isoweek, parties_message_weekday, parties_message_hour):
