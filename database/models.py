@@ -1165,6 +1165,8 @@ class PartiesMessage(Base):
     updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     message_json = Column(String, default=None)
 
+    chat: Chat = relationship("Chat")
+
     def __init__(self, message: Message, events_type: str, events_list: Optional[List] = None, force_sent=False):
         self.message_id = message.message_id
         self.chat_id = message.chat.id

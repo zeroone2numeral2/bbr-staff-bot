@@ -98,6 +98,7 @@ class BotSettingKey:
     PARTIES_LIST_HOUR = "parties_list_hour"
     PARTIES_LIST_PIN = "parties_list_pin"
     PARTIES_LIST_DISCUSSION_LINK = "parties_list_discussion_link"
+    PARTIES_LIST_POST_TO_USERS_CHAT = "parties_list_post_to_users_chat"
 
 
 class BotSettingCategory:
@@ -371,6 +372,15 @@ BOT_SETTINGS_DEFAULTS = {
         label="link messaggi gruppo",
         emoji=Emoji.PEOPLE,
         description="se i messaggi devono linkare, oltre ai post nel canale, anche il relativo post nel gruppo",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=False,
+        label="invia nel gruppo",
+        emoji=Emoji.ANNOUNCEMENT,
+        description="se inviare la lista delle feste nel gruppo invece che nel canale",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
