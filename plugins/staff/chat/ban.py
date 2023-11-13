@@ -1,13 +1,14 @@
 import logging
 import re
+from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import filters, PrefixHandler, ContextTypes
 
 from ext.filters import ChatFilter
-from database.models import Chat, UserMessage
-from database.queries import user_messages
+from database.models import Chat, UserMessage, User
+from database.queries import user_messages, common
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
@@ -20,18 +21,11 @@ logger = logging.getLogger(__name__)
 async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/ban or /shadowban {utilities.log(update)}")
 
-    if not update.message.reply_to_message.from_user or update.message.reply_to_message.from_user.id == context.bot.id:
-        await update.effective_message.reply_text("Reply to an user's message")
+    user: Optional[User] = await common.get_user_instance_from_message(update, context, session)
+    if not user:
         return
 
-    user_message: UserMessage = user_messages.get_user_message(session, update)
-    if not user_message:
-        logger.warning(f"couldn't find replied-to message, "
-                       f"chat_id: {update.effective_chat.id}; "
-                       f"message_id: {update.message.reply_to_message.message_id}")
-        return
-
-    logger.info("banning user...")
+    logger.info(f"banning user {user.full_name()} ({user.user_id})...")
     reason = utilities.get_argument(
         ["ban", "shadowban"],
         update.message.text,
@@ -40,10 +34,10 @@ async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
     ) or None
     shadowban = bool(re.search(rf"[{COMMAND_PREFIXES}]shadowban", update.message.text, re.I))
 
-    user_message.user.ban(reason=reason, shadowban=shadowban)
+    user.ban(reason=reason, shadowban=shadowban)
 
-    text = f"User {utilities.escape_html(user_message.user.name)} {'shadow' if shadowban else ''}banned, reason: {reason or '-'}\n" \
-           f"#id{user_message.user.user_id}"
+    text = f"User {utilities.escape_html(user.name)} {'shadow' if shadowban else ''}banned, reason: {reason or '-'}\n" \
+           f"#id{user.user_id}"
 
     await update.effective_message.reply_text(text)
 
@@ -53,18 +47,11 @@ async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"/unban {utilities.log(update)}")
 
-    if not update.message.reply_to_message.from_user or update.message.reply_to_message.from_user.id == context.bot.id:
-        await update.effective_message.reply_text("Reply to an user's message")
+    user: Optional[User] = await common.get_user_instance_from_message(update, context, session)
+    if not user:
         return
 
-    user_message: UserMessage = user_messages.get_user_message(session, update)
-    if not user_message:
-        logger.warning(f"couldn't find replied-to message, "
-                       f"chat_id: {update.effective_chat.id}; "
-                       f"message_id: {update.message.reply_to_message.message_id}")
-        return
-
-    user_message.user.unban()
+    user.unban()
     await update.effective_message.reply_text(f"User unbanned")
 
 
