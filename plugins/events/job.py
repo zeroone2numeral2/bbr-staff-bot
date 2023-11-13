@@ -14,8 +14,8 @@ import decorators
 import utilities
 from config import config
 from constants import BotSettingKey, RegionName, TempDataKey, BotSettingCategory, MONTHS_IT, DeeplinkParam
-from database.models import Chat, Event, PartiesMessage
-from database.queries import chats, events, settings, parties_messages
+from database.models import Chat, Event, PartiesMessage, ChatMember
+from database.queries import chats, events, settings, parties_messages, chat_members
 from emojis import Flag, Emoji
 from plugins.events.common import format_event_string, EventFilter, get_all_events_strings_from_db_group_by, GroupBy
 
@@ -168,15 +168,20 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
         logger.debug("parties list disabled from settings")
         return
 
-    if pl_settings[BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT].value():
+    if not pl_settings[BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT].value():
+        target_chat: Optional[Chat] = chats.get_chat(session, Chat.is_events_chat)
+    else:
         logger.info("using users chat as target chat")
         target_chat: Optional[Chat] = chats.get_chat(session, Chat.is_users_chat)
-    else:
-        target_chat: Optional[Chat] = chats.get_chat(session, Chat.is_events_chat)
 
     if not target_chat:
         logger.debug("no events/users chat set")
-        return
+    elif target_chat.is_users_chat:
+        bot_chat_member: Optional[ChatMember] = chat_members.get_chat_member_by_id(session, context.bot.id, target_chat.chat_id)
+        if not (bot_chat_member.is_administrator() and bot_chat_member.can_pin_messages):
+            # only admins with the permission to pin messages can edit messages with no time limit
+            logger.warning("cannot post to users chat if the bot doesn't have the permission to pin messages")
+            return
 
     parties_message_update_only = pl_settings[BotSettingKey.PARTIES_LIST_UPDATE_ONLY].value()  # whether to use the same messages instad of sending new ones
     parties_message_weekday = pl_settings[BotSettingKey.PARTIES_LIST_WEEKDAY].value()
