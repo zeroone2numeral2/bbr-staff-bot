@@ -561,7 +561,7 @@ approval_mode_conversation_handler = ConversationHandler(
     fallbacks=[
         MessageHandler(filters.TEXT & filters.Regex(Re.CANCEL), on_cancel),
     ],
-    conversation_timeout=Timeout.HOURS_3
+    conversation_timeout=Timeout.HOURS_6
 )
 
 HANDLERS = (
