@@ -1152,6 +1152,7 @@ class PartiesMessage(Base):
     discussion_group_message_id = Column(Integer, default=None)
     discussion_group_received_on = Column(DateTime, default=None)
     discussion_group_message_json = Column(String, default=None)
+    discussion_group_message_deleted = Column(Boolean, default=False)
 
     message_date = Column(DateTime, default=None)
     message_edit_date = Column(DateTime, default=None)

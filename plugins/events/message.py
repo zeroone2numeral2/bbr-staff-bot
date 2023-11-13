@@ -233,9 +233,17 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
     parties_message: Optional[PartiesMessage] = parties_messages.get_parties_message(session, channel_chat_id, channel_message_id)
     if not parties_message:
         logger.warning(f"no PartiesMessage was found for message {channel_message_id} in chat {channel_chat_id}")
-    else:
-        logger.info("PartiesMessage: saving discussion group's post info...")
-        parties_message.save_discussion_group_message(update.effective_message)
+        return
+
+    logger.info("PartiesMessage: saving discussion group's post info...")
+    parties_message.save_discussion_group_message(update.effective_message)
+
+    # we delete the message because mirrored channel messages are not updated reliably
+    logger.info("trying to delete message in the group...")
+    success = await utilities.delete_messages_safe(update.effective_message)
+    if success:
+        parties_message.discussion_group_message_deleted = True
+        logger.info("...success")
 
 
 @decorators.catch_exception(silent=True)
