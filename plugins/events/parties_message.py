@@ -20,38 +20,39 @@ logger = logging.getLogger(__name__)
 
 @decorators.catch_exception()
 @decorators.pass_session()
-async def on_updatelists_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/updatelists {utilities.log(update)}")
+async def on_partiesjob_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/partiesjob {utilities.log(update)}")
 
     events_chat = chats.get_chat(session, Chat.is_events_chat)
 
-    context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
+    list_needs_update = context.bot_data.get(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
+    text = (f"Verrà eseguito il job che controlla se aggiornare i messaggi con la lista delle feste in {events_chat.title} "
+            f"ogni {config.settings.parties_message_job_frequency} minuti (feste aggiunte/modificate dall'ultima esecuzione? "
+            f"{utilities.bool_to_str_it(list_needs_update, si_no=True)})")
 
-    message_links = []
+    message_descriptions = []
     for events_type, _ in LIST_TYPE_DESCRIPTION.items():
         parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type)
         if parties_message:
-            message_links.append(parties_message.message_link())
+            description = f"{parties_message.message_link(parties_message.events_type)}"
+            message_descriptions.append(description)
 
-    await update.message.reply_html(f"Aggiorno questi messaggi: {', '.join(message_links)}")
+    if message_descriptions:
+        text += f"\nUltimi messaggi inviati: {', '.join(message_descriptions)}"
+    else:
+        text += f"\nUltimi messaggi inviati: nessuno (se il giorno e l'ora sono giusti, verranno postati dei nuovi messaggi)"
 
-    if context.args and context.args[0].lower() == "force":
-        logger.info("saving flag to force-update the list")
-        context.bot_data[TempDataKey.FORCE_UPDATE_PARTIES_MESSAGE] = True
+    if context.args:
+        if context.args[0].lower() == "forceupdate":
+            logger.info("setting flag to force-update the list")
+            context.bot_data[TempDataKey.FORCE_UPDATE_PARTIES_MESSAGE] = True
+            text += "\nIl bot agirà come se siano state pubblicate/modificate feste nel canale"
+        elif context.args[0].lower() == "forcepost":
+            logger.info("setting flag to force-post the list")
+            context.bot_data[TempDataKey.FORCE_POST_PARTIES_MESSAGE] = True
+            text += "\nVerrà forzato l'invio di nuovi messaggi"
 
-    context.job_queue.run_once(parties_message_job, when=1)
-
-
-@decorators.catch_exception()
-@decorators.pass_session()
-async def on_sendlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/sendlists {utilities.log(update)}")
-
-    events_chat = chats.get_chat(session, Chat.is_events_chat)
-
-    context.bot_data[TempDataKey.FORCE_POST_PARTIES_MESSAGE] = True
-
-    await update.message.reply_html(f"Invio delle nuove liste in {utilities.escape_html(events_chat.title)}...")
+    await update.message.reply_html(text)
 
     context.job_queue.run_once(parties_message_job, when=1)
 
@@ -115,8 +116,7 @@ async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 HANDLERS = (
-    (CommandHandler(["updatelists", "ul"], on_updatelists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
-    (CommandHandler(["sendlists", "sl"], on_sendlists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["partiesjob", "pj"], on_partiesjob_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["getlists", "gl"], on_getlists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["listsinfo"], on_listsinfo_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )

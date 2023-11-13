@@ -1184,9 +1184,12 @@ class PartiesMessage(Base):
         self.discussion_group_received_on = message.date
         self.discussion_group_message_json = json.dumps(message.to_dict(), indent=2)
 
-    def message_link(self):
+    def message_link(self, text: str = ""):
         chat_id_link = str(self.chat_id).replace("-100", "")
-        return f"https://t.me/c/{chat_id_link}/{self.message_id}"
+        message_link = f"https://t.me/c/{chat_id_link}/{self.message_id}"
+        if not text:
+            return message_link
+        return f"<a href=\"{message_link}\">{utilities.escape_html(text)}</a>"
 
     def save_events(self, events_list: List):
         self.events_list = json.dumps(events_list, indent=2)
