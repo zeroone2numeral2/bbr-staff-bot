@@ -7,7 +7,7 @@ from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, F
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
-    ChatMemberLeft, ChatMemberBanned, ChatMemberMember, Message, InputMediaPhoto, InputMediaVideo
+    ChatMemberLeft, ChatMemberBanned, ChatMemberMember, Message, InputMediaPhoto, InputMediaVideo, ChatInviteLink
 from telegram.helpers import mention_html
 
 import utilities
@@ -1543,3 +1543,112 @@ class StaffChatMessage(Base):
 
         message_link = self.message_link()
         return f"<a href=\"{message_link}\">{utilities.escape_html(text)}</a>"
+
+
+class InviteLink(Base):
+    __tablename__ = 'invite_links'
+    __allow_unmapped__ = True
+
+    link_id = Column(Integer, primary_key=True, autoincrement=True)
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'))
+
+    destination = Column(String, default=None)
+    created_on = Column(DateTime, default=None)
+
+    used_by_user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
+    used_on = Column(DateTime, default=None)
+
+    # info about who we generated the invite link for
+    sent_to_user_user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
+    sent_to_user_message_id = Column(Integer, default=None)
+    sent_to_user_message_ids_to_delete = Column(String, default=None)  # json, messages we might want to delete once the link is used
+    sent_to_user_via_reply_markup = Column(Boolean, default=False)
+    sent_to_user_link_removed = Column(Boolean, default=False)  # wether we removed if from the message
+    sent_to_user_on = Column(DateTime, default=None)
+
+    # from https://core.telegram.org/bots/api#chatinvitelink
+    invite_link = Column(String, default=None)
+    creator_user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
+    creates_join_request = Column(Boolean, default=False)
+    is_primary = Column(Boolean, default=False)
+    is_revoked = Column(Boolean, default=False)
+    name = Column(String, default=None)
+    expire_date = Column(DateTime, default=None)
+    member_limit = Column(Integer, default=None)
+    pending_join_request_count = Column(Integer, default=None)
+
+    # other
+    can_be_revoked = Column(Boolean, default=True)
+    revoked_on = Column(DateTime, default=None)
+
+    def __init__(
+            self,
+            chat_id: int,
+            destination: Optional[str] = None,
+            invite_link: Optional[str] = None,
+            creator_user_id: Optional[int] = None,
+            creates_join_request: bool = False,
+            is_primary: bool = False,
+            is_revoked: bool = False,
+            name: Optional[str] = None,
+            expire_date: Optional[datetime.datetime] = None,
+            member_limit: Optional[int] = None,
+            pending_join_request_count: Optional[int] = None
+    ):
+        self.chat_id = chat_id
+        self.destination = destination
+        self.invite_link = invite_link
+        self.creator_user_id = creator_user_id
+        self.creates_join_request = creates_join_request
+        self.is_primary = is_primary
+        self.is_revoked = is_revoked
+        self.name = name
+        self.expire_date = expire_date
+        self.member_limit = member_limit
+        self.pending_join_request_count = pending_join_request_count
+        self.created_on = utilities.now()
+
+    @classmethod
+    def from_chat_invite_link(cls, chat_id: int, chat_invite_link: ChatInviteLink, destination: Optional[str] = None):
+        return cls(
+            chat_id=chat_id,
+            destination=destination,
+            invite_link=chat_invite_link.invite_link,
+            creator_user_id=chat_invite_link.creator.id,
+            creates_join_request=chat_invite_link.creates_join_request,
+            is_primary=chat_invite_link.is_primary,
+            is_revoked=chat_invite_link.is_revoked,
+            name=chat_invite_link.name,
+            expire_date=chat_invite_link.expire_date,
+            member_limit=chat_invite_link.member_limit,
+            pending_join_request_count=chat_invite_link.pending_join_request_count
+        )
+
+    def save_sent_to_user_message_data(self, message: Message, message_ids_to_delete: Optional[Iterable] = None, via_reply_markup: bool = False):
+        self.sent_to_user_user_id = message.chat.id
+        self.sent_to_user_message_id = message.message_id
+        if message_ids_to_delete:
+            self.save_message_ids_to_delete(message_ids_to_delete)
+        self.sent_to_user_via_reply_markup = via_reply_markup
+        self.sent_to_user_on = message.date
+
+    def revoked(self, revoked_on: Optional[datetime.datetime] = None):
+        self.is_revoked = True
+        self.revoked_on = revoked_on or utilities.now()
+
+    def used_by(self, user: Union[int, TelegramUser], used_on: Optional[datetime.datetime] = None):
+        if isinstance(user, int):
+            self.used_by_user_id = user
+        else:
+            self.used_by_user_id = user.id
+
+        self.used_on = used_on or utilities.now()
+
+    def save_message_ids_to_delete(self, message_ids_to_delete: Iterable):
+        self.sent_to_user_message_ids_to_delete = json.dumps(message_ids_to_delete, indent=2)
+
+    def get_message_ids_to_delete(self):
+        if not self.sent_to_user_message_ids_to_delete:
+            return []
+
+        return json.loads(self.sent_to_user_message_ids_to_delete)
