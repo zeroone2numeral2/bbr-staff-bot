@@ -186,8 +186,6 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard("Membri che conosci"))
     private_chat_messages.save(session, sent_message)
 
-    user.set_started()
-
     return State.WAITING_OTHER_MEMBERS
 
 
