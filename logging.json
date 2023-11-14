@@ -74,6 +74,9 @@
         },
         "save_from_message": {
             "level": "INFO"
+        },
+        "plugins.applications.users.any_message": {
+            "level": "INFO"
         }
     },
     "formatters": {

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True, pass_down_db_instances=True)
 async def on_private_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"saving new private chat message ({update.message.message_id}) {utilities.log(update)}")
+    logger.debug(f"saving new private chat message ({update.message.message_id}) {utilities.log(update)}")
     private_chat_message = PrivateChatMessage(
         message_id=update.message.message_id,
         user_id=update.effective_user.id,
