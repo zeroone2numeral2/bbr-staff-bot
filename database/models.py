@@ -1265,6 +1265,12 @@ class ApplicationRequest(Base):
     def is_pending(self):
         return self.status is None
 
+    def rejected(self):
+        return self.status is False
+
+    def accepted(self):
+        return self.status is True
+
     def status_pretty(self):
         if self.status is None:
             return "pending"

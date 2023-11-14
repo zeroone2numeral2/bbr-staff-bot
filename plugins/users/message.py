@@ -22,12 +22,12 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info(f"new user message {utilities.log(update)}")
 
     if utilities.is_superadmin(update.effective_user):
-        logger.info("superadmin, ignoring message")
+        logger.info("ignoring user message: superadmin")
         # TODO: continue update propagation
         return
 
     if chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat):
-        logger.info("staff chat member, ignoring message")
+        logger.info("ignoring user message: staff chat member")
         # TODO: continue update propagation
         return
 
@@ -38,7 +38,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         # if the user has a pending/rejected request, use the evaluation chat as target chat
         # otherwise, keep the staff chat as target chat
         logger.info("user can talk to the staff regardless of the approval mode status/whether they are part of the users chat or not")
-        if user.pending_request_id or user.last_request.status is False:
+        if user.pending_request_id or user.last_request.rejected():
             logger.info("user has a pending/rejected request: target chat is evaluation chat")
             target_chat: Chat = chats.get_chat(session, Chat.is_evaluation_chat)
     else:
@@ -62,14 +62,14 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 session.add(chat_member)
                 session.commit()
 
-            if not chat_member.is_member() and not chat_member.left_or_kicked() and user.last_request_id and user.last_request.status is not True:
+            if not chat_member.is_member() and not chat_member.left_or_kicked() and user.last_request_id and user.last_request.rejected():
                 # we ignore requests coming from users that are not member, but we shouldn't ignore messages from
                 # users that were members but left, or that were accepted but never joined
                 logger.info("ignoring user message: user is not a member of the users chat, didn't previously leave, and their last request was not accepted")
                 return
 
-            if user.last_request and user.last_request.status is False:
-                logger.info(f"ignoring user message: they were rejected")
+            if user.last_request and user.last_request.rejected():
+                logger.info(f"ignoring user message: user was rejected")
                 ltext = texts.get_localized_text_with_fallback(
                     session,
                     LocalizedTextKey.APPLICATION_REJECTED_ANSWER,

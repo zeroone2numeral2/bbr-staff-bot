@@ -131,7 +131,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         session.add(chat_member)
         session.commit()
 
-    if chat_member.is_member() or (user.last_request and user.last_request.status is True and not chat_member.is_member()):
+    if chat_member.is_member() or (user.last_request and user.last_request.accepted() and not chat_member.is_member()):
         logger.info("user is already a member of the users chat *or* they were accepted but did not join the chat: sending welcome text for members")
         welcome_text_member = get_text(session, LocalizedTextKey.WELCOME_MEMBER, update.effective_user)
         sent_message = await update.message.reply_text(welcome_text_member)
@@ -159,7 +159,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
         return ConversationHandler.END  # <-- idea/todo: return correct status based on what we already received
 
-    if user.last_request and user.last_request.status is False:
+    if user.last_request and user.last_request.rejected():
         logger.info("ignoring: user already went through the application process, but was rejected")
         text = get_text(session, LocalizedTextKey.APPLICATION_REJECTED_ANSWER, update.effective_user, raise_if_no_fallback=False)
         if text:
