@@ -50,9 +50,8 @@ class User(Base):
     banned_on = Column(DateTime, default=None)
 
     # application (user)
-    pending_request_id = mapped_column(Integer, default=None)  # pending ApplicationRequest
-    last_request_id = mapped_column(Integer, default=None)  # status of the last application accepted/rejected by the admins
-    # last_request_status = Column(Boolean, default=None)  # SHOULDN'T BE USED
+    pending_request_id = mapped_column(Integer, default=None)  # pending ApplicationRequest (pending: not yet accepted/rejected, waiting for evaluation)
+    last_request_id = mapped_column(Integer, default=None)  # last request accepted/rejected by the admins
     conversate_with_staff_override = Column(Boolean, default=False)  # whether the user can conversate with the staff even when a request is pending/rejected
 
     # application (admin)
