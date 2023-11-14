@@ -48,39 +48,48 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             # cases where we should ignore the message
             logger.debug("approval mode is on and conversate_with_staff_override is false")
 
-            if user.pending_request_id:
-                logger.info("ignoring user message: user has a pending request")
-                return
+            accept_message = False
 
-            chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
-            if not chat_member:
-                # we don't have the ChatMember record saved for this user in the users chat
-                users_chat = chats.get_chat(session, Chat.is_users_chat)
-                logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
-                tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
-                chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
-                session.add(chat_member)
-                session.commit()
+            if not accept_message and (user.last_request and user.last_request.accepted()):
+                logger.info("allowed: user's last request was accepted")
+                accept_message = True
 
-            if not chat_member.is_member() and not chat_member.left_or_kicked():
-                # we ignore requests coming from users that are not member, but we shouldn't ignore messages from
-                # users that were members but left, or that were accepted but never joined
-                logger.info("ignoring user message: user is not a member of the users chat and didn't previously leave")
-                return
+            if not accept_message:
+                # do this check only if needed
+                chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
+                if not chat_member:
+                    # we don't have the ChatMember record saved for this user in the users chat
+                    users_chat = chats.get_chat(session, Chat.is_users_chat)
+                    logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
+                    tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
+                    chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
+                    session.add(chat_member)
+                    session.commit()
 
-            if user.last_request and user.last_request.rejected():
-                logger.info(f"user's last request was rejected: we will answer if the ltext is set")
-                ltext = texts.get_localized_text_with_fallback(
-                    session,
-                    LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
-                    Language.IT,
-                    fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
-                    raise_if_no_fallback=False
-                )
-                if ltext:
-                    logger.info("sending APPLICATION_REJECTED_ANSWER message...")
-                    sent_message = await update.message.reply_html(ltext.value)
-                    private_chat_messages.save(session, sent_message)
+                if not accept_message and chat_member.is_member():
+                    logger.info("allowed: user is a meber of the users chat, or was a member or left")
+                    accept_message = True
+
+                if not accept_message and chat_member.left_or_kicked():
+                    logger.info("allowed: user was a member of the users chat and left (or was kicked)")
+                    accept_message = True
+
+            if not accept_message:
+                logger.info("ignoring user message: none of the requirements were met")
+
+                if user.last_request and user.last_request.rejected():
+                    logger.info(f"user's last request was rejected: we will answer if the ltext is set")
+                    ltext = texts.get_localized_text_with_fallback(
+                        session,
+                        LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
+                        Language.IT,
+                        fallback_language=settings.get_or_create(session, BotSettingKey.FALLBACK_LANGAUGE).value(),
+                        raise_if_no_fallback=False
+                    )
+                    if ltext:
+                        logger.info("sending APPLICATION_REJECTED_ANSWER message...")
+                        sent_message = await update.message.reply_html(ltext.value)
+                        private_chat_messages.save(session, sent_message)
                 return
 
     if not target_chat:
