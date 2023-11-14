@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 # noinspection PyPackageRequirements
-from telegram import Update
+from telegram import Update, ReplyKeyboardRemove
 # noinspection PyPackageRequirements
 from telegram.error import TimedOut, BadRequest
 # noinspection PyPackageRequirements
@@ -257,6 +257,29 @@ def staff_member():
 
             result = await func(update, context, session=session, *args, **kwargs)
             return result
+
+        return wrapped
+
+    return real_decorator
+
+
+def check_pending_request():
+    # we need this decorator above any fucntion in the request conversation
+    # if for some reason the pending request is removed while the user is still conversating with the bot (eg. /reset),
+    # it might result in many different errors
+    def real_decorator(func):
+        @wraps(func)
+        async def wrapped(update: Update, context: CallbackContext, session: Session, user: User, *args, **kwargs):
+            # we fetch the session once per message at max, cause the decorator is run only if a message passes filters
+            if not user.pending_request_id:
+                logger.warning(f"{update.effective_user.id} ({update.effective_user.full_name}) no longer has a pending_request_id: force-ending conversation")
+                await update.effective_message.reply_html(
+                    f"Mi dispiace, la richiesta precedentemente avviata non è più valida {Emoji.CONFUSED}\nUsa /start se vuoi riprovare",
+                    reply_markup=ReplyKeyboardRemove()
+                )
+                return ConversationHandler.END
+
+            return await func(update, context, session=session, user=user, *args, **kwargs)
 
         return wrapped
 

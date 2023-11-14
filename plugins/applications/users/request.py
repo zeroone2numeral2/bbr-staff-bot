@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message
 from telegram.constants import MessageLimit, MediaGroupLimit
-from telegram.ext import CommandHandler
+from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, \
     CallbackContext
 from telegram.ext import filters
@@ -35,6 +35,7 @@ class ApplicationDataKey:
 
 
 class State:
+    WAITING_START_INLINE_BUTTON = 5
     WAITING_OTHER_MEMBERS = 10
     WAITING_SOCIAL = 20
     WAITING_DESCRIBE_SELF = 30
@@ -57,6 +58,10 @@ class Command:
 
 
 DESCRIBE_SELF_ALLOWED_MESSAGES_FILTER = (filters.TEXT & ~filters.Regex(Re.BUTTONS)) | filters.VOICE | filters.VIDEO_NOTE | filters.PHOTO | filters.VIDEO | filters.AUDIO
+
+START_REQUEST_REPLY_MARKUP = InlineKeyboardMarkup(
+    [[InlineKeyboardButton(f"{Emoji.SPIRAL} iniziamo!", callback_data="startrequest")]]
+)
 
 
 def get_cancel_keyboard(input_field_placeholder: Optional[str] = None):
@@ -171,28 +176,25 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     logger.info("user is not a member of the users chat and doesn't have any pending/completed request")
 
-    request = ApplicationRequest(update.effective_user.id)
-    session.add(request)
-    session.commit()
-
-    user.pending_request_id = request.id
-    session.commit()
-
     welcome_text_not_member = get_text(session, LocalizedTextKey.WELCOME_NOT_MEMBER, update.effective_user)
-    sent_message = await update.message.reply_text(welcome_text_not_member)
+    sent_message = await update.message.reply_text(welcome_text_not_member, reply_markup=START_REQUEST_REPLY_MARKUP)
     private_chat_messages.save(session, sent_message)
 
-    send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
-    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard("Amici in flytek"))
-    private_chat_messages.save(session, sent_message)
-
-    return State.WAITING_OTHER_MEMBERS
+    # exit from the conversation when /start is used: the user will re-enter it for good when they use the inline button
+    return ConversationHandler.END
 
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 async def on_start_application_request_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"start application request cb {utilities.log(update)}")
+
+    request = ApplicationRequest(update.effective_user.id)
+    session.add(request)
+    session.commit()
+
+    user.pending_request_id = request.id
+    session.commit()
 
     send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
     sent_message = await update.effective_message.reply_html(
@@ -227,6 +229,7 @@ async def on_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, session:
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_waiting_other_members_unexpected_message_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"(unexpected) received non-text message while waiting for other members {utilities.log(update)}")
 
@@ -239,6 +242,7 @@ async def on_waiting_other_members_unexpected_message_received(update: Update, c
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_waiting_social_unexpected_message_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"(unexpected) received non-text message while waiting for social {utilities.log(update)}")
 
@@ -251,6 +255,7 @@ async def on_waiting_social_unexpected_message_received(update: Update, context:
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_waiting_description_unexpected_message_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"(unexpected) received message while waiting for social {utilities.log(update)}")
 
@@ -263,6 +268,7 @@ async def on_waiting_description_unexpected_message_received(update: Update, con
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_waiting_other_members_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received other members {utilities.log(update)}")
 
@@ -281,6 +287,7 @@ async def on_waiting_other_members_received(update: Update, context: ContextType
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_waiting_other_members_skip(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"waiting other members: skip {utilities.log(update)}")
 
@@ -293,6 +300,7 @@ async def on_waiting_other_members_skip(update: Update, context: ContextTypes.DE
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_waiting_socials_skip(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"waiting socials: skip {utilities.log(update)}")
 
@@ -305,6 +313,7 @@ async def on_waiting_socials_skip(update: Update, context: ContextTypes.DEFAULT_
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received social {utilities.log(update)}")
 
@@ -330,6 +339,7 @@ async def send_waiting_for_more_message(context: CallbackContext):
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_describe_self_received(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"received describe self message {utilities.log(update)}")
 
@@ -504,6 +514,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+@decorators.check_pending_request()
 async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"conversation timed out or user is done")
 
@@ -558,7 +569,10 @@ approval_mode_conversation_handler = ConversationHandler(
     name="approval_conversation",
     persistent=True,
     allow_reentry=False,  # if inside the conversation, it will not be restarted if an entry point is triggered
-    entry_points=[CommandHandler(["start"], on_start_command, filters=filters.ChatType.PRIVATE)],
+    entry_points=[
+        CommandHandler(["start"], on_start_command, filters=filters.ChatType.PRIVATE),
+        CallbackQueryHandler(on_start_application_request_cb, pattern=r"startrequest")
+    ],
     states={
         State.WAITING_OTHER_MEMBERS: [
             MessageHandler(~filters.TEXT, on_waiting_other_members_unexpected_message_received),
@@ -589,6 +603,6 @@ approval_mode_conversation_handler = ConversationHandler(
 )
 
 HANDLERS = (
-    # (CommandHandler('start', on_start_command, filters.ChatType.PRIVATE), Group.NORMAL),
+    # (CommandHandler(["start"], on_start_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (approval_mode_conversation_handler, Group.NORMAL),
 )

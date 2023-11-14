@@ -7,6 +7,7 @@ class Emoji:
     CLOCK = "🕑"
     COMPASS = "🧭"
     COMRADE = "✊"
+    CONFUSED = "😵‍💫"
     CRYSTAL_SPHERE = "🔮"
     EVIL = "😈"
     EXCLAMATION_MARK = "❗️"
