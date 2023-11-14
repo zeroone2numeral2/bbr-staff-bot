@@ -162,6 +162,39 @@ async def on_events_chat_invite_deeplink(update: Update, context: ContextTypes.D
     )
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+@decorators.check_ban()
+async def on_users_chat_invite_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"users chat invite link deeplink {utilities.log(update)}")
+
+    users_chat_member: Optional[ChatMember] = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
+    user_allowed = (user.last_request and user.last_request.accepted()) or (users_chat_member and (users_chat_member.is_member() or users_chat_member.left_or_kicked()))
+    if not user_allowed:
+        logger.info(f"forbidden: user's last request was rejected or is still waiting for evaluation, or user is not (and has never been) member of the users chat")
+        return
+
+    users_chat: Optional[Chat] = chats.get_chat(session, Chat.is_users_chat)
+    if not users_chat:
+        logger.warning("no users chat is set")
+        return
+
+    if not users_chat.can_invite_users:
+        logger.warning(f"cannot generate invite links for users chat {users_chat.title} ({users_chat.chat_id}): \"invite users\" permission missing")
+        sent_message = await update.message.reply_html("Mi dispiace, non posso generare link d'invito per il gruppo. Contatta gli admin")
+        private_chat_messages.save(session, sent_message)
+        return
+
+    await generate_and_send_invite_link(
+        update=update,
+        context=context,
+        session=session,
+        chat=users_chat,
+        link_destination=Destination.USERS_CHAT_DEEPLINK
+    )
+
+
 HANDLERS = (
     (CommandHandler("start", on_events_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.EVENTS_CHAT_INVITE_LINK}$")), Group.NORMAL),
+    (CommandHandler("start", on_users_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.USERS_CHAT_INVITE_LINK}$")), Group.NORMAL),
 )
