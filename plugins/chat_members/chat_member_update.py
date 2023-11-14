@@ -119,7 +119,6 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
                 logger.error(f"error while removing reply makrup: {e}")
 
         if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
-            logger.info(f"revoking invite link {user.last_request.invite_link}...")
             success = await revoke_invite_link_safe(bot, chat.chat_id, user.last_request.invite_link)
             user.last_request.invite_link_revoked = success
 
