@@ -62,14 +62,14 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 session.add(chat_member)
                 session.commit()
 
-            if not chat_member.is_member() and not chat_member.left_or_kicked() and user.last_request_id and user.last_request.rejected():
+            if not chat_member.is_member() and not chat_member.left_or_kicked():
                 # we ignore requests coming from users that are not member, but we shouldn't ignore messages from
                 # users that were members but left, or that were accepted but never joined
-                logger.info("ignoring user message: user is not a member of the users chat, didn't previously leave, and their last request was not accepted")
+                logger.info("ignoring user message: user is not a member of the users chat and didn't previously leave")
                 return
 
             if user.last_request and user.last_request.rejected():
-                logger.info(f"ignoring user message: user was rejected")
+                logger.info(f"user's last request was rejected: we will answer if the ltext is set")
                 ltext = texts.get_localized_text_with_fallback(
                     session,
                     LocalizedTextKey.APPLICATION_REJECTED_ANSWER,
@@ -78,6 +78,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                     raise_if_no_fallback=False
                 )
                 if ltext:
+                    logger.info("sending APPLICATION_REJECTED_ANSWER message...")
                     sent_message = await update.message.reply_html(ltext.value)
                     private_chat_messages.save(session, sent_message)
                 return
