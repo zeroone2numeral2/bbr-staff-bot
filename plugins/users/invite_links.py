@@ -130,6 +130,8 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
 async def on_events_chat_invite_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"events chat invite link deeplink {utilities.log(update)}")
 
+    user.set_started()
+
     users_chat_member: Optional[ChatMember] = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
     if not users_chat_member or not users_chat_member.is_member():
         logger.info("forbidden: user is not member of the users chat")
@@ -167,6 +169,8 @@ async def on_events_chat_invite_deeplink(update: Update, context: ContextTypes.D
 @decorators.check_ban()
 async def on_users_chat_invite_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"users chat invite link deeplink {utilities.log(update)}")
+
+    user.set_started()
 
     users_chat: Optional[Chat] = chats.get_chat(session, Chat.is_users_chat)
     if not users_chat:
