@@ -26,7 +26,7 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     text = f"• <b>name</b>: {user.mention()}\n" \
            f"• <b>username</b>: @{user.username or '-'}\n" \
            f"• <b>first seen</b>: {utilities.format_datetime(user.first_seen)}\n" \
-           f"• <b>last seen</b>: {utilities.format_datetime(user.last_message)}\n" \
+           f"• <b>last message to staff</b>: {utilities.format_datetime(user.last_message)}\n" \
            f"• <b>started</b>: {str(user.started).lower()} (on: {utilities.format_datetime(user.started_on)})\n" \
            f"• <b>stopped</b>: {str(user.stopped).lower()} (on: {utilities.format_datetime(user.stopped_on)})\n" \
            f"• <b>language code (telegram/selected)</b>: {user.language_code or '-'}/{user.selected_language or '-'}"
