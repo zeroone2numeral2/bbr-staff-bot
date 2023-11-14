@@ -191,6 +191,25 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
+async def on_start_application_request_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"start application request cb {utilities.log(update)}")
+
+    send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
+    sent_message = await update.effective_message.reply_html(
+        send_other_members_text,
+        reply_markup=get_cancel_keyboard("Amici in flytek"),
+        quote=False
+    )
+    private_chat_messages.save(session, sent_message)
+
+    # remove the button
+    await update.effective_message.edit_reply_markup(reply_markup=None)
+
+    return State.WAITING_OTHER_MEMBERS
+
+
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
 async def on_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"application conversation: /cancel command {utilities.log(update)}")
 
