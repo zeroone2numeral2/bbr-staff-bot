@@ -48,34 +48,34 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             # cases where we should ignore the message
             logger.debug("approval mode is on and conversate_with_staff_override is false")
 
-            accept_message = False
+            user_allowed = False
 
-            if not accept_message and (user.last_request and user.last_request.accepted()):
+            if not user_allowed and (user.last_request and user.last_request.accepted()):
                 logger.info("allowed: user's last request was accepted")
-                accept_message = True
+                user_allowed = True
 
-            if not accept_message:
+            if not user_allowed:
                 # do this check only if needed
                 chat_member = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
                 if not chat_member:
                     # we don't have the ChatMember record saved for this user in the users chat
                     users_chat = chats.get_chat(session, Chat.is_users_chat)
-                    logger.info(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
+                    logger.debug(f"no ChatMember record for user {update.effective_user.id} in chat {users_chat.chat_id}, fetching ChatMember...")
                     tg_chat_member = await context.bot.get_chat_member(users_chat.chat_id, update.effective_user.id)
                     chat_member = DbChatMember.from_chat_member(users_chat.chat_id, tg_chat_member)
                     session.add(chat_member)
                     session.commit()
 
-                if not accept_message and chat_member.is_member():
+                if not user_allowed and chat_member.is_member():
                     logger.info("allowed: user is a meber of the users chat, or was a member or left")
-                    accept_message = True
+                    user_allowed = True
 
-                if not accept_message and chat_member.left_or_kicked():
+                if not user_allowed and chat_member.left_or_kicked():
                     logger.info("allowed: user was a member of the users chat and left (or was kicked)")
-                    accept_message = True
+                    user_allowed = True
 
-            if not accept_message:
-                logger.info("ignoring user message: none of the requirements were met")
+            if not user_allowed:
+                logger.info("ignoring user message: none of the requirements were met (last request was accepted/is member/left or kicked)")
 
                 if user.last_request and user.last_request.rejected():
                     logger.info(f"user's last request was rejected: we will answer if the ltext is set")
