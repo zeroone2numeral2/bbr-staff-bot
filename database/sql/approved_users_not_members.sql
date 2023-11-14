@@ -9,7 +9,8 @@ select
 	ar.invite_link,
 	cm.status as membership,
 	cm.has_been_member,
-	cm.updated_on
+	ar.status_changed_on as approved_on,
+	cm.updated_on as chat_member_updated_on
 from application_requests as ar
 	left join users as u
 		on ar.user_id = u.user_id
