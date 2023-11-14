@@ -55,7 +55,7 @@ async def handle_events_chat_join_via_bot_link(session: Session, bot: Bot, chat_
 
     invite_link.used_by(chat_member_updated.new_chat_member.user, used_on=chat_member_updated.date)
 
-    if invite_link.destination == Destination.EVENTS_CHAT_DEEPLINK:
+    if invite_link.destination in (Destination.EVENTS_CHAT_DEEPLINK, Destination.USERS_CHAT_DEEPLINK):
         # do not revoke for other destinations
         logger.info(f"link destination is {invite_link.destination}")
         success = await revoke_invite_link_safe(bot, invite_link.chat_id, invite_link.invite_link)
@@ -154,9 +154,9 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
         logger.info("user joined the users chat")
         await handle_users_chat_join(session, chat, context.bot, update.chat_member)
 
-    if utilities.is_join_update(update.chat_member) and chat.is_events_chat:
+    if utilities.is_join_update(update.chat_member) and chat.is_special_chat():
         if update.chat_member.invite_link and update.chat_member.invite_link.creator.id == context.bot.id:
-            logger.info("user joined events chat with a link created by the bot")
+            logger.info("user joined a special chat with a link created by the bot")
             await handle_events_chat_join_via_bot_link(session, context.bot, update.chat_member)
 
 
