@@ -39,7 +39,7 @@ def save(session: Session, messages: [Union[Message, Update], List[Union[Message
             user_id=message.chat.id,
             from_self=message.from_user.is_bot,
             date=message.date,
-            message_json=json.dumps(message.to_dict(), indent=2)
+            # message_json=json.dumps(message.to_dict(), indent=2)
         )
         new_instances.append(private_chat_message)
 
