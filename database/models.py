@@ -432,6 +432,8 @@ class ChatMember(Base):
     can_add_web_page_previews = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_add_web_page_previews"])
     until_date = Column(DateTime, default=None)
 
+    # flag set only when the user has been seen in the group
+    # there might be BANNED and RESTRICTED users that have never been part of the chat
     has_been_member = Column(Boolean, default=False)
     kicked = Column(Boolean, default=False)
 
