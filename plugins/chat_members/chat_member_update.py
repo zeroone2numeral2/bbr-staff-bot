@@ -75,13 +75,12 @@ async def handle_events_chat_join_via_bot_link(session: Session, bot: Bot, chat_
 
 async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
-    if not user.last_request_id or user.last_request.is_pending() or user.last_request.status is False:
-        # user joined the chat without going through the approval process, or their request was rejected
+    added_by_admin = not chat_member_updated.invite_link
+    if added_by_admin:
+        logger.info("user was added by an admin (didn't join by invite link)")
 
-        if not chat_member_updated.invite_link:
-            logger.info("user was added by an admin and didn't join by invite link")
-            # do not log manual additions
-            return
+    if not added_by_admin and (not user.last_request_id or user.last_request.is_pending() or user.last_request.rejected()):
+        # user joined the chat without going through the approval process, or their request was rejected: log to channel
 
         logger.debug("no last request to check or last request is pending: we log the join")
         log_chat = chats.get_chat(session, Chat.is_log_chat)
@@ -105,22 +104,24 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
         await bot.send_message(log_chat.chat_id, text)
         return
 
-    if user.last_request.accepted_message_message_id:
-        # always remove the inline keyboard
-        logger.debug(f"removing keyboard from message_id {user.last_request.accepted_message_message_id}")
-        try:
-            await bot.edit_message_reply_markup(
-                user.user_id,
-                user.last_request.accepted_message_message_id,
-                reply_markup=None
-            )
-        except (TelegramError, BadRequest) as e:
-            logger.error(f"error while removing reply makrup: {e}")
+    if user.last_request_id:
+        # when a new member joins the chat, always try to remove the last link we sent them
+        if user.last_request.accepted_message_message_id:
+            # always remove the inline keyboard
+            logger.debug(f"removing keyboard from message_id {user.last_request.accepted_message_message_id}")
+            try:
+                await bot.edit_message_reply_markup(
+                    user.user_id,
+                    user.last_request.accepted_message_message_id,
+                    reply_markup=None
+                )
+            except (TelegramError, BadRequest) as e:
+                logger.error(f"error while removing reply makrup: {e}")
 
-    if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
-        logger.info(f"revoking invite link {user.last_request.invite_link}...")
-        success = await revoke_invite_link_safe(bot, chat.chat_id, user.last_request.invite_link)
-        user.last_request.invite_link_revoked = success
+        if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
+            logger.info(f"revoking invite link {user.last_request.invite_link}...")
+            success = await revoke_invite_link_safe(bot, chat.chat_id, user.last_request.invite_link)
+            user.last_request.invite_link_revoked = success
 
 
 @decorators.catch_exception(silent=True)
@@ -156,7 +157,7 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
 
     if utilities.is_join_update(update.chat_member) and chat.is_special_chat():
         if update.chat_member.invite_link and update.chat_member.invite_link.creator.id == context.bot.id:
-            logger.info("user joined a special chat with a link created by the bot")
+            logger.info(f"user joined a special chat ({chat.title}) with a link created by the bot")
             await handle_events_chat_join_via_bot_link(session, context.bot, update.chat_member)
 
 
