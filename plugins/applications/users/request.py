@@ -500,10 +500,13 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     elif not user.pending_request.ready and not done_button_pressed:
         # await update.message.reply_text("Per favore invia almeno un messaggio")
         # return
-        logger.info("user didn't complete the conversation: canceling operation")
+        logger.info("user didn't complete the conversation (timeout): canceling operation")
         text = get_text(session, LocalizedTextKey.APPLICATION_TIMEOUT, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
         private_chat_messages.save(session, sent_message)
+
+        logger.info("forgetting current pending request")
+        user.pending_request_id = None
 
         return ConversationHandler.END
 
