@@ -22,6 +22,7 @@ class Emoji:
     NUMBERS = "🔢"
     PERSON = "👤"
     PHONE = "📱"
+    POINT_DOWN = "👇"
     PLUS = "➕"
     RECYCLE = "♻️"
     RED = "🔴"
