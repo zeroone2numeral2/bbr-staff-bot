@@ -83,7 +83,7 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
                 diff_str = utilities.elapsed_str_from_seconds(int(config.settings.events_chat_deeplink_cooldown - seconds_diff), "poco")
                 sent_message = await update.message.reply_html(
                     f"Mi dispiace, è trascorso troppo poco tempo da quando hai richiesto questo link d'invito l'ultima volta. "
-                    f"Riprova tra {diff_str}"
+                    f"Riprova tra ~{diff_str}"
                 )
                 private_chat_messages.save(session, sent_message)
                 return
