@@ -40,11 +40,12 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     # unban the user so they can join again, just in case the user was removed manually before /reset was used
     only_if_banned = not utilities.get_command(update.message.text) == "resetkick"  # check whether to kick the user
     users_chat_member = chat_members.get_chat_member(session, user.user_id, Chat.is_users_chat)
-    try:
-        await context.bot.unban_chat_member(users_chat_member.chat_id, user.user_id, only_if_banned=only_if_banned)
-        logger.debug("user unbanned")
-    except (TelegramError, BadRequest) as e:
-        logger.debug(f"error while unbanning member: {e}")
+    if users_chat_member:
+        try:
+            await context.bot.unban_chat_member(users_chat_member.chat_id, user.user_id, only_if_banned=only_if_banned)
+            logger.debug("user unbanned")
+        except (TelegramError, BadRequest) as e:
+            logger.debug(f"error while unbanning member: {e}")
 
     log_chat = chats.get_chat(session, Chat.is_log_chat)
     if not log_chat:
