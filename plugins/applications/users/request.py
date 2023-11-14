@@ -183,7 +183,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     private_chat_messages.save(session, sent_message)
 
     send_other_members_text = get_text(session, LocalizedTextKey.SEND_OTHER_MEMBERS, update.effective_user)
-    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard("Membri che conosci"))
+    sent_message = await update.message.reply_text(send_other_members_text, reply_markup=get_cancel_keyboard("Amici in flytek"))
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_OTHER_MEMBERS
