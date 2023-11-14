@@ -113,10 +113,12 @@ def get_text(session: Session, ltext_key: str, user: TelegramUser, raise_if_no_f
 async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/start {utilities.log(update)}")
 
+    user.set_started()
+
     if user.banned:
         logger.info(f"ignoring user message: the user was banned (shadowban: {user.shadowban})")
         if not user.shadowban:
-            reason = user.banned_reason or "not provided"
+            reason = user.banned_reason or "non fornita"
             sent_message = await update.message.reply_text(f"{Emoji.BANNED} Sei stato bannato dall'utilizzare questo bot. "
                                                            f"Motivo: {utilities.escape_html(reason)}")
             private_chat_messages.save(session, sent_message)
@@ -131,12 +133,11 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         session.add(chat_member)
         session.commit()
 
-    if chat_member.is_member() or (user.last_request and user.last_request.accepted() and not chat_member.is_member()):
+    if chat_member.is_member() or (user.last_request and user.last_request.accepted()):
         logger.info("user is already a member of the users chat *or* they were accepted but did not join the chat: sending welcome text for members")
         welcome_text_member = get_text(session, LocalizedTextKey.WELCOME_MEMBER, update.effective_user)
         sent_message = await update.message.reply_text(welcome_text_member)
         private_chat_messages.save(session, sent_message)
-        user.set_started()
 
         return ConversationHandler.END
 
@@ -168,7 +169,7 @@ async def on_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
         return ConversationHandler.END
 
-    logger.info("user is not a member of the users chat and doesn't have any pending/accepted request")
+    logger.info("user is not a member of the users chat and doesn't have any pending/completed request")
 
     request = ApplicationRequest(update.effective_user.id)
     session.add(request)
