@@ -108,10 +108,7 @@ def superscript(string: str) -> str:
     return string.translate(SUPERSCRIPT)
 
 
-def elapsed_str(from_dt: datetime.datetime, if_empty: Optional[str] = None) -> str:
-    from_dt_utc = naive_to_aware(from_dt, force_utc=True)
-    total_seconds = (now() - from_dt_utc).total_seconds()
-
+def elapsed_str_from_seconds(total_seconds: int, if_empty: Optional[str] = None) -> str:
     string = ""
     for period, period_data in SECONDS_REDUCTION.items():
         if period_data["skip"]:
@@ -135,6 +132,13 @@ def elapsed_str(from_dt: datetime.datetime, if_empty: Optional[str] = None) -> s
         return if_empty
 
     return string
+
+
+def elapsed_str(from_dt: datetime.datetime, if_empty: Optional[str] = None) -> str:
+    from_dt_utc = naive_to_aware(from_dt, force_utc=True)
+    total_seconds = (now() - from_dt_utc).total_seconds()
+
+    return elapsed_str_from_seconds(total_seconds, if_empty)
 
 
 def elapsed_str_old(from_dt: datetime.datetime) -> str:
