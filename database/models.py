@@ -462,15 +462,16 @@ class ChatMember(Base):
     def is_banned(self):
         return self.status == TgChatMember.BANNED
 
-    def update_has_been_member(self):
-        if self.is_member():
-            self.has_been_member = True
-
     def left_or_kicked(self):
         # the user has been member, but they:
         # - left the chat
-        # - was removed but is no longer in the blocked users list (can join again)
+        # - were removed but are no longer in the blocked users list (can join again)
         return self.status == TgChatMember.LEFT and self.has_been_member
+
+    def update_has_been_member(self):
+        if self.is_member():
+            # do not set this flag if banned: there might be banned users that never joined
+            self.has_been_member = True
 
     def status_pretty(self):
         if self.status == TgChatMember.OWNER:
