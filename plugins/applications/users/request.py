@@ -24,6 +24,9 @@ from replacements import replace_placeholders
 logger = logging.getLogger(__name__)
 
 
+CONVERSATION_TIMEOUT = Timeout.HOURS_6
+
+
 class ApplicationDataKey:
     OTHER_MEMBERS = "other_members"
     SOCIAL = "social"
@@ -500,7 +503,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     elif not user.pending_request.ready and not done_button_pressed:
         # await update.message.reply_text("Per favore invia almeno un messaggio")
         # return
-        logger.info("user didn't complete the conversation (timeout): canceling operation")
+        logger.info(f"user didn't complete the conversation (timeout: {CONVERSATION_TIMEOUT} seconds): canceling operation")
         text = get_text(session, LocalizedTextKey.APPLICATION_TIMEOUT, update.effective_user)
         sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
         private_chat_messages.save(session, sent_message)
@@ -564,7 +567,7 @@ approval_mode_conversation_handler = ConversationHandler(
     fallbacks=[
         MessageHandler(filters.TEXT & filters.Regex(Re.CANCEL), on_cancel),
     ],
-    conversation_timeout=Timeout.HOURS_6
+    conversation_timeout=CONVERSATION_TIMEOUT
 )
 
 HANDLERS = (
