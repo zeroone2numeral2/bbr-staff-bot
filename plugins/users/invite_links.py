@@ -126,7 +126,7 @@ async def on_events_chat_invite_deeplink(update: Update, context: ContextTypes.D
 
     logger.info("sending link to user...")
     sent_message = await update.message.reply_html(
-        f"{Emoji.EYE} Usa il tasto qui sotto per unirti a {utilities.escape_html(events_chat.title)}:",
+        f"{Emoji.EYE} Usa il tasto qui sotto per unirti a {events_chat.title_escaped()}:",
         reply_markup=reply_markup,
         protect_content=True
     )

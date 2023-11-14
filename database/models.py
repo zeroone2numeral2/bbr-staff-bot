@@ -238,6 +238,9 @@ class Chat(Base):
         self.type = telegram_chat.type
         self.is_forum = telegram_chat.is_forum
 
+    def title_escaped(self):
+        return utilities.escape_html(self.title)
+
     def type_pretty(self):
         if self.is_staff_chat:
             return "staff chat"
