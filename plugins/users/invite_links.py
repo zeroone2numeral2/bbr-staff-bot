@@ -186,10 +186,6 @@ async def on_users_chat_invite_deeplink(update: Update, context: ContextTypes.DE
 
     user_allowed = False
 
-    if not user_allowed and (user.last_request and user.last_request.accepted()):
-        logger.info("allowed: user's last request was accepted")
-        user_allowed = True
-
     users_chat_member: Optional[ChatMember] = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
     if not user_allowed and (users_chat_member and users_chat_member.is_member()):
         logger.info("allowed: user is member of the members chat")
@@ -197,6 +193,10 @@ async def on_users_chat_invite_deeplink(update: Update, context: ContextTypes.DE
 
     if not user_allowed and (users_chat_member and users_chat_member.left_or_kicked()):
         logger.info("allowed: user was a member of the users chat and left, or was kicked")
+        user_allowed = True
+
+    if not user_allowed and (user.last_request and user.last_request.accepted()):
+        logger.info("allowed: user's last request was accepted")
         user_allowed = True
 
     if not user_allowed:
