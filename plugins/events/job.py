@@ -107,8 +107,9 @@ def get_events_text(
                 f"{request_channel_invite_link_part}" \
                 f"➜ <i>aggiornato in automatico ogni {refresh_freq}</i>\n"
 
-    # solar/legal hour
-    # now_str = utilities.format_datetime(now + datetime.timedelta(hours=1), format_str='%Y%m%d %H%M')
+    # daiyight savings
+    if now.dst():
+        now = now + now.dst()
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
     text += f"{utilities.subscript(now_str)}"
 

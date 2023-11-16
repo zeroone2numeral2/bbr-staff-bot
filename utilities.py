@@ -69,19 +69,24 @@ def naive_to_aware(unaware: [datetime.datetime, datetime.date], force_utc=False)
     return pytz.utc.localize(unaware)
 
 
-def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None) -> datetime.datetime:
+def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None, dst_check=False) -> datetime.datetime:
     """Returns the current datetime. A timezone can be passed as string, pytz.timezone(), or 'true' for Rome's timezone.
     If no argument is passed, the utc datetime is returned"""
 
     if not tz:
         return datetime.datetime.now(tz=UTC_TIMEZONE)
 
+    now_naive = datetime.datetime.now()
     if isinstance(tz, bool) and tz is True:
         tz = ROME_TIMEZONE
     elif isinstance(tz, str):
         tz = pytz.timezone(tz)
 
-    return datetime.datetime.now(tz=tz)
+    local_time = tz.localize(now_naive)
+    if dst_check and local_time.dst():
+        return local_time + local_time.dst()
+
+    return local_time
 
 
 class SecondsQt:
