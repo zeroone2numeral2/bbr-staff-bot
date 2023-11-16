@@ -106,7 +106,7 @@ async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
     list_was_updated = context.bot_data.get(TempDataKey.UPDATE_PARTIES_MESSAGE, False)  # do not pop
 
-    now_it = utilities.now(tz=True)
+    now_it = utilities.now(tz=True, dst_check=True)
     now_it_hour = utilities.format_datetime(now_it, format_str="%H:%M")
     await update.message.reply_html(
         f"<b>Abilitato</b>: {utilities.bool_to_str_it(enabled, si_no=True)} ({weeks} settimana/e)\n"
