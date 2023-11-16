@@ -100,12 +100,15 @@ def get_events_text(
             request_link_deeplink = helpers.create_deep_linked_url(bot_username, payload=DeeplinkParam.EVENTS_CHAT_INVITE_LINK)
             request_channel_invite_link_part = f"➜ <i>non riesci ad accedere alle feste linkate? <a href=\"{request_link_deeplink}\">unisciti al canale</a></i>\n"
 
+        refresh_freq = utilities.elapsed_str_from_seconds(config.settings.parties_message_job_frequency * 60, if_empty="pochi minuti")
         text += f"➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
                 f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a>" \
                 f"{radar_deeplink_part}</i>\n" \
                 f"{request_channel_invite_link_part}" \
-                f"➜ <i>aggiornato in automatico ogni ora</i>\n"
+                f"➜ <i>aggiornato in automatico ogni {refresh_freq}</i>\n"
 
+    # solar/legal hour
+    # now_str = utilities.format_datetime(now + datetime.timedelta(hours=1), format_str='%Y%m%d %H%M')
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
     text += f"{utilities.subscript(now_str)}"
 
