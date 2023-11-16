@@ -107,9 +107,6 @@ def get_events_text(
                 f"{request_channel_invite_link_part}" \
                 f"➜ <i>aggiornato in automatico ogni {refresh_freq}</i>\n"
 
-    # daiylight savings
-    if now.dst():
-        now = now + now.dst()
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
     text += f"{utilities.subscript(now_str)}"
 
@@ -225,7 +222,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     post_new_message_force = context.bot_data.pop(TempDataKey.FORCE_POST_PARTIES_MESSAGE, False)
     logger.info(f"'post_new_message_force' from context.bot_data: {post_new_message_force}")
 
-    now_it = utilities.now(tz=True)
+    now_it = utilities.now(tz=True, dst_check=True)
 
     # we need this so we can add the footer text just to the last message
     last_filter_key = list(PARTIES_MESSAGE_TYPES_ARGS.keys())[-1]

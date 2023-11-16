@@ -68,7 +68,7 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     last_filter_key = list(PARTIES_MESSAGE_TYPES_ARGS.keys())[-1]
 
-    now = utilities.now(tz=True)
+    now = utilities.now(tz=True, dst_check=True)
     for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
         args.append(EventFilter.WEEK) if weeks <= 1 else args.append(EventFilter.WEEK_2)
         text = get_events_text(
