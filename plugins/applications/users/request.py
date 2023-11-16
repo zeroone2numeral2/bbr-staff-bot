@@ -489,7 +489,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     # create and send the main log message with user info, social, other members, and links to attachments
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "username non impostato"
-    base_text = f"{Emoji.SPARKLE} <b>nuova #richiesta</b> • #rid{request.id} • #pendente\n\n" \
+    base_text = f"{Emoji.SPARKLE} <b>nuova #richiesta</b> • #rid{request.id} • #pendente • #nojoin\n\n" \
                 f"{Emoji.PERSON} <b>utente</b>\n" \
                 f"• {user_mention}\n" \
                 f"• {user_username}\n" \

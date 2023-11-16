@@ -496,10 +496,22 @@ async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[
 
 async def edit_text_safe(update: Update, *args, **kwargs):
     try:
-        await update.effective_message.edit_text(*args, **kwargs)
+        return await update.effective_message.edit_text(*args, **kwargs)
     except BadRequest as e:
         if "message is not modified" not in e.message.lower():
             raise e
+        else:
+            logger.info("message not modified exception ignored")
+
+
+async def edit_text_by_ids_safe(bot: Bot, *args, **kwargs):
+    try:
+        return await bot.edit_message_text(*args, **kwargs)
+    except BadRequest as e:
+        if "message is not modified" not in e.message.lower():
+            raise e
+        else:
+            logger.info("message not modified exception ignored")
 
 
 async def remove_reply_markup_safe(bot, chat_id: int, message_id: int):

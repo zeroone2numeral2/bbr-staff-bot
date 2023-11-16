@@ -73,6 +73,30 @@ async def handle_events_chat_join_via_bot_link(session: Session, bot: Bot, chat_
                     invite_link.sent_to_user_link_removed = True
 
 
+async def remove_nojoin_hashtag(user: User, bot: Bot):
+    logger.info(f"removing #nojoin hashtag from staff message...")
+    staff_message_no_hashtag = user.last_request.staff_message_text_html.replace(" • #nojoin", "")
+    edited_staff_message = await utilities.edit_text_by_ids_safe(
+        bot=bot,
+        chat_id=user.last_request.staff_message_chat_id,
+        message_id=user.last_request.staff_message_message_id,
+        text=f"{staff_message_no_hashtag}"
+    )
+    if edited_staff_message:
+        user.last_request.update_staff_chat_message(edited_staff_message)
+
+    logger.info(f"removing #nojoin hashtag from log message...")
+    log_message_no_hashtag = user.last_request.log_message_text_html.replace(" • #nojoin", "")
+    edited_log_message = await utilities.edit_text_by_ids_safe(
+        bot=bot,
+        chat_id=user.last_request.log_message_chat_id,
+        message_id=user.last_request.log_message_message_id,
+        text=f"{log_message_no_hashtag}"
+    )
+    if edited_log_message:
+        user.last_request.update_log_chat_message(edited_log_message)
+
+
 async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
     added_by_admin = not chat_member_updated.invite_link
@@ -121,6 +145,9 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
         if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
             success = await revoke_invite_link_safe(bot, chat.chat_id, user.last_request.invite_link)
             user.last_request.invite_link_revoked = success
+
+        # we have to remove the #nojoin hashtag
+        await remove_nojoin_hashtag(user, bot)
 
 
 @decorators.catch_exception(silent=True)
