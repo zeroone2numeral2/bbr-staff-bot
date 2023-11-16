@@ -11,7 +11,7 @@ from constants import Group, TempDataKey, BotSettingKey, WEEKDAYS_IT, BotSetting
 from database.models import Chat, PartiesMessage
 from database.queries import chats, parties_messages, settings
 from ext.filters import ChatFilter, Filter
-from plugins.events.common import EventFilter
+from plugins.events.common import EventFilter, EventFormatting
 from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, get_events_text, PARTIES_MESSAGE_TYPES_ARGS
 from config import config
 
@@ -79,7 +79,7 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             bot_username=context.bot.username,
             send_to_group=send_to_group,
             append_bottom_text=filter_key == last_filter_key,
-            discussion_group_messages_links=discussion_group_messages_links
+            formatting=EventFormatting(discussion_group_link=discussion_group_messages_links)
         )
         if not text:
             text = f"nessuna festa per <code>{filter_key}</code>"

@@ -23,7 +23,7 @@ from plugins.events.common import (
     send_events_messages,
     format_event_string,
     FILTER_DESCRIPTION,
-    ORDER_BY_DESCRIPTION, GROUP_BY_DESCRIPTION
+    ORDER_BY_DESCRIPTION, GROUP_BY_DESCRIPTION, EventFormatting
 )
 from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages, chats
@@ -71,11 +71,12 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
     )
     all_events_strings = []
     total_entities_count = 0
+    formatting = EventFormatting(use_message_date=True)
     for i, event in enumerate(events_list):
         if event.is_valid():
             continue
 
-        text_line, event_entities_count = format_event_string(event, message_date_instead_of_event_date=True)
+        text_line, event_entities_count = format_event_string(event, formatting)
         all_events_strings.append(text_line)
         total_entities_count += event_entities_count  # not used yet, find something to do with this
 

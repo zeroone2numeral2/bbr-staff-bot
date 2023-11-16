@@ -17,7 +17,8 @@ from constants import BotSettingKey, RegionName, TempDataKey, BotSettingCategory
 from database.models import Chat, Event, PartiesMessage, ChatMember
 from database.queries import chats, events, settings, parties_messages, chat_members
 from emojis import Flag, Emoji
-from plugins.events.common import format_event_string, EventFilter, get_all_events_strings_from_db_group_by, GroupBy
+from plugins.events.common import format_event_string, EventFilter, get_all_events_strings_from_db_group_by, GroupBy, \
+    EventFormatting
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ def get_events_text(
         bot_username: str,
         send_to_group=False,
         append_bottom_text=True,
-        discussion_group_messages_links=False
+        formatting: Optional[EventFormatting] = None
 ) -> Optional[str]:
     logger.info(f"getting events of type \"{filter_key}\"...")
 
@@ -67,7 +68,7 @@ def get_events_text(
     all_events = get_all_events_strings_from_db_group_by(
         session=session,
         args=args,
-        discussion_group_messages_links=discussion_group_messages_links
+        formatting=formatting
     )
     if not all_events:
         return
@@ -282,7 +283,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             bot_username=context.bot.username,
             append_bottom_text=filter_key == last_filter_key,
             send_to_group=parties_message_send_to_group,
-            discussion_group_messages_links=parties_message_group_messages_links
+            formatting=EventFormatting(discussion_group_link=parties_message_group_messages_links)
         )
         if not text:
             logger.info("no events for this filter, continuing to next one...")

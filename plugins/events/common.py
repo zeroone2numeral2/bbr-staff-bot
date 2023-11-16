@@ -364,7 +364,33 @@ def drop_events_cache(context: CallbackContext):
     return False
 
 
-def format_event_string(event: Event, message_date_instead_of_event_date=False, include_discussion_group_message_link=True) -> Tuple[str, int]:
+class EventFormatting:
+    def __init__(self, bold=True, region_emoji=True, discussion_group_link=True, use_message_date=False):
+        self.bold = bold
+        self.region_emoji = region_emoji
+        self.discussion_group_link = discussion_group_link
+        self.use_message_date = use_message_date
+
+    def __str__(self):
+        defaults = EventFormatting()  # mention only non-default properties
+        options = []
+        if self.bold != defaults.bold:
+            options.append(f"bold={self.bold}")
+        if self.region_emoji != defaults.region_emoji:
+            options.append(f"region_emoji={self.region_emoji}")
+        if self.discussion_group_link != defaults.discussion_group_link:
+            options.append(f"discussion_group_link={self.discussion_group_link}")
+        if self.use_message_date != defaults.use_message_date:
+            options.append(f"use_message_date={self.use_message_date}")
+
+        options_str = ", ".join(options)
+        return f"EventFormatting({options_str})"
+
+
+def format_event_string(event: Event, formatting: Optional[EventFormatting] = None) -> Tuple[str, int]:
+    if not formatting:
+        formatting = EventFormatting()
+
     region_icon = ""
     if event.region and event.region in REGIONS_DATA:
         region_icon = REGIONS_DATA[event.region]["emoji"]
@@ -383,14 +409,14 @@ def format_event_string(event: Event, message_date_instead_of_event_date=False, 
     if event.canceled:
         title_escaped = f"<s>{title_escaped}</s>"
 
-    if message_date_instead_of_event_date:
+    if formatting.use_message_date:
         date = utilities.format_datetime(event.message_date, format_str="msg date: %d/%m/%Y")
     else:
         date = event.pretty_date(week_number=False)
 
     # text = f"{event.icon()}{region_icon} <b>{title_escaped}</b> ({event.pretty_date()}) • <a href=\"{event.message_link()}\">fly & info</a>"
     title_with_link = f"<b><a href=\"{event.message_link()}\">{title_escaped}</a></b>"
-    if include_discussion_group_message_link and event.discussion_group_message_id:
+    if formatting.discussion_group_link and event.discussion_group_message_id:
         # add a link to the post in the discussion group
         title_with_link = f"{title_with_link} [<a href=\"{event.discussion_group_message_link()}\">➜{Emoji.PEOPLE}</a>]"
 
@@ -772,12 +798,13 @@ def get_all_events_strings_from_db(session: Session, args: List[str], date_overr
 
     all_events_strings = []
     total_entities_count = 0  # total number of telegram entities for the list of events
+    formatting = EventFormatting()
     for i, event in enumerate(events_list):
         if not event.is_valid():
             logger.info(f"skipping invalid event: {event}")
             continue
 
-        text_line, event_entities_count = format_event_string(event)
+        text_line, event_entities_count = format_event_string(event, formatting)
         all_events_strings.append(text_line)
         total_entities_count += event_entities_count  # not used yet, find something to do with this
 
@@ -787,9 +814,10 @@ def get_all_events_strings_from_db(session: Session, args: List[str], date_overr
 def get_all_events_strings_from_db_group_by(
         session: Session, args: List[str],
         date_override: Optional[datetime.date] = None,
-        discussion_group_messages_links=True
+        formatting: Optional[EventFormatting] = None
 ) -> List[str]:
     logger.debug("getting events from db...")
+    logger.debug(f"formatting: {formatting}")
 
     query_filters = extract_query_filters(args, today=date_override)
     order_by = extract_order_by(args)  # returns the default ordering if no elegible arg is provided
@@ -811,10 +839,7 @@ def get_all_events_strings_from_db_group_by(
 
         event: Event
         for event in events_list:
-            text_line, event_entities_count = format_event_string(
-                event,
-                include_discussion_group_message_link=discussion_group_messages_links
-            )
+            text_line, event_entities_count = format_event_string(event, formatting)
             all_events_strings.append(text_line)
             total_entities_count += event_entities_count  # not used yet, find something to do with this
 
