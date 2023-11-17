@@ -155,11 +155,15 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     # we attach it at the end of the original message
     evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, admin, user)
     # we have to remove the #pendente hashtag
-    original_message_without_pending_hashtag = user.last_request.staff_message_text_html.replace(" • #pendente", "")
+    new_staff_message_text = user.last_request.staff_message_text_html.replace(" • #pendente", "")
+    if not accepted:
+        # if rejected, remove the #nojoin hashtag too
+        new_staff_message_text = new_staff_message_text.replace(" • #nojoin", "")
+
     edited_staff_message = await bot.edit_message_text(
         chat_id=user.last_request.staff_message_chat_id,
         message_id=user.last_request.staff_message_message_id,
-        text=f"{original_message_without_pending_hashtag}\n\n{evaluation_text}",
+        text=f"{new_staff_message_text}\n\n{evaluation_text}",
         reply_markup=None
     )
     user.last_request.update_staff_chat_message(edited_staff_message)
@@ -172,11 +176,16 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
         allow_sending_without_reply=True
     )
 
-    logger.info("editing previously sent log chat message...")  # we only need to remove the #pendente hashtag
+    logger.info("editing previously sent log chat message...")  # we only need to remove the #pendente/#nojoin hashtag
+    new_log_message_text = user.last_request.log_message_text_html.replace(" • #pendente", "")
+    if not accepted:
+        # if rejected, remove the #nojoin hashtag too
+        new_log_message_text = new_log_message_text.replace(" • #nojoin", "")
+
     edited_log_chat_message = await bot.edit_message_text(
         chat_id=user.last_request.log_message_chat_id,
         message_id=user.last_request.log_message_message_id,
-        text=f"{user.last_request.log_message_text_html.replace(' • #pendente', '')}",
+        text=new_log_message_text,
         reply_markup=None
     )
     user.last_request.update_log_chat_message(edited_log_chat_message)
