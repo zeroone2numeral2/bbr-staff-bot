@@ -1222,6 +1222,7 @@ class ApplicationRequest(Base):
     user_id = mapped_column(Integer, ForeignKey('users.user_id'))
     ready = Column(Boolean, default=False)  # ready to be sent to staff
     status = Column(Boolean, default=None)
+    reset = Column(Boolean, default=False)
     status_notes = Column(String, default=None)
     status_changed_on = Column(DateTime, default=None)
     # canceled = Column(Boolean, default=False)

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy import null
+from sqlalchemy import null, select, false
 
 from database.models import ApplicationRequest
 
@@ -24,3 +24,10 @@ def get_by_id(session: Session, application_request_id: int) -> Optional[Applica
     request: ApplicationRequest = session.query(ApplicationRequest).filter(ApplicationRequest.id == application_request_id).one_or_none()
 
     return request
+
+
+def get_user_requests(session: Session, user_id: int):
+    return session.query(ApplicationRequest).filter(
+        ApplicationRequest.user_id == user_id,
+        ((ApplicationRequest.reset == false()) | (ApplicationRequest.reset == null()))
+    ).all()
