@@ -23,6 +23,13 @@ from plugins.applications.staff.common import can_evaluate_applications
 logger = logging.getLogger(__name__)
 
 
+def get_reset_keyboard(user_id: int, application_id: int):
+    keyboard = [[
+        InlineKeyboardButton(f"{Emoji.RECYCLE} resetta", callback_data=f"reset:{user_id}:{application_id}")
+    ]]
+    return InlineKeyboardMarkup(keyboard)
+
+
 def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUser, user: User):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     admin_mention = utilities.mention_escaped(admin)
@@ -154,17 +161,19 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     logger.info("editing evaluation chat message and removing keyboard...")
     # we attach it at the end of the original message
     evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, admin, user)
+    reply_markup = None
     # we have to remove the #pendente hashtag
     new_staff_message_text = user.last_request.staff_message_text_html.replace(" • #pendente", "")
     if not accepted:
         # if rejected, remove the #nojoin hashtag too
         new_staff_message_text = new_staff_message_text.replace(" • #nojoin", "")
+        reply_markup = get_reset_keyboard(user.user_id, user.last_request_id)
 
     edited_staff_message = await bot.edit_message_text(
         chat_id=user.last_request.staff_message_chat_id,
         message_id=user.last_request.staff_message_message_id,
         text=f"{new_staff_message_text}\n\n{evaluation_text}",
-        reply_markup=None
+        reply_markup=reply_markup
     )
     user.last_request.update_staff_chat_message(edited_staff_message)
 
@@ -220,9 +229,9 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
     if TempDataKey.EVALUATION_BUTTONS_ONCE not in context.user_data:
         context.user_data[TempDataKey.EVALUATION_BUTTONS_ONCE] = {}
     if not context.user_data[TempDataKey.EVALUATION_BUTTONS_ONCE].pop(tap_key, False):
-        logger.info(f"first button tap for <{action}>")
+        logger.info(f"first button tap for <{action}> ({tap_key})")
         context.user_data[TempDataKey.EVALUATION_BUTTONS_ONCE][tap_key] = True
-        await update.callback_query.answer(f"usa di nuov il tasto per confermare")
+        await update.callback_query.answer(f"usa di nuovo il tasto per confermare")
         return
 
     accepted = action == "accept"
@@ -230,7 +239,7 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
     user: User = users.get_or_create(session, user_id)
     if not user.pending_request_id:
         logger.info(f"user {user.user_id} has no pending request")
-        await update.callback_query.answer(f"Questo utente non ha alcuna richiesta di ingresso pendente", show_alert=True)
+        await update.callback_query.answer(f"Questo utente non ha alcuna richiesta di ingresso pendente", show_alert=True, cache_time=10)
         await update.callback_query.edit_message_reply_markup(reply_markup=None)
         return
 
