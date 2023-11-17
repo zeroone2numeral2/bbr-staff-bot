@@ -29,13 +29,13 @@ async def unban_user(bot: Bot, session: Session, user: User, only_if_banned=True
             return False
 
 
-def reset_log_text(user: User, admin_telegram_user: TelegramUser):
+def get_reset_log_text(user: User, admin_telegram_user: TelegramUser):
     log_text = f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}\n\n" \
                f"{user.mention()} (#id{user.user_id}) potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
     return log_text
 
 
-def reset_staff_text(admin_telegram_user: TelegramUser):
+def get_reset_staff_text(admin_telegram_user: TelegramUser):
     return f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
 
 
@@ -69,7 +69,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.warning("no log chat set")
         return
 
-    log_text = reset_log_text(user, update.effective_user)
+    log_text = get_reset_log_text(user, update.effective_user)
 
     additional_context = utilities.get_argument(
         ["resetkick", "reset"],
@@ -134,7 +134,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info("editing staff message...")
     # always try to remove the #pendente and #nojoin hashtag
     new_staff_message_text = update.effective_message.text_html.replace(" • #pendente", "").replace(" • #nojoin", "")
-    new_staff_message_text = f"{new_staff_message_text}\n\n{reset_staff_text(update.effective_user)}"
+    new_staff_message_text = f"{new_staff_message_text}\n\n{get_reset_staff_text(update.effective_user)}"
     edited_staff_message = await update.effective_message.edit_text(
         text=new_staff_message_text,
         reply_markup=None
@@ -147,7 +147,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         return
 
     logger.info("sending log chat message...")
-    log_text = reset_log_text(user, update.effective_user)
+    log_text = get_reset_log_text(user, update.effective_user)
     await context.bot.send_message(log_chat.chat_id, log_text)
 
     # remove the #pendnete and #nojoin hashtags from the log chat message
