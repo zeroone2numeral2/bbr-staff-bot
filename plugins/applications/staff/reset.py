@@ -132,7 +132,9 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info(f"request_id: {request.id}")
 
     logger.info("editing staff message...")
-    new_staff_message_text = f"{update.effective_message.text_html}\n\n{reset_staff_text(update.effective_user)}"
+    # always try to remove the #pendente and #nojoin hashtag
+    new_staff_message_text = update.effective_message.text_html.replace(" • #pendente", "").replace(" • #nojoin", "")
+    new_staff_message_text = f"{new_staff_message_text}\n\n{reset_staff_text(update.effective_user)}"
     edited_staff_message = await update.effective_message.edit_text(
         text=new_staff_message_text,
         reply_markup=None
@@ -147,6 +149,20 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info("sending log chat message...")
     log_text = reset_log_text(user, update.effective_user)
     await context.bot.send_message(log_chat.chat_id, log_text)
+
+    # remove the #pendnete and #nojoin hashtags from the log chat message
+    log_message_text = request.log_message_text_html
+    new_log_message_text = log_message_text.replace(" • #pendente", "").replace(" • #nojoin", "")
+    if log_message_text != new_log_message_text:
+        logger.info("removing hashtags from the log chat message...")
+        edited_message = await utilities.edit_text_by_ids_safe(
+            bot=context.bot,
+            chat_id=request.log_message_chat_id,
+            message_id=request.log_message_message_id,
+            text=new_log_message_text
+        )
+        if edited_message:
+            request.update_log_chat_message(edited_message)
 
 
 HANDLERS = (

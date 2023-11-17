@@ -90,11 +90,15 @@ def get_done_keyboard(input_field_placeholder: Optional[str] = None):
     )
 
 
-def get_evaluation_keyboard(user_id: int, application_id: int):
+def get_evaluation_keyboard(user_id: int, application_id: int, include_reset=True):
     keyboard = [[
         InlineKeyboardButton(f"{Emoji.GREEN} accetta", callback_data=f"accept:{user_id}:{application_id}"),
         InlineKeyboardButton(f"{Emoji.RED} rifiuta", callback_data=f"reject:{user_id}:{application_id}")
     ]]
+    if include_reset:
+        reset_button = InlineKeyboardButton(f"{Emoji.RECYCLE} resetta", callback_data=f"reset:{user_id}:{application_id}")
+        keyboard[0].insert(1, reset_button)
+
     return InlineKeyboardMarkup(keyboard)
 
 

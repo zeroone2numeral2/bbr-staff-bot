@@ -504,7 +504,7 @@ async def edit_text_safe(update: Update, *args, **kwargs):
             logger.info("message not modified exception ignored")
 
 
-async def edit_text_by_ids_safe(bot: Bot, *args, **kwargs):
+async def edit_text_by_ids_safe(bot: Bot, *args, **kwargs) -> Optional[Message]:
     try:
         return await bot.edit_message_text(*args, **kwargs)
     except BadRequest as e:
