@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update
-from telegram.ext import filters, PrefixHandler, ContextTypes
+from telegram.ext import filters, ContextTypes, CommandHandler
 
 from ext.filters import ChatFilter
 from database.models import Chat, UserMessage, User
@@ -56,6 +56,6 @@ async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ['ban', 'shadowban'], on_ban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
-    (PrefixHandler(COMMAND_PREFIXES, 'unban', on_unban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
+    (CommandHandler(['ban', 'shadowban'], on_ban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
+    (CommandHandler('unban', on_unban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
 )

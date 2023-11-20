@@ -2,7 +2,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from telegram import Update
-from telegram.ext import filters, PrefixHandler, ContextTypes
+from telegram.ext import filters, ContextTypes, CommandHandler
 
 import decorators
 import utilities
@@ -54,5 +54,5 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, ["revoke"], on_revoke_admin_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
+    (CommandHandler(["revoke"], on_revoke_admin_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
 )

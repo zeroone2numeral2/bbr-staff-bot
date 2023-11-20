@@ -3,7 +3,7 @@ from typing import Tuple
 
 from sqlalchemy.orm import Session
 from telegram import Update, ChatMember
-from telegram.ext import PrefixHandler
+from telegram.ext import CommandHandler
 
 import decorators
 import utilities
@@ -29,5 +29,5 @@ async def on_reloadadmins_command(update: Update, _, session: Session, chat: Cha
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'reloadadmins', on_reloadadmins_command, ChatFilter.STAFF | ChatFilter.USERS | ChatFilter.EVALUATION), Group.NORMAL),
+    (CommandHandler('reloadadmins', on_reloadadmins_command, ChatFilter.STAFF | ChatFilter.USERS | ChatFilter.EVALUATION), Group.NORMAL),
 )

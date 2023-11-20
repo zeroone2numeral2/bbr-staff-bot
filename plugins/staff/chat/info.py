@@ -2,7 +2,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from telegram import Update
-from telegram.ext import PrefixHandler, ContextTypes
+from telegram.ext import ContextTypes, CommandHandler
 
 import decorators
 import utilities
@@ -89,7 +89,7 @@ async def on_userchats_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 HANDLERS = (
-    (PrefixHandler(COMMAND_PREFIXES, 'info', on_info_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
-    (PrefixHandler(COMMAND_PREFIXES, 'userchats', on_userchats_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
+    (CommandHandler('info', on_info_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
+    (CommandHandler('userchats', on_userchats_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
 )
 

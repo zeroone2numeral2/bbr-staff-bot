@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram import Update, User as TelegramUser, ChatInviteLink, Bot
 from telegram.error import TelegramError, BadRequest
-from telegram.ext import CallbackQueryHandler, PrefixHandler
+from telegram.ext import CallbackQueryHandler, CommandHandler
 from telegram.ext import ContextTypes
 from telegram.ext import filters
 
@@ -326,6 +326,6 @@ async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TY
 
 HANDLERS = (
     (CallbackQueryHandler(on_reject_or_accept_button, rf"(?P<action>accept|reject):(?P<user_id>\d+):(?P<request_id>\d+)$"), Group.NORMAL),
-    (PrefixHandler(COMMAND_PREFIXES, ["accetta", "rifiuta"], on_reject_or_accept_command, filters.REPLY & ChatFilter.EVALUATION), Group.NORMAL),
-    (PrefixHandler(COMMAND_PREFIXES, ["delhistory"], on_delhistory_command, ChatFilter.EVALUATION), Group.NORMAL),
+    (CommandHandler(["accetta", "rifiuta"], on_reject_or_accept_command, filters.REPLY & ChatFilter.EVALUATION), Group.NORMAL),
+    (CommandHandler(["delhistory"], on_delhistory_command, ChatFilter.EVALUATION), Group.NORMAL),
 )
