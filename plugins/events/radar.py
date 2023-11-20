@@ -1,14 +1,10 @@
 import datetime
-import json
 import logging
 from typing import Optional, List
 
-import telegram.constants
-from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
 from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat, helpers
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
-from telegram.constants import MessageLimit
 
 from emojis import Emoji, Flag
 from ext.filters import Filter
@@ -18,14 +14,13 @@ from plugins.events.common import (
     FILTER_DESCRIPTION,
     get_all_events_strings_from_db,
     get_all_events_strings_from_db_group_by,
-    send_events_messages, EventFormatting
+    send_events_messages
 )
-from database.models import Chat, Event, User, BotSetting, EventType
-from database.queries import settings, events, chat_members, private_chat_messages
+from database.models import Chat, User
+from database.queries import settings, chat_members, private_chat_messages
 import decorators
 import utilities
-from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout, DeeplinkParam, \
-    BotSettingCategory
+from constants import BotSettingKey, Group, MONTHS_IT, TempDataKey, Timeout, DeeplinkParam, BotSettingCategory
 from config import config
 
 logger = logging.getLogger(__name__)

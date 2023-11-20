@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat, MessageId
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler
-from telegram.constants import MessageLimit
+from telegram.constants import MessageType
 
 from emojis import Emoji, Flag
 from ext.filters import Filter, ChatFilter
@@ -29,7 +29,7 @@ from database.models import Chat, Event, User, BotSetting, EventType
 from database.queries import settings, events, chat_members, private_chat_messages, chats
 import decorators
 import utilities
-from constants import BotSettingKey, Group, RegionName, MediaType, MONTHS_IT, TempDataKey, Timeout
+from constants import BotSettingKey, Group, TempDataKey, Timeout
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await update.effective_message.reply_html(f"{event.message_text}")
     else:
         # if no media_type, assume photo
-        media_type = event.media_type or MediaType.PHOTO
+        media_type = event.media_type or MessageType.PHOTO
         await utilities.reply_media(
             message=update.message,
             media_type=media_type,

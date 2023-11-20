@@ -72,17 +72,6 @@ class DeeplinkParam:
     REVOKE_STAFF_MESSAGE = "revokestaff"
 
 
-class MediaType:
-    PHOTO = "photo"
-    VIDEO = "video"
-    DOCUMENT = "document"
-    STICKER = "sticker"
-    ANIMATION = "animation"
-    VIDEO_NOTE = "video_note"
-    VOICE = "voice"
-    AUDIO = "audio"
-
-
 class BotSettingKey:
     SENT_TO_STAFF = "sent_to_staff_message"
     BROADCAST_EDITS = "broadcast_edits"

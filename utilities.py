@@ -18,11 +18,13 @@ from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from sqlalchemy.orm import Session
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
     ChatMember, Bot
+from telegram.constants import MessageType
 from telegram.error import BadRequest
 from telegram.ext import ContextTypes
+from telegram.helpers import effective_message_type
 
 from config import config
-from constants import COMMAND_PREFIXES, Language, Regex, MediaType
+from constants import COMMAND_PREFIXES, Language, Regex
 
 logger = logging.getLogger(__name__)
 
@@ -347,47 +349,49 @@ def is_reply_to_forwarded_channel_message(message: Message) -> bool:
     return message.reply_to_message.forward_from_chat and message.reply_to_message.forward_from_chat.type == Chat.CHANNEL
 
 
-def detect_media_type(message: Message, raise_on_unknown_type=True) -> Optional[str]:
-    if message.photo:
-        return MediaType.PHOTO
-    elif message.video:
-        return MediaType.VIDEO
-    elif message.animation:
+def detect_media_type(message: Message, raise_on_unknown_type=True) -> Optional[MessageType]:
+    message_type = effective_message_type(message)
+
+    if message_type == MessageType.PHOTO:
+        return message_type
+    elif message_type == MessageType.VIDEO:
+        return message_type
+    elif message_type == MessageType.ANIMATION:
         # must be before the 'document' check because message.document is also populated for gifs
-        return MediaType.ANIMATION
-    elif message.document:
-        return MediaType.DOCUMENT
-    elif message.voice:
-        return MediaType.VOICE
-    elif message.video_note:
-        return MediaType.VIDEO_NOTE
-    elif message.audio:
-        return MediaType.AUDIO
-    elif message.sticker:
-        return MediaType.STICKER
+        return message_type
+    elif message_type == MessageType.DOCUMENT:
+        return message_type
+    elif message_type == MessageType.VOICE:
+        return message_type
+    elif message_type == MessageType.VIDEO_NOTE:
+        return message_type
+    elif message_type == MessageType.AUDIO:
+        return message_type
+    elif message_type == MessageType.STICKER:
+        return message_type
 
     if raise_on_unknown_type:
-        raise ValueError("message contains unknown media type or doesn't contain a media")
+        raise ValueError(f"message contains unknown media type or doesn't contain a media (MessageType: {message_type})")
 
     return
 
 
 async def reply_media(message: Message, media_type: str, file_id: str, caption: Optional[str] = None, quote: Optional[bool] = None) -> Message:
-    if media_type == MediaType.PHOTO:
+    if media_type == MessageType.PHOTO:
         return await message.reply_photo(file_id, caption=caption, quote=quote)
-    elif media_type == MediaType.VIDEO:
+    elif media_type == MessageType.VIDEO:
         return await message.reply_video(file_id, caption=caption, quote=quote)
-    elif media_type == MediaType.DOCUMENT:
+    elif media_type == MessageType.DOCUMENT:
         return await message.reply_document(file_id, caption=caption, quote=quote)
-    elif media_type == MediaType.VOICE:
+    elif media_type == MessageType.VOICE:
         return await message.reply_voice(file_id, caption=caption, quote=quote)
-    elif media_type == MediaType.VIDEO_NOTE:
+    elif media_type == MessageType.VIDEO_NOTE:
         return await message.reply_video_note(file_id, quote=quote)
-    elif media_type == MediaType.AUDIO:
+    elif media_type == MessageType.AUDIO:
         return await message.reply_audio(file_id, caption=caption, quote=quote)
-    elif media_type == MediaType.ANIMATION:
+    elif media_type == MessageType.ANIMATION:
         return await message.reply_animation(file_id, caption=caption, quote=quote)
-    elif media_type == MediaType.STICKER:
+    elif media_type == MessageType.STICKER:
         return await message.reply_sticker(file_id, quote=quote)
 
 
