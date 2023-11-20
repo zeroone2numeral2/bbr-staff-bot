@@ -54,6 +54,6 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 HANDLERS = (
-    (CommandHandler(["revoke"], on_revoke_admin_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
+    (CommandHandler(["revoke", "rev", "d"], on_revoke_admin_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
     # (CommandHandler("start", on_revoke_staff_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.REVOKE_STAFF_MESSAGE}$")), Group.NORMAL),
 )
