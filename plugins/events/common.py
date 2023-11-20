@@ -1,3 +1,4 @@
+import copy
 import datetime
 import logging
 import re
@@ -121,11 +122,8 @@ class DateMatchNormal:
 class DateMatchDaysList:
     NAME = "DateMatchDaysList"
     PATTERN = (
-        # "." inside a "[]" matches the character "." literally
-        r"(?P<days>(?:\d{1,2}[.-]?)+)/(?P<month>\d{1,2})/(?P<year>(?:2[0k])?2[3-9])(?![.-])",  # https://regex101.com/r/f9vJkw
-        r"(?P<days>(?:\d{1,2}[/-]?)+)\.(?P<month>\d{1,2})\.(?P<year>(?:2[0k])?2[3-9])(?![/-])",  # https://regex101.com/r/QkzVSg
-        r"(?P<days>(?:\d{1,2}[/.]?)+)-(?P<month>\d{1,2})-(?P<year>(?:2[0k])?2[3-9])(?![/.])",  # https://regex101.com/r/wKMaKI
-        r"(?P<days>(?:\d{1,2}[/.-]?)+)[/.-](?P<month>\d{1,2})[/.-](?P<year>(?:2[0k])?2[3-9])",  # https://regex101.com/r/OFIsou
+        # eg. 25-26-27/11/2023, 11-12/11/2023, 24/25/26/27/28/11/2023
+        r"(?P<days>(?:\d{1,2}[\.\-/]?)+)[/.\-](?P<month>\d{1,2})[/.\-](?P<year>(?:2[0k])?2[3-9])(?![\.-/])",  # https://regex101.com/r/OLJZJo
     )
 
     @staticmethod
@@ -150,6 +148,51 @@ class DateMatchDaysList:
 
         end_date = EventDate(year, month, int(days_list[-1]))
         end_date.fix_months_overlap(start_date.day)
+        end_date.validate()
+
+        logger.debug(f"parsed dates: {start_date}; {end_date}")
+        return start_date, end_date
+
+
+class DateMatchMonthsJump:
+    NAME = "DateMatchMonthsJump"
+    PATTERN = (
+        # "." inside a "[]" matches the character "." literally
+        r"\b(?P<start_day>[0-3]?[0-9])[/.](?P<start_month>[0-1]?[0-9])(?:[./](?P<start_year>(?:2[0K])?2[3-9]))? *[-/] *(?P<end_day>(?:[0-3]?[0-9]|\?\?|xx))[/.](?P<end_month>[0-1]?[0-9])(?:[/.](?P<end_year>(?:2[0K])?2[3-9]))",  # https://regex101.com/r/eacPKF
+    )
+
+    @staticmethod
+    def extract(match: Match):
+        # DAY
+        # for this kind of dates format, we always expect a start day
+        start_day_str = match.group("start_day").lower()
+        start_day = int(start_day_str)
+
+        end_day_str = match.group("end_day").lower()
+        if "?" in end_day_str or "x" in end_day_str:
+            end_day = None
+        else:
+            end_day = int(end_day_str)
+
+        # MONTH
+        start_month = int(match.group("start_month"))
+        end_month = int(match.group("end_month"))
+
+        # YEAR
+        end_year: str = match.group("end_year")
+        end_year: int = utilities.format_year(end_year)
+
+        start_year: str = match.group("start_year")
+        if start_year:
+            start_year: int = utilities.format_year(start_year)
+        else:
+            start_year: int = copy.deepcopy(end_year)
+
+        # VALIDATE
+        start_date = EventDate(start_year, start_month, start_day)
+        start_date.validate()
+
+        end_date = EventDate(end_year, end_month, end_day)
         end_date.validate()
 
         logger.debug(f"parsed dates: {start_date}; {end_date}")
@@ -321,25 +364,27 @@ def parse_message_text(message_text: str, event: Event):
 
     # DATES
     parsing_success = False
-    date_tests = [DateMatchDaysList, DateMatchNormal]
+    date_tests = [DateMatchMonthsJump, DateMatchDaysList, DateMatchNormal]
     for date_test in date_tests:
         date_match = None
-        for pattern in date_test.PATTERN:
-            date_match = re.search(pattern, message_text, re.M)
+        for i, pattern in enumerate(date_test.PATTERN):
+            logger.debug(f"testing pattern #{i} for regex '{date_test.NAME}'")
+            date_match = re.search(pattern, message_text, re.M | re.I)
             if date_match:
+                logger.debug("pattern match successfull")
                 break
 
         if not date_match:
             continue
-
-        logger.info(f"pattern match successfull: {date_test.NAME}")
 
         try:
             start_date, end_date = date_test.extract(date_match)
             parsing_success = True
             break
         except ValueError as e:
-            logger.info(f"error while parsing date with test '{date_test.NAME}': {e}")
+            logger.info(f"error while extracting date with test '{date_test.NAME}': {e}")
+            # do not continue with next regexes: they might extract and unwanted result, if a match already happened
+            break
 
     if not parsing_success:
         logger.info("couldn't parse any date with any regex")

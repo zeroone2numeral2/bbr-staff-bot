@@ -1125,7 +1125,12 @@ class Event(Base):
 
         if not self.single_day():
             end_day = f"{self.end_day:02}" if self.end_day else "??"
-            return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}{week_number}"
+            if self.start_month != self.end_month:
+                return f"{start_day}.{self.start_month:02}-{end_day}.{self.end_month:02}.{self.start_year}{week_number}"
+            else:
+                return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}{week_number}"
+
+        logger.info(f"{self.start_month}, {self.end_month}")
 
         return f"{start_day}.{self.start_month:02}.{self.start_year}{week_number}"
 
@@ -1141,6 +1146,7 @@ class Event(Base):
         return {field.name: getattr(self, field.name) for field in self.__table__.c}
 
     def __repr__(self):
+        # logger.info(f"Event.__repr__")
         return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
 
 
