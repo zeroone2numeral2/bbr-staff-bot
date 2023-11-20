@@ -250,6 +250,22 @@ def is_superadmin(user: User) -> bool:
     return user.id in config.telegram.admins
 
 
+def copy_message_supported(message: Message):
+    return effective_message_type(message) in (
+        MessageType.ANIMATION,
+        MessageType.AUDIO,
+        MessageType.DICE,
+        MessageType.DOCUMENT,
+        MessageType.LOCATION,
+        MessageType.PHOTO,
+        MessageType.STICKER,
+        MessageType.TEXT,
+        MessageType.VIDEO,
+        MessageType.VIDEO_NOTE,
+        MessageType.VOICE,
+    )
+
+
 async def copy_message(
     bot: Bot,
     message: Message,
