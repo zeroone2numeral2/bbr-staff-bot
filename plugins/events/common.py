@@ -187,6 +187,8 @@ class DateMatchMonthsJump:
             start_year: int = utilities.format_year(start_year)
         else:
             start_year: int = copy.deepcopy(end_year)
+            if start_month == 12 and end_month == 1:
+                start_year -= 1
 
         # VALIDATE
         start_date = EventDate(start_year, start_month, start_day)
