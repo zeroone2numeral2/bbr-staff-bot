@@ -6,7 +6,7 @@ from telegram.ext import filters, ContextTypes, CommandHandler
 
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES, Group
+from constants import COMMAND_PREFIXES, Group, DeeplinkParam
 from database.models import AdminMessage
 from database.queries import admin_messages
 from emojis import Emoji
@@ -55,4 +55,5 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
 
 HANDLERS = (
     (CommandHandler(["revoke"], on_revoke_admin_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
+    # (CommandHandler("start", on_revoke_staff_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.REVOKE_STAFF_MESSAGE}$")), Group.NORMAL),
 )
