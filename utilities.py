@@ -260,7 +260,7 @@ async def copy_message(
     allow_sending_without_reply: Optional[bool] = None,
     protect_content: Optional[bool] = None,
     message_thread_id: Optional[int] = None,
-    has_spoiler: Optional[bool] = None,
+    has_spoiler_ovverride: Optional[bool] = None,
     raise_on_unsupported_type=True
 ) -> Optional[Message]:
     message_type = effective_message_type(message)
@@ -275,7 +275,7 @@ async def copy_message(
 
     if message_type == MessageType.ANIMATION:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
-        kwargs["has_spoiler"] = has_spoiler
+        kwargs["has_spoiler"] = has_spoiler_ovverride or message.has_media_spoiler
         result = await bot.send_animation(file_id=message.animation.file_id, **kwargs)
     elif message_type == MessageType.AUDIO:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
@@ -296,7 +296,7 @@ async def copy_message(
         )
     elif message_type == MessageType.PHOTO:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
-        kwargs["has_spoiler"] = has_spoiler
+        kwargs["has_spoiler"] = has_spoiler_ovverride or message.has_media_spoiler
         result = await bot.send_photo(file_id=message.photo[-1].file_id, **kwargs)
     elif message_type == MessageType.STICKER:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
@@ -306,7 +306,7 @@ async def copy_message(
         result = await bot.send_message(file_id=message.sticker.file_id, **kwargs)
     elif message_type == MessageType.VIDEO:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
-        kwargs["has_spoiler"] = has_spoiler
+        kwargs["has_spoiler"] = has_spoiler_ovverride or message.has_media_spoiler
         result = await bot.send_video(file_id=message.video.file_id, **kwargs)
     elif message_type == MessageType.VIDEO_NOTE:
         result = await bot.send_video_note(file_id=message.video_note.file_id, **kwargs)
