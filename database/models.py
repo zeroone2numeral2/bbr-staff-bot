@@ -1125,8 +1125,10 @@ class Event(Base):
 
         if not self.single_day():
             end_day = f"{self.end_day:02}" if self.end_day else "??"
-            if self.start_month != self.end_month:
-                return f"{start_day}.{self.start_month:02}-{end_day}.{self.end_month:02}.{self.start_year}{week_number}"
+            if self.start_year != self.end_year:
+                return f"{start_day}.{self.start_month:02}.{self.start_year}-{end_day}.{self.end_month:02}.{self.end_year}{week_number}"
+            elif self.start_month != self.end_month:
+                return f"{start_day}.{self.start_month:02}-{end_day}.{self.end_month:02}.{self.end_year}{week_number}"
             else:
                 return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}{week_number}"
 
