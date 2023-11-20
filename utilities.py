@@ -7,6 +7,7 @@ import logging.config
 import math
 import re
 import sys
+from functools import partial
 from html import escape
 from re import Match
 from typing import List
@@ -111,6 +112,13 @@ def subscript(string: str) -> str:
 
 def superscript(string: str) -> str:
     return string.translate(SUPERSCRIPT)
+
+
+def round_base(n, base=1.0):
+    return int(round(n / base) * base)
+
+
+round_to_hour = partial(round_base, base=60.0)
 
 
 def elapsed_str_from_seconds(total_seconds: int, if_empty: Optional[str] = None) -> str:
@@ -756,4 +764,7 @@ if __name__ == "__main__":
     # print(elapsed_str_old(past_dt))
     # print(datetime.datetime(2023, 1, 1).isocalendar()[1])
     # print(week_start_end(datetime.date(2023, 10, 8)))
+    # test = [10, 20, 30, 31, 60, 61, 122, 170]
+    # for n in test:
+    #     print(f"{n}: {round_to_hour(n)}")
     pass
