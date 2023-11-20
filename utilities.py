@@ -250,6 +250,78 @@ def is_superadmin(user: User) -> bool:
     return user.id in config.telegram.admins
 
 
+async def copy_message(
+    bot: Bot,
+    message: Message,
+    chat_id: int,
+    text_or_caption_override: Optional[str] = None,
+    reply_to_message_id: Optional[int] = None,
+    reply_markup: Optional[int] = None,
+    allow_sending_without_reply: Optional[bool] = None,
+    protect_content: Optional[bool] = None,
+    message_thread_id: Optional[int] = None,
+    has_spoiler: Optional[bool] = None,
+    raise_on_unsupported_type=True
+) -> Optional[Message]:
+    message_type = effective_message_type(message)
+    kwargs = dict(
+        chat_id=chat_id,
+        reply_to_message_id=reply_to_message_id,
+        reply_markup=reply_markup,
+        allow_sending_without_reply=allow_sending_without_reply,
+        protect_content=protect_content,
+        message_thread_id=message_thread_id,
+    )
+
+    if message_type == MessageType.ANIMATION:
+        kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        kwargs["has_spoiler"] = has_spoiler
+        result = await bot.send_animation(file_id=message.animation.file_id, **kwargs)
+    elif message_type == MessageType.AUDIO:
+        kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        result = await bot.send_audio(file_id=message.audio.file_id, **kwargs)
+    elif message_type == MessageType.DICE:
+        result = await bot.send_dice(emoji=message.text, **kwargs)
+    elif message_type == MessageType.DOCUMENT:
+        kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        result = await bot.send_document(file_id=message.document.file_id, **kwargs)
+    elif message_type == MessageType.LOCATION:
+        result = await bot.send_location(
+            latitude=message.location.latitude,
+            logintude=message.location.longitude,
+            horizontal_accuracy=message.location.horizontal_accuracy,
+            heading=message.location.heading,
+            proximity_alert_radius=message.location.proximity_alert_radius,
+            **kwargs
+        )
+    elif message_type == MessageType.PHOTO:
+        kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        kwargs["has_spoiler"] = has_spoiler
+        result = await bot.send_photo(file_id=message.photo[-1].file_id, **kwargs)
+    elif message_type == MessageType.STICKER:
+        kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        result = await bot.send_sticker(file_id=message.sticker.file_id, **kwargs)
+    elif message_type == MessageType.TEXT:
+        kwargs["text"] = text_or_caption_override if text_or_caption_override else message.text_html
+        result = await bot.send_message(file_id=message.sticker.file_id, **kwargs)
+    elif message_type == MessageType.VIDEO:
+        kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        kwargs["has_spoiler"] = has_spoiler
+        result = await bot.send_video(file_id=message.video.file_id, **kwargs)
+    elif message_type == MessageType.VIDEO_NOTE:
+        result = await bot.send_video_note(file_id=message.video_note.file_id, **kwargs)
+    elif message_type == MessageType.VOICE:
+        kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        result = await bot.send_voice(file_id=message.voice.file_id, **kwargs)
+    else:
+        if raise_on_unsupported_type:
+            raise NotImplementedError(f"copying message of type '{message_type}' is not supported")
+        else:
+            return
+
+    return result
+
+
 def is_normal_group(chat: Chat) -> bool:
     # return str(chat.id).startswith("-100")
     return chat.type == Chat.GROUP
