@@ -89,6 +89,35 @@ async def on_getlists_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @decorators.catch_exception()
 @decorators.pass_session()
+async def on_dellist_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/dellists {utilities.log(update)}")
+
+    if not context.args:
+        return
+
+    message_link = context.args[0]
+    chat_id, message_id = utilities.unpack_message_link(message_link)
+    if not chat_id:
+        await update.message.reply_text("Il link utilizzato non è valido")
+        return
+
+    ids_str = f"<code>{chat_id}</code>/<code>{message_id}</code>"
+
+    parties_message: Optional[PartiesMessage] = parties_messages.get_parties_message(session, chat_id, message_id)
+    if not parties_message:
+        logger.info(f"no PartiesMessage was found for message {message_id} in chat {chat_id}")
+        await update.effective_message.reply_text(f"Nessuna festa salvata per <a href=\"{message_link}\">questo messaggio</a> ({ids_str})")
+        return
+
+    parties_message.deleted = True
+    await update.effective_message.reply_text(
+        f"<a href=\"{message_link}\">Messaggio</a> ({ids_str}, tipo: <code>{parties_message.events_type}</code>) "
+        f"contrassegnato come eliminato, non verrà più considerato come valido per aggiornare le feste"
+    )
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
 async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/listsinfo {utilities.log(update)}")
 
@@ -125,4 +154,5 @@ HANDLERS = (
     (CommandHandler(["partiesjob", "pj"], on_partiesjob_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["getlists", "gl"], on_getlists_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["listsinfo"], on_listsinfo_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["dellist"], on_dellist_command, filters=ChatFilter.STAFF | Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
 )
