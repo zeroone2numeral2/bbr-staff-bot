@@ -698,6 +698,8 @@ def is_leap_year(year):
 
 
 def format_year(year: Optional[str] = None) -> int:
+    year = year.lower().replace("k", "0")
+
     if year:
         if len(year) == 2:
             year = f"20{year}"
