@@ -14,6 +14,7 @@ import utilities
 from constants import Language
 from emojis import Emoji
 from .base import Base
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -531,6 +532,9 @@ class UserMessage(Base):
         self.revoked_on = utilities.now()
 
     def save_message_json(self, message: Message):
+        if not config.settings.db_save_json:
+            return
+
         # we convert manually because Message.to_json() doesn't indent
         self.message_json = json.dumps(message.to_dict(), indent=2)
 
@@ -580,6 +584,9 @@ class AdminMessage(Base):
         self.revoked_by = revoked_by
 
     def save_message_json(self, message: Message):
+        if not config.settings.db_save_json:
+            return
+
         self.message_json = json.dumps(message.to_dict(), indent=2)
 
 
@@ -805,7 +812,8 @@ class PrivateChatMessage(Base):
         self.user_id = user_id
         self.from_self = from_self
         self.date = date
-        self.message_json = message_json
+        if config.settings.db_save_json:
+            self.message_json = message_json
 
     def set_revoked(self, reason=None):
         self.revoked = True
@@ -1319,22 +1327,26 @@ class ApplicationRequest(Base):
         self.log_message_message_id = message.message_id
         self.log_message_text_html = message.text_html
         self.log_message_posted_on = utilities.now()
-        self.log_message_json = json.dumps(message.to_dict(), indent=2)
+        if config.settings.db_save_json:
+            self.log_message_json = json.dumps(message.to_dict(), indent=2)
 
     def set_staff_message(self, message: Message):
         self.staff_message_chat_id = message.chat.id
         self.staff_message_message_id = message.message_id
         self.staff_message_text_html = message.text_html
         self.staff_message_posted_on = utilities.now()
-        self.staff_message_json = json.dumps(message.to_dict(), indent=2)
+        if config.settings.db_save_json:
+            self.staff_message_json = json.dumps(message.to_dict(), indent=2)
 
     def update_staff_chat_message(self, message: Message):
         self.staff_message_text_html = message.text_html
-        self.staff_message_json = json.dumps(message.to_dict(), indent=2)
+        if config.settings.db_save_json:
+            self.staff_message_json = json.dumps(message.to_dict(), indent=2)
 
     def update_log_chat_message(self, message: Message):
         self.log_message_text_html = message.text_html
-        self.log_message_json = json.dumps(message.to_dict(), indent=2)
+        if config.settings.db_save_json:
+            self.log_message_json = json.dumps(message.to_dict(), indent=2)
 
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
@@ -1453,7 +1465,8 @@ class DescriptionMessage(Base):
                     self.media_file_id = message.video_note.file_id
                     self.media_unique_id = message.video_note.file_unique_id
 
-        self.message_json = json.dumps(message.to_dict(), indent=2)
+        if config.settings.db_save_json:
+            self.message_json = json.dumps(message.to_dict(), indent=2)
 
     def is_other_members_message(self):
         return self.type == DescriptionMessageType.OTHER_MEMBERS
@@ -1535,7 +1548,8 @@ class StaffChatMessage(Base):
         self.is_topic_message = message.is_topic_message
         self.message_date = message.date
         self.message_edit_date = message.edit_date
-        self.message_json = json.dumps(message.to_dict(), indent=2)
+        if config.settings.db_save_json:
+            self.message_json = json.dumps(message.to_dict(), indent=2)
 
         text = message.text or message.caption
         if text:
