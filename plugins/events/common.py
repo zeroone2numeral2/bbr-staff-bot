@@ -385,8 +385,7 @@ def parse_message_text(message_text: str, event: Event):
             break
         except ValueError as e:
             logger.info(f"error while extracting date with test '{date_test.NAME}': {e}")
-            # do not continue with next regexes: they might extract and unwanted result, if a match already happened
-            break
+            continue
 
     if not parsing_success:
         logger.info("couldn't parse any date with any regex")
