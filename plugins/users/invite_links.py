@@ -50,13 +50,13 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
     )
 
     if last_unused_invite_link:
-        logger.info(
-            f"user laready received a link but didn't use it, id: {last_unused_invite_link.link_id} created on {last_unused_invite_link.created_on}")
+        logger.info(f"user laready received a link but didn't use it, id: {last_unused_invite_link.link_id} created on {last_unused_invite_link.created_on}")
         try:
             sent_message = await update.message.reply_html(
                 "^ usa il link d'invito che hai ricevuto in precedenza",
                 reply_to_message_id=last_unused_invite_link.sent_to_user_message_id,
-                allow_sending_without_reply=False
+                allow_sending_without_reply=False,
+                quote=True
             )
             private_chat_messages.save(session, sent_message)
             last_unused_invite_link.extend_message_ids_to_delete([update.message.message_id, sent_message.message_id])
