@@ -41,7 +41,9 @@ async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int) -> Tup
     return True, chat_invite_link
 
 
-async def generate_and_send_invite_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, link_destination: str):
+async def generate_and_send_invite_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, link_destination: str, ignore_cooldown=False):
+    logger.info(f"ignore_cooldown: {ignore_cooldown}")
+
     last_unused_invite_link: Optional[InviteLink] = invite_links.get_last_unused_invite_link(
         session,
         chat.chat_id,
@@ -65,7 +67,7 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
             logger.error(f"error while trying to reply to a previously sent invite link: {e}")
             logger.info("we will generate a new one")
 
-    if config.settings.events_chat_deeplink_cooldown:
+    if not ignore_cooldown and config.settings.events_chat_deeplink_cooldown:
         logger.info(f"cooldown is set to {config.settings.events_chat_deeplink_cooldown} seconds")
         last_invite_link: Optional[InviteLink] = invite_links.get_most_recent_invite_link(
             session,
@@ -160,7 +162,8 @@ async def on_events_chat_invite_deeplink(update: Update, context: ContextTypes.D
         context=context,
         session=session,
         chat=events_chat,
-        link_destination=Destination.EVENTS_CHAT_DEEPLINK
+        link_destination=Destination.EVENTS_CHAT_DEEPLINK,
+        ignore_cooldown="ecil" in update.message.text
     )
 
 
@@ -213,5 +216,6 @@ async def on_users_chat_invite_deeplink(update: Update, context: ContextTypes.DE
 
 HANDLERS = (
     (CommandHandler("start", on_events_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.EVENTS_CHAT_INVITE_LINK}$")), Group.NORMAL),
+    (CommandHandler("ecil", on_events_chat_invite_deeplink, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler("start", on_users_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.USERS_CHAT_INVITE_LINK}$")), Group.NORMAL),
 )
