@@ -137,7 +137,7 @@ class DateMatchDaysList:
                 break
 
         if not days_list:
-            raise ValueError(f"string \"{days_str}\" couldn't be split by any of {separators}")
+            raise ValueError(f"days list \"{days_str}\" couldn't be split by any of {separators}")
 
         month = int(match.group("month"))
         year: str = match.group("year")
