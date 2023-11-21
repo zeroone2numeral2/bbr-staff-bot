@@ -57,7 +57,7 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
         if last_unused_invite_link.sent_to_user_via_reply_markup:
             text = f"Usa questo link generato in precedenza {Emoji.POINT_DOWN}"
             reply_markup = InlineKeyboardMarkup([[
-                InlineKeyboardButton(f"{Emoji.UFO} {last_unused_invite_link.chat.title}", url=last_unused_invite_link.invite_link)
+                InlineKeyboardButton(f"{Emoji.UFO} unisciti a {last_unused_invite_link.chat.title}", url=last_unused_invite_link.invite_link)
             ]])
         else:
             text = f"{Emoji.UFO} Usa <a href=\"{last_unused_invite_link.invite_link}\">questo link</a> " \
