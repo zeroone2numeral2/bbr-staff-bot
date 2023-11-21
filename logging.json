@@ -46,6 +46,11 @@
             "propagate": false,
             "level": "DEBUG"
         },
+        "plugins.staff.chat.duplicates_job": {
+            "handlers": ["console", "file_jobs"],
+            "propagate": false,
+            "level": "DEBUG"
+        },
         "": {
             "handlers": [
                 "console",
