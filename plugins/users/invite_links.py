@@ -55,8 +55,7 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
             sent_message = await update.message.reply_html(
                 "^ usa il link d'invito che hai ricevuto in precedenza",
                 reply_to_message_id=last_unused_invite_link.sent_to_user_message_id,
-                allow_sending_without_reply=False,
-                quote=True
+                allow_sending_without_reply=False
             )
             private_chat_messages.save(session, sent_message)
             last_unused_invite_link.extend_message_ids_to_delete([update.message.message_id, sent_message.message_id])
