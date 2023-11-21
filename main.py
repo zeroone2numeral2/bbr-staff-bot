@@ -25,6 +25,7 @@ from database.models import ChatMember as DbChatMember, Chat, Event
 from database.queries import chats, chat_members, events
 from loader import load_modules
 from plugins.events.job import parties_message_job
+from plugins.staff.chat.duplicates_job import delete_old_messages_job
 
 logger = logging.getLogger(__name__)
 logger_startup = logging.getLogger("startup")
@@ -280,6 +281,11 @@ def main():
             parties_message_job,
             interval=config.settings.parties_message_job_frequency * 60,
             first=config.settings.parties_message_job_frequency * 60
+        )
+        app.job_queue.run_repeating(
+            delete_old_messages_job,
+            interval=60 * 60 * 24 * 7,  # 7 days
+            first=60 * 60 * 24  # 25 hours
         )
 
     # app.add_handler(CommandHandler("bad_command", test_bad_command))

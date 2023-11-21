@@ -1,8 +1,9 @@
+import datetime
 import json
 import logging
 from typing import Optional, List, Union
 
-from sqlalchemy import false, select
+from sqlalchemy import false, select, delete
 from sqlalchemy.orm import Session
 from telegram import Message, Update
 
@@ -59,3 +60,18 @@ def find_duplicates(session: Session, message: Message):
     statement = select(StaffChatMessage).filter(*filters).order_by(StaffChatMessage.message_id.desc())
 
     return session.scalars(statement).all()
+
+
+def select_old_messages(session: Session, older_than: datetime.datetime):
+    statement = select(StaffChatMessage).filter(
+        StaffChatMessage.message_date < older_than
+    ).order_by(StaffChatMessage.message_id)
+
+    return session.scalars(statement).all()
+
+
+def delete_old_messages(session: Session, older_than: datetime.datetime):
+    statement = delete(StaffChatMessage).where(StaffChatMessage.message_date < older_than)
+
+    result = session.execute(statement)
+    return result.rowcount
