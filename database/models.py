@@ -1620,6 +1620,8 @@ class InviteLink(Base):
     can_be_revoked = Column(Boolean, default=True)
     revoked_on = Column(DateTime, default=None)
 
+    chat: Chat = relationship("Chat")
+
     def __init__(
             self,
             chat_id: int,

@@ -42,7 +42,7 @@ async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int) -> Tup
 
 
 async def generate_and_send_invite_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, link_destination: str, ignore_cooldown=False):
-    logger.info(f"ignore_cooldown: {ignore_cooldown}")
+    logger.info(f"ignore cooldown: {ignore_cooldown}")
 
     last_unused_invite_link: Optional[InviteLink] = invite_links.get_last_unused_invite_link(
         session,
@@ -53,19 +53,20 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
 
     if last_unused_invite_link:
         logger.info(f"user laready received a link but didn't use it, id: {last_unused_invite_link.link_id} created on {last_unused_invite_link.created_on}")
-        try:
-            sent_message = await update.message.reply_html(
-                "^ usa il link d'invito che hai ricevuto in precedenza",
-                reply_to_message_id=last_unused_invite_link.sent_to_user_message_id,
-                allow_sending_without_reply=False
-            )
-            private_chat_messages.save(session, sent_message)
-            last_unused_invite_link.extend_message_ids_to_delete([update.message.message_id, sent_message.message_id])
-            return
-        except (BadRequest, TelegramError) as e:
-            last_unused_invite_link.sent_to_user_link_removed = True
-            logger.error(f"error while trying to reply to a previously sent invite link: {e}")
-            logger.info("we will generate a new one")
+        reply_markup = None
+        if last_unused_invite_link.sent_to_user_via_reply_markup:
+            text = f"Usa questo link generato in precedenza {Emoji.POINT_DOWN}"
+            reply_markup = InlineKeyboardMarkup([[
+                InlineKeyboardButton(f"{Emoji.UFO} {last_unused_invite_link.chat.title}", url=last_unused_invite_link.invite_link)
+            ]])
+        else:
+            text = f"{Emoji.UFO} Usa <a href=\"{last_unused_invite_link.invite_link}\">questo link</a> " \
+                    f"generato in precedenza per unirti a {last_unused_invite_link.chat.title_escaped()}"
+
+        sent_message = await update.message.reply_html(text, reply_markup=reply_markup)
+        private_chat_messages.save(session, sent_message)
+        last_unused_invite_link.extend_message_ids_to_delete([update.message.message_id, sent_message.message_id])
+        return
 
     if not ignore_cooldown and config.settings.events_chat_deeplink_cooldown:
         logger.info(f"cooldown is set to {config.settings.events_chat_deeplink_cooldown} seconds")
