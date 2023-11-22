@@ -984,6 +984,12 @@ class Event(Base):
     def title_link_html(self):
         return self.message_link_html(self.event_title)
 
+    def deletion_reason_desc(self):
+        if self.deletion_reason:
+            return DELETION_REASON_DESC.get(self.deletion_reason, self.deletion_reason)
+        else:
+            return ""
+
     def delete(self, reason: Optional[int] = None):
         self.deleted = True
         self.deleted_on = utilities.now()

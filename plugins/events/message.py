@@ -11,7 +11,7 @@ import decorators
 import utilities
 from config import config
 from constants import Group, TempDataKey
-from database.models import Chat, Event, PartiesMessage
+from database.models import Chat, Event, PartiesMessage, DELETION_REASON_DESC, DeletionReason
 from database.queries import events, parties_messages, chats
 from emojis import Emoji
 from ext.filters import ChatFilter, Filter
@@ -352,8 +352,8 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
     event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
     if not event:
         logger.info(f"no Event found for tap key {tap_key}")
-        await update.callback_query.answer("Ooops, qualcosa è andato storto. "
-                                           "Impossibile trovare il messaggio nel database", show_alert=True)
+        await update.callback_query.answer("Qualcosa è andato storto: "
+                                           "impossibile trovare il messaggio nel database", show_alert=True)
         await update.callback_query.edit_message_reply_markup(reply_markup=None)
 
         # pop the key, no reason to keep it
@@ -361,8 +361,8 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
 
         return
 
-    if event.not_a_party:
-        logger.info("event was already marked a not a party")
+    if event.deleted:
+        logger.info(f"event was already marked as deleted, reason: {event.deletion_reason_desc()}")
 
         context.user_data[TempDataKey.NOT_A_PARTY_MESSAGE_BUTTON_ONCE].pop(tap_key, None)
         succes = await utilities.delete_messages_safe(update.effective_message)
@@ -371,7 +371,7 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
                                                "ma non posso eliminare questo messaggio perchè troppo vecchio")
         return
 
-    event.not_a_party = True
+    event.deleted(DeletionReason.NOT_A_PARTY)
     session.commit()
 
     await update.callback_query.answer(
