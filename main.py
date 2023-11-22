@@ -1,6 +1,7 @@
 import logging
 from typing import Union, Iterable, Optional
 
+from sqlalchemy import select, true
 from sqlalchemy.orm import Session
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMemberAdministrator
@@ -15,7 +16,7 @@ import utilities
 from config import config
 from constants import Language, HandlersMode, BOT_SETTINGS_DEFAULTS
 from database.base import get_session, Base, engine
-from database.models import BotSetting, ChatMember
+from database.models import BotSetting, ChatMember, Event, DeletionReason
 from database.models import ChatMember as DbChatMember, Chat
 from database.queries import chats, chat_members
 from loader import load_modules
@@ -205,6 +206,16 @@ async def post_init(application: Application) -> None:
             setting.category = bot_setting_data["category"]
         if setting.show_if_true_key != bot_setting_data["show_if_true_key"]:
             setting.show_if_true_key = bot_setting_data["show_if_true_key"]
+
+    session.commit()
+
+    logger_startup.info("fixing Event.not_a_party...")
+    statement = select(Event).where(Event.not_a_party == true())
+    event: Event
+    for event in session.execute(statement).all():
+        logger.info(f"fixing 'not a party' event {event.chat_id}/{event.message_id}...")
+        event.delete(DeletionReason.NOT_A_PARTY)
+        event.not_a_party = None
 
     session.commit()
 

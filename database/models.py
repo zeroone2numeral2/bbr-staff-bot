@@ -964,7 +964,7 @@ class Event(Base):
 
     deleted = Column(Boolean, default=False)  # != Event.canceled
     deleted_on = Column(DateTime, default=None)
-    deletion_reason = Column(Integer, default=DeletionReason.OTHER)
+    deleted_reason = Column(Integer, default=DeletionReason.OTHER)
     not_a_party = Column(Boolean, default=False)
 
     localata = Column(Boolean, default=False)
@@ -985,8 +985,8 @@ class Event(Base):
         return self.message_link_html(self.event_title)
 
     def deletion_reason_desc(self):
-        if self.deletion_reason:
-            return DELETION_REASON_DESC.get(self.deletion_reason, self.deletion_reason)
+        if self.deleted_reason:
+            return DELETION_REASON_DESC.get(self.deleted_reason, self.deleted_reason)
         else:
             return ""
 
@@ -994,12 +994,12 @@ class Event(Base):
         self.deleted = True
         self.deleted_on = utilities.now()
         if reason:
-            self.deletion_reason = reason
+            self.deleted_reason = reason
 
     def restore(self):
         self.deleted = False
         self.deleted_on = None
-        self.deletion_reason = None
+        self.deleted_reason = None
 
     def is_valid(self) -> bool:
         """an event is valid if it has a title and either:
