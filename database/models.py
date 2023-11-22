@@ -961,9 +961,9 @@ class Event(Base):
     message_json = Column(String, default=None)
 
     deleted = Column(Boolean, default=False)  # != Event.canceled
-    # deleted_on = Column(DateTime, default=None)
+    deleted_on = Column(DateTime, default=None)
+    deletion_reason = Column(Integer, default=DeletionReason.OTHER)
     not_a_party = Column(Boolean, default=False)
-    # deletion_reason = Column(Integer, default=DeletionReason.OTHER)
 
     localata = Column(Boolean, default=False)
 
