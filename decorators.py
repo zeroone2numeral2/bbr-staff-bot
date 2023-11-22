@@ -265,7 +265,7 @@ def staff_member():
 
 def check_pending_request():
     # we need this decorator above any fucntion in the request conversation
-    # if for some reason the pending request is removed while the user is still conversating with the bot (eg. /reset),
+    # if for some reason the pending request is removed while the user is still conversating with the bot (e.g. /reset),
     # it might result in many different errors
     def real_decorator(func):
         @wraps(func)

@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+@decorators.pass_session(pass_chat=True)
+async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"reply to a message starting by ++ {utilities.log(update)}")
 
     if update.message.reply_to_message.from_user.id == context.bot.id:

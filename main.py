@@ -160,7 +160,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     # traceback_list = traceback.format_exception(None, context.error, context.error.__traceback__)
     # traceback_string = "".join(traceback_list)
 
-    # might need to add some logic to deal with messages longer than the 4096 character limit
+    # might need to add some logic to deal with messages longer than the 4096 characters limit
     update_str = update.to_dict() if isinstance(update, Update) else str(update)
     logger.error(f"update that caused the exception: {update_str}")
     logger.error(f"context.chat_data: {context.chat_data}")

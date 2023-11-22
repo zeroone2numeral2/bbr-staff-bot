@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_new_group_chat(update: Update, context: CallbackContext, session: Session, user: User, chat: Chat):
+@decorators.pass_session(pass_chat=True)
+async def on_new_group_chat(update: Update, context: CallbackContext, session: Session, chat: Chat):
     new_group = bool(update.message.group_chat_created)  # do not exit when we receive this update
     if update.message.new_chat_members:
         member: TelegramUser

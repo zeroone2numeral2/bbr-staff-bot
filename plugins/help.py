@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session()
+async def on_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/help {utilities.log(update)}")
 
     if not chat_members.is_member(session, update.effective_user.id, Chat.is_staff_chat, is_admin=True):

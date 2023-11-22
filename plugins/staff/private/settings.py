@@ -111,9 +111,9 @@ def get_setting_text(setting: BotSetting):
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
+@decorators.pass_session()
 @decorators.staff_member()
-async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/settings {utilities.log(update)}")
 
     reply_markup = get_bot_settings_categories_reply_markup()

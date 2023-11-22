@@ -25,6 +25,7 @@ class RequestId:
     EVENTS = 4
     LOG = 5
 
+
 REQUEST_ID_TO_DESTINATION = {
     RequestId.STAFF: ChatDestination.STAFF,
     RequestId.USERS: ChatDestination.USERS,
@@ -55,8 +56,8 @@ SET_CHAT_MARKUP = ReplyKeyboardMarkup([
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_chats_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session()
+async def on_chats_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/chats {utilities.log(update)}")
 
     chats_list: Iterable[Chat] = chats.get_core_chats(session)
@@ -69,8 +70,8 @@ async def on_chats_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_setchat_group_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+@decorators.pass_session(pass_chat=True)
+async def on_setchat_group_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
     logger.info(f"/setchat (group) {utilities.log(update)}")
 
     chat_types_str = f"<code>{'</code>, <code>'.join(Chat.DESTINATION_TYPES_GROUP)}</code>"
@@ -105,8 +106,8 @@ async def on_setchat_group_command(update: Update, context: ContextTypes.DEFAULT
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_setchat_private_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session()
+async def on_setchat_private_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/setchat (private) {utilities.log(update)}")
 
     chat_types_str = f"<code>{'</code>, <code>'.join(Chat.DESTINATION_TYPES_CHANNEL)}</code>"

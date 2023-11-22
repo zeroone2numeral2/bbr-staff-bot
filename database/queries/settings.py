@@ -3,6 +3,7 @@ from typing import Optional, Union, List
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from constants import BOT_SETTINGS_DEFAULTS
 from database.models import BotSetting
 
 
@@ -37,7 +38,7 @@ def get_or_create(session: Session, key: str, create_if_missing=True, value=None
     setting: BotSetting = session.query(BotSetting).filter(BotSetting.key == key).one_or_none()
 
     if not setting and create_if_missing:
-        setting = BotSetting(key=key, value=value)
+        setting = BotSetting(key=key, value=value, category=BOT_SETTINGS_DEFAULTS[key]["category"])
         session.add(setting)
 
     return setting

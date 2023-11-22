@@ -89,7 +89,7 @@ class BotSettingKey:
     PARTIES_LIST_WEEKDAY = "parties_list_weekday"
     PARTIES_LIST_HOUR = "parties_list_hour"
     PARTIES_LIST_PIN = "parties_list_pin"
-    PARTIES_LIST_DELETE_OLD= "parties_list_delete_old"
+    PARTIES_LIST_DELETE_OLD = "parties_list_delete_old"
     PARTIES_LIST_DISCUSSION_LINK = "parties_list_discussion_link"
     PARTIES_LIST_POST_TO_USERS_CHAT = "parties_list_post_to_users_chat"
 

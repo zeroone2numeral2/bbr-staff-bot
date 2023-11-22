@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 from typing import Optional, List
 
@@ -32,9 +31,9 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
+@decorators.pass_session()
 @decorators.staff_member()
-async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/events {utilities.log(update)}")
 
     args = context.args if context.args else []
@@ -55,9 +54,9 @@ async def on_drop_events_cache_command(update: Update, context: ContextTypes.DEF
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
+@decorators.pass_session()
 @decorators.check_ban()
-async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/invalidevents {utilities.log(update)}")
 
     events_list: List[Event] = events.get_events(
@@ -82,8 +81,8 @@ async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAUL
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session()
+async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/parseevents {utilities.log(update)}")
 
     events_list: List[Event] = events.get_all_events(session)
@@ -129,9 +128,9 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
+@decorators.pass_session()
 @decorators.staff_member()
-async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"event action {utilities.log(update)}")
 
     event: Event = await event_from_link(update, context, session)
@@ -175,9 +174,9 @@ async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
+@decorators.pass_session()
 @decorators.staff_member()
-async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/getpost {utilities.log(update)}")
 
     event: Event = await event_from_link(update, context, session)
@@ -254,9 +253,9 @@ async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
+@decorators.pass_session()
 @decorators.staff_member()
-async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/getfilters {utilities.log(update)}")
 
     text = "<b>Filtri disponibili:</b>"

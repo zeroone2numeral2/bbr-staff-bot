@@ -208,8 +208,8 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+@decorators.pass_session()
+async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"reject/accept user button {utilities.log(update)}")
 
     if not can_evaluate_applications(session, update.effective_user):
@@ -253,8 +253,8 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True, pass_chat=True)
-async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
+@decorators.pass_session()
+async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/accetta or /rifiuta command {utilities.log(update)}")
 
     if not can_evaluate_applications(session, update.effective_user):
@@ -275,7 +275,7 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
     delete_history_if_rejected = True
     if context.args and "nodel" in context.args:
         logger.info("skipping history delete")
-        delete_history_if_rejected=False
+        delete_history_if_rejected = False
 
     await accept_or_reject(
         session=session,

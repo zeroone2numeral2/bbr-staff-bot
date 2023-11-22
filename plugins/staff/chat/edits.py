@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_chat=True)
-async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+@decorators.pass_session()
+async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"message edit in a group {utilities.log(update)}")
     if not settings.get_or_create(session, BotSettingKey.BROADCAST_EDITS).value():
         logger.info("message edits are disabled")

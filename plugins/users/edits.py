@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_edited_message_user(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session()
+async def on_edited_message_user(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.error("user-sent messages cannot be edited because they are forwarded")
 
     logger.info(f"message edit in a private chat {utilities.log(update)}")

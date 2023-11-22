@@ -90,8 +90,8 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
-async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+@decorators.pass_session()
+async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/reset {utilities.log(update)}")
 
     if not can_evaluate_applications(session, update.effective_user):

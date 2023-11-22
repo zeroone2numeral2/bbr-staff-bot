@@ -43,8 +43,8 @@ async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_chat=True)
-async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+@decorators.pass_session()
+async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/unban {utilities.log(update)}")
 
     user: Optional[User] = await common.get_user_instance_from_message(update, context, session)

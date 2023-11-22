@@ -181,9 +181,9 @@ async def on_localized_text_delete_button(update: Update, context: ContextTypes.
 
 
 @decorators.catch_exception()
-@decorators.pass_session(pass_user=True)
+@decorators.pass_session()
 @decorators.staff_member()
-async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+async def on_ltexts_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/texts {utilities.log(update)}")
 
     reply_markup = get_localized_texts_list_reply_markup(session)
