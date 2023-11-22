@@ -178,6 +178,7 @@ def time_to_post(now_it: datetime.datetime, last_parties_message_isoweek: int, p
 @decorators.catch_exception_job()
 @decorators.pass_session_job()
 async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info("")
     logger.info("parties message job: start")
 
     pl_settings = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.PARTIES_LIST)
