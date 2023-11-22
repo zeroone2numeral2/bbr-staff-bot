@@ -210,9 +210,9 @@ async def post_init(application: Application) -> None:
     session.commit()
 
     logger_startup.info("fixing Event.not_a_party...")
-    statement = select(Event).where(Event.not_a_party == true())
+    events =session.query(Event).filter(Event.not_a_party == true()).all()
     event: Event
-    for event in session.execute(statement).all():
+    for event in events:
         logger.info(f"fixing 'not a party' event {event.chat_id}/{event.message_id}...")
         event.delete(DeletionReason.NOT_A_PARTY)
         event.not_a_party = None
