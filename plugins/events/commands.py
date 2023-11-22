@@ -54,9 +54,9 @@ async def on_drop_events_cache_command(update: Update, context: ContextTypes.DEF
 
 
 @decorators.catch_exception()
-@decorators.pass_session()
+@decorators.pass_session(pass_user=True)
 @decorators.check_ban()
-async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+async def on_invalid_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/invalidevents {utilities.log(update)}")
 
     events_list: List[Event] = events.get_events(

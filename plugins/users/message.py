@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 @decorators.check_ban()
-async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None, user: Optional[User] = None):
+async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"new user message {utilities.log(update)}")
 
     if utilities.is_superadmin(update.effective_user):
