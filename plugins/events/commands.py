@@ -184,6 +184,11 @@ async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await update.message.reply_text("nessuno evento per questo link")
         return
 
+    await update.message.reply_html(f"info di debug\n"
+                                    f"<code>date: {event.start_date_as_str()} -> {event.end_date_as_str()}\n"
+                                    f"eliminato: {event.deleted} (motivo: {event.deletion_reason_desc()})\n"
+                                    f"hashtags: {event.get_hashtags()}</code>")
+
     if not event.media_file_id:
         await update.effective_message.reply_html(f"{event.message_text}")
     else:
