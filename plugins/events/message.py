@@ -171,8 +171,8 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     logger.info(f"parsed event: {event}")
 
-    if event.not_a_party:
-        # if the event is marked as 'not a party', we stop here
+    if event.deleted:
+        # if the event is marked as deleted, we stop here
         # we parse the medtadata & text anyway because that flag might be turned to false: in that case,
         # the message data should be up-to-date
         # anyway we can avoid to drop the cache, set the UPDATE_PARTIES_MESSAGE flag, and send validity notifications
