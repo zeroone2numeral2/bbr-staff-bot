@@ -520,7 +520,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
 @decorators.pass_session(pass_user=True)
 @decorators.check_pending_request()
 async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"conversation timed out or user is done")
+    logger.info(f"conversation timed out or user is done {utilities.log(update)}")
 
     # on timeout, the last received update is passed to the handler
     # so if the last update is not the "done" button, then it means the conversation timeout-out
