@@ -965,7 +965,6 @@ class Event(Base):
     deleted = Column(Boolean, default=False)  # != Event.canceled
     deleted_on = Column(DateTime, default=None)
     deleted_reason = Column(Integer, default=DeletionReason.OTHER)
-    not_a_party = Column(Boolean, default=False)
 
     localata = Column(Boolean, default=False)
 

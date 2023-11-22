@@ -34,8 +34,6 @@ def get_events(
         filters.append(Chat.is_events_chat == true())
 
     filters.append(Event.deleted == false())
-    # even if not_a_party's defualt is False, we have to explicitly select also NULL values
-    # filters.append(((Event.not_a_party == false()) | Event.not_a_party.is_(None)))
 
     if skip_canceled:
         filters.append(Event.canceled == false())
@@ -71,8 +69,6 @@ def get_week_events(session: Session, now: datetime.datetime, filters: List, wee
     ])
 
     filters.append(Event.deleted == false())
-    # even if not_a_party's defualt is False, we have to explicitly select also NULL values
-    # filters.append(((Event.not_a_party == false()) | Event.not_a_party.is_(None)))
 
     statement = select(Event).filter(*filters).order_by(
         Event.start_year,

@@ -209,16 +209,6 @@ async def post_init(application: Application) -> None:
 
     session.commit()
 
-    logger_startup.info("fixing Event.not_a_party...")
-    events = session.query(Event).filter(Event.not_a_party == true()).all()
-    event: Event
-    for event in events:
-        logger.info(f"fixing 'not a party' event {event.chat_id}/{event.message_id}...")
-        event.delete(DeletionReason.NOT_A_PARTY)
-        event.not_a_party = None
-
-    session.commit()
-
     staff_chat = chats.get_chat(session, Chat.is_staff_chat)
     users_chat = chats.get_chat(session, Chat.is_users_chat)
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
