@@ -7,7 +7,7 @@ from telegram.ext import CommandHandler
 
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES, Group
+from constants import Group
 from database.models import Chat
 from database.queries import chats
 from ext.filters import ChatFilter

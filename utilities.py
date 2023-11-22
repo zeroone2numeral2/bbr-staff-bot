@@ -15,12 +15,10 @@ from typing import Union, Optional, Tuple
 
 import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
-from sqlalchemy.orm import Session
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
     ChatMember, Bot
 from telegram.constants import MessageType
 from telegram.error import BadRequest
-from telegram.ext import ContextTypes
 from telegram.helpers import effective_message_type
 
 from config import config

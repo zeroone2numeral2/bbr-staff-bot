@@ -11,10 +11,10 @@ from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User a
 from telegram.helpers import mention_html
 
 import utilities
+from config import config
 from constants import Language
 from emojis import Emoji
 from .base import Base
-from config import config
 
 logger = logging.getLogger(__name__)
 

@@ -5,10 +5,9 @@ Revises: db08018da65e
 Create Date: 2023-05-11 17:58:05.311104
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.exc import OperationalError
-
 
 # revision identifiers, used by Alembic.
 revision = 'a2401cf8abfd'

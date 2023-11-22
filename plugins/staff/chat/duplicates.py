@@ -1,16 +1,14 @@
 import logging
-from typing import List
 
 from sqlalchemy.orm import Session
-from telegram import Update, Chat, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.error import BadRequest
-from telegram.ext import ContextTypes, MessageHandler, CommandHandler, CallbackQueryHandler
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import ContextTypes, MessageHandler, CallbackQueryHandler
 from telegram.ext import filters
 
-from database.models import StaffChatMessage
 import decorators
 import utilities
 from constants import Group, TempDataKey
+from database.models import StaffChatMessage
 from database.queries import staff_chat_messages
 from emojis import Emoji
 from ext.filters import ChatFilter, Filter

@@ -5,8 +5,8 @@ Revises: 20dc88994b13
 Create Date: 2023-05-10 14:21:50.360717
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.exc import OperationalError
 
 # revision identifiers, used by Alembic.

@@ -1,7 +1,7 @@
 from typing import Optional, Union, List
 
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from database.models import BotSetting
 

@@ -10,7 +10,6 @@ from config import config
 from database.base import session_scope
 from database.models import Chat
 from database.queries import chats
-from main import app
 
 logger = logging.getLogger(__name__)
 

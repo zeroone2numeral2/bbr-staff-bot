@@ -1,7 +1,7 @@
 from typing import Optional
 
+from sqlalchemy import null, false
 from sqlalchemy.orm import Session
-from sqlalchemy import null, select, false
 
 from database.models import ApplicationRequest
 

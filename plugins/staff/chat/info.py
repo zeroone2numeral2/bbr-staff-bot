@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes, CommandHandler
 
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES, Group
+from constants import Group
 from database.models import ChatMember as DbChatMember, Chat, User
 from database.queries import chats, chat_members, common
 from ext.filters import ChatFilter, Filter

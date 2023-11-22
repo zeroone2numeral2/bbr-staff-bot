@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Iterable
+from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update, Bot, User as TelegramUser

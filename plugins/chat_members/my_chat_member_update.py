@@ -2,18 +2,19 @@ import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
+from telegram import ChatMember, ChatMemberMember, ChatMemberRestricted, ChatMemberLeft, ChatMemberBanned, \
+    ChatMemberAdministrator
 from telegram import Update
-from telegram import ChatMember, ChatMemberMember, ChatMemberRestricted, ChatMemberLeft, ChatMemberBanned, ChatMemberAdministrator
 from telegram.ext import ChatMemberHandler
 
+import decorators
+import utilities
 from constants import Group
 from database.models import Chat
 from plugins.chat_members.common import (
     save_or_update_users_from_chat_member_update,
     save_chat_member
 )
-import decorators
-import utilities
 
 logger = logging.getLogger(__name__)
 

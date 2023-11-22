@@ -1,18 +1,13 @@
-import json
 import logging
-import traceback
 from typing import Union, Iterable, Optional
 
-import pytz
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 from telegram import BotCommand, BotCommandScopeAllPrivateChats
 from telegram import ChatMemberAdministrator
 from telegram import Update, BotCommandScopeChat, ChatMemberOwner, BotCommandScopeDefault
 from telegram.constants import ParseMode
 from telegram.error import BadRequest, NetworkError
-from telegram.ext import ApplicationBuilder, Application, PicklePersistence, PersistenceInput, ContextTypes, \
-    CommandHandler
+from telegram.ext import ApplicationBuilder, Application, PicklePersistence, PersistenceInput, ContextTypes
 from telegram.ext import Defaults
 from telegram.ext import ExtBot
 
@@ -21,8 +16,8 @@ from config import config
 from constants import Language, HandlersMode, BOT_SETTINGS_DEFAULTS
 from database.base import get_session, Base, engine
 from database.models import BotSetting, ChatMember
-from database.models import ChatMember as DbChatMember, Chat, Event
-from database.queries import chats, chat_members, events
+from database.models import ChatMember as DbChatMember, Chat
+from database.queries import chats, chat_members
 from loader import load_modules
 from plugins.events.job import parties_message_job
 from plugins.staff.chat.duplicates_job import delete_old_messages_job

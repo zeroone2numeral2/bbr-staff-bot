@@ -6,6 +6,8 @@ from telegram import Update, ChatMemberUpdated, Bot, Chat as TelegramChat
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ChatMemberHandler, CallbackContext
 
+import decorators
+import utilities
 from constants import Group
 from database.models import User, Chat, ChatMember as DbChatMember, Destination
 from database.queries import users, chats, invite_links
@@ -14,8 +16,6 @@ from plugins.chat_members.common import (
     save_or_update_users_from_chat_member_update,
     save_chat_member
 )
-import decorators
-import utilities
 
 logger = logging.getLogger(__name__)
 

@@ -5,11 +5,11 @@ from telegram import Update
 from telegram.ext import ContextTypes, PrefixHandler
 from telegram.ext import filters
 
-from database.models import User, UserMessage
-from database.queries import settings, user_messages
 import decorators
 import utilities
 from constants import BotSettingKey, COMMAND_PREFIXES, Group
+from database.models import User, UserMessage
+from database.queries import settings, user_messages
 
 logger = logging.getLogger(__name__)
 

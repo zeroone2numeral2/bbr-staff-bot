@@ -6,12 +6,12 @@ from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import filters, ContextTypes, CommandHandler
 
-from ext.filters import ChatFilter
-from database.models import Chat, UserMessage, User
-from database.queries import user_messages, common
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, Group
+from database.models import Chat, User
+from database.queries import common
+from ext.filters import ChatFilter
 
 logger = logging.getLogger(__name__)
 

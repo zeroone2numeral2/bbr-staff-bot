@@ -6,7 +6,7 @@ from telegram.ext import filters, ContextTypes, CommandHandler
 
 import decorators
 import utilities
-from constants import COMMAND_PREFIXES, Group, DeeplinkParam
+from constants import Group
 from database.models import AdminMessage
 from database.queries import admin_messages
 from emojis import Emoji

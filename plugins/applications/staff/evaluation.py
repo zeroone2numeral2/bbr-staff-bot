@@ -13,9 +13,9 @@ from telegram.ext import filters
 import decorators
 import utilities
 from config import config
-from constants import Group, BotSettingKey, Language, LocalizedTextKey, COMMAND_PREFIXES, TempDataKey
+from constants import Group, BotSettingKey, Language, LocalizedTextKey, TempDataKey
 from database.models import User, PrivateChatMessage, Chat, BotSetting
-from database.queries import texts, settings, users, chats, private_chat_messages, chat_members, common
+from database.queries import texts, settings, users, chats, private_chat_messages, common
 from emojis import Emoji
 from ext.filters import ChatFilter
 from plugins.applications.staff.common import can_evaluate_applications

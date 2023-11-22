@@ -1,5 +1,5 @@
-from emojis import Emoji, Flag
 from config import config
+from emojis import Emoji, Flag
 
 MONTHS_IT = [
     "Gennaio",

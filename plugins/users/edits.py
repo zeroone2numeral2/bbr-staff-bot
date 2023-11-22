@@ -6,9 +6,9 @@ from telegram.ext import MessageHandler, filters, ContextTypes
 
 import decorators
 import utilities
+from config import config
 from constants import Group
 from database.models import User, UserMessage
-from config import config
 
 logger = logging.getLogger(__name__)
 

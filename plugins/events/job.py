@@ -15,9 +15,9 @@ import utilities
 from config import config
 from constants import BotSettingKey, RegionName, TempDataKey, BotSettingCategory, MONTHS_IT, DeeplinkParam
 from database.models import Chat, Event, PartiesMessage, ChatMember
-from database.queries import chats, events, settings, parties_messages, chat_members
+from database.queries import chats, settings, parties_messages, chat_members
 from emojis import Flag, Emoji
-from plugins.events.common import format_event_string, EventFilter, get_all_events_strings_from_db_group_by, GroupBy, \
+from plugins.events.common import EventFilter, get_all_events_strings_from_db_group_by, GroupBy, \
     EventFormatting
 
 logger = logging.getLogger(__name__)

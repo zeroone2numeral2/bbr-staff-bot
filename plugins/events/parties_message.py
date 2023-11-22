@@ -7,13 +7,13 @@ from telegram.ext import ContextTypes, CommandHandler
 
 import decorators
 import utilities
+from config import config
 from constants import Group, TempDataKey, BotSettingKey, WEEKDAYS_IT, BotSettingCategory
 from database.models import Chat, PartiesMessage
 from database.queries import chats, parties_messages, settings
 from ext.filters import ChatFilter, Filter
 from plugins.events.common import EventFilter, EventFormatting
 from plugins.events.job import parties_message_job, LIST_TYPE_DESCRIPTION, get_events_text, PARTIES_MESSAGE_TYPES_ARGS
-from config import config
 
 logger = logging.getLogger(__name__)
 

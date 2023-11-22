@@ -1,6 +1,5 @@
 import logging
 
-from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 

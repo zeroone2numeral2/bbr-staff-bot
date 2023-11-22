@@ -2,8 +2,8 @@ from typing import Optional, Tuple
 
 from sqlalchemy import true, select, update, or_
 from sqlalchemy.orm import Session
-from telegram import ChatMember
 from telegram import Chat as TelegramChat
+from telegram import ChatMember
 
 from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
 from database.queries import users

@@ -1,14 +1,13 @@
 import datetime
-import json
 import logging
-from typing import Optional, List, Union
+from typing import Optional
 
-from sqlalchemy import false, select, delete
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
-from telegram import Message, Update
+from telegram import Message
 
 import utilities
-from database.models import StaffChatMessage, HashingVersion
+from database.models import StaffChatMessage
 
 logger = logging.getLogger(__name__)
 

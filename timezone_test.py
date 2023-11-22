@@ -1,6 +1,7 @@
 import datetime
-import pytz
 import sys
+
+import pytz
 
 print(f"python version: {sys.version}")
 print(f"pytz version: {pytz.__version__}\n")

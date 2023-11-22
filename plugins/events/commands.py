@@ -1,36 +1,32 @@
-import datetime
+import json
 import json
 import logging
 from typing import Optional, List
 
-import telegram.constants
-from sqlalchemy import true, false, null
+from sqlalchemy import false
 from sqlalchemy.orm import Session
-from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat, MessageId
-from telegram.error import TelegramError, BadRequest
-from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram import Update, Message, Chat as TelegramChat, MessageId
 from telegram.constants import MessageType
+from telegram.error import TelegramError, BadRequest
+from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext
 
-from emojis import Emoji, Flag
+import decorators
+import utilities
+from constants import Group, TempDataKey
+from database.models import Event, User
+from database.queries import events, private_chat_messages
 from ext.filters import Filter, ChatFilter
 from plugins.events.common import (
     parse_message_entities,
     parse_message_text,
     drop_events_cache,
     add_event_message_metadata,
-    get_all_events_strings_from_db,
     get_all_events_strings_from_db_group_by,
     send_events_messages,
     format_event_string,
     FILTER_DESCRIPTION,
     ORDER_BY_DESCRIPTION, GROUP_BY_DESCRIPTION, EventFormatting
 )
-from database.models import Chat, Event, User, BotSetting, EventType
-from database.queries import settings, events, chat_members, private_chat_messages, chats
-import decorators
-import utilities
-from constants import BotSettingKey, Group, TempDataKey, Timeout
-from config import config
 
 logger = logging.getLogger(__name__)
 

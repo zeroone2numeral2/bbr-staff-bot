@@ -2,18 +2,18 @@ import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update
 from telegram.ext import ContextTypes
-from telegram.ext import filters
 from telegram.ext import MessageHandler, CallbackQueryHandler, PrefixHandler, ConversationHandler
+from telegram.ext import filters
 
-from database.models import User, LocalizedText
-from database.queries import texts, settings
 import decorators
 import utilities
 from constants import COMMAND_PREFIXES, State, TempDataKey, CONVERSATION_TIMEOUT, Action, \
     LOCALIZED_TEXTS_DESCRIPTORS, LANGUAGES, ACTION_DESCRIPTORS, Group
+from database.models import User, LocalizedText
+from database.queries import texts, settings
 
 logger = logging.getLogger(__name__)
 

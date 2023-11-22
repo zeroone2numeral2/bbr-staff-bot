@@ -10,12 +10,12 @@ from telegram.error import TimedOut, BadRequest
 # noinspection PyPackageRequirements
 from telegram.ext import CallbackContext, ConversationHandler
 
+import utilities
+from config import config
 from constants import TempDataKey
 from database.base import get_session
 from database.models import User, Chat
 from database.queries import chats, chat_members, users, private_chat_messages
-import utilities
-from config import config
 from emojis import Emoji
 
 logger = logging.getLogger(__name__)

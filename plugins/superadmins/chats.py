@@ -2,16 +2,16 @@ import logging
 from typing import Iterable
 
 from sqlalchemy.orm import Session
-from telegram import Update, InlineKeyboardMarkup, KeyboardButtonRequestChat, InlineKeyboardButton, ReplyKeyboardMarkup, \
+from telegram import Update, KeyboardButtonRequestChat, ReplyKeyboardMarkup, \
     KeyboardButton, ReplyKeyboardRemove
+from telegram.ext import ContextTypes, CommandHandler, MessageHandler
 from telegram.ext import filters
-from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler
 
-from database.models import User, Chat, ChatDestination
-from database.queries import chats, chat_members
 import decorators
 import utilities
 from constants import Group
+from database.models import User, Chat, ChatDestination
+from database.queries import chats, chat_members
 from emojis import Emoji
 from ext.filters import Filter, ChatFilter
 

@@ -1,18 +1,15 @@
 import json
 import logging
-from typing import List
 
 from sqlalchemy.orm import Session
 from telegram import Update
-from telegram.error import BadRequest
-from telegram.ext import ContextTypes, MessageHandler, CommandHandler
+from telegram.ext import ContextTypes, MessageHandler
 from telegram.ext import filters
 
-from database.models import User, PrivateChatMessage
 import decorators
 import utilities
 from constants import Group
-from database.queries import private_chat_messages
+from database.models import User, PrivateChatMessage
 
 logger = logging.getLogger(__name__)
 

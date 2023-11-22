@@ -1,12 +1,11 @@
-from typing import cast
 from contextlib import contextmanager
+from typing import cast
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm import scoped_session
-from sqlalchemy.exc import SQLAlchemyError
-
 
 engine = create_engine("sqlite:///bot.db")
 SessionClass = sessionmaker(bind=engine)

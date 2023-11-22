@@ -5,8 +5,8 @@ from sqlalchemy import select, false, null, true
 from sqlalchemy.orm import Session
 
 import utilities
-from database.models import Event, Chat
 from config import config
+from database.models import Event, Chat
 
 
 def get_or_create(session: Session, chat_id: int, message_id: int, create_if_missing=True, commit=False) -> Optional[Event]:

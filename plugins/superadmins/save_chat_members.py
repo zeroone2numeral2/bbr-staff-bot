@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 
-from database.models import Chat
 import decorators
 import utilities
 from constants import Group
+from database.models import Chat
 from ext.filters import Filter
 
 logger = logging.getLogger(__name__)

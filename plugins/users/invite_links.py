@@ -1,25 +1,20 @@
-import datetime
-import json
 import logging
-from typing import Optional, List, Tuple, Union
+from typing import Optional, Tuple, Union
 
-import telegram.constants
-from sqlalchemy import true, false, null
 from sqlalchemy.orm import Session
-from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat, ChatInviteLink, \
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatInviteLink, \
     Bot
 from telegram.error import TelegramError, BadRequest
-from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
-from telegram.constants import MessageLimit
+from telegram.ext import ContextTypes, filters, CommandHandler
 
-from emojis import Emoji, Flag
-from ext.filters import Filter
-from database.models import Chat, Event, User, BotSetting, EventType, ChatMember, InviteLink, Destination
-from database.queries import settings, events, chat_members, private_chat_messages, chats, invite_links
 import decorators
 import utilities
-from constants import Group, DeeplinkParam
 from config import config
+from constants import Group, DeeplinkParam
+from database.models import Chat, User, ChatMember, InviteLink, Destination
+from database.queries import chat_members, private_chat_messages, chats, invite_links
+from emojis import Emoji
+from ext.filters import Filter
 
 logger = logging.getLogger(__name__)
 

@@ -3,25 +3,23 @@ import logging
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
-from telegram import Update, Message, InlineKeyboardMarkup, InlineKeyboardButton, Chat as TelegramChat, helpers
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, helpers
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
 
+import decorators
+import utilities
+from constants import BotSettingKey, Group, MONTHS_IT, TempDataKey, Timeout, DeeplinkParam, BotSettingCategory
+from database.models import Chat, User
+from database.queries import settings, chat_members, private_chat_messages
 from emojis import Emoji, Flag
 from ext.filters import Filter
 from plugins.events.common import (
     EventFilter,
     GroupBy,
     FILTER_DESCRIPTION,
-    get_all_events_strings_from_db,
     get_all_events_strings_from_db_group_by,
     send_events_messages
 )
-from database.models import Chat, User
-from database.queries import settings, chat_members, private_chat_messages
-import decorators
-import utilities
-from constants import BotSettingKey, Group, MONTHS_IT, TempDataKey, Timeout, DeeplinkParam, BotSettingCategory
-from config import config
 
 logger = logging.getLogger(__name__)
 
