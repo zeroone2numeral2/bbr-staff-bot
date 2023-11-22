@@ -165,7 +165,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     # we have to remove the #pendente hashtag
     new_staff_message_text = user.last_request.staff_message_text_html.replace(" • #pendente", "")
     if not accepted:
-        # if rejected, remove the #nojoin hashtag too
+        # if rejected, remove the #nojoin hashtag from the staff message
         new_staff_message_text = new_staff_message_text.replace(" • #nojoin", "")
         reply_markup = get_reset_keyboard(user.user_id, user.last_request_id)
 
