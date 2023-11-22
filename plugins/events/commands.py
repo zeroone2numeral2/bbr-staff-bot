@@ -12,7 +12,7 @@ from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext
 import decorators
 import utilities
 from constants import Group, TempDataKey
-from database.models import Event, User
+from database.models import Event, User, DeletionReason
 from database.queries import events, private_chat_messages
 from ext.filters import Filter, ChatFilter
 from plugins.events.common import (
@@ -141,16 +141,16 @@ async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_
     # session.delete(event)
     command = utilities.get_command(update.message.text)
     if command in ("delevent", "de", "deleventmsg", "dem"):
-        event.deleted = True
+        event.delete(DeletionReason.DELEVENT_GENERIC)
         action = "deleted"
     elif command in ("resevent", "re"):
-        event.deleted = False
+        event.restore()
         action = "restored"
     elif command in ("notparty",):
-        event.not_a_party = True
+        event.delete(DeletionReason.NOT_A_PARTY)
         action = "marked as not a party"
     elif command in ("isparty",):
-        event.not_a_party = False
+        event.restore()
         action = "marked as party"
     else:
         raise ValueError(f"invalid command: {command}")

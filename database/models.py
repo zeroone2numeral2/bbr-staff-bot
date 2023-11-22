@@ -893,13 +893,15 @@ class DeletionReason:
     DUPLICATE = 10
     MESSAGE_DELETED = 20
     NOT_A_PARTY = 30
-    OTHER = 100
+    DELEVENT_GENERIC = 40
+    OTHER = 300
 
 
 DELETION_REASON_DESC = {
     DeletionReason.DUPLICATE: "duplicato",
     DeletionReason.MESSAGE_DELETED: "il messaggio è stato eliminato",
     DeletionReason.NOT_A_PARTY: "il messaggio non riguadrava una festa",
+    DeletionReason.DELEVENT_GENERIC: "comando /delevent",
     DeletionReason.OTHER: "altro"
 }
 
