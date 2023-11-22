@@ -158,7 +158,7 @@ class DateMatchMonthsJump:
     NAME = "DateMatchMonthsJump"
     PATTERN = (
         # "." inside a "[]" matches the character "." literally
-        r"\b(?P<start_day>[0-3]?[0-9])[/.](?P<start_month>[0-1]?[0-9])(?:[./](?P<start_year>(?:2[0K])?2[3-9]))? *(?:[-/]|->) *(?P<end_day>(?:[0-3]?[0-9]|\?\?|xx))[/.](?P<end_month>[0-1]?[0-9])(?:[/.](?P<end_year>(?:2[0K])?2[3-9]))",  # https://regex101.com/r/eacPKF
+        r"\b(?P<start_day>[0-3]?[0-9])[/.](?P<start_month>[0-1]?[0-9])(?:[./](?P<start_year>(?:2[0K])?2[3-9]))? *(?:[-/]|[-–]>) *(?P<end_day>(?:[0-3]?[0-9]|\?\?|xx))[/.](?P<end_month>[0-1]?[0-9])(?:[/.](?P<end_year>(?:2[0K])?2[3-9]))",  # https://regex101.com/r/eacPKF
     )
 
     @staticmethod
