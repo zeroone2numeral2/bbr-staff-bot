@@ -369,9 +369,11 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
         if not succes:
             await update.callback_query.answer("Ok, ho salvato il messaggio come \"non festa\", "
                                                "ma non posso eliminare questo messaggio perchè troppo vecchio")
+            # remove keyboard if deletion didn't succeed
+            await update.effective_message.edit_reply_markup(reply_markup=None)
         return
 
-    event.deleted(DeletionReason.NOT_A_PARTY)
+    event.delete(DeletionReason.NOT_A_PARTY)
     session.commit()
 
     await update.callback_query.answer(
