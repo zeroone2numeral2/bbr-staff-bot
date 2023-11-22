@@ -3,6 +3,7 @@ from typing import Optional, List, Any, Tuple
 
 from sqlalchemy import select, false, null, true
 from sqlalchemy.orm import Session
+from telegram import Message
 
 import utilities
 from config import config
@@ -19,6 +20,13 @@ def get_or_create(session: Session, chat_id: int, message_id: int, create_if_mis
             session.commit()
 
     return event
+
+
+def get_event_from_discussion_group_message(session: Session, message: Message) -> Optional[Event]:
+    return session.query(Event).filter(
+        Event.discussion_group_chat_id == message.chat.id,
+        Event.discussion_group_message_id == message.message_thread_id
+    ).one_or_none()
 
 
 def get_events(

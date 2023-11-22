@@ -44,6 +44,12 @@ class FilterAlbumMessage(MessageFilter):
         return bool(message.media_group_id)
 
 
+class FilterBelongsToThread(MessageFilter):
+    def filter(self, message):
+        # message belongs to a thread
+        return bool(message.message_thread_id)
+
+
 class FilterRadarPassword(MessageFilter):
     def filter(self, message):
         if not config.settings.radar_password or not message.text:
@@ -62,6 +68,7 @@ class Filter:
     REPLY_TO_BOT = FilterReplyToBot()
     REPLY_TOPICS_AWARE = FilterReplyTopicsAware()
     ALBUM_MESSAGE = FilterAlbumMessage()
+    BELONGS_TO_THREAD = FilterBelongsToThread()
     RADAR_PASSWORD = FilterRadarPassword()
     FLY_MEDIA_DOWNLOAD = filters.PHOTO | filters.VIDEO | filters.ANIMATION  # media we can consider as fly, for backups
 
