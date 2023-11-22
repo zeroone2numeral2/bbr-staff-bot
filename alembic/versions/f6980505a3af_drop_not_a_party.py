@@ -17,7 +17,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.drop_column('events', 'not_a_party')
+    with op.batch_alter_table('events') as batch_op:
+        batch_op.drop_column('not_a_party')
 
 
 def downgrade() -> None:
