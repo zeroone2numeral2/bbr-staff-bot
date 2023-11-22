@@ -988,6 +988,11 @@ class Event(Base):
         if reason:
             self.deletion_reason = reason
 
+    def restore(self):
+        self.deleted = False
+        self.deleted_on = None
+        self.deletion_reason = None
+
     def is_valid(self) -> bool:
         """an event is valid if it has a title and either:
         - has a start month/year
