@@ -18,6 +18,7 @@ depends_on = None
 
 def upgrade() -> None:
     # https://stackoverflow.com/a/31140916
+    # https://github.com/miguelgrinberg/flasky/issues/414
     with op.batch_alter_table('events') as batch_op:
         batch_op.drop_column('not_a_party')
 
