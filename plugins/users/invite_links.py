@@ -19,7 +19,7 @@ from ext.filters import Filter
 logger = logging.getLogger(__name__)
 
 
-async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int) -> Tuple[bool, Union[ChatInviteLink, str]]:
+async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int, creates_join_request=False) -> Tuple[bool, Union[ChatInviteLink, str]]:
     logger.info("generating invite link...")
 
     try:
@@ -27,7 +27,7 @@ async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int) -> Tup
             events_chat.chat_id,
             member_limit=1,
             name=f"user {user_id}",
-            creates_join_request=False
+            creates_join_request=creates_join_request
         )
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while generating invite link for chat {events_chat.chat_id}: {e}")
@@ -36,7 +36,7 @@ async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int) -> Tup
     return True, chat_invite_link
 
 
-async def generate_and_send_invite_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, link_destination: str, ignore_cooldown=False):
+async def generate_and_send_invite_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, link_destination: str, creates_join_request=False, ignore_cooldown=False):
     logger.info(f"ignore cooldown: {ignore_cooldown}")
 
     last_unused_invite_link: Optional[InviteLink] = invite_links.get_last_unused_invite_link(
@@ -85,7 +85,7 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
                 private_chat_messages.save(session, sent_message)
                 return
 
-    success, chat_invite_link = await generate_invite_link(context.bot, chat, update.effective_user.id)
+    success, chat_invite_link = await generate_invite_link(context.bot, chat, update.effective_user.id, creates_join_request=creates_join_request)
     if not success:
         logger.warning(f"couldn't generate invite link for events chat {chat.title} ({chat.chat_id}): {chat_invite_link}")
         sent_message = await update.message.reply_html(
@@ -230,7 +230,7 @@ async def on_qrcode_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     users_chat_member: Optional[ChatMember] = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
     if users_chat_member and users_chat_member.is_member():
-        logger.info("allowed: user is member of the members chat")
+        logger.info("user is already a member of the users chat")
         await update.message.reply_html(f"Sei già membro del gruppo :D")
         return
 
@@ -239,7 +239,14 @@ async def on_qrcode_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE,
         context=context,
         session=session,
         chat=users_chat,
-        link_destination=Destination.QRCODE_DEEPLINK
+        link_destination=Destination.QRCODE_DEEPLINK,
+        creates_join_request=True  # create a join request for these invite links
+    )
+
+    log_chat = chats.get_chat(session, Chat.is_log_chat)
+    await context.bot.send_message(
+        log_chat.chat_id,
+        f"<b>#QRCODE_DEEPLINK</b> utilizzato da {utilities.escape(update.effective_user.mention_html())} • #id{user.user_id}"
     )
 
 
