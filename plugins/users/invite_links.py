@@ -210,8 +210,42 @@ async def on_users_chat_invite_deeplink(update: Update, context: ContextTypes.DE
     )
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_user=True)
+@decorators.check_ban()
+async def on_qrcode_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
+    logger.info(f"qrcode deeplink {utilities.log(update)}")
+
+    user.set_started()
+
+    users_chat: Optional[Chat] = chats.get_chat(session, Chat.is_users_chat)
+    if not users_chat:
+        logger.warning("no users chat is set")
+        return
+
+    if not users_chat.can_invite_users:
+        logger.warning(f"cannot generate invite links for users chat {users_chat.title} ({users_chat.chat_id}): \"invite users\" permission missing")
+        # stay silent
+        return
+
+    users_chat_member: Optional[ChatMember] = chat_members.get_chat_member(session, update.effective_user.id, Chat.is_users_chat)
+    if users_chat_member and users_chat_member.is_member():
+        logger.info("allowed: user is member of the members chat")
+        await update.message.reply_html(f"Sei già membro del gruppo :D")
+        return
+
+    await generate_and_send_invite_link(
+        update=update,
+        context=context,
+        session=session,
+        chat=users_chat,
+        link_destination=Destination.QRCODE_DEEPLINK
+    )
+
+
 HANDLERS = (
     (CommandHandler("start", on_events_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.EVENTS_CHAT_INVITE_LINK}$")), Group.NORMAL),
     (CommandHandler("ecil", on_events_chat_invite_deeplink, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler("start", on_users_chat_invite_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.USERS_CHAT_INVITE_LINK}$")), Group.NORMAL),
+    (CommandHandler("start", on_qrcode_deeplink, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.QRCODE_INVITE_LINK}$")), Group.NORMAL),
 )

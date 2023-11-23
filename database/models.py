@@ -1594,6 +1594,7 @@ class StaffChatMessage(Base):
 class Destination:
     EVENTS_CHAT_DEEPLINK = "events-chat-deeplink"
     USERS_CHAT_DEEPLINK = "users-chat-deeplink"
+    QRCODE_DEEPLINK = "qrcode-deeplink"
 
 
 class InviteLink(Base):
