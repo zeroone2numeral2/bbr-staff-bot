@@ -4,6 +4,7 @@ from typing import Optional, Tuple, Union
 from sqlalchemy.orm import Session
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatInviteLink, \
     Bot
+from telegram.constants import ParseMode
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler
 
@@ -25,7 +26,8 @@ async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int, create
     try:
         chat_invite_link: ChatInviteLink = await bot.create_chat_invite_link(
             events_chat.chat_id,
-            member_limit=1,
+            # member_limit can't be specified for links requiring administrator approval
+            member_limit=1 if not creates_join_request else None,
             name=f"user {user_id}",
             creates_join_request=creates_join_request
         )
@@ -36,8 +38,9 @@ async def generate_invite_link(bot: Bot, events_chat: Chat, user_id: int, create
     return True, chat_invite_link
 
 
-async def generate_and_send_invite_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, link_destination: str, creates_join_request=False, ignore_cooldown=False):
-    logger.info(f"ignore cooldown: {ignore_cooldown}")
+async def check_for_unused_links(update: Update, session: Session, chat: Chat, link_destination: str):
+    """returns whether to generate a new link or not"""
+    logger.info("checking unused invite links...")
 
     last_unused_invite_link: Optional[InviteLink] = invite_links.get_last_unused_invite_link(
         session,
@@ -52,18 +55,26 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
         if last_unused_invite_link.sent_to_user_via_reply_markup:
             text = f"Usa questo link generato in precedenza {Emoji.POINT_DOWN}"
             reply_markup = InlineKeyboardMarkup([[
-                InlineKeyboardButton(f"{Emoji.UFO} unisciti a {last_unused_invite_link.chat.title}", url=last_unused_invite_link.invite_link)
+                InlineKeyboardButton(f"{Emoji.UFO} unisciti a {last_unused_invite_link.chat.title}",
+                                     url=last_unused_invite_link.invite_link)
             ]])
         else:
             text = f"{Emoji.UFO} Usa <a href=\"{last_unused_invite_link.invite_link}\">questo link</a> " \
-                    f"generato in precedenza per unirti a {last_unused_invite_link.chat.title_escaped()}"
+                   f"generato in precedenza per unirti a {last_unused_invite_link.chat.title_escaped()}"
 
         sent_message = await update.message.reply_html(text, reply_markup=reply_markup)
         private_chat_messages.save(session, sent_message)
         last_unused_invite_link.extend_message_ids_to_delete([update.message.message_id, sent_message.message_id])
-        return
+        return False
 
-    if not ignore_cooldown and config.settings.events_chat_deeplink_cooldown:
+    return True
+
+
+async def check_cooldown(update: Update, session: Session, chat: Chat, link_destination: str):
+    """returns whether to generate a new link or not"""
+    logger.info(f"checking cooldown...")
+
+    if config.settings.events_chat_deeplink_cooldown:
         logger.info(f"cooldown is set to {config.settings.events_chat_deeplink_cooldown} seconds")
         last_invite_link: Optional[InviteLink] = invite_links.get_most_recent_invite_link(
             session,
@@ -77,14 +88,19 @@ async def generate_and_send_invite_link(update: Update, context: ContextTypes.DE
             seconds_diff = (utilities.now() - created_on_utc).total_seconds()
             if seconds_diff < config.settings.events_chat_deeplink_cooldown:
                 logger.info(f"link requested too soon, diff: {seconds_diff} seconds")
-                diff_str = utilities.elapsed_str_from_seconds(int(config.settings.events_chat_deeplink_cooldown - seconds_diff), "poco")
+                diff_str = utilities.elapsed_str_from_seconds(
+                    int(config.settings.events_chat_deeplink_cooldown - seconds_diff), "poco")
                 sent_message = await update.message.reply_html(
                     f"Mi dispiace, è trascorso troppo poco tempo da quando hai richiesto questo link d'invito l'ultima volta. "
                     f"Riprova tra ~{diff_str}"
                 )
                 private_chat_messages.save(session, sent_message)
-                return
+                return False
 
+    return True
+
+
+async def send_new_invite_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, link_destination: str, creates_join_request=False):
     success, chat_invite_link = await generate_invite_link(context.bot, chat, update.effective_user.id, creates_join_request=creates_join_request)
     if not success:
         logger.warning(f"couldn't generate invite link for events chat {chat.title} ({chat.chat_id}): {chat_invite_link}")
@@ -153,14 +169,18 @@ async def on_events_chat_invite_deeplink(update: Update, context: ContextTypes.D
         private_chat_messages.save(session, sent_message)
         return
 
-    await generate_and_send_invite_link(
-        update=update,
-        context=context,
-        session=session,
-        chat=events_chat,
-        link_destination=Destination.EVENTS_CHAT_DEEPLINK,
-        ignore_cooldown="ecil" in update.message.text
-    )
+    generate_new_link = await check_for_unused_links(update, session, events_chat, Destination.EVENTS_CHAT_DEEPLINK)
+    if generate_new_link and "ecil" not in update.message.text:
+        generate_new_link = await check_cooldown(update, session, events_chat, Destination.EVENTS_CHAT_DEEPLINK)
+
+    if generate_new_link:
+        await send_new_invite_link(
+            update=update,
+            context=context,
+            session=session,
+            chat=events_chat,
+            link_destination=Destination.EVENTS_CHAT_DEEPLINK
+        )
 
 
 @decorators.catch_exception()
@@ -201,13 +221,18 @@ async def on_users_chat_invite_deeplink(update: Update, context: ContextTypes.DE
         logger.info(f"forbidden: none of the conditions were met (last request was accepted/member of the users chat/left or kicked from the users chat)")
         return
 
-    await generate_and_send_invite_link(
-        update=update,
-        context=context,
-        session=session,
-        chat=users_chat,
-        link_destination=Destination.USERS_CHAT_DEEPLINK
-    )
+    generate_new_link = await check_for_unused_links(update, session, users_chat, Destination.USERS_CHAT_DEEPLINK)
+    if generate_new_link:
+        generate_new_link = await check_cooldown(update, session, users_chat, Destination.USERS_CHAT_DEEPLINK)
+
+    if generate_new_link:
+        await send_new_invite_link(
+            update=update,
+            context=context,
+            session=session,
+            chat=users_chat,
+            link_destination=Destination.USERS_CHAT_DEEPLINK
+        )
 
 
 @decorators.catch_exception()
@@ -234,20 +259,29 @@ async def on_qrcode_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await update.message.reply_html(f"Sei già membro del gruppo :D")
         return
 
-    await generate_and_send_invite_link(
-        update=update,
-        context=context,
-        session=session,
-        chat=users_chat,
-        link_destination=Destination.QRCODE_DEEPLINK,
-        creates_join_request=True  # create a join request for these invite links
-    )
+    generate_new_link = await check_for_unused_links(update, session, users_chat, Destination.QRCODE_DEEPLINK)
+    if generate_new_link:
+        generate_new_link = await check_cooldown(update, session, users_chat, Destination.QRCODE_DEEPLINK)
 
-    log_chat = chats.get_chat(session, Chat.is_log_chat)
-    await context.bot.send_message(
-        log_chat.chat_id,
-        f"<b>#QRCODE_DEEPLINK</b> utilizzato da {utilities.escape(update.effective_user.mention_html())} • #id{user.user_id}"
-    )
+    if generate_new_link:
+        await send_new_invite_link(
+            update=update,
+            context=context,
+            session=session,
+            chat=users_chat,
+            creates_join_request=True,
+            link_destination=Destination.QRCODE_DEEPLINK
+        )
+
+        logger.info("sending log message...")
+        log_chat = chats.get_chat(session, Chat.is_log_chat)
+        user_full_name = utilities.escape(update.effective_user.full_name)
+        await context.bot.send_message(
+            log_chat.chat_id,
+            f"<b>#QRCODE_DEEPLINK</b> utilizzato da {update.effective_user.mention_html(user_full_name)} • #id{user.user_id}",
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
+        )
 
 
 HANDLERS = (
