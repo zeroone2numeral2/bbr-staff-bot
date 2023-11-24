@@ -1,7 +1,9 @@
 import logging
 import re
+import sqlite3
 from typing import Optional, List
 
+import sqlalchemy
 from sqlalchemy.orm import Session
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message
@@ -333,6 +335,20 @@ async def on_waiting_social_received(update: Update, context: ContextTypes.DEFAU
     private_chat_messages.save(session, sent_message)
 
     return State.WAITING_DESCRIBE_SELF
+
+
+def retry_on_db_locked(callback, *args, **kwargs):
+    attempts = 0
+    max_attempts = 15
+    while True:
+        attempts += 1
+        try:
+            return callback(*args, **kwargs)
+        except sqlite3.OperationalError as e:
+            logger.warning(f"<{e}> error while running function <{callback.__name__}()>")
+            if attempts >= max_attempts:
+                logger.info(f"too many attempts: {attempts}")
+                raise e
 
 
 async def send_waiting_for_more_message(context: CallbackContext):
