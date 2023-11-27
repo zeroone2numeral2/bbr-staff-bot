@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
     ChatMemberLeft, ChatMemberBanned, ChatMemberMember, Message, InputMediaPhoto, InputMediaVideo, ChatInviteLink
+from telegram.constants import ChatMemberStatus
 from telegram.helpers import mention_html
 
 import utilities
@@ -392,8 +393,8 @@ def chat_members_to_dict(chat_id: int, chat_members: Iterable[chat_member_union_
 
 
 class ChatMember(Base):
-    MEMBER_STATUSES = (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER, TgChatMember.RESTRICTED, TgChatMember.MEMBER)
-    ADMINISTRATOR_STATUSES = (TgChatMember.ADMINISTRATOR, TgChatMember.OWNER)
+    MEMBER_STATUSES = (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER, ChatMemberStatus.RESTRICTED, ChatMemberStatus.MEMBER)
+    ADMINISTRATOR_STATUSES = (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
 
     __tablename__ = 'chat_members'
     __allow_unmapped__ = True
@@ -463,13 +464,13 @@ class ChatMember(Base):
         return self.status in self.MEMBER_STATUSES
 
     def is_banned(self):
-        return self.status == TgChatMember.BANNED
+        return self.status == ChatMemberStatus.BANNED
 
     def left_or_kicked(self):
         # the user has been member, but they:
         # - left the chat
         # - were removed but are no longer in the blocked users list (can join again)
-        return self.status == TgChatMember.LEFT and self.has_been_member
+        return self.status == ChatMemberStatus.LEFT and self.has_been_member
 
     def update_has_been_member(self):
         if self.is_member():
@@ -477,17 +478,17 @@ class ChatMember(Base):
             self.has_been_member = True
 
     def status_pretty(self):
-        if self.status == TgChatMember.OWNER:
+        if self.status == ChatMemberStatus.OWNER:
             return "member (owner)"
-        elif self.status == TgChatMember.ADMINISTRATOR:
+        elif self.status == ChatMemberStatus.ADMINISTRATOR:
             return "member (admin)"
-        elif self.status == TgChatMember.MEMBER:
+        elif self.status == ChatMemberStatus.MEMBER:
             return "member"
-        elif self.status == TgChatMember.RESTRICTED:
+        elif self.status == ChatMemberStatus.RESTRICTED:
             return "member (restricted)"
-        elif self.status == TgChatMember.LEFT:
+        elif self.status == ChatMemberStatus.LEFT:
             return "not a member (never joined/left/removed but not banned)"
-        elif self.status == TgChatMember.BANNED:
+        elif self.status == ChatMemberStatus.BANNED:
             return "not a member (banned)"
         else:
             return self.status

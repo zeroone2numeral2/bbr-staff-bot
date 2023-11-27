@@ -2,14 +2,15 @@ from typing import Optional, Union, Iterable
 
 from sqlalchemy import true
 from sqlalchemy.orm import Session
-from telegram import ChatMemberAdministrator, ChatMemberOwner, ChatMember
+from telegram import ChatMemberAdministrator, ChatMemberOwner
+from telegram.constants import ChatMemberStatus
 
 from database.models import Chat, ChatMember as DbChatMember, chat_members_to_dict
 from database.queries import users
 
-CHAT_MEMBER_STATUS_ADMIN = [ChatMember.ADMINISTRATOR, ChatMember.OWNER]
+CHAT_MEMBER_STATUS_ADMIN = [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
 
-CHAT_MEMBER_STATUS_MEMBER = [ChatMember.ADMINISTRATOR, ChatMember.OWNER, ChatMember.MEMBER, ChatMember.RESTRICTED]
+CHAT_MEMBER_STATUS_MEMBER = [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER, ChatMemberStatus.MEMBER, ChatMemberStatus.RESTRICTED]
 
 
 def save_administrators(session: Session, chat_id: int, administrators: Iterable[Union[ChatMemberAdministrator, ChatMemberOwner]], save_users=True):
