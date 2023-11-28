@@ -16,6 +16,7 @@ now_rome = local_time.localize(utc_now_naive)
 print(f"utc now: {utc_now}")
 print(f"utc now naive: {utc_now_naive}")
 print(f"tzaware now: {now_tzaware}")
+print(f"tzaware now with dst: {now_tzaware + now_tzaware.dst()}")
 
 for month in (1, 6):
     now_dt = datetime.datetime(year=2023, month=month, day=1)
