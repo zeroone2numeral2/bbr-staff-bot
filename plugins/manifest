@@ -36,7 +36,11 @@ staff.chat.ban
 staff.chat.info
 staff.chat.revoke
 staff.chat.reply # must be after all the other staff commands, but before the duplicates plugin
+
+[flytek]
 staff.chat.duplicates
+
+[+]
 chat_members.newchat
 chat_members.my_chat_member_update
 
