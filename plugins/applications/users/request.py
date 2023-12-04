@@ -443,6 +443,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
 
     # merge and send all DescriptionMessage that contain the text the user sent as presentation
+    logger.debug("merging and sending presentation text messages...")
     merged_text = f"{Emoji.SHEET} <b>presentazione</b> • #rid{request.id}"
     merged_text_includes = []  # list of indexes of the DescriptionMessage that have been merged into the current merged_text
     for i, description_message in enumerate(text_messages_to_merge):
@@ -461,6 +462,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
 
     # send what's left, if anything
     if merged_text:
+        logger.debug("sending what's left...")
         sent_message = await bot.send_message(log_chat_id, merged_text, **timeouts)
         sent_attachment_messages.append(sent_message)
         for i in merged_text_includes:
@@ -468,6 +470,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
             text_messages_to_merge[i].set_log_message(sent_message)
 
     # merge into an album and send all DescriptionMessage that can be grouped into an album
+    logger.debug("merging and sending presentation media messages that fit into albums...")
     input_medias = []
     for i, description_message in enumerate(messages_to_send_as_album):
         input_medias.append(description_message.get_input_media())
@@ -487,6 +490,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     # send what's left, if anything
     medias_count = len(input_medias)
     if input_medias:
+        logger.debug(f"sending what's left ({input_medias})...")
         sent_messages = await bot.send_media_group(log_chat_id, media=input_medias, **timeouts)
         sent_attachment_messages.append(sent_messages[0])  # we will link just the first one
         for i, sent_message in enumerate(sent_messages):
@@ -495,6 +499,7 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
             messages_to_send_as_album[index].set_log_message(sent_message)
 
     # send all DescriptionMessage that are a media and cannot be grouped
+    logger.debug("sending presentation text messages tthat should be sent on their own...")
     for description_message in single_media_messages:
         if description_message.type == DescriptionMessageType.VOICE:
             sent_message = await bot.send_voice(log_chat_id, description_message.media_file_id, caption=description_message.caption_html)
