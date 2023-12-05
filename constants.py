@@ -460,6 +460,7 @@ class TempDataKey:
     DELETE_DUPLICATE_MESSAGE_BUTTON_ONCE = "delete_duplicate_message_button_once"
     SETTINGS_MESSAGE_TYPE = "settings_message_type"
     EVALUATION_BUTTONS_ONCE = "evaluation_buttons_once"
+    ALBUM_ANSWERED = "album_asnwered"
 
 
 COMMAND_PREFIXES = ["/", "!"]

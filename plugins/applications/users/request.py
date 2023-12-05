@@ -351,12 +351,6 @@ def retry_on_db_locked(callback, *args, **kwargs):
                 raise e
 
 
-async def send_waiting_for_more_message(context: CallbackContext):
-    sent_message = await context.bot.send_message(context.job.data["user_id"], context.job.data["text"], reply_markup=get_done_keyboard("Invia uno o più messaggi/media"))
-    with session_scope() as session:
-        private_chat_messages.save(session, sent_message)
-
-
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 @decorators.check_pending_request()
@@ -378,18 +372,28 @@ async def on_describe_self_received(update: Update, context: ContextTypes.DEFAUL
     logger.info(f"saved description message, total messages: {len(user.pending_request.description_messages)}")
 
     text = get_text(session, LocalizedTextKey.DESCRIBE_SELF_SEND_MORE, update.effective_user)
+    reply_markup = get_done_keyboard("Invia altri messaggi/media")
 
-    if update.message.media_group_id:
-        job_name = f"media_group_{update.message.media_group_id}"
-        jobs = context.job_queue.get_jobs_by_name(job_name)
-        if not jobs:
-            data = dict(text=text, user_id=update.effective_user.id)
-            context.job_queue.run_once(callback=send_waiting_for_more_message, when=3, name=job_name, data=data)
-    else:
+    if not update.message.media_group_id:
         # sending this message is needed if we want the "done" keyboard to appear after the user sends the message
-        reply_markup = get_done_keyboard("Invia altri messaggi/media")
         sent_message = await update.message.reply_text(text, reply_markup=reply_markup, quote=True)
         private_chat_messages.save(session, sent_message)
+
+        # pop this temp key if the message doesn't belong to an album
+        context.user_data.pop(TempDataKey.ALBUM_ANSWERED, None)
+    else:
+        # send a reply only to the first album message received
+        if TempDataKey.ALBUM_ANSWERED not in context.user_data:
+            context.user_data[TempDataKey.ALBUM_ANSWERED] = []
+
+        if update.message.media_group_id not in context.user_data[TempDataKey.ALBUM_ANSWERED]:
+            logger.info(f"first time we receive a message belonging to album {update.message.media_group_id}, answering...")
+            sent_message = await update.message.reply_text(text, reply_markup=reply_markup, quote=True)
+            private_chat_messages.save(session, sent_message)
+            context.user_data[TempDataKey.ALBUM_ANSWERED].append(update.message.media_group_id)
+        else:
+            # do not answer multiple times to the same album
+            logger.info(f"not answering to message from album {update.message.media_group_id} because we already did")
 
     return State.WAITING_DESCRIBE_SELF
 
@@ -542,6 +546,9 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
 @decorators.check_pending_request()
 async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"conversation timed out or user is done {utilities.log(update)}")
+
+    # make sure to pop this key from user_data
+    context.user_data.pop(TempDataKey.ALBUM_ANSWERED, None)
 
     # on timeout, the last received update is passed to the handler
     # so if the last update is not the "done" button, then it means the conversation timeout-out
