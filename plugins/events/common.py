@@ -587,7 +587,9 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
     # EVENT TYPE
     if EventFilter.NOT_FREE in args or EventFilter.LEGAL in args:
         # legal = anything that is not a free party
-        query_filters.append(Event.event_type != EventType.FREE)
+        query_filters.append((
+                (Event.event_type != EventType.FREE) | (Event.event_type == null())
+        ))
     elif EventFilter.FREE in args:
         query_filters.append(Event.event_type == EventType.FREE)
 
@@ -676,7 +678,9 @@ def extract_query_filters(args: List[str], today: Optional[datetime.date] = None
     if EventFilter.IT in args:
         query_filters.append(Event.region.in_(it_regions))
     elif EventFilter.NOT_IT in args:
-        query_filters.append(Event.region.not_in(it_regions))
+        query_filters.append((
+            (Event.region.not_in(it_regions) | (Event.region == null()))
+        ))
 
     return query_filters
 
