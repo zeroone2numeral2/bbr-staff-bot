@@ -548,6 +548,7 @@ class RegionHashtag:
     SARDINIA = "#sardinia"
     SICILIA = "#sicilia"
     SICILY = "#sicily"
+    FR = "#fr"
     FRANCE = "#france"
     FRANCIA = "#francia"
     GERMANY = "#germany"
@@ -591,6 +592,8 @@ class RegionHashtag:
     MAROCCO = "#marocco"
     SWEDEN = "#sweden"
     SVEZIA = "#svezia"
+    TURCHIA = "#turchia"
+    TURKEY = "#turkey"
     NORWAY = "#norway"
     NORVEGIA = "#norvegia"
     COLOMBIA = "#colombia"
@@ -645,6 +648,7 @@ class RegionName:
     SUD_ITALIA = "Sud Italia"
     SVEZIA = "Svezia"
     SVIZZERA = "Svizzera"
+    TURCHIA = "Turchia"
     UNGARIA = "Ungaria"
 
 
@@ -661,7 +665,7 @@ REGIONS_DATA = {
     RegionName.CROAZIA: dict(hashtags=[RegionHashtag.CROATIA, RegionHashtag.CROAZIA], emoji=Flag.CROATIA),
     RegionName.DANIMARCA: dict(hashtags=[RegionHashtag.DENMARK, RegionHashtag.DANIMARCA], emoji=Flag.DENMARK),
     RegionName.FINLANDIA: dict(hashtags=[RegionHashtag.FINLAND, RegionHashtag.FINLANDIA], emoji=Flag.FINLAND),
-    RegionName.FRANCIA: dict(hashtags=[RegionHashtag.FRANCE, RegionHashtag.FRANCIA], emoji=Flag.FRANCE),
+    RegionName.FRANCIA: dict(hashtags=[RegionHashtag.FRANCE, RegionHashtag.FRANCIA, RegionHashtag.FR], emoji=Flag.FRANCE),
     RegionName.GERMANIA: dict(hashtags=[RegionHashtag.GERMANY, RegionHashtag.GERMANIA], emoji=Flag.GERMANY),
     RegionName.GRECIA: dict(hashtags=[RegionHashtag.GRECIA, RegionHashtag.GREECE], emoji=Flag.GREECE),
     RegionName.INGHILTERRA: dict(hashtags=[RegionHashtag.UK, RegionHashtag.ENGLAND], emoji=Flag.ENGLAND),
@@ -683,6 +687,7 @@ REGIONS_DATA = {
     RegionName.SVIZZERA: dict(hashtags=[RegionHashtag.SWISS], emoji=Flag.SWISS),
     # RegionName.SUD_ITALIA: dict(hashtags=[RegionHashtag.SUD_ITALIA, RegionHashtag.SUD_ITALY], emoji=Flag.ITALY),
     RegionName.SVEZIA: dict(hashtags=[RegionHashtag.SVEZIA, RegionHashtag.SWEDEN], emoji=Flag.SWEDEN),
+    RegionName.TURCHIA: dict(hashtags=[RegionHashtag.TURKEY, RegionHashtag.TURCHIA], emoji=Flag.TURKEY),
     RegionName.UNGARIA: dict(hashtags=[RegionHashtag.UNGARIA, RegionHashtag.HUNGARY], emoji=Flag.HUNGARY),
     # these needs to be placed *below* their sub-regions
     RegionName.EUROPA: dict(hashtags=[RegionHashtag.EUROPA, RegionHashtag.EUROPE], emoji=Flag.EUROPE),

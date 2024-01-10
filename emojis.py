@@ -102,5 +102,4 @@ class Flag:
     SPAIN = "🇪🇸"
     SWISS = "🇨🇭"
     SWEDEN = "🇸🇪"
-
-
+    TURKEY = "🇹🇷"
