@@ -25,20 +25,19 @@ from plugins.events.common import (
 logger = logging.getLogger(__name__)
 
 
-async def download_event_media(message: Message):
+async def download_event_media(message: Message) -> bool:
     if not message.photo and not message.video and not message.animation:
         logger.debug(f"no media to backup")
-        return
+        return False
 
     if not message.photo and message.effective_attachment.file_size > FileSizeLimit.FILESIZE_DOWNLOAD:
         logger.info(f"file too large: {message.effective_attachment.file_size} bytes")
-        return
+        return False
 
-    if not message.edit_date:
-        file_name = f"{message.message_id}"
-    else:
-        edit_timestamp = int(message.edit_date.timestamp())
-        file_name = f"{message.message_id}_edit_{edit_timestamp}"
+    file_unique_id = message.photo[-1].file_unique_id if message.photo else message.effective_attachment.file_unique_id
+    chat_id_str = str(message.chat.id).replace("-100", "")
+
+    file_name = f"{chat_id_str}_{message.message_id}_{file_unique_id}"
 
     if message.photo:
         file_name = f"{file_name}.jpg"
@@ -47,6 +46,10 @@ async def download_event_media(message: Message):
 
     file_path = pathlib.Path("events_data") / file_name
 
+    if file_path.is_file():
+        logger.info(f"file <{file_path}> already exist: skipping download")
+        return False
+
     logger.info(f"downloading to {file_path}...")
     if message.photo:
         new_file = await message.effective_attachment[-1].get_file()
@@ -54,21 +57,17 @@ async def download_event_media(message: Message):
         new_file = await message.effective_attachment.get_file()
 
     await new_file.download_to_drive(file_path)
+    return True
 
 
-async def backup_event_media(update: Update, event: Optional[Event] = None):
-    # edited_messages: do not download the media if it was not modified
-    if update.edited_message and event:
-        m = update.edited_message
-        new_file_unique_id = m.photo[-1].file_unique_id if m.photo else m.effective_attachment.file_unique_id
-        if new_file_unique_id == event.media_file_unique_id:
-            logger.debug(
-                f"edited event message: file_unique_id ({new_file_unique_id}) didn't change, skipping media download")
-            return False
+async def backup_event_media(update: Update):
+    # download_event_media() will check whether a file with the same chat_id/message_id/file_unique_id
+    # already exists on disk, and will skip the download if so.
+    # In this way we will not try to download the same media more than once (eg. when a channel post is edited,
+    # but only the caption changed)
 
     try:
-        await download_event_media(update.effective_message)
-        return True
+        return await download_event_media(update.effective_message)
     except Exception as e:
         logger.error(f"error while trying to download media: {e}", exc_info=True)
         return False
@@ -201,7 +200,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         )
 
     if config.settings.backup_events:
-        await backup_event_media(update, event)
+        await backup_event_media(update)
 
 
 @decorators.catch_exception(silent=True)
