@@ -1001,6 +1001,22 @@ class Event(Base):
         self.deleted_on = None
         self.deleted_reason = None
 
+    def start_date_in_the_past(self, today: Optional[datetime.date] = None, raise_on_no_date=True):
+        if not today:
+            today = utilities.now().date()
+
+        if self.start_date:
+            return today > self.start_date
+
+        if self.start_year and self.start_month:
+            return today.year > self.start_year or (today.year == self.start_year and today.month > self.start_month)
+
+        if raise_on_no_date:
+            raise ValueError("cannot check whether an event without start year/month is in the past")
+        else:
+            # if no start year/month, return False
+            return False
+
     def is_valid(self) -> bool:
         """an event is valid if it has a title and either:
         - has a start month/year

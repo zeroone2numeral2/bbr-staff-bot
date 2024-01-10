@@ -83,12 +83,15 @@ def date_notifications_reply_markup(event_chat_id: int, event_message_id: int):
 
 
 async def notify_event_validity(
-        session: Session,
+        message: Message,
         event: Event,
         bot: Bot,
+        staff_chat: Chat,
         is_edited_message: bool,
         was_valid_before_parsing: bool,
-        is_valid_after_parsing: bool
+        is_valid_after_parsing: bool,
+        date_in_the_past_before_parsing: bool,
+        date_in_the_past_after_parsing: bool,
 ):
     logger.debug(f"is_edited_message: {is_edited_message}; "
                  f"was_valid_before_parsing: {was_valid_before_parsing}; "
@@ -96,10 +99,6 @@ async def notify_event_validity(
                  f"Event.send_validity_notifications: {event.send_validity_notifications}")
 
     if not event.send_validity_notifications:
-        return
-
-    staff_chat = chats.get_chat(session, Chat.is_staff_chat)
-    if not staff_chat:
         return
 
     reply_markup = date_notifications_reply_markup(event.chat_id, event.message_id)
@@ -124,6 +123,16 @@ async def notify_event_validity(
                 f"dopo che il messaggio è stato modificato :( (#nodata)")
         sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
         event.save_validity_notification_message(sent_message)
+    elif not message.edit_date and is_valid_after_parsing and date_in_the_past_after_parsing:
+        logger.info(f"event is a new message and has a valid start date, but it's in the past ({event.start_date_as_str()})")
+        text = f"\"{event.title_link_html()}\" inizia nel passato ({event.start_date_as_str()})"
+        sent_message = await bot.send_message(staff_chat.chat_id, text, reply_markup=reply_markup)
+        event.save_validity_notification_message(sent_message)
+    elif message.edit_date and is_valid_after_parsing and date_in_the_past_before_parsing and not date_in_the_past_after_parsing:
+        logger.info(f"event has a valid start date and was edited to update a date in the past")
+        if event.validity_notification_chat_id and event.validity_notification_message_id:
+            # delete if now ok
+            await utilities.delete_messages_by_id_safe(bot, event.validity_notification_chat_id, event.validity_notification_message_id)
 
 
 @decorators.catch_exception(silent=True)
@@ -157,6 +166,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     # Also, for an event to be valid, the dates must *not* come from the hashtag
     is_edited_message = bool(update.effective_message.edit_date)
     was_valid_before_parsing = event.is_valid_from_parsing() or not is_edited_message
+    date_in_the_past_before_parsing = event.start_date_in_the_past(raise_on_no_date=False)
     had_hashtags = bool(event.get_hashtags())
 
     add_event_message_metadata(update.effective_message, event)
@@ -179,6 +189,7 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return
 
     is_valid_after_parsing = event.is_valid_from_parsing()
+    date_in_the_past_after_parsing = event.start_date_in_the_past(raise_on_no_date=False)
     has_hashtags = bool(event.get_hashtags())
 
     logger.info("setting flag to signal that the parties message list should be updated...")
@@ -190,14 +201,19 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     session.commit()
 
     if config.settings.notify_events_validity:
-        await notify_event_validity(
-            session=session,
-            event=event,
-            bot=context.bot,
-            is_edited_message=is_edited_message,
-            was_valid_before_parsing=was_valid_before_parsing,
-            is_valid_after_parsing=is_valid_after_parsing
-        )
+        staff_chat = chats.get_chat(session, Chat.is_staff_chat)
+        if staff_chat:
+            await notify_event_validity(
+                message=update.effective_message,
+                event=event,
+                bot=context.bot,
+                staff_chat=staff_chat,
+                is_edited_message=is_edited_message,
+                was_valid_before_parsing=was_valid_before_parsing,
+                is_valid_after_parsing=is_valid_after_parsing,
+                date_in_the_past_before_parsing=date_in_the_past_before_parsing,
+                date_in_the_past_after_parsing=date_in_the_past_after_parsing
+            )
 
     if config.settings.backup_events:
         await backup_event_media(update)
