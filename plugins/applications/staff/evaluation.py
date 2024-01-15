@@ -115,10 +115,7 @@ async def delete_history(session: Session, bot: Bot, user: User, delete_reason: 
             try:
                 sent_rabbit_message = await bot.send_photo(user.user_id, setting.value(), protect_content=True)
             except BadRequest as e:
-                if "wrong file identifier/http url specified" in e.message.lower():
-                    logger.error(f"cannot send file: {e.message}")
-                else:
-                    raise e
+                logger.error(f"cannot send file: {e.message}")
 
     now = utilities.now()
 
