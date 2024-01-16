@@ -81,6 +81,7 @@ class BotSettingKey:
     CHAT_INVITE_LINK = "chat_invite_link"
     APPROVAL_MODE = "approval_mode"
     RABBIT_FILE = "rabbit_file"
+    FOLDER_LINK = "folder_link"
     RADAR_ENABLED = "radar_enabled"
     RADAR_PASSWORD_ENABLED = "radar_password_enabled"
     RADAR_FILE = "radar_file"
@@ -295,6 +296,15 @@ BOT_SETTINGS_DEFAULTS = {
         emoji=Emoji.LINK,
         description="the chat's invite link",
         show_if_true_key=None,
+        telegram_media=False
+    ),
+    BotSettingKey.FOLDER_LINK: dict(
+        category=BotSettingCategory.GENERAL,
+        default=None,
+        label="link cartella",
+        emoji=Emoji.FOLDER,
+        description="link per aggiungere la cartella. Se presente, agli utenti approvati verrà inviato questo link. Altrimenti verrà generato un link d'invito al gruppo",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),
     BotSettingKey.FALLBACK_LANGAUGE: dict(

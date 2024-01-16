@@ -39,6 +39,19 @@ def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUs
 
 
 async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
+    # check whether there is a folder link set
+    folder_link_setting = settings.get_or_create(session, BotSettingKey.FOLDER_LINK)
+    if folder_link_setting.value():
+        folder_link = folder_link_setting.value()
+        logger.info(f"folder link is set ({folder_link}): using folder link instead of generating an invite link to the users chat")
+
+        user.last_request.folder_link = folder_link
+
+        reply_markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton(f"{Emoji.ALIEN} unisciti al network", url=folder_link)]]
+        )
+        return reply_markup
+
     logger.info("generating invite link...")
     users_chat = chats.get_chat(session, Chat.is_users_chat)
 

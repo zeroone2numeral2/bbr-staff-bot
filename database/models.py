@@ -1275,7 +1275,8 @@ class ApplicationRequest(Base):
     request_sent_message_message_id = Column(Integer, default=None)  # message_id of the message we sent to the user saying that their request has been sent to the staff
     accepted_message_message_id = Column(Integer, default=None)  # message notifying the user that they were accepted
 
-    invite_link = Column(String, default=None)  # the invite link we sent to the user
+    folder_link = Column(String, default=None)  # the folder link we sent to the user, if we sent a folder link
+    invite_link = Column(String, default=None)  # the invite link we sent to the user, if we sent a joinchat link
     invite_link_can_be_revoked_after_join = Column(Boolean, default=False)  # wether it is safe to revoke the invite link after the user joined
     invite_link_revoked = Column(Boolean, default=False)  # wether 'invite_link' has been revoked or not
 

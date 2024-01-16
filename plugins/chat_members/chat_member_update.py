@@ -99,14 +99,16 @@ async def remove_nojoin_hashtag(user: User, bot: Bot):
 
 async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
-    added_by_admin = not chat_member_updated.invite_link
+    added_by_admin = not chat_member_updated.invite_link and not chat_member_updated.via_chat_folder_invite_link
     if added_by_admin:
-        logger.info("user was added by an admin (didn't join by invite link)")
+        logger.info("user was added by an admin (didn't join by invite link/folder link)")
 
     if not added_by_admin and (not user.last_request_id or user.last_request.is_pending() or user.last_request.rejected()):
         # user joined the chat without going through the approval process, or their request was rejected: log to channel
+        # note about joins via folder link: when a user joins via a folder link, they actually
+        # joined through the invite link of the admin that generated that folder invite link
 
-        logger.debug("no last request to check or last request is pending: we log the join")
+        logger.debug("no last request to check or last request is pending/rejected: we log the join")
         log_chat = chats.get_chat(session, Chat.is_log_chat)
 
         user_mention = user.mention()
@@ -124,6 +126,10 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
         text = f"{Emoji.LINK} <b>#JOIN_SENZA_RICHIESTA</b> di {user_mention} • #id{user.user_id}\n\n" \
                f"link: #link{invite_link_id} ({invite_link_name})\n" \
                f"generato da: {admin_mention} • #admin{created_by.id}"
+
+        if chat_member_updated.via_chat_folder_invite_link:
+            text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
+                     f"aggiungere la cartella del network")
 
         await bot.send_message(log_chat.chat_id, text)
         return
@@ -143,6 +149,7 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
                 logger.error(f"error while removing reply makrup: {e}")
 
         if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
+            # if the user was sent the folder link instead of a joinchat link, invite_link_can_be_revoked_after_join will be False
             success = await revoke_invite_link_safe(bot, chat.chat_id, user.last_request.invite_link)
             user.last_request.invite_link_revoked = success
 

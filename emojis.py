@@ -13,6 +13,7 @@ class Emoji:
     EXCLAMATION_MARK = "❗️"
     EYE = "👁"
     EYES = "👀"
+    FOLDER = "📂"
     GEAR = "⚙️"
     GREEN = "🟢"
     HASHTAG = "#️⃣"
