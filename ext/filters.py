@@ -17,10 +17,7 @@ logger = logging.getLogger(__name__)
 class FilterReplyToBot(MessageFilter):
     def __init__(self):
         super().__init__()
-        if utilities.is_test_bot():
-            self.bot_id = 6217274130
-        else:
-            self.bot_id = 6171174621
+        self.bot_id = config.telegram.bot_id
 
     def filter(self, message):
         if (message.reply_to_message
