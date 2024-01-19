@@ -1,6 +1,5 @@
 [telegram]
 token = "" # your bot's token (get it from @BotFather)
-bot_id = 1
 admins = [] # list of super admins, place your Telegram ID here
 
 [settings]

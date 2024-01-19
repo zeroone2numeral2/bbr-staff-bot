@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class FilterReplyToBot(MessageFilter):
     def __init__(self):
         super().__init__()
-        self.bot_id = config.telegram.bot_id
+        self.bot_id = config.telegram.token.split(":")[0]
 
     def filter(self, message):
         if (message.reply_to_message
