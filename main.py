@@ -252,10 +252,11 @@ async def post_init(application: Application) -> None:
         chat_members.save_administrators(session, chat.chat_id, administrators)
         session.commit()
 
-    if config.handlers.mode == HandlersMode.BBR:
-        await set_bbr_commands(session, bot)
-    else:
-        await set_flytek_commands(session, bot)
+    if config.settings.set_commands:
+        if config.handlers.mode == HandlersMode.BBR:
+            await set_bbr_commands(session, bot)
+        elif config.handlers.mode == HandlersMode.FLYTEK:
+            await set_flytek_commands(session, bot)
 
     session.commit()
     session.close()

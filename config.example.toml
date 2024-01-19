@@ -3,6 +3,7 @@ token = "" # your bot's token (get it from @BotFather)
 admins = [] # list of super admins, place your Telegram ID here
 
 [settings]
+set_commands = true # whether to set commands or not
 db_save_json = true # whether to save or not a message's json, when needed (doesn't apply to Event and PartiesMessage)
 broadcast_message_edits = true # whether to broadcast message edits from the staff to the user chat
 backup_events = true # download flyers, for archival purposes
