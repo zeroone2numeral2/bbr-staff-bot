@@ -23,16 +23,20 @@ logger = logging.getLogger(__name__)
 async def on_partiesjob_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/partiesjob {utilities.log(update)}")
 
-    events_chat = chats.get_chat(session, Chat.is_events_chat)
+    send_to_group = settings.get_or_create(session, BotSettingKey.PARTIES_LIST_POST_TO_USERS_CHAT).value()
+    if send_to_group:
+        target_chat = chats.get_chat(session, Chat.is_users_chat)
+    else:
+        target_chat = chats.get_chat(session, Chat.is_events_chat)
 
     list_needs_update = context.bot_data.get(TempDataKey.UPDATE_PARTIES_MESSAGE, False)
-    text = (f"Verrà eseguito il job che controlla se aggiornare i messaggi con la lista delle feste in {events_chat.title} "
+    text = (f"Verrà eseguito il job che controlla se aggiornare i messaggi con la lista delle feste in {target_chat.title} "
             f"ogni {config.settings.parties_message_job_frequency} minuti (feste aggiunte/modificate dall'ultima esecuzione? "
             f"{utilities.bool_to_str_it(list_needs_update, si_no=True)})")
 
     message_descriptions = []
     for events_type, _ in LIST_TYPE_DESCRIPTION.items():
-        parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, events_chat.chat_id, events_type)
+        parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, target_chat.chat_id, events_type)
         if parties_message:
             description = f"{parties_message.message_link(parties_message.events_type)}"
             message_descriptions.append(description)
