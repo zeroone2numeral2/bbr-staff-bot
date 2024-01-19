@@ -20,7 +20,7 @@ PLACEHOLDER_REPLACEMENTS_TELEGRAM_USER = {
 
 
 PLACEHOLDER_REPLACEMENTS_DATABASE = {
-    "{CHATLINK}": lambda s: settings.get_or_create(s, BotSettingKey.CHAT_INVITE_LINK).value(),
+    "{CHATLINK}": lambda s: settings.get_or_create(s, BotSettingKey.CHAT_INVITE_LINK).value() or "",
 }
 
 
