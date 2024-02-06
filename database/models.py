@@ -343,6 +343,7 @@ CHAT_MEMBER_DEFAULTS = dict(
     # these are channels-only permissions
     can_post_messages=None,
     can_edit_messages=None,
+
     # ChatMemberRestricted, ChatMemberMember
     # None: defaults to the chat's permissions settings
     can_send_messages=None,
