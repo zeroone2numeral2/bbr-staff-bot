@@ -335,6 +335,9 @@ CHAT_MEMBER_DEFAULTS = dict(
     can_manage_video_chats=False,
     can_restrict_members=False,
     can_promote_members=False,
+    can_post_stories=False,
+    can_edit_stories=False,
+    can_delete_stories=False,
     # these might depend on the chat's permisssions settings, so they default to None
     can_change_info=None,
     can_invite_users=None,
@@ -419,6 +422,9 @@ class ChatMember(Base):
     can_post_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_post_messages"])
     can_edit_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_edit_messages"])
     can_pin_messages = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_pin_messages"])
+    can_post_stories = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_post_stories"])
+    can_edit_stories = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_edit_stories"])
+    can_delete_stories = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_delete_stories"])
     can_manage_topics = Column(Boolean, default=CHAT_MEMBER_DEFAULTS["can_manage_topics"])
 
     # ChatMemberMember/ChatMemberRestricted
