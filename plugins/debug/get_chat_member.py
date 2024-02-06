@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes, CommandHandler
 
 import decorators
 import utilities
-from constants import Group
+from constants import Group, Regex
 from database.models import Chat, User, ChatMember as DbChatMember
 from database.queries import chats, users, chat_members
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @decorators.pass_session()
 async def on_getcm_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     users_chat = chats.get_chat(session, Chat.is_users_chat)
-    user_id = utilities.get_user_id_from_text(update.message.text)
+    user_id = utilities.get_user_id_from_text(update.message.text, pattern=Regex.USER_ID_OPTIONAL_HASHTAG)
     logger.info(f"user id: {user_id}")
 
     chat_member = await context.bot.get_chat_member(users_chat.chat_id, user_id)

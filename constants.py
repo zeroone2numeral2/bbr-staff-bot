@@ -534,7 +534,8 @@ class Group:
 
 class Regex:
     FIRST_LINE = r"^(.+)$"
-    USER_ID_HASHTAG = r"(?:#user|#id)?(?P<user_id>\d+)"
+    USER_ID_HASHTAG = r"(?:#user|#id)(?P<user_id>\d+)"
+    USER_ID_OPTIONAL_HASHTAG = r"(?:#user|#id)?(?P<user_id>\d+)"
     USER_ID_HASHTAG_SUB = r"((?:#user|#id)\d+)"
     DATETIME = r"(?P<date>(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?)\s+((?P<hour>\d{1,2}):(?P<minute>\d{1,2})(?::(?P<second>\d{1,2}))?)"
     DATE = r"(?P<day>\d{1,2})[/.-](?P<month>\d{1,2})(?:[/.-](?P<year>\d{2,4}))?"

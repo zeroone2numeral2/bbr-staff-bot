@@ -500,8 +500,11 @@ def get_media_ids(message: Message):
     return media_file_id, media_file_unique_id, media_group_id
 
 
-def get_user_id_from_text(text: str) -> Optional[int]:
-    match = re.search(Regex.USER_ID_HASHTAG, text, re.I)
+def get_user_id_from_text(text: str, pattern: Optional[str] = None) -> Optional[int]:
+    if not pattern:
+        pattern = Regex.USER_ID_HASHTAG
+
+    match = re.search(pattern, text, re.I)
     if not match:
         return
 
