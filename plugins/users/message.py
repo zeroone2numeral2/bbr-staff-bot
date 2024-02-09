@@ -99,6 +99,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     logger.debug("forwarding to staff...")
     forwarded_message = await update.message.forward(target_chat.chat_id)
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND)  # react as soon as we forward the message
+
     user_message = UserMessage(
         message_id=update.message.message_id,
         user_id=update.effective_user.id,
@@ -109,10 +111,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     user_message.save_message_json(forwarded_message)
     session.add(user_message)
 
-    react_to_message = False
-    if not settings.get_or_create(session, BotSettingKey.SENT_TO_STAFF).value():
-        react_to_message = True
-    else:
+    if settings.get_or_create(session, BotSettingKey.SENT_TO_STAFF).value():
         user_language = utilities.get_language_code(user.selected_language, update.effective_user.language_code)
         logger.info(f"sending 'sent to staff' message (user language: {user_language})...")
         try:
@@ -126,15 +125,11 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             text = sent_to_staff.value
         except ValueError as e:
             logger.error(f"{e}")
-            react_to_message = True
+            text = ""
 
-    if not react_to_message:
-        logger.debug("sending \"forwarded\" confirmation message to user...")
-        sent_message = await update.message.reply_text(text, quote=True)
-        private_chat_messages.save(session, sent_message)
-    else:
-        logger.debug("reacting to user's message...")
-        await update.message.set_reaction(ReactionEmoji.WRITING_HAND)
+        if text:
+            sent_message = await update.message.reply_text(text, quote=True)
+            private_chat_messages.save(session, sent_message)
 
     user.set_started()
     user.update_last_message()
