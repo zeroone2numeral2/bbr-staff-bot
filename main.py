@@ -149,6 +149,7 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
 
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
     if evaluation_chat:
+        logger.info("setting evaluation chat's commands...")
         await bot.set_my_commands(evaluation_chat_commands, scope=BotCommandScopeChat(evaluation_chat.chat_id))
 
 
