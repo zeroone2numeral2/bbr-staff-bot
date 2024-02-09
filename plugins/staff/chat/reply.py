@@ -65,6 +65,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
         protect_content=config.settings.protected_admin_replies
     )
     private_chat_messages.save(session, sent_message)
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND)  # react as soon as we forward the message
 
     admin_message = AdminMessage(
         message_id=update.effective_message.id,
@@ -80,8 +81,6 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 
     admin_message.save_message_json(sent_message)
     admin_message.user_message.add_reply()
-
-    await update.message.set_reaction(ReactionEmoji.WRITING_HAND, is_big=True)
 
 
 @decorators.catch_exception()
