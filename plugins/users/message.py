@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update
+from telegram.constants import ReactionEmoji
 from telegram.ext import ContextTypes, MessageHandler
 from telegram.ext import filters
 
@@ -98,6 +99,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     logger.debug("forwarding to staff...")
     forwarded_message = await update.message.forward(target_chat.chat_id)
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND)  # react as soon as we forward the message
+
     user_message = UserMessage(
         message_id=update.message.message_id,
         user_id=update.effective_user.id,
@@ -122,10 +125,11 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             text = sent_to_staff.value
         except ValueError as e:
             logger.error(f"{e}")
-            text = "<i>delivered</i>"
+            text = ""
 
-        sent_message = await update.message.reply_text(text, quote=True)
-        private_chat_messages.save(session, sent_message)
+        if text:
+            sent_message = await update.message.reply_text(text, quote=True)
+            private_chat_messages.save(session, sent_message)
 
     user.set_started()
     user.update_last_message()

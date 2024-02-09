@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update, MessageId
-from telegram.constants import ChatAction
+from telegram.constants import ChatAction, ReactionEmoji
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import filters, ContextTypes, MessageHandler
 
@@ -65,6 +65,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
         protect_content=config.settings.protected_admin_replies
     )
     private_chat_messages.save(session, sent_message)
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND)  # react as soon as we forward the message
 
     admin_message = AdminMessage(
         message_id=update.effective_message.id,
@@ -80,8 +81,6 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 
     admin_message.save_message_json(sent_message)
     admin_message.user_message.add_reply()
-
-    await update.message.reply_html(f"<i>message sent to {admin_message.target_user.mention()}</i>", quote=True)
 
 
 @decorators.catch_exception()
@@ -151,6 +150,12 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         protect_content=config.settings.protected_admin_replies
     )
 
+    # react right after we send the message: if something goes wrong after the message is forwarded,
+    # the staff should know that the message has been delivered even if an exception has been raised
+    logger.debug("reacting...")
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND)
+    await update.message.reply_to_message.set_reaction(ReactionEmoji.MAN_TECHNOLOGIST)
+
     private_chat_message = PrivateChatMessage(
         message_id=sent_message.message_id,
         user_id=user.user_id,
@@ -174,8 +179,6 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         message_datetime=update.effective_message.date
     )
     session.add(admin_message)
-
-    await update.message.reply_html(f"<i>message sent to {user.mention()}</i>", quote=True)
 
 
 HANDLERS = (
