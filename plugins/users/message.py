@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update
+from telegram.constants import ReactionEmoji
 from telegram.ext import ContextTypes, MessageHandler
 from telegram.ext import filters
 
@@ -108,6 +109,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     user_message.save_message_json(forwarded_message)
     session.add(user_message)
 
+    react_to_message = False
     if settings.get_or_create(session, BotSettingKey.SENT_TO_STAFF).value():
         user_language = utilities.get_language_code(user.selected_language, update.effective_user.language_code)
         logger.info(f"sending 'sent to staff' message (user language: {user_language})...")
@@ -122,10 +124,13 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             text = sent_to_staff.value
         except ValueError as e:
             logger.error(f"{e}")
-            text = "<i>delivered</i>"
+            react_to_message = True
 
+    if not react_to_message:
         sent_message = await update.message.reply_text(text, quote=True)
         private_chat_messages.save(session, sent_message)
+    else:
+        await update.message.set_reaction(ReactionEmoji.WRITING_HAND)
 
     user.set_started()
     user.update_last_message()
