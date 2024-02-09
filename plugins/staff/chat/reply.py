@@ -151,6 +151,12 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         protect_content=config.settings.protected_admin_replies
     )
 
+    # react right after we send the message: if something goes wrong after the message is forwarded,
+    # the staff should know that the message has been delivered even if an exception has been raised
+    logger.debug("reacting...")
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND)
+    await update.message.reply_to_message.set_reaction(ReactionEmoji.MAN_TECHNOLOGIST)
+
     private_chat_message = PrivateChatMessage(
         message_id=sent_message.message_id,
         user_id=user.user_id,
@@ -174,8 +180,6 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         message_datetime=update.effective_message.date
     )
     session.add(admin_message)
-
-    await update.message.set_reaction(ReactionEmoji.WRITING_HAND, is_big=True)
 
 
 HANDLERS = (
