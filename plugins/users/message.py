@@ -125,6 +125,8 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         except ValueError as e:
             logger.error(f"{e}")
             react_to_message = True
+    else:
+        react_to_message = True
 
     if not react_to_message:
         sent_message = await update.message.reply_text(text, quote=True)
