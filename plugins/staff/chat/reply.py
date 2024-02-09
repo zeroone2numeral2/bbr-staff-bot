@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from telegram import Update, MessageId
-from telegram.constants import ChatAction
+from telegram.constants import ChatAction, ReactionEmoji
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import filters, ContextTypes, MessageHandler
 
@@ -81,7 +81,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
     admin_message.save_message_json(sent_message)
     admin_message.user_message.add_reply()
 
-    await update.message.reply_html(f"<i>message sent to {admin_message.target_user.mention()}</i>", quote=True)
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND, is_big=True)
 
 
 @decorators.catch_exception()
@@ -175,7 +175,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
     )
     session.add(admin_message)
 
-    await update.message.reply_html(f"<i>message sent to {user.mention()}</i>", quote=True)
+    await update.message.set_reaction(ReactionEmoji.WRITING_HAND, is_big=True)
 
 
 HANDLERS = (
