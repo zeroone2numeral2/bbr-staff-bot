@@ -3,7 +3,7 @@ from typing import Union, Iterable, Optional
 
 from sqlalchemy import select, true
 from sqlalchemy.orm import Session
-from telegram import BotCommand, BotCommandScopeAllPrivateChats
+from telegram import BotCommand, BotCommandScopeAllPrivateChats, LinkPreviewOptions
 from telegram import ChatMemberAdministrator
 from telegram import Update, BotCommandScopeChat, ChatMemberOwner, BotCommandScopeDefault
 from telegram.constants import ParseMode
@@ -30,9 +30,9 @@ Base.metadata.create_all(engine)
 
 defaults = Defaults(
     parse_mode=ParseMode.HTML,
-    disable_web_page_preview=True,
+    link_preview_options=LinkPreviewOptions(is_disabled=True),
     # tzinfo=pytz.utc,  # pytz.utc is the default
-    quote=False
+    do_quote=False
 )
 
 # persistence was initially added to make conversation statuses persistent,
@@ -262,14 +262,10 @@ async def post_init(application: Application) -> None:
     session.close()
 
 
-builder.post_init(post_init)
-app: Application = builder.build()
-app.bot.initialize()
-bot_info = app.bot
-
-
 def main():
     utilities.load_logging_config('logging.json')
+
+    app: Application = builder.post_init(post_init).build()
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)
 
