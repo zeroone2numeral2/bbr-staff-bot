@@ -254,7 +254,7 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
             await update.callback_query.edit_message_reply_markup(reply_markup=None)
         except BadRequest as e:
             # user might have tapped thrice on the button
-            if "message is not modified" not in e.message:
+            if "message is not modified" not in e.message.lower():
                 raise e
         return
 
