@@ -342,7 +342,7 @@ def is_normal_group(chat: Chat) -> bool:
 
 
 def forward_from_hidden_account(message: Message):
-    return message.forward_sender_name and not message.forward_from
+    return message.forward_origin and isinstance(message.forward_origin, MessageOriginHiddenUser)
 
 
 def is_service_account(user: User):
