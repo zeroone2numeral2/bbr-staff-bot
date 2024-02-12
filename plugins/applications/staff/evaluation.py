@@ -135,6 +135,7 @@ async def delete_history(session: Session, bot: Bot, user: User, delete_reason: 
     result = dict(deleted=0, too_old=0, failed=0)
 
     messages: List[PrivateChatMessage] = private_chat_messages.get_messages(session, user.user_id)
+    message_ids = []
     for message in messages:
         if message.revoked:
             continue
@@ -143,15 +144,14 @@ async def delete_history(session: Session, bot: Bot, user: User, delete_reason: 
             result["too_old"] += 1
             continue
 
-        logger.debug(f"deleting message {message.message_id} from chat {user.user_id}...")
-        success, _ = await utilities.delete_messages_by_id_safe(bot, user.user_id, message.message_id)
-        logger.debug(f"...success: {success}")
-        message.set_revoked(reason=delete_reason)
+        message_ids.append(message.message_id)
+        message.set_revoked(reason=delete_reason)  # always set as revoked if passed to Telegram
 
-        if not success:
-            result["failed"] += 1
-        else:
-            result["deleted"] += 1
+    result["deleted"] = len(message_ids)
+    try:
+        await bot.delete_messages(user.user_id, message_ids)
+    except (BadRequest, TelegramError) as e:
+        logger.error(f"error while deleting messages: {e}")
 
     # we need to save it here after we're done with the cleanup, otherwise it would be deleted with all the other messages
     if sent_rabbit_message:
@@ -328,7 +328,6 @@ async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TY
     await update.message.reply_text(
         f"• eliminati: {result_dict['deleted']}\n"
         f"• non eliminati perchè troppo vecchi: {result_dict['too_old']}\n"
-        f"• non eliminati per altri motivi: {result_dict['failed']}\n"
         f"• file rabbit: {'inviato (se impostato)' if send_rabbit else 'non inviato'}",
         quote=True
     )
