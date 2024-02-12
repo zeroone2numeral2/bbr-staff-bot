@@ -250,7 +250,12 @@ async def on_reject_or_accept_button(update: Update, context: ContextTypes.DEFAU
     if not user.pending_request_id:
         logger.info(f"user {user.user_id} has no pending request")
         await update.callback_query.answer(f"Questo utente non ha alcuna richiesta di ingresso pendente", show_alert=True, cache_time=10)
-        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        try:
+            await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        except BadRequest as e:
+            # user might have tapped thrice on the button
+            if "message is not modified" not in e.message:
+                raise e
         return
 
     await accept_or_reject(
