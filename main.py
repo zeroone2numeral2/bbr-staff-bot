@@ -6,8 +6,7 @@ from sqlalchemy import select, true
 from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session
 from telegram.warnings import PTBUserWarning
-from telegram import BotCommand, BotCommandScopeAllPrivateChats
-from telegram._linkpreviewoptions import LinkPreviewOptions
+from telegram import BotCommand, BotCommandScopeAllPrivateChats, LinkPreviewOptions
 from telegram import ChatMemberAdministrator
 from telegram import Update, BotCommandScopeChat, ChatMemberOwner, BotCommandScopeDefault
 from telegram.constants import ParseMode
