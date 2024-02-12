@@ -3,7 +3,7 @@ import pathlib
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, Message, Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, Message, Bot, InlineKeyboardButton, InlineKeyboardMarkup, MessageOriginChannel
 from telegram.constants import FileSizeLimit
 from telegram.ext import ContextTypes, filters, MessageHandler, CallbackQueryHandler
 
@@ -225,7 +225,7 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
     logger.info(f"discussion group: channel message update {utilities.log(update)}")
 
     channel_chat_id = update.message.sender_chat.id
-    channel_message_id = update.message.forward_from_message_id
+    channel_message_id = update.message.forward_origin.message_id  # must be a MessageOriginChannel, so message_id is always present
     
     event: Event = events.get_or_create(session, channel_chat_id, channel_message_id, create_if_missing=False)
     if not event:

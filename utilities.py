@@ -16,7 +16,7 @@ from typing import Union, Optional, Tuple
 import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
-    ChatMember, Bot
+    ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser, MessageOriginChannel
 from telegram.constants import MessageType
 from telegram.error import BadRequest
 from telegram.helpers import effective_message_type
@@ -342,24 +342,38 @@ def is_normal_group(chat: Chat) -> bool:
 
 
 def forward_from_hidden_account(message: Message):
-    return message.forward_sender_name and not message.forward_from
+    return message.forward_origin and isinstance(message.forward_origin, MessageOriginHiddenUser)
 
 
 def is_service_account(user: User):
     return user.id in (777000,)
 
 
-def is_forward_from_user(message: Message, exclude_service=True, exclude_bots=True):
-    """Returns True if the original sender of the message was an user account. Will exlcude service account"""
+def is_forward_from_user(message: Message, exclude_service_accounts=True, exclude_bots=True):
+    """Returns True if the original sender of the message was an user account. Will exlcude service account by default"""
 
-    if message.forward_from and exclude_service and is_service_account(message.forward_from):
-        return False
-    elif message.forward_from and exclude_bots and message.forward_from.is_bot:
-        # message.forward_from always exist with bots because they cannot hide their forwards
+    if not message.forward_origin:
+        # not a forwarded message
         return False
 
-    # return True even when the user decided to hide their account
-    return message.forward_sender_name or message.forward_from
+    if not isinstance(message.forward_origin, (MessageOriginUser, MessageOriginHiddenUser)):
+        # not a forwarded message from an user/an user that hidden their identity
+        return False
+
+    if isinstance(message.forward_origin, MessageOriginHiddenUser):
+        # return True even when the user decided to hide their account
+        if exclude_service_accounts or exclude_bots:
+            logger.info("origin sender hid their account: cannot check whether it is a bot or service account")
+
+        return True
+
+    if exclude_service_accounts and is_service_account(message.forward_origin.sender_user):
+        return False
+    elif exclude_bots and message.forward_origin.sender_user.is_bot:
+        # message.forward_origin.sender_user always exist with bots because they cannot hide their forwards
+        return False
+
+    return True
 
 
 def is_organic_user(user: User):
@@ -432,7 +446,7 @@ def is_reply_to_forwarded_channel_message(message: Message) -> bool:
     if not message.reply_to_message:
         return False
 
-    return message.reply_to_message.forward_from_chat and message.reply_to_message.forward_from_chat.type == Chat.CHANNEL
+    return message.reply_to_message.forward_origin and isinstance(message.reply_to_message.forward_origin, MessageOriginChannel)
 
 
 def detect_media_type(message: Message, raise_on_unknown_type=True) -> Optional[MessageType]:
