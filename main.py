@@ -3,6 +3,7 @@ from warnings import filterwarnings
 from typing import Union, Iterable, Optional
 
 from sqlalchemy import select, true
+from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import Session
 from telegram.warnings import PTBUserWarning
 from telegram import BotCommand, BotCommandScopeAllPrivateChats, LinkPreviewOptions
@@ -26,6 +27,7 @@ from plugins.events.job import parties_message_job
 from plugins.staff.chat.duplicates_job import delete_old_messages_job
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
+filterwarnings(action="ignore", message=r".*implicitly coercing SELECT object to scalar subquery", category=SAWarning)
 
 logger = logging.getLogger(__name__)
 logger_startup = logging.getLogger("startup")
