@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from sqlalchemy import false
 from sqlalchemy.orm import Session
-from telegram import Update, Message, Chat as TelegramChat, MessageId
+from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel
 from telegram.constants import MessageType
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext
@@ -223,15 +223,15 @@ async def on_reparse_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             # event_from_link() already replied to the user, just return
             return
     else:
-        if not update.message.reply_to_message.forward_from_chat or update.message.reply_to_message.forward_from_chat.type != TelegramChat.CHANNEL:
+        if not update.message.reply_to_message.forward_origin or not isinstance(update.message.reply_to_message.forward_origin, MessageOriginChannel):
             await update.message.reply_html(
                 "Rispondi ad un messaggi inoltrato da un canale, oppure ad un messaggio di testo seguito dal link "
                 "al messaggio dell'evento"
             )
             return
 
-        chat_id = update.message.reply_to_message.forward_from_chat.id
-        message_id = update.message.reply_to_message.forward_from_message_id
+        chat_id = update.message.reply_to_message.forward_origin.chat.id
+        message_id = update.message.reply_to_message.forward_origin.message_id
 
         event: Event = events.get_or_create(session, chat_id, message_id)
         if not event:
