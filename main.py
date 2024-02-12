@@ -304,7 +304,8 @@ def main():
             Update.CHAT_MEMBER,
             Update.MY_CHAT_MEMBER,
             Update.MESSAGE_REACTION,
-            Update.MESSAGE_REACTION_COUNT
+            Update.MESSAGE_REACTION_COUNT,
+            Update.CHAT_JOIN_REQUEST
         ]
     )
 
