@@ -16,7 +16,7 @@ from typing import Union, Optional, Tuple
 import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
-    ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser
+    ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser, MessageOriginChannel
 from telegram.constants import MessageType
 from telegram.error import BadRequest
 from telegram.helpers import effective_message_type
@@ -446,7 +446,7 @@ def is_reply_to_forwarded_channel_message(message: Message) -> bool:
     if not message.reply_to_message:
         return False
 
-    return message.reply_to_message.forward_from_chat and message.reply_to_message.forward_from_chat.type == Chat.CHANNEL
+    return message.reply_to_message.forward_origin and isinstance(message.reply_to_message.forward_origin, MessageOriginChannel)
 
 
 def detect_media_type(message: Message, raise_on_unknown_type=True) -> Optional[MessageType]:
