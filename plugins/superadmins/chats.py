@@ -123,7 +123,8 @@ async def on_setchat_private_command(update: Update, context: ContextTypes.DEFAU
 
     destination_type = context.args[0].lower()
 
-    chat = chats.get_safe(session, update.message.reply_to_message.forward_from_chat, commit=True)
+    # noinspection PyUnresolvedReferences
+    chat = chats.get_safe(session, update.message.reply_to_message.forward_origin.chat, commit=True)
 
     if destination_type == ChatDestination.LOG:
         chats.reset_log_chat(session)
