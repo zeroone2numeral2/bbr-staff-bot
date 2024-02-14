@@ -55,6 +55,11 @@
             "propagate": false,
             "level": "DEBUG"
         },
+        "session_decorator": {
+            "handlers": ["console", "file"],
+            "propagate": false,
+            "level": "INFO"
+        },
         "plugins.events.job": {
             "handlers": ["console", "file_jobs"],
             "propagate": false,

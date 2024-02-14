@@ -20,6 +20,7 @@ from emojis import Emoji
 
 logger = logging.getLogger(__name__)
 logger_job = logging.getLogger("plugins.events.job")
+logger_session = logging.getLogger("session_decorator")  # will write to the default file ("bot.log") + console, but for INFO or more severe
 
 
 class DatabaseInstanceKey:
@@ -130,7 +131,7 @@ def pass_session(
             chat: Optional[Chat] = None
 
             if TempDataKey.DB_INSTANCES in context.chat_data:
-                logger.debug(f"chat_data contains {TempDataKey.DB_INSTANCES} (session will be recycled)")
+                logger_session.debug(f"chat_data contains {TempDataKey.DB_INSTANCES} (session will be recycled)")
                 if DatabaseInstanceKey.SESSION not in context.chat_data[TempDataKey.DB_INSTANCES]:
                     raise ValueError("session object was not passed in chat_data")
                 session = context.chat_data[TempDataKey.DB_INSTANCES][DatabaseInstanceKey.SESSION]
@@ -145,7 +146,7 @@ def pass_session(
             # we fetch the session once per message at max, because the decorator is run only if a message passes filters
             # if we are using different handlers groups, the session will be fetched once per  group unless passed down
             if not session:
-                logger.debug("fetching a new session")
+                logger_session.debug("fetching a new session")
                 session: Session = get_session()
 
             if not pass_down_db_instances:
@@ -155,18 +156,18 @@ def pass_session(
             if pass_user and update.effective_user:
                 if not user:
                     # fetch it only if not passed in chat_data
-                    logger.debug("fetching User object")
+                    logger_session.debug("fetching User object")
                     user = users.get_safe(session, update.effective_user, commit=True)
                 kwargs['user'] = user
 
             if pass_chat and update.effective_chat:
                 if update.effective_chat.id > 0:
                     # raise ValueError("'pass_chat' cannot be True for updates that come from private chats")
-                    logger.warning("'pass_chat' shouldn't be True for updates that come from private chats")
+                    logger_session.warning("'pass_chat' shouldn't be True for updates that come from private chats")
                 else:
                     if not chat:
                         # fetch it only if not passed in chat_data
-                        logger.debug("fetching Chat object")
+                        logger_session.debug("fetching Chat object")
                         chat = chats.get_safe(session, update.effective_chat, commit=True)
                     kwargs['chat'] = chat
 
@@ -175,11 +176,11 @@ def pass_session(
                 result = await func(update, context, session=session, *args, **kwargs)
             except Exception as e:
                 if rollback_on_exception:
-                    logger.warning(f"exception while running an handler callback ({e}): rolling back")
+                    logger_session.warning(f"exception while running an handler callback ({e}): rolling back")
                     session.rollback()
 
                 if commit_on_exception:
-                    logger.warning(f"exception while running an handler callback ({e}): committing")
+                    logger_session.warning(f"exception while running an handler callback ({e}): committing")
                     session.commit()
 
                 # if an exception happens, we DO NOT pass session/db instances down
@@ -190,14 +191,14 @@ def pass_session(
                 raise
 
             if pass_down_db_instances:
-                logger.debug(f"storing db instances in chat_data")
+                logger_session.debug(f"storing db instances in chat_data")
                 context.chat_data[TempDataKey.DB_INSTANCES] = {
                     DatabaseInstanceKey.SESSION: session,
                     DatabaseInstanceKey.USER: user,
                     DatabaseInstanceKey.CHAT: chat
                 }
 
-            logger.debug("committing session...")
+            logger_session.debug("committing session...")
             session.commit()
 
             return result
