@@ -28,6 +28,7 @@ class Emoji:
     PLUS = "➕"
     RECYCLE = "♻️"
     RED = "🔴"
+    SAD = "😔"
     SHEET = "📝"
     SHRUG = "🤷"
     SLEEPING = "😪"
