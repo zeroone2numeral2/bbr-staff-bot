@@ -1556,6 +1556,7 @@ class StaffChatMessage(Base):
     message_date = Column(DateTime, default=None)
     message_edit_date = Column(DateTime, default=None)
     deleted = Column(Boolean, default=False)
+    duplicate = Column(Boolean, default=False)
 
     text_hash = Column(String, default=None)
     text_hashing_version = Column(Integer, default=None)

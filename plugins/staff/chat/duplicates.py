@@ -51,6 +51,8 @@ async def on_staff_chat_message(update: Update, context: ContextTypes.DEFAULT_TY
     if not duplicates:
         return
 
+    staff_chat_message.duplicate = True
+
     logger.info(f"found {len(duplicates)} duplicates")
     duplicates_links = [d.message_link_html(f"{utilities.elapsed_str(d.message_date, 'poco')} fa") for d in duplicates]
     text = f"Sembra che questo messaggio sia già stato inviato {'; '.join(duplicates_links)}"
