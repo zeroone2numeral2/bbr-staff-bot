@@ -1621,6 +1621,7 @@ class Destination:
     EVENTS_CHAT_DEEPLINK = "events-chat-deeplink"
     USERS_CHAT_DEEPLINK = "users-chat-deeplink"
     QRCODE_DEEPLINK = "qrcode-deeplink"
+    APPLICATION_REQUEST_ACCEPTED = "application-request-accepted"
 
 
 class InviteLink(Base):
