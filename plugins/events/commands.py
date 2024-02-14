@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from sqlalchemy import false
 from sqlalchemy.orm import Session
-from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel
+from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel, ReplyParameters
 from telegram.constants import MessageType
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext
@@ -295,20 +295,22 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     if not event.discussion_group_chat_id or not event.discussion_group_message_id:
         logger.info(f"no discussion group message saved for {event}")
-        await update.message.reply_text(f"Il messaggio nel gruppo a cui rispondere non è stato salvato", quote=True)
+        await update.message.reply_text(f"Il messaggio nel gruppo a cui rispondere non è stato salvato", do_quote=True)
         return
 
     try:
         comment_message_id: MessageId = await update.message.reply_to_message.copy(
             chat_id=event.discussion_group_chat_id,
-            reply_to_message_id=event.discussion_group_message_id,
-            allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
+            reply_parameters=ReplyParameters(
+                message_id=event.discussion_group_message_id,
+                allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
+            )
         )
         message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
         event_title_link = event.title_link_html()
         await update.message.reply_html(
             f"<a href=\"{message_link}\">Messaggio inviato</a> come commento a \"{event_title_link}\"",
-            reply_to_message_id=update.effective_message.reply_to_message.message_id
+            reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
         )
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while copying message: {e.message}")
@@ -316,7 +318,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             discussion_message_link = event.discussion_group_message_link()
             await update.message.reply_html(
                 f"Invio fallito: impossibile trovare <a href=\"{discussion_message_link}\">il messaggio nel gruppo</a> a cui rispondere",
-                reply_to_message_id=update.effective_message.reply_to_message.message_id
+                reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
             )
         else:
             raise e

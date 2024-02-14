@@ -4,7 +4,7 @@ import re
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, MessageId
+from telegram import Update, MessageId, ReplyParameters
 from telegram.constants import ChatAction, ReactionEmoji
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import filters, ContextTypes, MessageHandler
@@ -38,7 +38,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
                        f"message_id: {update.message.reply_to_message.message_id}")
         await update.message.reply_text(
             "⚠️ <i>can't find the message to reply to in the database</i>",
-            reply_to_message_id=update.message.reply_to_message.message_id
+            reply_parameters=ReplyParameters(message_id=update.message.reply_to_message.message_id)
         )
         return
 
@@ -50,7 +50,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
         await update.message.reply_html(
             "<i>\"++\" non può essere usato in risposta ad un messaggio dello staff che risponde ad "
             "un messaggio di servizio che notifica l'arrivo di una nuova richiesta</i>",
-            quote=True
+            do_quote=True
         )
         return
 
@@ -60,8 +60,10 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
     sent_message = await context.bot.send_message(
         chat_id=admin_message.user_message.user_id,
         text=re.sub(r"^\+\+\s*", "", update.effective_message.text_html),
-        reply_to_message_id=admin_message.reply_message_id,  # reply to the admin message we previously sent in the chat
-        allow_sending_without_reply=True,
+        reply_parameters=ReplyParameters(
+            message_id=admin_message.reply_message_id,  # reply to the admin message we previously sent in the chat
+            allow_sending_without_reply=True
+        ),
         protect_content=config.settings.protected_admin_replies
     )
     private_chat_messages.save(session, sent_message)
@@ -124,7 +126,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
             logger.warning("bot was blocked by the user")
             await update.message.reply_text(
                 f"{Emoji.WARNING} <i>coudln't send the message to {user.mention()}: they blocked the bot</i>",
-                quote=True
+                do_quote=True
             )
             user.set_stopped()
             return
@@ -145,8 +147,10 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 
     sent_message: MessageId = await update.message.copy(
         chat_id=user.user_id,
-        reply_to_message_id=user_chat_reply_to_message_id,
-        allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
+        reply_parameters=ReplyParameters(
+            message_id=user_chat_reply_to_message_id,
+            allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
+        ),
         protect_content=config.settings.protected_admin_replies
     )
 

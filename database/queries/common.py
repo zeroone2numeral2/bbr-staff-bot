@@ -35,7 +35,7 @@ async def get_user_instance_from_message(update: Update, context: ContextTypes.D
         await update.message.reply_text(
             "<i>can't detect the user's ID\nreply to one of their forwarded messages or to a message containing their #id1234567 hasthag, "
             "or include the ID hashtag after the command</i>",
-            quote=True
+            do_quote=True
         )
         return
     else:
@@ -43,7 +43,7 @@ async def get_user_instance_from_message(update: Update, context: ContextTypes.D
         user: Optional[User] = users.get_or_create(session, user_id, create_if_missing=False)
         if not user:
             logger.info(f"can't find user in the database")
-            await update.message.reply_text(f"can't find user <code>{user_id}</code> in the database", quote=True)
+            await update.message.reply_text(f"can't find user <code>{user_id}</code> in the database", do_quote=True)
             return
 
     return user

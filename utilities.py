@@ -16,7 +16,7 @@ from typing import Union, Optional, Tuple
 import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
-    ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser, MessageOriginChannel
+    ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser, MessageOriginChannel, ReplyParameters
 from telegram.constants import MessageType
 from telegram.error import BadRequest
 from telegram.helpers import effective_message_type
@@ -280,12 +280,15 @@ async def copy_message(
     message_type = effective_message_type(message)
     kwargs = dict(
         chat_id=chat_id,
-        reply_to_message_id=reply_to_message_id,
         reply_markup=reply_markup,
-        allow_sending_without_reply=allow_sending_without_reply,
         protect_content=protect_content,
         message_thread_id=message_thread_id,
     )
+    if reply_to_message_id or allow_sending_without_reply:
+        kwargs["reply_parameters"] = ReplyParameters(
+            message_id=reply_to_message_id,
+            allow_sending_without_reply=allow_sending_without_reply
+        )
 
     if message_type == MessageType.ANIMATION:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html

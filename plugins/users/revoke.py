@@ -1,7 +1,7 @@
 import logging
 
 from sqlalchemy.orm import Session
-from telegram import Update
+from telegram import Update, ReplyParameters
 from telegram.ext import ContextTypes, PrefixHandler
 from telegram.ext import filters
 
@@ -32,7 +32,7 @@ async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_T
         logger.warning(f"couldn't find replied-to message, message_id: {update.message.reply_to_message.message_id}")
         await update.message.reply_text(
             "⚠️ <i>can't find the message to revoke in the database</i>",
-            reply_to_message_id=update.message.reply_to_message.message_id
+            reply_parameters=ReplyParameters(message_id=update.message.reply_to_message.message_id)
         )
         return
 
@@ -44,7 +44,7 @@ async def on_revoke_user_command(update: Update, context: ContextTypes.DEFAULT_T
 
     await update.message.reply_text(
         "🚮 <i>message revoked successfully: it has been deleted from the staff chat</i>",
-        reply_to_message_id=update.message.reply_to_message.message_id
+        reply_parameters=ReplyParameters(message_id=update.message.reply_to_message.message_id)
     )
 
     user_message.revoke()

@@ -128,7 +128,7 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
             text = ""
 
         if text:
-            sent_message = await update.message.reply_text(text, quote=True)
+            sent_message = await update.message.reply_text(text, do_quote=True)
             private_chat_messages.save(session, sent_message)
 
     user.set_started()

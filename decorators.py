@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 # noinspection PyPackageRequirements
-from telegram import Update, ReplyKeyboardRemove
+from telegram import Update, ReplyKeyboardRemove, ReplyParameters
 # noinspection PyPackageRequirements
 from telegram.error import TimedOut, BadRequest
 # noinspection PyPackageRequirements
@@ -64,7 +64,13 @@ def catch_exception(silent=False, ignore_message_not_modified_exception=False):
                     if update.callback_query:
                         sent_message = await update.callback_query.message.reply_html(text)
                     else:
-                        sent_message = await update.effective_message.reply_html(text, quote=True, allow_sending_without_reply=True)
+                        sent_message = await update.effective_message.reply_html(
+                            text,
+                            reply_parameters=ReplyParameters(
+                                message_id=update.effective_message.message_id,
+                                allow_sending_without_reply=True
+                            )
+                        )
 
                     if sent_message.chat.id > 0:
                         # only save if we sent the message in a private chat

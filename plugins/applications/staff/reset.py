@@ -107,7 +107,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     await update.message.reply_text(
         f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
         f"(eventuali richieste pendenti o rifiutate sono state dimenticate, se era bannato è stato sbannato)",
-        quote=True
+        do_quote=True
     )
 
     # unban the user so they can join again, just in case the user was removed manually before /reset was used

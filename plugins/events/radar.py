@@ -3,7 +3,7 @@ import logging
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, helpers
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, helpers, ReplyParameters
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
 
 import decorators
@@ -332,8 +332,8 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
             await update.effective_message.delete()  # delete the message as we will send the new ones
             await update.effective_message.reply_html(
                 "^consulta questa lista, gli eventi non sono cambiati da quando è stata inviata",
-                reply_to_message_id=message_id,
-                quote=True
+                reply_parameters=ReplyParameters(message_id=message_id),
+                do_quote=True
             )
             return
 

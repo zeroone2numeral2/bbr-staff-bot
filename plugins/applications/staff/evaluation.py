@@ -3,7 +3,7 @@ import re
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyParameters
 from telegram import Update, User as TelegramUser, ChatInviteLink, Bot
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import CallbackQueryHandler, CommandHandler
@@ -191,8 +191,10 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     await bot.send_message(
         user.last_request.log_message_chat_id,
         evaluation_text,
-        reply_to_message_id=user.last_request.log_message_message_id,
-        allow_sending_without_reply=True
+        reply_parameters=ReplyParameters(
+            message_id=user.last_request.log_message_message_id,
+            allow_sending_without_reply=True
+        )
     )
 
     logger.info("editing previously sent log chat message...")  # we only need to remove the #pendente/#nojoin hashtag
@@ -303,7 +305,7 @@ async def on_reject_or_accept_command(update: Update, context: ContextTypes.DEFA
 
     await update.message.reply_text(
         f"<i>fatto! {user.last_request.staff_message_link('vai alla richiesta')}</i>",
-        quote=True
+        do_quote=True
     )
 
 
@@ -316,7 +318,7 @@ async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TY
 
     user_id = utilities.get_user_id_from_text(text)
     if not user_id:
-        await update.message.reply_text(f"<i>impossibile rilevare hashtag con ID dell'utente</i>", quote=True)
+        await update.message.reply_text(f"<i>impossibile rilevare hashtag con ID dell'utente</i>", do_quote=True)
         return
 
     logger.info(f"user_id: {user_id}")
@@ -326,7 +328,7 @@ async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TY
     if context.args and context.args[0].lower() == "rabbit":
         send_rabbit = True
 
-    await update.message.reply_html(f"Elimino la cronologia dei messaggi per {user.mention()}...", quote=True)
+    await update.message.reply_html(f"Elimino la cronologia dei messaggi per {user.mention()}...", do_quote=True)
 
     result_dict = await delete_history(session, context.bot, user, delete_reason="/delhistory", send_rabbit=send_rabbit)
 
@@ -334,7 +336,7 @@ async def on_delhistory_command(update: Update, context: ContextTypes.DEFAULT_TY
         f"• eliminati: {result_dict['deleted']}\n"
         f"• non eliminati perchè troppo vecchi: {result_dict['too_old']}\n"
         f"• file rabbit: {'inviato (se impostato)' if send_rabbit else 'non inviato'}",
-        quote=True
+        do_quote=True
     )
 
 
