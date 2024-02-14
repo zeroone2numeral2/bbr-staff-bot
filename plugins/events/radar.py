@@ -22,6 +22,7 @@ from plugins.events.common import (
 )
 
 logger = logging.getLogger(__name__)
+logger_radar = logging.getLogger('radar')
 
 
 DEFAULT_FILTERS = [EventFilter.IT, EventFilter.NOT_FREE, EventFilter.WEEK]
@@ -89,6 +90,7 @@ def radar_save_date_override_to_user_data(context: ContextTypes.DEFAULT_TYPE):
 @decorators.check_ban()
 async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
     logger.info(f"/radar23 {utilities.log(update)}")
+    logger_radar.info(f"{update.effective_message.text} {utilities.log(update)}")
 
     # set started, in case we entered this handler because of a deeplink
     user.set_started()
@@ -163,7 +165,9 @@ def safe_remove(items: List[str], item: str):
 @decorators.catch_exception(ignore_message_not_modified_exception=True)
 @decorators.pass_session()
 async def on_change_filter_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"change filter callback query {utilities.log(update)}")
+    log_text = f"change filter callback query {utilities.log(update)}"
+    logger.info(log_text)
+    logger_radar.info(log_text)
 
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
     new_filter = context.matches[0].group("filter")
@@ -281,7 +285,9 @@ def cache_all_events_strings_for_cache_key(context: CallbackContext, args_cache_
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"confirm callback query {utilities.log(update)}")
+    log_text = f"confirm callback query {utilities.log(update)}"
+    logger.info(log_text)
+    logger_radar.info(log_text)
 
     args = context.user_data.get(TempDataKey.EVENTS_FILTERS, DEFAULT_FILTERS)
     # we create a copy of the list because modifiyng `args`'s content
@@ -368,7 +374,9 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
 @decorators.pass_session(pass_user=True)
 @decorators.check_ban()
 async def on_radar_password(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User):
-    logger.info(f"radar password/deeplink ({update.message.text}) {utilities.log(update)}")
+    log_text = f"radar password/deeplink ({update.message.text}) {utilities.log(update)}"
+    logger.info(log_text)
+    logger_radar.info(log_text)
 
     user.can_use_radar = True
     user.set_started()

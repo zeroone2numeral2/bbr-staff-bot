@@ -33,11 +33,25 @@
             "maxBytes": 3145728,
             "filename": "logs/jobs.log",
             "backupCount": 20
+        },
+        "file_radar": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "standard",
+            "level": "DEBUG",
+            "encoding": "utf8",
+            "maxBytes": 3145728,
+            "filename": "logs/radar.log",
+            "backupCount": 20
         }
     },
     "loggers": {
          "startup": {
             "handlers": ["console", "file_startup"],
+            "propagate": false,
+            "level": "DEBUG"
+        },
+        "radar": {
+            "handlers": ["file_radar"],
             "propagate": false,
             "level": "DEBUG"
         },
