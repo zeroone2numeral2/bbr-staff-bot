@@ -1176,7 +1176,7 @@ class Event(Base):
             else:
                 return f"{start_day}-{end_day}.{self.start_month:02}.{self.start_year}{week_number}"
 
-        logger.info(f"{self.start_month}, {self.end_month}")
+        # logger.info(f"{self.start_month}, {self.end_month}")
 
         return f"{start_day}.{self.start_month:02}.{self.start_year}{week_number}"
 
