@@ -2,8 +2,7 @@ import logging
 from typing import Optional, Tuple, Union
 
 from sqlalchemy.orm import Session
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatInviteLink, \
-    Bot
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatInviteLink, Bot
 from telegram.constants import ParseMode
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler
@@ -279,8 +278,7 @@ async def on_qrcode_deeplink(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await context.bot.send_message(
             log_chat.chat_id,
             f"<b>#QRCODE_DEEPLINK</b> utilizzato da {update.effective_user.mention_html(user_full_name)} • #id{user.user_id}",
-            parse_mode=ParseMode.HTML,
-            disable_web_page_preview=True
+            parse_mode=ParseMode.HTML
         )
 
 
