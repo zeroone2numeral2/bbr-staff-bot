@@ -28,6 +28,19 @@ class FilterReplyToBot(MessageFilter):
         return False
 
 
+class FilterEventsChatMessageLink(MessageFilter):
+    def __init__(self, chat_id: int):
+        super().__init__()
+        chat_id = str(chat_id).replace("-100", "")
+        self.pattern = rf"^https://t\.me/c/{chat_id}/\d+"
+
+    def filter(self, message):
+        if message.text:
+            return bool(re.search(self.pattern, message.text, re.I))
+
+        return False
+
+
 class FilterReplyTopicsAware(MessageFilter):
     def filter(self, message):
         # messages sent in a topic, when they are *not* a reply to a message, are sent as reply
@@ -55,6 +68,11 @@ class FilterRadarPassword(MessageFilter):
         return bool(re.search(config.settings.radar_password, message.text, re.I))
 
 
+class FilterFalse(MessageFilter):
+    def filter(self, message):
+        return False
+
+
 class Filter:
     SUPERADMIN = filters.User(config.telegram.admins)
     SUPERADMIN_AND_GROUP = filters.ChatType.GROUPS & filters.User(config.telegram.admins)
@@ -68,6 +86,7 @@ class Filter:
     BELONGS_TO_THREAD = FilterBelongsToThread()
     RADAR_PASSWORD = FilterRadarPassword()
     FLY_MEDIA_DOWNLOAD = filters.PHOTO | filters.VIDEO | filters.ANIMATION  # media we can consider as fly, for backups
+    EVENTS_CHAT_MESSAGE_LINK = FilterFalse()  # we init this filter later
 
 
 class ChatFilter:
@@ -88,6 +107,7 @@ def init_filters():
             logger.debug(f"initializing EVENTS filter ({events_chat.chat_id})...")
             ChatFilter.EVENTS.chat_ids = {events_chat.chat_id}
             ChatFilter.EVENTS_GROUP_POST.chat_ids = {events_chat.chat_id}
+            Filter.EVENTS_CHAT_MESSAGE_LINK = FilterEventsChatMessageLink(events_chat.chat_id)
 
         staff_chat: Chat = chats.get_chat(session, Chat.is_staff_chat)
         if staff_chat:

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel, ReplyParameters
 from telegram.constants import MessageType
 from telegram.error import TelegramError, BadRequest
-from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext
+from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler
 
 import decorators
 import utilities
@@ -125,6 +125,13 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
         return
 
     return event
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_member()
+async def on_event_chat_message_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"event chat message link {utilities.log(update)}")
 
 
 @decorators.catch_exception()
@@ -328,6 +335,7 @@ HANDLERS = (
     (CommandHandler(["events", "feste", "e"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["delevent", "de", "deleventmsg", "dem"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
     (CommandHandler(["resevent", "re"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["isparty", "notparty"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
