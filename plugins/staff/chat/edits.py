@@ -2,6 +2,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from telegram import Update
+from telegram.constants import ReactionEmoji
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, MessageHandler
 
@@ -41,6 +42,11 @@ async def on_edited_message_staff(update: Update, context: ContextTypes.DEFAULT_
         admin_message.save_message_json(new_message)
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while editing staff message in users chat: {e}")
+        return
+
+    # first remove, the set the reaction again
+    await update.effective_message.set_reaction()
+    await update.effective_message.set_reaction(ReactionEmoji.WRITING_HAND)
 
 
 HANDLERS = (
