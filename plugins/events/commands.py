@@ -13,7 +13,7 @@ from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext,
 import decorators
 import utilities
 from constants import Group, TempDataKey
-from database.models import Event, User, DeletionReason
+from database.models import Event, User, DeletionReason, DELETION_REASON_DESC
 from database.queries import events, private_chat_messages
 from ext.filters import Filter, ChatFilter
 from plugins.events.common import (
@@ -154,7 +154,13 @@ async def on_event_chat_message_link(update: Update, context: ContextTypes.DEFAU
 
     event_str, _ = format_event_string(event)
 
-    is_valid_str = "Questo messaggio non appare in radar/nell'elenco delle feste perchè le date non sono valide e niente hashtag #soon\n\n" if not event.is_valid() else ""
+    is_valid_str = ""
+    if event.deleted:
+        reason = DELETION_REASON_DESC.get(event.deleted_reason, DELETION_REASON_DESC[DeletionReason.OTHER])
+        is_valid_str = f"Questo messaggio non appare in radar/nell'elenco delle feste perchè è stato eliminato a mano (motivo: {reason})\n\n"
+    elif not event.is_valid():
+        is_valid_str = "Questo messaggio non appare in radar/nell'elenco delle feste perchè le date non sono valide e niente hashtag #soon\n\n"
+
     text = f"{event_str}\n\n{is_valid_str}<i>Scegli cosa fare:</i>"
 
     reply_markup = get_event_reply_markup(event)
