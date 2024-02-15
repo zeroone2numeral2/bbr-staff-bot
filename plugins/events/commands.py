@@ -4,7 +4,8 @@ from typing import Optional, List
 
 from sqlalchemy import false
 from sqlalchemy.orm import Session
-from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel, ReplyParameters
+from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel, ReplyParameters, \
+    InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import MessageType
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler
@@ -103,23 +104,23 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def event_from_link(update: Update, context: CallbackContext, session: Session) -> Optional[Event]:
-    if not context.args:
-        return
-
-    message_link = context.args[0]
+    message_link = context.args[0] if context.args else update.effective_message.text
     chat_id, message_id = utilities.unpack_message_link(message_link)
     if not chat_id:
-        await update.message.reply_text("Il link utilizzato non è valido")
+        logger.debug("invalid event link")
+        await update.effective_message.reply_text("Il link utilizzato non è valido")
         return
 
     if isinstance(chat_id, str):
-        await update.message.reply_text("Questo comando non funziona con chat pubbliche (che hanno uno username)")
+        logger.debug("public chat message link")
+        await update.effective_message.reply_text("Questo comando non funziona con chat pubbliche (che hanno uno username)")
         return
 
     event_ids_str = f"{chat_id}</code>/<code>{message_id}</code>"
 
     event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
     if not event:
+        logger.debug("no event saved for this message link")
         await update.effective_message.reply_text(f"Nessuna festa salvata per <a href=\"{message_link}\">"
                                                   f"questo messaggio</a> ({event_ids_str})")
         return
@@ -127,11 +128,37 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
     return event
 
 
+def get_event_reply_markup(event: Event):
+    keyboard = [[
+        InlineKeyboardButton(f"vedi post", callback_data=f"getpost:{event.chat_id}:{event.message_id}")
+    ]]
+
+    if event.deleted:
+        keyboard[0].append(InlineKeyboardButton(f"ripristina", callback_data=f"restore:{event.chat_id}:{event.message_id}"))
+    else:
+        keyboard[0].append(InlineKeyboardButton(f"elimina", callback_data=f"delete:{event.chat_id}:{event.message_id}"))
+
+    return InlineKeyboardMarkup(keyboard)
+
+
 @decorators.catch_exception()
 @decorators.pass_session()
 @decorators.staff_member()
 async def on_event_chat_message_link(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"event chat message link {utilities.log(update)}")
+
+    event: Event = await event_from_link(update, context, session)
+    if not event:
+        # event_from_link() will also answer the user
+        return
+
+    event_str, _ = format_event_string(event)
+
+    is_valid_str = "Questo messaggio non appare in radar/nell'elenco delle feste perchè le date non sono valide e niente hashtag #soon\n\n" if not event.is_valid() else ""
+    text = f"{event_str}\n\n{is_valid_str}<i>Scegli cosa fare:</i>"
+
+    reply_markup = get_event_reply_markup(event)
+    await update.message.reply_html(text, reply_markup=reply_markup, do_quote=True)
 
 
 @decorators.catch_exception()
