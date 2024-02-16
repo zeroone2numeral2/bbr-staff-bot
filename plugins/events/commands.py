@@ -289,16 +289,16 @@ async def on_delete_option_button(update: Update, context: ContextTypes.DEFAULT_
     deletion_info = "I messaggi eliminati non appaiono nella lista delle feste fissata, e nel radar"
     if action == EventMessageLinkAction.DELETE_DUPLICATE:
         event.delete(DeletionReason.DUPLICATE)
-        await update.callback_query.answer(f"Eliminato: duplicato\n{deletion_info}", show_alert=True)
+        await update.callback_query.answer(f"Eliminato: duplicato\n\n{deletion_info}", show_alert=True)
     elif action == EventMessageLinkAction.DELETE_MESSAGE_DELETED:
         event.delete(DeletionReason.MESSAGE_DELETED)
-        await update.callback_query.answer(f"Eliminato: il messaggio nel canale è stato eliminato\n{deletion_info}", show_alert=True)
+        await update.callback_query.answer(f"Eliminato: il messaggio nel canale è stato eliminato\n\n{deletion_info}", show_alert=True)
     elif action == EventMessageLinkAction.DELETE_NOT_A_PARTY:
         event.delete(DeletionReason.NOT_A_PARTY)
-        await update.callback_query.answer(f"Eliminato: il messaggio non si riferiva ad una festa\n{deletion_info}", show_alert=True)
+        await update.callback_query.answer(f"Eliminato: il messaggio non si riferiva ad una festa\n\n{deletion_info}", show_alert=True)
     elif action == EventMessageLinkAction.DELETE_OTHER:
         event.delete(DeletionReason.OTHER)
-        await update.callback_query.answer(f"Eliminato\n{deletion_info}", show_alert=True)
+        await update.callback_query.answer(f"Eliminato\n\n{deletion_info}", show_alert=True)
 
     session.commit()
 
