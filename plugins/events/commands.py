@@ -247,7 +247,7 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
             # if no media_type, assume photo
             media_type = event.media_type or MessageType.PHOTO
             await utilities.reply_media(
-                message=update.message,
+                message=update.effective_message,
                 media_type=media_type,
                 file_id=event.media_file_id,
                 caption=event.message_text
