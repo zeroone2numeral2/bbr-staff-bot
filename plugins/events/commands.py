@@ -8,7 +8,7 @@ from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOr
     InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import MessageType
 from telegram.error import TelegramError, BadRequest
-from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler
+from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler, CallbackQueryHandler
 
 import decorators
 import utilities
@@ -29,6 +29,16 @@ from plugins.events.common import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class EventMessageLinkAction:
+    GET_POST = "getpost"
+    RESTORE = "restore"
+    DELETE = "delete"
+    DELETE_DUPLICATE = "delduplicate"
+    DELETE_MESSAGE_DELETED = "deldeleted"
+    DELETE_NOT_A_PARTY = "delnotaparty"
+    DELETE_OTHER = "delother"
 
 
 @decorators.catch_exception()
@@ -128,17 +138,47 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
     return event
 
 
-def get_event_reply_markup(event: Event):
+def get_event_message_link_reply_markup(event: Event):
     keyboard = [[
-        InlineKeyboardButton(f"vedi post", callback_data=f"getpost:{event.chat_id}:{event.message_id}")
+        InlineKeyboardButton(f"vedi post", callback_data=f"msglink:{EventMessageLinkAction.GET_POST}:{event.chat_id}:{event.message_id}")
     ]]
 
     if event.deleted:
-        keyboard[0].append(InlineKeyboardButton(f"ripristina", callback_data=f"restore:{event.chat_id}:{event.message_id}"))
+        keyboard[0].append(InlineKeyboardButton(f"ripristina", callback_data=f"msglink:{EventMessageLinkAction.RESTORE}:{event.chat_id}:{event.message_id}"))
     else:
-        keyboard[0].append(InlineKeyboardButton(f"elimina", callback_data=f"delete:{event.chat_id}:{event.message_id}"))
+        keyboard.append([
+            InlineKeyboardButton(f"elimina", callback_data=f"msglink:{EventMessageLinkAction.DELETE}:{event.chat_id}:{event.message_id}"),
+            InlineKeyboardButton(f"elimina (duplicato)", callback_data=f"msglink:{EventMessageLinkAction.DELETE_DUPLICATE}:{event.chat_id}:{event.message_id}")
+        ])
 
     return InlineKeyboardMarkup(keyboard)
+
+
+def get_delete_event_options_reply_markup(chat_id: int, message_id: int):
+    keyboard = [
+        [InlineKeyboardButton(f"festa duplicata", callback_data=f"delopt:{EventMessageLinkAction.DELETE_DUPLICATE}:{chat_id}:{message_id}")],
+        [InlineKeyboardButton(f"messaggio eliminato", callback_data=f"delopt:{EventMessageLinkAction.DELETE_MESSAGE_DELETED}:{chat_id}:{message_id}")],
+        [InlineKeyboardButton(f"non una festa/evento", callback_data=f"delopt:{EventMessageLinkAction.DELETE_NOT_A_PARTY}:{chat_id}:{message_id}")],
+        [InlineKeyboardButton(f"altro", callback_data=f"delopt:{EventMessageLinkAction.DELETE_OTHER}:{chat_id}:{message_id}")],
+        [InlineKeyboardButton(f"➜ indietro", callback_data=f"delopt:back:{chat_id}:{message_id}")],
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_event_message_link_text(event: Event):
+    event_str, _ = format_event_string(event)
+
+    is_valid_str = ""
+    if event.deleted:
+        reason = DELETION_REASON_DESC.get(event.deleted_reason, DELETION_REASON_DESC[DeletionReason.OTHER])
+        is_valid_str = f"Questo messaggio non appare in radar/nell'elenco delle feste perchè è stato eliminato a mano (motivo: {reason})\n\n"
+    elif not event.is_valid():
+        is_valid_str = "Questo messaggio non appare in radar/nell'elenco delle feste perchè le date non sono valide e niente hashtag #soon\n\n"
+
+    text = f"{event_str}\n\n{is_valid_str}<i>Scegli cosa fare:</i>"
+
+    return text
 
 
 @decorators.catch_exception()
@@ -152,94 +192,124 @@ async def on_event_chat_message_link(update: Update, context: ContextTypes.DEFAU
         # event_from_link() will also answer the user
         return
 
-    event_str, _ = format_event_string(event)
-
-    is_valid_str = ""
-    if event.deleted:
-        reason = DELETION_REASON_DESC.get(event.deleted_reason, DELETION_REASON_DESC[DeletionReason.OTHER])
-        is_valid_str = f"Questo messaggio non appare in radar/nell'elenco delle feste perchè è stato eliminato a mano (motivo: {reason})\n\n"
-    elif not event.is_valid():
-        is_valid_str = "Questo messaggio non appare in radar/nell'elenco delle feste perchè le date non sono valide e niente hashtag #soon\n\n"
-
-    text = f"{event_str}\n\n{is_valid_str}<i>Scegli cosa fare:</i>"
-
-    reply_markup = get_event_reply_markup(event)
+    text = get_event_message_link_text(event)
+    reply_markup = get_event_message_link_reply_markup(event)
     await update.message.reply_html(text, reply_markup=reply_markup, do_quote=True)
 
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_member()
-async def on_event_action_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"event action {utilities.log(update)}")
+async def on_event_link_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"message link action {utilities.log(update)}")
+    action = context.matches[0].group("action")
+    chat_id = int(context.matches[0].group("chat_id"))
+    message_id = int(context.matches[0].group("message_id"))
 
-    event: Event = await event_from_link(update, context, session)
-    if not event:
-        # event_from_link() will also answer the user
+    if action == EventMessageLinkAction.DELETE:
+        # generic "delete": show more options
+        reply_markup = get_delete_event_options_reply_markup(chat_id, message_id)
+        await update.callback_query.edit_message_reply_markup(reply_markup)
         return
 
-    # session.delete(event)
-    command = utilities.get_command(update.message.text)
-    if command in ("delevent", "de", "deleventmsg", "dem"):
-        event.delete(DeletionReason.DELEVENT_GENERIC)
-        action = "deleted"
-    elif command in ("resevent", "re"):
+    event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
+    if not event:
+        logger.warning(f"cannot find event: chat_id: {chat_id}, message_id: {message_id}")
+        await update.callback_query.answer(f"Impossibile trovare evento (chat id: {chat_id}, message id: {message_id})")
+        await update.effective_message.edit_reply_markup(reply_markup=None)
+        return
+
+    logger.info(f"action selected: {action}")
+
+    if action == EventMessageLinkAction.RESTORE:
         event.restore()
-        action = "restored"
-    elif command in ("notparty",):
-        event.delete(DeletionReason.NOT_A_PARTY)
-        action = "marked as not a party"
-    elif command in ("isparty",):
-        event.restore()
-        action = "marked as party"
-    else:
-        raise ValueError(f"invalid command: {command}")
 
-    event_str, _ = format_event_string(event)
-    await update.effective_message.reply_text(f"{event_str}\n\n^event {action}")
+        context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
+        drop_events_cache(context)
 
-    # set the flag and drop the cache always, even when the command is /isparty or /notparty, as the command
-    # does not originate from an "invalid date" notification, and the Event might be recognized as a valid party
-    logger.info("setting flag to signal that the parties message list should be updated and dropping events cache...")
-    context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
-    drop_events_cache(context)
+        await update.callback_query.answer("evento ripristinato")
+    elif action == EventMessageLinkAction.DELETE_DUPLICATE:
+        event.delete(DeletionReason.DUPLICATE)
 
-    if command in ("deleventmsg", "dem"):
-        result, result_description = await utilities.delete_messages_by_id_safe(context.bot, event.chat_id, event.message_id)
-        text = f"{event.message_link_html('message')} deleted: {str(result).lower()} ({result_description})"
-        if not result and event.message_date:
-            # messages cannot be deleted by a bot if they were sent > 48 hours ago
-            text += f"\nThe post was sent {utilities.elapsed_str(event.message_date)} ago"
-        await update.message.reply_html(text)
+        context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
+        drop_events_cache(context)
+
+        await update.callback_query.answer("evento eliminato (duplicato)")
+    elif action == EventMessageLinkAction.GET_POST:
+        await update.callback_query.answer("invio info evento...")
+        await update.effective_message.reply_html(f"info di debug\n"
+                                                  f"<code>date: {event.start_date_as_str()} -> {event.end_date_as_str()}\n"
+                                                  f"eliminato: {event.deleted} (motivo: {event.deletion_reason_desc()})\n"
+                                                  f"hashtags: {event.get_hashtags()}</code>")
+
+        if not event.media_file_id:
+            await update.effective_message.reply_html(f"{event.message_text}")
+        else:
+            # if no media_type, assume photo
+            media_type = event.media_type or MessageType.PHOTO
+            await utilities.reply_media(
+                message=update.message,
+                media_type=media_type,
+                file_id=event.media_file_id,
+                caption=event.message_text
+            )
+
+    text = get_event_message_link_text(event)
+    reply_markup = get_event_message_link_reply_markup(event)
+    try:
+        await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+    except BadRequest as e:
+        if "not modified" not in e.message.lower():
+            raise e
+        else:
+            logger.debug("message is not modified")
 
 
 @decorators.catch_exception()
 @decorators.pass_session()
-@decorators.staff_member()
-async def on_getpost_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/getpost {utilities.log(update)}")
+async def on_delete_option_button(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Optional[Session] = None):
+    logger.info(f"delete event option button {utilities.log(update)}")
+    action = context.matches[0].group("action")
+    chat_id = int(context.matches[0].group("chat_id"))
+    message_id = int(context.matches[0].group("message_id"))
 
-    event: Event = await event_from_link(update, context, session)
+    event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
     if not event:
-        await update.message.reply_text("nessuno evento per questo link")
+        logger.warning(f"cannot find event: chat_id: {chat_id}, message_id: {message_id}")
+        await update.callback_query.answer(f"Impossibile trovare evento (chat id: {chat_id}, message id: {message_id})")
+        await update.effective_message.edit_reply_markup(reply_markup=None)
         return
 
-    await update.message.reply_html(f"info di debug\n"
-                                    f"<code>date: {event.start_date_as_str()} -> {event.end_date_as_str()}\n"
-                                    f"eliminato: {event.deleted} (motivo: {event.deletion_reason_desc()})\n"
-                                    f"hashtags: {event.get_hashtags()}</code>")
+    if action in (EventMessageLinkAction.DELETE_DUPLICATE, EventMessageLinkAction.DELETE_MESSAGE_DELETED, EventMessageLinkAction.DELETE_NOT_A_PARTY, EventMessageLinkAction.DELETE_OTHER):
+        logger.info("dropping events cache...")
+        context.bot_data[TempDataKey.UPDATE_PARTIES_MESSAGE] = True
+        drop_events_cache(context)
 
-    if not event.media_file_id:
-        await update.effective_message.reply_html(f"{event.message_text}")
-    else:
-        # if no media_type, assume photo
-        media_type = event.media_type or MessageType.PHOTO
-        await utilities.reply_media(
-            message=update.message,
-            media_type=media_type,
-            file_id=event.media_file_id,
-            caption=event.message_text
-        )
+    logger.info(f"delete options, selected action: {action}")
+
+    if action == EventMessageLinkAction.DELETE_DUPLICATE:
+        event.delete(DeletionReason.DUPLICATE)
+        await update.callback_query.answer("eliminato perchè duplicato")
+    elif action == EventMessageLinkAction.DELETE_MESSAGE_DELETED:
+        event.delete(DeletionReason.MESSAGE_DELETED)
+        await update.callback_query.answer("eliminato: il messaggio nel canale è stato eliminato")
+    elif action == EventMessageLinkAction.DELETE_NOT_A_PARTY:
+        event.delete(DeletionReason.NOT_A_PARTY)
+        await update.callback_query.answer("eliminato: il messaggio non si riferiva ad una festa")
+    elif action == EventMessageLinkAction.DELETE_OTHER:
+        event.delete(DeletionReason.OTHER)
+        await update.callback_query.answer("eliminato")
+
+    session.commit()
+
+    text = get_event_message_link_text(event)
+    reply_markup = get_event_message_link_reply_markup(event)
+    try:
+        await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+    except BadRequest as e:
+        if "not modified" not in e.message.lower():
+            raise e
+        else:
+            logger.debug("message is not modified")
 
 
 @decorators.catch_exception()
@@ -367,14 +437,13 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 HANDLERS = (
     (CommandHandler(["events", "feste", "e"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["delevent", "de", "deleventmsg", "dem"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
-    (CommandHandler(["resevent", "re"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["isparty", "notparty"], on_event_action_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["getpost"], on_getpost_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["comment", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
+    # events chat message link actions
+    (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
+    (CallbackQueryHandler(on_event_link_action_button, rf"^msglink:(?P<action>\w+):(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
+    (CallbackQueryHandler(on_delete_option_button, rf"^delopt:(?P<action>\w+):(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
     # superadmins
     (CommandHandler(["dropeventscache", "dec"], on_drop_events_cache_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["parseevents", "pe"], on_parse_events_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
