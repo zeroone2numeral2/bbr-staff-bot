@@ -174,9 +174,9 @@ def get_event_message_link_text(event: Event):
     is_valid_str = ""
     if event.deleted:
         reason = DELETION_REASON_DESC.get(event.deleted_reason, DELETION_REASON_DESC[DeletionReason.OTHER])
-        is_valid_str = f"Questo messaggio non appare in radar/nell'elenco delle feste perchè è stato eliminato a mano (motivo: {reason})\n\n"
+        is_valid_str = f"Questo messaggio non appare in radar/nell'elenco delle feste perchè l'evento è stato eliminato a mano (motivo: {reason})\n\n"
     elif not event.is_valid():
-        is_valid_str = "Questo messaggio non appare in radar/nell'elenco delle feste perchè le date non sono valide e niente hashtag #soon\n\n"
+        is_valid_str = "Questo messaggio non appare in radar/nell'elenco delle feste perchè le date non sono valide, e non c'è hashtag #soon o equivalente\n\n"
 
     text = f"{event_str}\n\n{is_valid_str}<i>Scegli cosa fare:</i>"
 
