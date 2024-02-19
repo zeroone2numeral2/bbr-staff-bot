@@ -1131,6 +1131,14 @@ class Event(Base):
     def dates_as_date(self, fill_missing_day: int = 0):
         return self.start_date_as_date(fill_missing_day), self.end_date_as_date(fill_missing_day)
 
+    def as_dict(self, pop_keys: Optional[List] = None):
+        result_dict = self.__dict__.copy()
+        if pop_keys:
+            for key in pop_keys:
+                result_dict.pop(key, None)
+
+        return result_dict
+
     def single_day(self):
         """wether the event is a single-day event or not"""
 

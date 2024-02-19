@@ -236,10 +236,8 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
         await update.callback_query.answer("evento eliminato (duplicato)")
     elif action == EventMessageLinkAction.GET_POST:
         await update.callback_query.answer("invio info evento...")
-        await update.effective_message.reply_html(f"info di debug\n"
-                                                  f"<code>date: {event.start_date_as_str()} -> {event.end_date_as_str()}\n"
-                                                  f"eliminato: {event.deleted} (motivo: {event.deletion_reason_desc()})\n"
-                                                  f"hashtags: {event.get_hashtags()}</code>")
+        instance_str = json.dumps(event.as_dict(pop_keys=["message_json"]), default=lambda o: str(o), indent=2, sort_keys=True)
+        await update.effective_message.reply_html(f"<pre><code class=\"language-json\">{utilities.escape(instance_str)}</code></pre>")
 
         if not event.media_file_id:
             await update.effective_message.reply_html(f"{event.message_text}")
