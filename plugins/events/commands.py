@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 class EventMessageLinkAction:
     GET_POST = "getpost"
+    GET_JSON = "getjson"
     RESTORE = "restore"
     DELETE = "delete"
     DELETE_DUPLICATE = "delduplicate"
@@ -140,7 +141,8 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
 
 def get_event_message_link_reply_markup(event: Event):
     keyboard = [[
-        InlineKeyboardButton(f"vedi post", callback_data=f"msglink:{EventMessageLinkAction.GET_POST}:{event.chat_id}:{event.message_id}")
+        InlineKeyboardButton(f"vedi post", callback_data=f"msglink:{EventMessageLinkAction.GET_POST}:{event.chat_id}:{event.message_id}"),
+        InlineKeyboardButton(f"vedi json", callback_data=f"msglink:{EventMessageLinkAction.GET_JSON}:{event.chat_id}:{event.message_id}")
     ]]
 
     if event.deleted:
@@ -234,10 +236,18 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
         drop_events_cache(context)
 
         await update.callback_query.answer("evento eliminato (duplicato)")
+    elif action == EventMessageLinkAction.GET_JSON:
+        await update.callback_query.answer("invio json evento...")
+
+        instance_str = utilities.escape(json.dumps(
+            event.as_dict(pop_keys=["message_json"]),
+            default=lambda o: str(o),
+            indent=2,
+            sort_keys=True
+        ))
+        await update.effective_message.reply_html(f"<pre><code class=\"language-json\">{instance_str}</code></pre>")
     elif action == EventMessageLinkAction.GET_POST:
-        await update.callback_query.answer("invio info evento...")
-        instance_str = json.dumps(event.as_dict(pop_keys=["message_json"]), default=lambda o: str(o), indent=2, sort_keys=True)
-        await update.effective_message.reply_html(f"<pre><code class=\"language-json\">{utilities.escape(instance_str)}</code></pre>")
+        await update.callback_query.answer("invio evento...")
 
         if not event.media_file_id:
             await update.effective_message.reply_html(f"{event.message_text}")
