@@ -1,6 +1,7 @@
 [flytek]
 applications.users.any_message # preprocess
 events.message # preprocess
+events.comment # preprocess
 
 [+]
 superadmins.chats
