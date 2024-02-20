@@ -1,14 +1,15 @@
 import copy
 import datetime
 import logging
+import pathlib
 import re
 from re import Match
 from typing import Optional, List, Union, Tuple, Sequence, Dict
 
 from sqlalchemy import true, null
 from sqlalchemy.orm import Session
-from telegram import Message, MessageEntity
-from telegram.constants import MessageLimit
+from telegram import Message, MessageEntity, Update
+from telegram.constants import MessageLimit, FileSizeLimit
 from telegram.ext import CallbackContext
 
 import utilities
@@ -894,3 +895,51 @@ def get_all_events_strings_from_db_group_by(
             total_entities_count += event_entities_count  # not used yet, find something to do with this
 
     return all_events_strings
+
+
+async def download_event_media(message: Message) -> bool:
+    if not message.photo and not message.video and not message.animation:
+        logger.debug(f"no media to backup")
+        return False
+
+    if not message.photo and message.effective_attachment.file_size > FileSizeLimit.FILESIZE_DOWNLOAD:
+        logger.info(f"file too large: {message.effective_attachment.file_size} bytes")
+        return False
+
+    file_unique_id = message.photo[-1].file_unique_id if message.photo else message.effective_attachment.file_unique_id
+    chat_id_str = str(message.chat.id).replace("-100", "")
+
+    file_name = f"{message.chat.type}_{chat_id_str}_{message.message_id}_{file_unique_id}"
+
+    if message.photo:
+        file_name = f"{file_name}.jpg"
+    elif message.video or message.animation:
+        file_name = f"{file_name}.mp4"
+
+    file_path = pathlib.Path("events_data") / file_name
+
+    if file_path.is_file():
+        logger.info(f"file <{file_path}> already exist: skipping download")
+        return False
+
+    logger.info(f"downloading to {file_path}...")
+    if message.photo:
+        new_file = await message.effective_attachment[-1].get_file()
+    else:
+        new_file = await message.effective_attachment.get_file()
+
+    await new_file.download_to_drive(file_path)
+    return True
+
+
+async def backup_event_media(update: Update):
+    # download_event_media() will check whether a file with the same chat_id/message_id/file_unique_id
+    # already exists on disk, and will skip the download if so.
+    # In this way we will not try to download the same media more than once (eg. when a channel post is edited,
+    # but only the caption changed)
+
+    try:
+        return await download_event_media(update.effective_message)
+    except Exception as e:
+        logger.error(f"error while trying to download media: {e}", exc_info=True)
+        return False

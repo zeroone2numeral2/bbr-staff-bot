@@ -3,7 +3,7 @@ import json
 import logging
 from typing import List, Optional, Union, Iterable
 
-from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date, Index
+from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date, Index, ForeignKeyConstraint
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
@@ -1202,6 +1202,77 @@ class Event(Base):
     def __repr__(self):
         # logger.info(f"Event.__repr__")
         return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
+
+
+class ChannelComment(Base):
+    __tablename__ = 'channel_comments'
+    __allow_unmapped__ = True
+
+    chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    message_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
+    sender_chat_id = Column(Integer, default=None, nullable=True)
+    message_thread_id = Column(Integer, default=None)
+    reply_to_message_id = Column(Integer, default=None)
+
+    channel_post_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'))
+    channel_post_message_id = mapped_column(Integer)  # should be == message_thread_id
+
+    not_info = Column(Boolean, default=False)  # if the comment does not contain infos about the party
+
+    message_text = Column(String, default=None)
+    message_date = Column(DateTime, default=None)
+    message_edit_date = Column(DateTime, default=None)
+
+    media_group_id = Column(Integer, default=None)
+    media_file_id = Column(String, default=None)
+    media_file_unique_id = Column(String, default=None)
+    media_type = Column(String, default=None)
+    media_file_path = Column(String, default=None)
+
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
+    message_json = Column(String, default=None)
+
+    __table_args__ = (ForeignKeyConstraint(
+        [channel_post_chat_id, channel_post_message_id],
+        ['events.chat_id', 'events.message_id'],
+    ),)  # <- the comma here is important because __table_args__ wants a tuple
+
+    chat: Chat = relationship("Chat", foreign_keys=[chat_id])
+    channel_post_chat: Chat = relationship("Chat", foreign_keys=[channel_post_chat_id])
+    user: User = relationship("User")
+    event: Event = relationship("Event", foreign_keys=[channel_post_chat_id, channel_post_message_id])
+
+    def __init__(self, chat_id: int, message_id: int, event: Event):
+        self.chat_id = chat_id
+        self.message_id = message_id
+
+        self.channel_post_chat_id = event.chat_id
+        self.channel_post_message_id = event.message_id
+
+    def save_message(self, message: Message):
+        self.message_thread_id = message.message_thread_id
+        if not message.sender_chat and message.from_user:
+            # from_user will contain the sender chat, for backward compatibility: save it only if sender_chat is empty
+            self.user_id = message.from_user.id
+        if message.sender_chat:
+            self.sender_chat_id = message.sender_chat.id
+        if message.reply_to_message:
+            self.reply_to_message_id = message.reply_to_message.message_id
+
+        self.message_text = message.text or message.caption
+        self.message_date = message.date
+        self.message_edit_date = message.edit_date
+        self.message_json = json.dumps(message.to_dict(), indent=2)
+
+        self.save_media_metadata(message)
+
+    def save_media_metadata(self, message: Message):
+        self.media_group_id = message.media_group_id
+        if utilities.contains_media_with_file_id(message):
+            self.media_file_id, self.media_file_unique_id, self.media_group_id = utilities.get_media_ids(message)
+            self.media_type = utilities.detect_media_type(message)
 
 
 class PartiesMessage(Base):

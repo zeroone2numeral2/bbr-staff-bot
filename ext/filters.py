@@ -60,6 +60,13 @@ class FilterBelongsToThread(MessageFilter):
         return bool(message.message_thread_id)
 
 
+class FilterIsAutomaticForward(MessageFilter):
+    def filter(self, message):
+        # https://docs.python-telegram-bot.org/en/stable/telegram.message.html#telegram.Message.params.is_automatic_forward
+        # if the message is a channel post that was automatically forwarded to the connected discussion group
+        return bool(message.is_automatic_forward)
+
+
 class FilterRadarPassword(MessageFilter):
     def filter(self, message):
         if not config.settings.radar_password or not message.text:
@@ -84,6 +91,7 @@ class Filter:
     REPLY_TOPICS_AWARE = FilterReplyTopicsAware()
     ALBUM_MESSAGE = FilterAlbumMessage()
     BELONGS_TO_THREAD = FilterBelongsToThread()
+    IS_AUTOMATIC_FORWARD = FilterIsAutomaticForward()
     RADAR_PASSWORD = FilterRadarPassword()
     FLY_MEDIA_DOWNLOAD = filters.PHOTO | filters.VIDEO | filters.ANIMATION  # media we can consider as fly, for backups
     EVENTS_CHAT_MESSAGE_LINK = FilterFalse()  # we init this filter later

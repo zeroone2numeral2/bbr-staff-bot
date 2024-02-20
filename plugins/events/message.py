@@ -19,58 +19,11 @@ from plugins.events.common import (
     add_event_message_metadata,
     parse_message_text,
     parse_message_entities,
-    drop_events_cache
+    drop_events_cache,
+    backup_event_media
 )
 
 logger = logging.getLogger(__name__)
-
-
-async def download_event_media(message: Message) -> bool:
-    if not message.photo and not message.video and not message.animation:
-        logger.debug(f"no media to backup")
-        return False
-
-    if not message.photo and message.effective_attachment.file_size > FileSizeLimit.FILESIZE_DOWNLOAD:
-        logger.info(f"file too large: {message.effective_attachment.file_size} bytes")
-        return False
-
-    file_unique_id = message.photo[-1].file_unique_id if message.photo else message.effective_attachment.file_unique_id
-    chat_id_str = str(message.chat.id).replace("-100", "")
-
-    file_name = f"{chat_id_str}_{message.message_id}_{file_unique_id}"
-
-    if message.photo:
-        file_name = f"{file_name}.jpg"
-    elif message.video or message.animation:
-        file_name = f"{file_name}.mp4"
-
-    file_path = pathlib.Path("events_data") / file_name
-
-    if file_path.is_file():
-        logger.info(f"file <{file_path}> already exist: skipping download")
-        return False
-
-    logger.info(f"downloading to {file_path}...")
-    if message.photo:
-        new_file = await message.effective_attachment[-1].get_file()
-    else:
-        new_file = await message.effective_attachment.get_file()
-
-    await new_file.download_to_drive(file_path)
-    return True
-
-
-async def backup_event_media(update: Update):
-    # download_event_media() will check whether a file with the same chat_id/message_id/file_unique_id
-    # already exists on disk, and will skip the download if so.
-    # In this way we will not try to download the same media more than once (eg. when a channel post is edited,
-    # but only the caption changed)
-
-    try:
-        return await download_event_media(update.effective_message)
-    except Exception as e:
-        logger.error(f"error while trying to download media: {e}", exc_info=True)
-        return False
 
 
 def date_notifications_reply_markup(event_chat_id: int, event_message_id: int):
@@ -404,7 +357,7 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
 HANDLERS = (
     (MessageHandler(ChatFilter.EVENTS & Filter.WITH_TEXT & Filter.MESSAGE_OR_EDIT, on_event_message), Group.PREPROCESS),
     (MessageHandler(ChatFilter.EVENTS & ~Filter.WITH_TEXT & Filter.ALBUM_MESSAGE & Filter.FLY_MEDIA_DOWNLOAD, on_album_message_no_text), Group.PREPROCESS),
-    (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
+    (MessageHandler(filters.ChatType.GROUPS & Filter.IS_AUTOMATIC_FORWARD & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
     (MessageHandler((ChatFilter.EVENTS | ChatFilter.USERS) & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
     (CallbackQueryHandler(on_disable_notifications_button, rf"mutemsg:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_not_a_party_button, rf"notaparty:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),

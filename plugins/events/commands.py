@@ -13,7 +13,7 @@ from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext,
 import decorators
 import utilities
 from constants import Group, TempDataKey
-from database.models import Event, User, DeletionReason, DELETION_REASON_DESC
+from database.models import Event, User, DeletionReason, DELETION_REASON_DESC, ChannelComment
 from database.queries import events, private_chat_messages
 from ext.filters import Filter, ChatFilter
 from plugins.events.common import (
@@ -425,12 +425,6 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
                 allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
             )
         )
-        message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
-        event_title_link = event.title_link_html()
-        await update.message.reply_html(
-            f"<a href=\"{message_link}\">Messaggio inviato</a> come commento a \"{event_title_link}\"",
-            reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
-        )
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while copying message: {e.message}")
         if e.message.lower() == "replied message not found":
@@ -439,8 +433,35 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
                 f"Invio fallito: impossibile trovare <a href=\"{discussion_message_link}\">il messaggio nel gruppo</a> a cui rispondere",
                 reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
             )
+            return
         else:
             raise e
+
+    # we create the ChannelComment because we will not receive this update
+    channel_comment = ChannelComment(
+        event.discussion_group_chat_id,  # id of the chat we copied the message to
+        comment_message_id.message_id,  # result of copy()
+        event
+    )
+    channel_comment.user_id = context.bot.id  # the bot sent the comment
+    channel_comment.message_thread_id = event.discussion_group_message_id
+    channel_comment.reply_to_message_id = event.discussion_group_message_id  # we replied to the discussion group's message_id
+
+    channel_comment.message_text = update.message.reply_to_message.text or update.message.reply_to_message.caption
+    channel_comment.message_date = update.message.date  # date of the command we just received
+
+    channel_comment.save_media_metadata(update.message.reply_to_message)
+    channel_comment.media_group_id = None  # we override this: /comment does not support albums, so this should be None
+
+    session.add(channel_comment)
+    session.commit()
+
+    message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
+    event_title_link = event.title_link_html()
+    await update.message.reply_html(
+        f"<a href=\"{message_link}\">Messaggio inviato</a> come commento a \"{event_title_link}\"",
+        reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
+    )
 
 
 HANDLERS = (
