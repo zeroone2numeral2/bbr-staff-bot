@@ -7,32 +7,29 @@ from telegram.ext import MessageHandler, ContextTypes
 
 import decorators
 import utilities
-from config import config
 from constants import Group
 from database.models import Chat, Event, User, ChannelComment
 from database.queries import events, channel_comments
 from ext.filters import ChatFilter, Filter
 from plugins.events.common import backup_event_media
+from config import config
 
 logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception(silent=True)
-@decorators.pass_session()
-async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+@decorators.pass_session(pass_user=True, pass_chat=True)
+async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, user: User, chat: Chat):
     logger.info(f"users chat message with thread_id {update.effective_message.message_thread_id} {utilities.log(update)}")
 
     message: Message = update.effective_message
-    create = True
+    channel_comment = None
+
     if message.edit_date:
         logger.info("edited message: getting existing ChannelComment...")
-        channel_comment: ChannelComment = channel_comments.get(session, message.chat.id, message.message_id)
-        if channel_comment:
-            create = False
-        else:
-            logger.info("...ChannelComment not found: we will create it")
+        channel_comment: Optional[ChannelComment] = channel_comments.get(session, message.chat.id, message.message_id)
 
-    if create:
+    if not channel_comment:
         event: Optional[Event] = events.get_event_from_discussion_group_message(session, message)
         if not event:
             logger.info(f"no event found for message with thread_id {message.message_thread_id}")
@@ -49,7 +46,8 @@ async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE,
     logger.info("saving/updating ChannelComment data...")
     channel_comment.save_message(message)
 
-    if config.settings.backup_events:
+    if config.settings.backup_events and not channel_comment.not_info:
+        # do not download if a message is marked as "not info"
         await backup_event_media(update)
 
 
