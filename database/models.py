@@ -1211,6 +1211,7 @@ class ChannelComment(Base):
     chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     message_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
+    sender_chat_id = Column(Integer, default=None, nullable=True)
     message_thread_id = Column(Integer, default=None)
     reply_to_message_id = Column(Integer, default=None)
 
@@ -1234,10 +1235,34 @@ class ChannelComment(Base):
     updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     message_json = Column(String, default=None)
 
-    def __init__(self, message: Message):
+    def __init__(self, message: Message, event: Event, save_message=True):
         self.chat_id = message.chat.id
         self.message_id = message.message_id
-        self.user_id = message.from_user.id
+
+        self.channel_post_chat_id = event.chat_id
+        self.channel_post_message_id = event.message_id
+
+        if save_message:
+            self.save_message(message)
+
+    def save_message(self, message: Message):
+        self.message_thread_id = message.message_thread_id
+        if message.from_user:
+            self.user_id = message.from_user.id
+        if message.sender_chat:
+            self.sender_chat_id = message.sender_chat.id
+        if message.reply_to_message:
+            self.reply_to_message_id = message.reply_to_message.message_id
+
+        self.message_text = message.text or message.caption
+        self.message_date = message.date
+        self.message_edit_date = message.edit_date
+        self.message_json = message.to_json()
+
+        self.media_group_id = message.media_group_id
+        if utilities.contains_media_with_file_id(message):
+            self.media_file_id, self.media_file_unique_id, self.media_group_id = utilities.get_media_ids(message)
+            self.media_type = utilities.detect_media_type(message)
 
 
 class PartiesMessage(Base):

@@ -8,8 +8,8 @@ from telegram.ext import MessageHandler, ContextTypes
 import decorators
 import utilities
 from constants import Group
-from database.models import Chat, Event, User
-from database.queries import events
+from database.models import Chat, Event, User, ChannelComment
+from database.queries import events, channel_comments
 from ext.filters import ChatFilter, Filter
 
 logger = logging.getLogger(__name__)
@@ -21,21 +21,29 @@ async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE,
     logger.info(f"users chat message with thread_id {update.effective_message.message_thread_id} {utilities.log(update)}")
 
     message: Message = update.effective_message
+    create = True
     if message.edit_date:
         logger.info("edited message: getting existing ChannelComment...")
-        # channel_comment: ChannelComment = channel_comments.get(session, message)
-        # return if none
-    else:
-        event: Optional[Event] = events.get_event_from_discussion_group_message(session, update.effective_message)
+        channel_comment: ChannelComment = channel_comments.get(session, message.chat.id, message.message_id)
+        if channel_comment:
+            create = False
+
+    if create:
+        event: Optional[Event] = events.get_event_from_discussion_group_message(session, message)
         if not event:
-            # the update will continue the propagation because it's pre-process
+            logger.info(f"no event found for message with thread_id {message.message_thread_id}")
+            return
+
+        if event.deleted:
+            logger.info(f"skipping comment under deleted event")
             return
 
         logger.info("creating new ChannelComment...")
-        # ChannelComment(event)
+        channel_comment = ChannelComment(message, event, save_message=False)
+        session.add(channel_comment)
 
     logger.info("saving/updating ChannelComment data...")
-    # channel_comment.save_message(message)
+    channel_comment.save_message(message)
 
 
 HANDLERS = (
