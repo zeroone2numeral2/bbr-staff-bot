@@ -27,6 +27,8 @@ async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE,
         channel_comment: ChannelComment = channel_comments.get(session, message.chat.id, message.message_id)
         if channel_comment:
             create = False
+        else:
+            logger.info("...ChannelComment not found: we will create it")
 
     if create:
         event: Optional[Event] = events.get_event_from_discussion_group_message(session, message)
