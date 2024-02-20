@@ -450,7 +450,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         channel_comment.reply_to_message_id = event.discussion_group_message_id  # we replied to the discussion group's message_id
 
         channel_comment.message_text = update.message.reply_to_message.text or update.message.reply_to_message.caption
-        channel_comment.message_date = update.message.date  # date of the command we jusr received
+        channel_comment.message_date = update.message.date  # date of the command we just received
 
         channel_comment.save_media_metadata(update.message.reply_to_message)
 
