@@ -1247,7 +1247,8 @@ class ChannelComment(Base):
 
     def save_message(self, message: Message):
         self.message_thread_id = message.message_thread_id
-        if message.from_user:
+        if not message.sender_chat and message.from_user:
+            # from_user will contain the sender chat, for backward compatibility: save it only if sender_chat is empty
             self.user_id = message.from_user.id
         if message.sender_chat:
             self.sender_chat_id = message.sender_chat.id
