@@ -1204,6 +1204,42 @@ class Event(Base):
         return f"Event(origin={self.chat_id}/{self.message_id}, title=\"{self.event_title}\", date={self.pretty_date()}, link={self.message_link()})"
 
 
+class ChannelComment(Base):
+    __tablename__ = 'channel_comments'
+    __allow_unmapped__ = True
+
+    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    message_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
+    message_thread_id = Column(Integer, default=None)
+    reply_to_message_id = Column(Integer, default=None)
+
+    channel_post_chat_id = Column(Integer, ForeignKey('chats.chat_id'))
+    channel_post_message_id = Column(Integer)  # should be == message_thread_id
+
+    not_info = Column(Boolean, default=False)  # if the comment does not contain infos about the party
+
+    message_text = Column(String, default=None)
+    message_text_html = Column(String, default=None)
+    message_date = Column(DateTime, default=None)
+    message_edit_date = Column(DateTime, default=None)
+
+    media_group_id = Column(Integer, default=None)
+    media_file_id = Column(String, default=None)
+    media_file_unique_id = Column(String, default=None)
+    media_type = Column(String, default=None)
+    media_file_path = Column(String, default=None)
+
+    created_on = Column(DateTime, default=utilities.now)
+    updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
+    message_json = Column(String, default=None)
+
+    def __init__(self, message: Message):
+        self.chat_id = message.chat.id
+        self.message_id = message.message_id
+        self.user_id = message.from_user.id
+
+
 class PartiesMessage(Base):
     __tablename__ = 'parties_messages'
     __allow_unmapped__ = True
