@@ -3,7 +3,7 @@ import json
 import logging
 from typing import List, Optional, Union, Iterable
 
-from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date, Index
+from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date, Index, ForeignKeyConstraint
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from telegram import ChatMember as TgChatMember, ChatMemberAdministrator, User as TelegramUser, Chat as TelegramChat, \
     ChatMemberOwner, ChatMemberRestricted, \
@@ -1208,15 +1208,15 @@ class ChannelComment(Base):
     __tablename__ = 'channel_comments'
     __allow_unmapped__ = True
 
-    chat_id = Column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
+    chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), primary_key=True)
     message_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
     sender_chat_id = Column(Integer, default=None, nullable=True)
     message_thread_id = Column(Integer, default=None)
     reply_to_message_id = Column(Integer, default=None)
 
-    channel_post_chat_id = Column(Integer, ForeignKey('chats.chat_id'))
-    channel_post_message_id = Column(Integer)  # should be == message_thread_id
+    channel_post_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'))
+    channel_post_message_id = mapped_column(Integer)  # should be == message_thread_id
 
     not_info = Column(Boolean, default=False)  # if the comment does not contain infos about the party
 
@@ -1234,6 +1234,16 @@ class ChannelComment(Base):
     created_on = Column(DateTime, default=utilities.now)
     updated_on = Column(DateTime, default=utilities.now, onupdate=utilities.now)
     message_json = Column(String, default=None)
+
+    __table_args__ = (ForeignKeyConstraint(
+        [channel_post_chat_id, channel_post_message_id],
+        ['events.chat_id', 'events.message_id'],
+    ),)
+
+    chat: Chat = relationship("Chat", foreign_keys=[chat_id])
+    channel_post_chat: Chat = relationship("Chat", foreign_keys=[channel_post_chat_id])
+    user: User = relationship("User")
+    event: Event = relationship("Event", foreign_keys=[channel_post_chat_id, channel_post_message_id])
 
     def __init__(self, message: Message, event: Event, save_message=True):
         self.chat_id = message.chat.id

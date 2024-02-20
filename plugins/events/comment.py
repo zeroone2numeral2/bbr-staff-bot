@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 @decorators.catch_exception(silent=True)
-@decorators.pass_session(pass_chat=True, pass_user=True)
-async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat, user: User):
+@decorators.pass_session()
+async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"users chat message with thread_id {update.effective_message.message_thread_id} {utilities.log(update)}")
 
     message: Message = update.effective_message
