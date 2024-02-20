@@ -404,7 +404,7 @@ async def on_not_a_party_button(update: Update, context: ContextTypes.DEFAULT_TY
 HANDLERS = (
     (MessageHandler(ChatFilter.EVENTS & Filter.WITH_TEXT & Filter.MESSAGE_OR_EDIT, on_event_message), Group.PREPROCESS),
     (MessageHandler(ChatFilter.EVENTS & ~Filter.WITH_TEXT & Filter.ALBUM_MESSAGE & Filter.FLY_MEDIA_DOWNLOAD, on_album_message_no_text), Group.PREPROCESS),
-    (MessageHandler(filters.ChatType.GROUPS & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
+    (MessageHandler(filters.ChatType.GROUPS & Filter.IS_AUTOMATIC_FORWARD & ChatFilter.EVENTS_GROUP_POST & filters.UpdateType.MESSAGE & Filter.WITH_TEXT, on_linked_group_event_message), Group.PREPROCESS),
     (MessageHandler((ChatFilter.EVENTS | ChatFilter.USERS) & filters.StatusUpdate.PINNED_MESSAGE, on_events_chat_pinned_message), Group.NORMAL),
     (CallbackQueryHandler(on_disable_notifications_button, rf"mutemsg:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_not_a_party_button, rf"notaparty:(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
