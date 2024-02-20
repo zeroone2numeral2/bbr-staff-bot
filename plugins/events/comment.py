@@ -7,10 +7,12 @@ from telegram.ext import MessageHandler, ContextTypes
 
 import decorators
 import utilities
+from config import config
 from constants import Group
 from database.models import Chat, Event, User, ChannelComment
 from database.queries import events, channel_comments
 from ext.filters import ChatFilter, Filter
+from plugins.events.common import backup_event_media
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,9 @@ async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     logger.info("saving/updating ChannelComment data...")
     channel_comment.save_message(message)
+
+    if config.settings.backup_events:
+        await backup_event_media(update)
 
 
 HANDLERS = (
