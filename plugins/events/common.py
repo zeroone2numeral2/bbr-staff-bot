@@ -909,7 +909,7 @@ async def download_event_media(message: Message) -> bool:
     file_unique_id = message.photo[-1].file_unique_id if message.photo else message.effective_attachment.file_unique_id
     chat_id_str = str(message.chat.id).replace("-100", "")
 
-    file_name = f"{chat_id_str}_{message.message_id}_{file_unique_id}"
+    file_name = f"{message.chat.type}_{chat_id_str}_{message.message_id}_{file_unique_id}"
 
     if message.photo:
         file_name = f"{file_name}.jpg"
