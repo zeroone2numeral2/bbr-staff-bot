@@ -40,7 +40,7 @@ async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE,
             return
 
         logger.info("creating new ChannelComment...")
-        channel_comment = ChannelComment(message, event, save_message=False)
+        channel_comment = ChannelComment(message.chat.id, message.message_id, event)
         session.add(channel_comment)
 
     logger.info("saving/updating ChannelComment data...")

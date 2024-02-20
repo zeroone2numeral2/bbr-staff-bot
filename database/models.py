@@ -1244,15 +1244,12 @@ class ChannelComment(Base):
     user: User = relationship("User")
     event: Event = relationship("Event", foreign_keys=[channel_post_chat_id, channel_post_message_id])
 
-    def __init__(self, message: Message, event: Event, save_message=True):
-        self.chat_id = message.chat.id
-        self.message_id = message.message_id
+    def __init__(self, chat_id: int, message_id: int, event: Event):
+        self.chat_id = chat_id
+        self.message_id = message_id
 
         self.channel_post_chat_id = event.chat_id
         self.channel_post_message_id = event.message_id
-
-        if save_message:
-            self.save_message(message)
 
     def save_message(self, message: Message):
         self.message_thread_id = message.message_thread_id
@@ -1267,8 +1264,11 @@ class ChannelComment(Base):
         self.message_text = message.text or message.caption
         self.message_date = message.date
         self.message_edit_date = message.edit_date
-        self.message_json = message.to_json()
+        self.message_json = json.dumps(message.to_dict(), indent=2)
 
+        self.save_media_metadata(message)
+
+    def save_media_metadata(self, message: Message):
         self.media_group_id = message.media_group_id
         if utilities.contains_media_with_file_id(message):
             self.media_file_id, self.media_file_unique_id, self.media_group_id = utilities.get_media_ids(message)
