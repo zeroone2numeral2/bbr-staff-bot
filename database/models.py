@@ -1221,7 +1221,6 @@ class ChannelComment(Base):
     not_info = Column(Boolean, default=False)  # if the comment does not contain infos about the party
 
     message_text = Column(String, default=None)
-    message_text_html = Column(String, default=None)
     message_date = Column(DateTime, default=None)
     message_edit_date = Column(DateTime, default=None)
 
@@ -1238,7 +1237,7 @@ class ChannelComment(Base):
     __table_args__ = (ForeignKeyConstraint(
         [channel_post_chat_id, channel_post_message_id],
         ['events.chat_id', 'events.message_id'],
-    ),)
+    ),)  # <- the comma here is important because __table_args__ wants a tuple
 
     chat: Chat = relationship("Chat", foreign_keys=[chat_id])
     channel_post_chat: Chat = relationship("Chat", foreign_keys=[channel_post_chat_id])
