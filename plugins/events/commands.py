@@ -446,6 +446,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             event
         )
         channel_comment.user_id = context.bot.id  # the bot sent the comment
+        channel_comment.message_thread_id = event.discussion_group_message_id
         channel_comment.reply_to_message_id = event.discussion_group_message_id  # we replied to the discussion group's message_id
 
         channel_comment.message_text = update.message.reply_to_message.text or update.message.reply_to_message.caption
