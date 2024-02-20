@@ -465,7 +465,6 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         )
 
 
-
 HANDLERS = (
     (CommandHandler(["events", "feste", "e"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
