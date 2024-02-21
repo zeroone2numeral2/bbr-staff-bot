@@ -456,7 +456,7 @@ async def send_application_to_staff_old(bot: Bot, evaluation_chat_id: int, log_c
             sent_attachment_messages.append(sent_message)
             for j in merged_text_includes:
                 # save the message we just sent as the log message for each one of the DescriptionMessage that were merged into it
-                text_messages_to_merge[j].set_log_message(sent_message)
+                text_messages_to_merge[j].set_log_comment_message(sent_message)
 
             merged_text = ""
             merged_text_includes = []
@@ -471,7 +471,7 @@ async def send_application_to_staff_old(bot: Bot, evaluation_chat_id: int, log_c
         sent_attachment_messages.append(sent_message)
         for i in merged_text_includes:
             # save the message we just sent as the log message for each one of the DescriptionMessage that were merged into it
-            text_messages_to_merge[i].set_log_message(sent_message)
+            text_messages_to_merge[i].set_log_comment_message(sent_message)
 
     # merge into an album and send all DescriptionMessage that can be grouped into an album
     logger.debug("merging and sending presentation media messages that fit into albums...")
@@ -487,7 +487,7 @@ async def send_application_to_staff_old(bot: Bot, evaluation_chat_id: int, log_c
             for j, sent_message in enumerate(sent_messages):
                 index = int(i / MediaGroupLimit.MAX_MEDIA_LENGTH) + j
                 logger.debug(f"saving log message with index {index}...")
-                messages_to_send_as_album[index].set_log_message(sent_message)
+                messages_to_send_as_album[index].set_log_comment_message(sent_message)
 
             input_medias = []
 
@@ -500,7 +500,7 @@ async def send_application_to_staff_old(bot: Bot, evaluation_chat_id: int, log_c
         for i, sent_message in enumerate(sent_messages):
             index = (medias_count - i) * -1  # go through the list from the last item
             logger.debug(f"saving log message with index {index}...")
-            messages_to_send_as_album[index].set_log_message(sent_message)
+            messages_to_send_as_album[index].set_log_comment_message(sent_message)
 
     # send all DescriptionMessage that are a media and cannot be grouped
     logger.debug("sending presentation text messages tthat should be sent on their own...")
@@ -512,7 +512,7 @@ async def send_application_to_staff_old(bot: Bot, evaluation_chat_id: int, log_c
         else:
             continue
 
-        description_message.set_log_message(sent_message)
+        description_message.set_log_comment_message(sent_message)
         sent_attachment_messages.append(sent_message)
 
     # create and send the main log message with user info, social, other members, and links to attachments

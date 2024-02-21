@@ -1640,7 +1640,7 @@ class DescriptionMessage(Base):
         elif self.type == DescriptionMessageType.VIDEO:
             return InputMediaVideo(self.media_file_id, caption=self.caption_html)
 
-    def set_log_message(self, message: Message):
+    def set_log_comment_message(self, message: Message):
         self.log_message_chat_id = message.chat.id
         self.log_message_message_id = message.message_id
         self.log_message_json = json.dumps(message.to_dict(), indent=2)
@@ -1648,6 +1648,10 @@ class DescriptionMessage(Base):
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
+
+    def comment_message_link(self):
+        chat_id = str(self.log_message_chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id}/{self.log_message_message_id}?thread={self.application_request.staff_message_message_id}"
 
 
 class HashingVersion:
