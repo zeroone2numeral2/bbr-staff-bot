@@ -6,6 +6,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from telegram import Update, Message, Bot, InlineKeyboardButton, InlineKeyboardMarkup, MessageOriginChannel
 from telegram.constants import FileSizeLimit, MessageLimit, MediaGroupLimit
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes, filters, MessageHandler, CallbackQueryHandler
 
 import decorators
@@ -175,6 +176,12 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
         do_quote=True
     )
     request.set_evaluation_buttons_message(evaluation_buttons_message)
+
+    logger.info(f"unpinning log message from evaluation chat...")
+    try:
+        await update.message.unpin()
+    except BadRequest as e:
+        logger.info(f"error while unpinning: {e}")
 
 
 HANDLERS = (
