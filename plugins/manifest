@@ -23,6 +23,7 @@ events.parties_message
 applications.users.request
 applications.staff.reset
 applications.staff.evaluation
+applications.staff.attachments
 
 [bbr]
 help
