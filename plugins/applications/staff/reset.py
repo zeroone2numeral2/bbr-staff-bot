@@ -29,14 +29,12 @@ async def unban_user(bot: Bot, session: Session, user: User, only_if_banned=True
             return False
 
 
-def get_reset_log_text(user: User, admin_telegram_user: TelegramUser):
-    log_text = f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}\n\n" \
-               f"{user.mention()} (#id{user.user_id}) potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
-    return log_text
+def get_reset_text(user: User, admin_telegram_user: TelegramUser, add_explanation=False) -> str:
+    text = f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
+    if add_explanation:
+        text += f"\n\n{user.mention()} (#id{user.user_id}) potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
 
-
-def get_reset_staff_text(admin_telegram_user: TelegramUser):
-    return f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
+    return text
 
 
 async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: int):
@@ -49,7 +47,6 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
 
     reset_requests_count = 0
     edited_log_messages_count = 0
-    edited_staff_messages_count = 0
 
     request: ApplicationRequest
     for request in requests:
@@ -71,22 +68,7 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
                 request.update_log_chat_message(edited_message)
                 edited_log_messages_count += 1
 
-        if request.staff_message_text_html and (pendente_str in request.staff_message_text_html or nojoin_str in request.staff_message_text_html):
-            logger.info(f"removing hashtags and keyboard from staff message {request.staff_message_message_id}...")
-
-            new_staff_message_text = request.staff_message_text_html.replace(pendente_str, "").replace(nojoin_str, "")
-            edited_message = await utilities.edit_text_by_ids_safe(
-                bot=bot,
-                chat_id=request.staff_message_chat_id,
-                message_id=request.staff_message_message_id,
-                text=new_staff_message_text,
-                reply_markup=None  # make sure to also remove the inline keyboard
-            )
-            if edited_message:
-                request.update_staff_chat_message(edited_message)
-                edited_staff_messages_count += 1
-
-    logger.info(f"requests reset: {reset_requests_count}; edited log messages: {edited_log_messages_count}; edited staff messages: {edited_staff_messages_count}")
+    logger.info(f"requests reset: {reset_requests_count}; edited log messages: {edited_log_messages_count}")
 
 
 @decorators.catch_exception()
@@ -119,7 +101,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         logger.warning("no log chat set")
         return
 
-    log_text = get_reset_log_text(user, update.effective_user)
+    log_text = get_reset_text(user, update.effective_user)
 
     additional_context = utilities.get_argument(
         ["resetkick", "reset"],
@@ -185,24 +167,25 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     request: Optional[ApplicationRequest] = application_requests.get_by_id(session, request_id)
     logger.info(f"request_id: {request.id}")
 
-    logger.info("editing staff message...")
-    # the #pendente and #nojoin hashtags will be removed later
-    # new_staff_message_text = update.effective_message.text_html.replace(" • #pendente", "").replace(" • #nojoin", "")
-    new_staff_message_text = f"{update.effective_message.text_html}\n\n{get_reset_staff_text(update.effective_user)}"
-    edited_staff_message = await update.effective_message.edit_text(
-        text=new_staff_message_text,
+    logger.info("editing log message...")
+    # the #pendente and #nojoin hashtags will be removed later, by mark_previous_requests_as_reset()
+    new_log_message_text = f"{request.log_message_text_html}\n\n{get_reset_text(user, update.effective_user)}"
+    edited_log_message = await context.bot.edit_message_text(
+        chat_id=request.log_message_chat_id,
+        message_id=request.log_message_message_id,
+        text=new_log_message_text
+    )
+    request.update_log_chat_message(edited_log_message)
+    session.commit()  # make sure to commit now, because we will loop through the log messages later, to remove the hashtags
+
+    logger.info("editing evaluation buttons message...")
+    edited_evaluation_buttons_message = await context.bot.edit_message_text(
+        chat_id=request.evaluation_buttons_message_chat_id,
+        message_id=request.evaluation_buttons_message_message_id,
+        text=get_reset_text(user, update.effective_user, add_explanation=True),
         reply_markup=None
     )
-    request.update_staff_chat_message(edited_staff_message)
-
-    log_chat = chats.get_chat(session, Chat.is_log_chat)
-    if not log_chat:
-        logger.warning("no log chat set")
-        return
-
-    logger.info("sending log chat message...")
-    log_text = get_reset_log_text(user, update.effective_user)
-    await context.bot.send_message(log_chat.chat_id, log_text)
+    request.update_evaluation_buttons_message(edited_evaluation_buttons_message)
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
     session.commit()  # nake sure to commit before executing this function
