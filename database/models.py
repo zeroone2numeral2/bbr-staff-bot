@@ -1540,6 +1540,11 @@ class ApplicationRequest(Base):
         if config.settings.db_save_json:
             self.log_message_json = json.dumps(message.to_dict(), indent=2)
 
+    def update_evaluation_buttons_message(self, message: Message):
+        self.evaluation_buttons_message_text_html = message.text_html
+        if config.settings.db_save_json:
+            self.evaluation_buttons_message_json = json.dumps(message.to_dict(), indent=2)
+
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
