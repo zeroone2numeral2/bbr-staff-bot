@@ -169,11 +169,12 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
     # we have to send the keyboard in the comments because if we send it in the log channel post, Telegram apps
     # won't display the comments bar
     reply_markup = get_evaluation_keyboard(request.user_id, request.id)
-    await update.message.reply_html(
+    evaluation_buttons_message: Message = await update.message.reply_html(
         f"Decidi che fare con la richiesta di {request.user.mention(escape=True)}:",
         reply_markup=reply_markup,
         do_quote=True
     )
+    request.set_evaluation_buttons_message(evaluation_buttons_message)
 
 
 HANDLERS = (

@@ -1426,17 +1426,26 @@ class ApplicationRequest(Base):
     social_message_id = Column(Integer, default=None)
     social_received_on = Column(DateTime, default=None)
 
+    # log message sent to the log channel
     log_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     log_message_message_id = Column(Integer, default=None)
     log_message_text_html = Column(String, default=None)
     log_message_posted_on = Column(DateTime, default=None)
     log_message_json = Column(String, default=None)
 
+    # log message automatically forwarded to the discussion group (evaluation chat)
     staff_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     staff_message_message_id = Column(Integer, default=None)
     staff_message_text_html = Column(String, default=None)
     staff_message_posted_on = Column(DateTime, default=None)
     staff_message_json = Column(String, default=None)
+
+    # message with the accept/reject buttons sent in the log post comments
+    evaluation_buttons_message_chat_id = mapped_column(Integer, default=None)
+    evaluation_buttons_message_message_id = Column(Integer, default=None)
+    evaluation_buttons_message_text_html = Column(String, default=None)
+    evaluation_buttons_message_posted_on = Column(DateTime, default=None)
+    evaluation_buttons_message_json = Column(String, default=None)
 
     handled_by_user_id = mapped_column(Integer, ForeignKey('users.user_id'), default=None)  # admin that changed the status
 
@@ -1448,6 +1457,13 @@ class ApplicationRequest(Base):
     log_message_chat: Chat = relationship("Chat", foreign_keys=log_message_chat_id)
     staff_message_chat: Chat = relationship("Chat", foreign_keys=staff_message_chat_id)
     description_messages: List[Mapped['DescriptionMessage']] = relationship("DescriptionMessage", back_populates="application_request")
+    evaluation_buttons_message_chat: Chat = relationship(
+        "Chat",
+        foreign_keys=evaluation_buttons_message_chat_id,
+        primaryjoin="Chat.chat_id == ApplicationRequest.evaluation_buttons_message_chat_id",
+        # remote_side=user_id,
+        uselist=False
+    )
 
     def __init__(self, user_id: int):
         self.user_id = user_id
@@ -1505,6 +1521,14 @@ class ApplicationRequest(Base):
         self.staff_message_posted_on = utilities.now()
         if config.settings.db_save_json:
             self.staff_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def set_evaluation_buttons_message(self, message: Message):
+        self.evaluation_buttons_message_chat_id = message.chat.id
+        self.evaluation_buttons_message_message_id = message.message_id
+        self.evaluation_buttons_message_text_html = message.text_html
+        self.evaluation_buttons_message_posted_on = utilities.now()
+        if config.settings.db_save_json:
+            self.evaluation_buttons_message_json = json.dumps(message.to_dict(), indent=2)
 
     def update_staff_chat_message(self, message: Message):
         self.staff_message_text_html = message.text_html
