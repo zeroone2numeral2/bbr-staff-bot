@@ -412,7 +412,7 @@ async def on_done_button(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
     return State.WAITING_DESCRIBE_SELF
 
 
-async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
+async def send_application_to_staff_old(bot: Bot, evaluation_chat_id: int, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
     # we will save the whole list of attachments we sent just in case we will need to link them,
     # but we actually need just the first one (because it's the message we reply to)
     sent_attachment_messages: List[Message] = []
@@ -541,6 +541,37 @@ async def send_application_to_staff(bot: Bot, evaluation_chat_id: int, log_chat_
     request.set_staff_message(staff_message)
 
 
+async def send_application_to_staff(bot: Bot, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
+    # create and send the log message with user info, social, and other members
+    user_mention = utilities.mention_escaped(user)
+    user_username = f"@{user.username}" if user.username else "username non impostato"
+    base_text = f"{Emoji.SPARKLE} <b>nuova #richiesta</b> • #rid{request.id} • #pendente • #nojoin\n\n" \
+                f"{Emoji.PERSON} <b>utente</b>\n" \
+                f"• {user_mention}\n" \
+                f"• {user_username}\n" \
+                f"• #id{user.id}"
+
+    other_members_text = utilities.escape_html(request.other_members_text or "non forniti")
+    base_text += f"\n\n{Emoji.PEOPLE} <b>utenti garanti</b>\n{other_members_text}"
+
+    social_text = utilities.escape_html(request.social_text or "non forniti")
+    base_text += f"\n\n{Emoji.PHONE} <b>social</b>\n{social_text}"
+
+    # no idea why but we *need* large timeouts
+    timeouts = dict(connect_timeout=300, read_timeout=300, write_timeout=300)
+
+    reply_markup = get_evaluation_keyboard(request.user_id, request.id)
+
+    logger.debug("sending log message...")
+    log_message: Message = await bot.send_message(
+        chat_id=log_chat_id,
+        text=base_text,
+        reply_markup=reply_markup,
+        **timeouts
+    )
+    request.set_log_message(log_message)
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_user=True)
 @decorators.check_pending_request()
@@ -589,7 +620,6 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     await send_application_to_staff(
         bot=context.bot,
         log_chat_id=log_chat.chat_id,
-        evaluation_chat_id=evaluation_chat.chat_id,
         request=user.pending_request,
         user=update.effective_user
     )
