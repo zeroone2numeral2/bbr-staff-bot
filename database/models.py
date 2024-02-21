@@ -1301,8 +1301,8 @@ class ChannelComment(Base):
 
         return f"https://t.me/c/{str(self.channel_post_chat_id)[4:]}/{self.channel_post_message_id}"
 
-    def thread_view_link(self):
-        """link to the thread view (basically a link to the root post)"""
+    def comments_view_link(self):
+        """link to the thread view that opens when you open the comments from an app (basically a link to the root post)"""
 
         return f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_thread_id}?thread={self.message_thread_id}"
 
