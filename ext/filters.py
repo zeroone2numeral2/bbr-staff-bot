@@ -103,6 +103,7 @@ class ChatFilter:
     USERS = filters.Chat([])
     EVENTS = filters.Chat([])
     EVENTS_GROUP_POST = filters.SenderChat([])  # filter to catch EVENTS post in the linked group
+    EVALUATION_LOG_GROUP_POST = filters.SenderChat([])  # filter to catch log post in the evaluation group
 
 
 def init_filters():
@@ -126,6 +127,11 @@ def init_filters():
         if evaluation_chat:
             logger.debug(f"initializing EVALUATION filter ({evaluation_chat.chat_id})...")
             ChatFilter.EVALUATION.chat_ids = {evaluation_chat.chat_id}
+
+        log_chat: Chat = chats.get_chat(session, Chat.is_log_chat)
+        if log_chat:
+            logger.debug(f"initializing EVALUATION_LOG_GROUP_POST filter ({log_chat.chat_id})...")
+            ChatFilter.EVALUATION_LOG_GROUP_POST.chat_ids = {log_chat.chat_id}
 
         users_chat: Chat = chats.get_chat(session, Chat.is_users_chat)
         if users_chat:
