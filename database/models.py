@@ -1286,13 +1286,15 @@ class ChannelComment(Base):
             self.media_file_id, self.media_file_unique_id, self.media_group_id = utilities.get_media_ids(message)
             self.media_type = utilities.detect_media_type(message)
 
-    def message_link(self, thread_aware=False):
+    def group_message_link(self, thread_aware=False):
         """link to the message in the group. If 'thread_aware', the link will be opened in the thread view"""
-        message_link = f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_id}"
-        if thread_aware:
-            message_link = f"{message_link}?thread={self.message_thread_id}"
 
-        return message_link
+        return f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_id}"
+
+    def comment_message_link(self, thread_aware=False):
+        """link to the message in the comments (thread view)"""
+
+        return f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_id}?thread={self.message_thread_id}"
 
     def channel_post_link(self):
         """link to the channel post the comment has been posted to"""
