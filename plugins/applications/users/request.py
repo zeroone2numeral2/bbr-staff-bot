@@ -541,7 +541,7 @@ async def send_application_to_staff_old(bot: Bot, evaluation_chat_id: int, log_c
     request.set_staff_message(staff_message)
 
 
-async def send_application_to_staff(bot: Bot, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
+async def send_application_log_message(bot: Bot, log_chat_id: int, request: ApplicationRequest, user: TelegramUser):
     # create and send the log message with user info, social, and other members
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "username non impostato"
@@ -617,7 +617,7 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
     log_chat = chats.get_chat(session, Chat.is_log_chat)
     evaluation_chat = chats.get_chat(session, Chat.is_evaluation_chat)
 
-    await send_application_to_staff(
+    await send_application_log_message(
         bot=context.bot,
         log_chat_id=log_chat.chat_id,
         request=user.pending_request,
