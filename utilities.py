@@ -50,6 +50,12 @@ def escape_html(string):
     return escape(str(string))
 
 
+def html_url(text: str, url: str):
+    """returns the html url behind the given text. the text will always be escaped"""
+
+    return f"<a href=\"{url}\">{escape_html(text)}</a>"
+
+
 def mention_escaped(user: User, full_name=True) -> str:
     name = user.full_name if full_name else user.first_name
     return user.mention_html(name=escape_html(name))

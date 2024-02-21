@@ -1045,7 +1045,7 @@ class Event(Base):
         return f"https://t.me/c/{chat_id_link}/{self.message_id}"
 
     def comments_view_link(self):
-        return f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_id}?thread={self.message_id}"
+        return f"https://t.me/c/{str(self.discussion_group_chat_id)[4:]}/{self.discussion_group_message_id}?thread={self.discussion_group_message_id}"
 
     def message_link_html(self, text: str):
         """will html-escape the provided text"""
