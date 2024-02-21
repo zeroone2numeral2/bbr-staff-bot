@@ -1044,6 +1044,9 @@ class Event(Base):
         chat_id_link = str(self.chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id_link}/{self.message_id}"
 
+    def comments_view_link(self):
+        return f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_id}?thread={self.message_id}"
+
     def message_link_html(self, text: str):
         """will html-escape the provided text"""
 
@@ -1282,6 +1285,24 @@ class ChannelComment(Base):
         if utilities.contains_media_with_file_id(message):
             self.media_file_id, self.media_file_unique_id, self.media_group_id = utilities.get_media_ids(message)
             self.media_type = utilities.detect_media_type(message)
+
+    def message_link(self, thread_aware=False):
+        """link to the message in the group. If 'thread_aware', the link will be opened in the thread view"""
+        message_link = f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_id}"
+        if thread_aware:
+            message_link = f"{message_link}?thread={self.message_thread_id}"
+
+        return message_link
+
+    def channel_post_link(self):
+        """link to the channel post the comment has been posted to"""
+
+        return f"https://t.me/c/{str(self.channel_post_chat_id)[4:]}/{self.channel_post_message_id}"
+
+    def thread_view_link(self):
+        """link to the thread view (basically a link to the root post)"""
+
+        return f"https://t.me/c/{str(self.chat_id)[4:]}/{self.message_thread_id}?thread={self.message_thread_id}"
 
 
 class PartiesMessage(Base):
