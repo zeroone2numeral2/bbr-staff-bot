@@ -977,6 +977,7 @@ class Event(Base):
     localata = Column(Boolean, default=False)
 
     chat: Chat = relationship("Chat")
+    comments = relationship("ChannelComment", back_populates="event")
 
     def __init__(self, chat_id: int, message_id: int):
         self.message_id = message_id
@@ -1239,10 +1240,18 @@ class ChannelComment(Base):
         ['events.chat_id', 'events.message_id'],
     ),)  # <- the comma here is important because __table_args__ wants a tuple
 
-    chat: Chat = relationship("Chat", foreign_keys=[chat_id])
-    channel_post_chat: Chat = relationship("Chat", foreign_keys=[channel_post_chat_id])
     user: User = relationship("User")
-    event: Event = relationship("Event", foreign_keys=[channel_post_chat_id, channel_post_message_id])
+    chat: Chat = relationship("Chat", foreign_keys=[chat_id])
+    channel_post_chat: Chat = relationship(
+        "Chat",
+        foreign_keys=[channel_post_chat_id],
+        overlaps="comments"  # https://sqlalche.me/e/20/qzyx
+    )
+    event: Event = relationship(
+        "Event",
+        foreign_keys=[channel_post_chat_id, channel_post_message_id],
+        overlaps="channel_post_chat"  # https://sqlalche.me/e/20/qzyx
+    )
 
     def __init__(self, chat_id: int, message_id: int, event: Event):
         self.chat_id = chat_id
