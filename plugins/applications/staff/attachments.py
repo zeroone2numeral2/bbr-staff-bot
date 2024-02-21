@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import re
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -11,8 +12,8 @@ import decorators
 import utilities
 from config import config
 from constants import Group, TempDataKey
-from database.models import Chat, Event, PartiesMessage, DELETION_REASON_DESC, DeletionReason
-from database.queries import events, parties_messages, chats
+from database.models import Chat, Event, PartiesMessage, DELETION_REASON_DESC, DeletionReason, ApplicationRequest
+from database.queries import events, parties_messages, chats, application_requests
 from emojis import Emoji
 from ext.filters import ChatFilter, Filter
 from plugins.events.common import (
@@ -30,6 +31,17 @@ logger = logging.getLogger(__name__)
 @decorators.pass_session()
 async def on_linked_group_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"evaluation chat: forwarded log channel post {utilities.log(update)}")
+
+    log_message_chat_id = update.message.sender_chat.id
+    log_message_message_id = update.message.forward_origin.message_id
+
+    request: Optional[ApplicationRequest] = application_requests.get_from_log_channel_message(session, log_message_chat_id, log_message_message_id)
+    if not request:
+        logger.warning(f"couldn't find any application request for log channel message {log_message_message_id}")
+        if update.effective_message.text and re.search(r"#rid\d+", update.effective_message.text, re.I):
+            # send the warning message only if the hashtag is found
+            await update.effective_message.reply_html(f"{Emoji.WARNING} impossibile trovare richieste per questo messaggio")
+        return
 
 
 HANDLERS = (
