@@ -252,6 +252,9 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
     # LOCALATA
     if EventTypeHashtag.LOCALATA in hashtags_list:
         event.localata = True
+        if not event.event_type:
+            # if no event type has been detected yet, set as legal
+            event.event_type = EventType.LEGAL
     else:
         event.localata = False
 
