@@ -1276,7 +1276,8 @@ class ChannelComment(Base):
         self.message_text = message.text or message.caption
         self.message_date = message.date
         self.message_edit_date = message.edit_date
-        self.message_json = json.dumps(message.to_dict(), indent=2)
+        if config.settings.db_save_json:
+            self.message_json = json.dumps(message.to_dict(), indent=2)
 
         self.save_media_metadata(message)
 
