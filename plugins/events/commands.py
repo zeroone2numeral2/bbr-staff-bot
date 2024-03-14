@@ -127,7 +127,7 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
         await update.effective_message.reply_text("Questo comando non funziona con chat pubbliche (che hanno uno username)")
         return
 
-    event_ids_str = f"{chat_id}</code>/<code>{message_id}</code>"
+    event_ids_str = f"<code>{chat_id}</code>/<code>{message_id}</code>"
 
     event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
     if not event:
