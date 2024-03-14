@@ -1036,9 +1036,9 @@ class Event(Base):
 
     def is_valid_from_parsing(self):
         """returns true if the event is_valid() and its dates do not come from the month hashtag,
-        but from parsing the text"""
+        but from parsing the text. Will return True if marked as 'soon'"""
 
-        return self.is_valid() and not self.dates_from_hashtags
+        return (self.is_valid() and not self.dates_from_hashtags) or self.soon
 
     def message_link(self):
         chat_id_link = str(self.chat_id).replace("-100", "")
