@@ -1,12 +1,13 @@
 import json
 import logging
+from pathlib import Path
 from typing import Optional, List
 
 from sqlalchemy import false
 from sqlalchemy.orm import Session
 from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel, ReplyParameters, \
     InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.constants import MessageType
+from telegram.constants import MessageType, MessageLimit
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler, CallbackQueryHandler
 
@@ -239,13 +240,23 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
     elif action == EventMessageLinkAction.GET_JSON:
         await update.callback_query.answer("invio json evento...")
 
-        instance_str = utilities.escape(json.dumps(
+        instance_str = json.dumps(
             event.as_dict(pop_keys=["message_json"]),
             default=lambda o: str(o),
             indent=2,
             sort_keys=True
-        ))
-        await update.effective_message.reply_html(f"<pre><code class=\"language-json\">{instance_str}</code></pre>")
+        )
+        html_text = f"<pre><code class=\"language-json\">{utilities.escape(instance_str)}</code></pre>"
+        if len(html_text) < MessageLimit.MAX_TEXT_LENGTH:
+            await update.effective_message.reply_html(html_text)
+        else:
+            file_name = f"event_{event.chat_id}_{event.message_id}.json"
+            file_path = Path("tmp_data") / file_name
+            with open(file_path, "w+") as f:
+                f.write(f"{instance_str}\n")
+
+            await update.effective_message.reply_document(file_path, filename=file_name)
+            file_path.unlink(missing_ok=True)  # deletes the file
     elif action == EventMessageLinkAction.GET_POST:
         await update.callback_query.answer("invio evento...")
 
