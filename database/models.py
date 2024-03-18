@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+from pathlib import Path
 from typing import List, Optional, Union, Iterable
 
 from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, DateTime, Float, Date, Index, ForeignKeyConstraint
@@ -955,6 +956,7 @@ class Event(Base):
     media_file_id = Column(String, default=None)
     media_file_unique_id = Column(String, default=None)
     media_type = Column(String, default=None)
+    media_file_paths = Column(String, default=None)  # json list of file paths
 
     hashtags = Column(String, default=None)  # hashtag entities as json string
 
@@ -1134,6 +1136,18 @@ class Event(Base):
 
     def dates_as_date(self, fill_missing_day: int = 0):
         return self.start_date_as_date(fill_missing_day), self.end_date_as_date(fill_missing_day)
+
+    def get_media_file_paths(self):
+        if not self.media_file_paths:
+            return []
+
+        return json.loads(self.media_file_paths)
+
+    def add_media_file_path(self, file_path: Union[Path, str]):
+        file_paths = self.media_file_paths or []
+        file_paths.append(str(file_path))  # str(Path) will return the relative path if Path is itself relative
+
+        self.media_file_paths = json.dumps(file_paths, indent=2)
 
     def as_dict(self, pop_keys: Optional[List] = None):
         result_dict = self.__dict__.copy()

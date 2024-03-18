@@ -169,7 +169,9 @@ async def on_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
             )
 
     if config.settings.backup_events:
-        await backup_event_media(update)
+        file_path: pathlib.Path = await backup_event_media(update)
+        if file_path:
+            event.add_media_file_path(file_path)
 
 
 @decorators.catch_exception(silent=True)

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -29,8 +30,9 @@ async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE,
         logger.info("edited message: getting existing ChannelComment...")
         channel_comment: Optional[ChannelComment] = channel_comments.get(session, message.chat.id, message.message_id)
 
+    event: Optional[Event] = None
     if not channel_comment:
-        event: Optional[Event] = events.get_event_from_discussion_group_message(session, message)
+        event = events.get_event_from_discussion_group_message(session, message)
         if not event:
             logger.info(f"no event found for message with thread_id {message.message_thread_id}")
             return
@@ -48,7 +50,9 @@ async def on_channel_comment(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     if config.settings.backup_events and not channel_comment.not_info:
         # do not download if a message is marked as "not info"
-        await backup_event_media(update)
+        file_path: Path = await backup_event_media(update)
+        if file_path and event:
+            event.add_media_file_path(file_path)
 
 
 HANDLERS = (

@@ -900,14 +900,14 @@ def get_all_events_strings_from_db_group_by(
     return all_events_strings
 
 
-async def download_event_media(message: Message) -> bool:
+async def download_event_media(message: Message) -> Optional[pathlib.Path]:
     if not message.photo and not message.video and not message.animation:
         logger.debug(f"no media to backup")
-        return False
+        return
 
     if not message.photo and message.effective_attachment.file_size > FileSizeLimit.FILESIZE_DOWNLOAD:
         logger.info(f"file too large: {message.effective_attachment.file_size} bytes")
-        return False
+        return
 
     file_unique_id = message.photo[-1].file_unique_id if message.photo else message.effective_attachment.file_unique_id
     chat_id_str = str(message.chat.id).replace("-100", "")
@@ -923,7 +923,7 @@ async def download_event_media(message: Message) -> bool:
 
     if file_path.is_file():
         logger.info(f"file <{file_path}> already exist: skipping download")
-        return False
+        return
 
     logger.info(f"downloading to {file_path}...")
     if message.photo:
@@ -932,10 +932,10 @@ async def download_event_media(message: Message) -> bool:
         new_file = await message.effective_attachment.get_file()
 
     await new_file.download_to_drive(file_path)
-    return True
+    return file_path
 
 
-async def backup_event_media(update: Update):
+async def backup_event_media(update: Update) -> Optional[pathlib.Path]:
     # download_event_media() will check whether a file with the same chat_id/message_id/file_unique_id
     # already exists on disk, and will skip the download if so.
     # In this way we will not try to download the same media more than once (eg. when a channel post is edited,
@@ -945,4 +945,4 @@ async def backup_event_media(update: Update):
         return await download_event_media(update.effective_message)
     except Exception as e:
         logger.error(f"error while trying to download media: {e}", exc_info=True)
-        return False
+        return
