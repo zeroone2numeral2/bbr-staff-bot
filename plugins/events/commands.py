@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 class EventMessageLinkAction:
     GET_POST = "getpost"
     GET_JSON = "getjson"
+    GET_MEDIA_PATHS = "getmediapaths"
     RESTORE = "restore"
     DELETE = "delete"
     DELETE_DUPLICATE = "delduplicate"
@@ -151,8 +152,10 @@ async def event_from_link(update_or_message: Union[Update, Message], context: Ca
 def get_event_message_link_reply_markup(event: Event):
     keyboard = [[
         InlineKeyboardButton(f"vedi post", callback_data=f"msglink:{EventMessageLinkAction.GET_POST}:{event.chat_id}:{event.message_id}"),
-        InlineKeyboardButton(f"vedi json", callback_data=f"msglink:{EventMessageLinkAction.GET_JSON}:{event.chat_id}:{event.message_id}")
+        InlineKeyboardButton(f"json", callback_data=f"msglink:{EventMessageLinkAction.GET_JSON}:{event.chat_id}:{event.message_id}")
     ]]
+    if event.media_file_paths:
+        keyboard[0].append(InlineKeyboardButton(f"media", callback_data=f"msglink:{EventMessageLinkAction.GET_MEDIA_PATHS}:{event.chat_id}:{event.message_id}"))
 
     if event.deleted:
         keyboard[0].append(InlineKeyboardButton(f"ripristina", callback_data=f"msglink:{EventMessageLinkAction.RESTORE}:{event.chat_id}:{event.message_id}"))
@@ -265,6 +268,15 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
         drop_events_cache(context)
 
         await update.callback_query.answer("evento eliminato (duplicato)")
+    elif action == EventMessageLinkAction.GET_MEDIA_PATHS:
+        await update.callback_query.answer("invio elenco paths di media salvati per la festa...")
+
+        text = ""
+        for file_path in event.get_media_file_paths():
+            text += f"<code>{utilities.escape_html(file_path)}</code>\n"
+
+        await update.effective_message.reply_html(text)
+        return  # no need to do edit the message
     elif action == EventMessageLinkAction.GET_JSON:
         await update.callback_query.answer("invio json evento...")
 
@@ -285,6 +297,8 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
 
             await update.effective_message.reply_document(file_path, filename=file_name)
             file_path.unlink(missing_ok=True)  # deletes the file
+
+        return  # no need to do edit the message
     elif action == EventMessageLinkAction.GET_POST:
         await update.callback_query.answer("invio evento...")
 
