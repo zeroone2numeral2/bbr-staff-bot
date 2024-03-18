@@ -275,6 +275,8 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
         for file_path in event.get_media_file_paths():
             text += f"<code>{utilities.escape_html(file_path)}</code>\n"
 
+        text += "\nUsa <code>/getpath</code> seguito dall'indirizzo del file per inviarlo"
+
         await update.effective_message.reply_html(text)
         return  # no need to do edit the message
     elif action == EventMessageLinkAction.GET_JSON:
