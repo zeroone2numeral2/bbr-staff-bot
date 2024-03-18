@@ -210,7 +210,7 @@ def bool_to_str_it(value, si_no=False) -> str:
     if value:
         return "si" if si_no else "vero"
     else:
-        return "no" if si_no else "false"
+        return "no" if si_no else "falso"
 
 
 def is_test_bot():
