@@ -137,6 +137,12 @@ class User(Base):
 
         return mention_html(self.user_id, name)
 
+    def username_pretty(self, if_none: str = "-"):
+        if self.username:
+            return f"@{self.username}"
+
+        return if_none
+
     def set_started(self):
         self.started = True
         if not self.started_on:
@@ -1520,7 +1526,7 @@ class ApplicationRequest(Base):
         if not text:
             return link
 
-        return f"<a href\"{link}\">{utilities.escape(text)}</a>"
+        return f"<a href=\"{link}\">{utilities.escape(text)}</a>"
 
     def accept(self, by_user_id: int, notes: Optional[str] = None):
         self.status = True
