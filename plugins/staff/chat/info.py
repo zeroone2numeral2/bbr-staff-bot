@@ -23,12 +23,11 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     if not user:
         return
 
-    text = f"• <b>name</b>: {user.mention()}\n" \
-           f"• <b>username</b>: @{user.username or '-'}\n" \
+    text = f"• <b>name</b>: {user.mention()} ({user.username_pretty(if_none='no username')})\n" \
            f"• <b>first seen</b>: {utilities.format_datetime(user.first_seen)}\n" \
            f"• <b>last message to staff</b>: {utilities.format_datetime(user.last_message)}\n" \
-           f"• <b>started</b>: {str(user.started).lower()} (on: {utilities.format_datetime(user.started_on)})\n" \
-           f"• <b>stopped</b>: {str(user.stopped).lower()} (on: {utilities.format_datetime(user.stopped_on)})\n" \
+           f"• <b>started/stopped</b>: {utilities.bool_to_str_it(user.started)} (on: {utilities.format_datetime(user.started_on)}); " \
+           f"{utilities.bool_to_str_it(user.stopped)} (on: {utilities.format_datetime(user.stopped_on)})\n" \
            f"• <b>language code (telegram/selected)</b>: {user.language_code or '-'}/{user.selected_language or '-'}"
 
     if user.banned:
@@ -36,22 +35,28 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
                 f"• <b>reason</b>: {user.banned_reason or '-'}\n" \
                 f"• <b>banned on</b>: {utilities.format_datetime(user.banned_on)}"
 
-    chat_member = chat_members.get_chat_member(session, user.user_id, Chat.is_users_chat)
-    if not chat_member:
-        users_chat = chats.get_chat(session, Chat.is_users_chat)
-        chat_member_object = await context.bot.get_chat_member(users_chat.chat_id, user.user_id)
-        chat_member = DbChatMember.from_chat_member(users_chat.chat_id, chat_member_object)
-        session.add(chat_member)
-    text += f"\n• <b>status in users chat</b>: {chat_member.status_pretty()} (last update: {utilities.format_datetime(chat_member.updated_on)})"
+    chat_member_users_chat = chat_members.get_chat_member(session, user.user_id, Chat.is_users_chat)
+    chat_member_events_chat = chat_members.get_chat_member(session, user.user_id, Chat.is_events_chat)
+    # do NOT save chat member if not already saved. it might be helpful to know if something's not
+    # working because no ChatMember is saved
+    # if not chat_member_users_chat:
+    #     users_chat = chats.get_chat(session, Chat.is_users_chat)
+    #     chat_member_object = await context.bot.get_chat_member(users_chat.chat_id, user.user_id)
+    #     chat_member_users_chat = DbChatMember.from_chat_member(users_chat.chat_id, chat_member_object)
+    #     session.add(chat_member_users_chat)
+    text += (f"\n• <b>status in group/channel</b>: {chat_member_users_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_users_chat.updated_on)}); "
+             f"{chat_member_events_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_events_chat.updated_on)})")
 
-    if user.pending_request_id:
-        text += f"\n• <b>user has a pending request</b>, created on " \
-                f"{utilities.format_datetime(user.pending_request.created_on)} and updated on " \
-                f"{utilities.format_datetime(user.pending_request.updated_on)}"
-    elif user.last_request_id:
-        text += f"\n• <b>user has a completed request with result</b> <code>{user.last_request.status_pretty()}</code>, created on " \
-                f"{utilities.format_datetime(user.last_request.created_on)} and updated on " \
-                f"{utilities.format_datetime(user.last_request.updated_on)}"
+    if False:
+        # do nto show for now
+        if user.pending_request_id:
+            text += f"\n• <b>user has a pending request</b>, created on " \
+                    f"{utilities.format_datetime(user.pending_request.created_on)} and updated on " \
+                    f"{utilities.format_datetime(user.pending_request.updated_on)}"
+        elif user.last_request_id:
+            text += f"\n• <b>user has a completed request with result</b> <code>{user.last_request.status_pretty()}</code>, created on " \
+                    f"{utilities.format_datetime(user.last_request.created_on)} and updated on " \
+                    f"{utilities.format_datetime(user.last_request.updated_on)}"
 
     text += f"\n• #id{user.user_id}"
 
