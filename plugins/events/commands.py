@@ -26,8 +26,9 @@ from plugins.events.common import (
     send_events_messages,
     format_event_string,
     FILTER_DESCRIPTION,
-    ORDER_BY_DESCRIPTION, GROUP_BY_DESCRIPTION, EventFormatting
+    ORDER_BY_DESCRIPTION, GROUP_BY_DESCRIPTION, EventFormatting, backup_event_media
 )
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -500,6 +501,12 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         f"<a href=\"{message_link}\">Messaggio inviato</a> come commento a \"{event_title_link}\"",
         reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
     )
+
+    if config.settings.backup_events:
+        # noinspection PyTypeChecker
+        file_path: Path = await backup_event_media(update.message.reply_to_message)
+        if file_path:
+            event.add_media_file_path(file_path)
 
 
 HANDLERS = (
