@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from sqlalchemy import false
 from sqlalchemy.orm import Session
@@ -115,17 +115,24 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
     await update.message.reply_text(f"parsed {events_count} db entries")
 
 
-async def event_from_link(update: Update, context: CallbackContext, session: Session) -> Optional[Event]:
-    message_link = context.args[0] if context.args else update.effective_message.text
+async def event_from_link(update_or_message: Union[Update, Message], context: CallbackContext, session: Session) -> Optional[Event]:
+    if isinstance(update_or_message, Update):
+        message: Message = update_or_message.effective_message
+    elif isinstance(update_or_message, Message):
+        message: Message = update_or_message
+    else:
+        raise ValueError(f"'update_or_message' must be of type Update or Message")
+
+    message_link = context.args[0] if context.args else message.text
     chat_id, message_id = utilities.unpack_message_link(message_link)
     if not chat_id:
         logger.debug("invalid event link")
-        await update.effective_message.reply_text("Il link utilizzato non è valido")
+        await message.reply_text("Il link utilizzato non è valido")
         return
 
     if isinstance(chat_id, str):
         logger.debug("public chat message link")
-        await update.effective_message.reply_text("Questo comando non funziona con chat pubbliche (che hanno uno username)")
+        await message.reply_text("Questo comando non funziona con chat pubbliche (che hanno uno username)")
         return
 
     event_ids_str = f"<code>{chat_id}</code>/<code>{message_id}</code>"
@@ -133,8 +140,8 @@ async def event_from_link(update: Update, context: CallbackContext, session: Ses
     event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
     if not event:
         logger.debug("no event saved for this message link")
-        await update.effective_message.reply_text(f"Nessuna festa salvata per <a href=\"{message_link}\">"
-                                                  f"questo messaggio</a> ({event_ids_str})")
+        await message.reply_text(f"Nessuna festa salvata per <a href=\"{message_link}\">"
+                                 f"questo messaggio</a> ({event_ids_str})")
         return
 
     return event
@@ -191,6 +198,26 @@ async def on_event_chat_message_link(update: Update, context: ContextTypes.DEFAU
     logger.info(f"event chat message link {utilities.log(update)}")
 
     event: Event = await event_from_link(update, context, session)
+    if not event:
+        # event_from_link() will also answer the user
+        return
+
+    text = get_event_message_link_text(event)
+    reply_markup = get_event_message_link_reply_markup(event)
+    await update.message.reply_html(text, reply_markup=reply_markup, do_quote=True)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_member()
+async def on_postactions_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/postactions {utilities.log(update)}")
+
+    if not update.message.reply_to_message:
+        await update.message.reply_html(f"Usa il comando in risposta ad un messaggio che contiene un link t.me")
+        return
+
+    event: Event = await event_from_link(update.message.reply_to_message, context, session)
     if not event:
         # event_from_link() will also answer the user
         return
@@ -483,6 +510,7 @@ HANDLERS = (
     (CommandHandler(["comment", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
     # events chat message link actions
     (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
+    (CommandHandler(["postactions"], on_postactions_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CallbackQueryHandler(on_event_link_action_button, rf"^msglink:(?P<action>\w+):(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
     (CallbackQueryHandler(on_delete_option_button, rf"^delopt:(?P<action>\w+):(?P<chat_id>-\d+):(?P<message_id>\d+)$"), Group.NORMAL),
     # superadmins
