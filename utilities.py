@@ -206,11 +206,27 @@ def format_datetime(dt_object: Union[datetime.datetime, datetime.date], if_none=
     return dt_object.strftime(format_str)
 
 
-def bool_to_str_it(value, si_no=False) -> str:
+def _bool_to_str_base(value, true_str, false_str) -> str:
     if value:
-        return "si" if si_no else "vero"
+        return true_str
     else:
-        return "no" if si_no else "falso"
+        return false_str
+
+
+def bool_to_str_it(value, si_no=False) -> str:
+    return _bool_to_str_base(
+        value,
+        true_str="si" if si_no else "vero",
+        false_str="no" if si_no else "falso"
+    )
+
+
+def bool_to_str(value, yes_no=False) -> str:
+    return _bool_to_str_base(
+        value,
+        true_str="yes" if yes_no else "true",
+        false_str="no" if yes_no else "false"
+    )
 
 
 def is_test_bot():

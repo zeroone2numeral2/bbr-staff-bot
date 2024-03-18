@@ -26,8 +26,8 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     text = f"• <b>name</b>: {user.mention()} ({user.username_pretty(if_none='no username')})\n" \
            f"• <b>first seen</b>: {utilities.format_datetime(user.first_seen)}\n" \
            f"• <b>last message to staff</b>: {utilities.format_datetime(user.last_message)}\n" \
-           f"• <b>started/stopped</b>: {utilities.bool_to_str_it(user.started)} (on: {utilities.format_datetime(user.started_on)}); " \
-           f"{utilities.bool_to_str_it(user.stopped)} (on: {utilities.format_datetime(user.stopped_on)})\n" \
+           f"• <b>started</b>: {utilities.bool_to_str(user.started)} (on: {utilities.format_datetime(user.started_on)}); " \
+           f"<b>stopped</b>: {utilities.bool_to_str(user.stopped)} (on: {utilities.format_datetime(user.stopped_on)})\n" \
            f"• <b>language code (telegram/selected)</b>: {user.language_code or '-'}/{user.selected_language or '-'}"
 
     if user.banned:
@@ -44,8 +44,8 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     #     chat_member_object = await context.bot.get_chat_member(users_chat.chat_id, user.user_id)
     #     chat_member_users_chat = DbChatMember.from_chat_member(users_chat.chat_id, chat_member_object)
     #     session.add(chat_member_users_chat)
-    text += (f"\n• <b>status in group/channel</b>: {chat_member_users_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_users_chat.updated_on)}); "
-             f"{chat_member_events_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_events_chat.updated_on)})")
+    text += (f"\n• <b>status in group</b>: {chat_member_users_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_users_chat.updated_on)}); "
+             f"<b>in channel</b>: {chat_member_events_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_events_chat.updated_on)})")
 
     if False:
         # do nto show for now
