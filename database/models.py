@@ -945,6 +945,7 @@ class Event(Base):
     soon = Column(Boolean, default=False)
     region = Column(String, default=None)
     event_type = Column(String, default=None)
+    localata = Column(Boolean, default=False)
     canceled = Column(Boolean, default=False)
     parsing_errors = Column(String, default=None)
 
@@ -975,8 +976,6 @@ class Event(Base):
     deleted = Column(Boolean, default=False)  # != Event.canceled
     deleted_on = Column(DateTime, default=None)
     deleted_reason = Column(Integer, default=DeletionReason.OTHER)
-
-    localata = Column(Boolean, default=False)
 
     chat: Chat = relationship("Chat")
     comments = relationship("ChannelComment", back_populates="event")
