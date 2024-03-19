@@ -275,7 +275,7 @@ async def on_event_link_action_button(update: Update, context: ContextTypes.DEFA
         for file_path in event.get_media_file_paths():
             text += f"<code>{utilities.escape_html(file_path)}</code>\n"
 
-        text += "\nUsa <code>/getpath </code> seguito dall'indirizzo del file per inviarlo"
+        text += "\nUsa <code>/getpath </code>seguito dall'indirizzo del file per inviarlo"
 
         await update.effective_message.reply_html(text)
         return  # no need to do edit the message
@@ -459,6 +459,25 @@ async def on_getfilters_command(update: Update, context: ContextTypes.DEFAULT_TY
 
 @decorators.catch_exception()
 @decorators.pass_session()
+@decorators.staff_member()
+async def on_getpath_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/getpath {utilities.log(update)}")
+
+    command = utilities.get_command(update.message.text)
+    file_path = utilities.get_argument(command, update.message.text, context.bot.username)
+    if not file_path:
+        await update.message.reply_html("manca path file!")
+        return
+
+    file_path = Path(file_path)
+    if file_path.suffix in (".jpg", ".jpeg", ".png", ".webp"):
+        await update.effective_message.reply_photo(file_path)
+    elif file_path.suffix in (".mp4",):
+        await update.effective_message.reply_video(file_path)
+
+
+@decorators.catch_exception()
+@decorators.pass_session()
 async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/comment {utilities.log(update)}")
 
@@ -531,6 +550,7 @@ HANDLERS = (
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["comment", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
+    (CommandHandler(["getpath"], on_getpath_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     # events chat message link actions
     (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
     (CommandHandler(["postactions"], on_postactions_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
