@@ -583,6 +583,8 @@ class RegionHashtag:
     IRLANDA = "#irlanda"
     ITALIA = "#italia"
     ITALY = "#italy"
+    LITUANIA = "#lituania"
+    LITHUANIA = "#lithuania"
     MAROCCO = "#marocco"
     MOROCCO = "#morocco"
     NETHERLAND = "#netherland"
@@ -644,6 +646,7 @@ class RegionName:
     INGHILTERRA = "Inghilterra"
     IRLANDA = "Irlanda"
     ITALIA = "Italia"
+    LITUANIA = "Lituania"
     MAROCCO = "Marocco"
     NORD_ITALIA = "Nord Italia"
     NORVEGIA = "Norvegia"
@@ -684,6 +687,7 @@ REGIONS_DATA = {
     RegionName.GRECIA: dict(hashtags=[RegionHashtag.GRECIA, RegionHashtag.GREECE], emoji=Flag.GREECE),
     RegionName.INGHILTERRA: dict(hashtags=[RegionHashtag.UK, RegionHashtag.ENGLAND], emoji=Flag.ENGLAND),
     RegionName.IRLANDA: dict(hashtags=[RegionHashtag.IRELAND, RegionHashtag.IRLANDA], emoji=Flag.IRELAND),
+    RegionName.LITUANIA: dict(hashtags=[RegionHashtag.LITHUANIA, RegionHashtag.LITUANIA], emoji=Flag.LITHUANIA),
     RegionName.MAROCCO: dict(hashtags=[RegionHashtag.MAROCCO, RegionHashtag.MOROCCO], emoji=Flag.MOROCCO),
     # RegionName.NORD_ITALIA: dict(hashtags=[RegionHashtag.NORD_ITALIA, RegionHashtag.NORD_ITALY], emoji=Flag.ITALY),
     RegionName.NORVEGIA: dict(hashtags=[RegionHashtag.NORWAY, RegionHashtag.NORVEGIA], emoji=Flag.NORWAY),

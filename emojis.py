@@ -92,6 +92,7 @@ class Flag:
     HUNGARY = "🇭🇺"
     IRELAND = "🇮🇪"
     ITALY = "🇮🇹"
+    LITHUANIA = "🇱🇹"
     MOROCCO = "🇲🇦"
     NETHERLANDS = "🇳🇱"
     NORWAY = "🇳🇴"
