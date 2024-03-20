@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, Bot, User as TelegramUser
+from telegram import Update, Bot, User as TelegramUser, Message
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
 
@@ -172,7 +172,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     logger.info("editing log message...")
     # the #pendente and #nojoin hashtags will be removed later, by mark_previous_requests_as_reset()
     new_log_message_text = f"{request.log_message_text_html}\n\n{get_reset_text(user, update.effective_user)}"
-    edited_log_message = await context.bot.edit_message_text(
+    edited_log_message: Message = await context.bot.edit_message_text(
         chat_id=request.log_message_chat_id,
         message_id=request.log_message_message_id,
         text=new_log_message_text
