@@ -156,7 +156,7 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
     request: Optional[ApplicationRequest] = application_requests.get_from_log_channel_message(session, log_message_chat_id, log_message_message_id)
     if not request:
         logger.warning(f"couldn't find any application request for log channel message {log_message_message_id}")
-        if update.effective_message.text and re.search(rf"{request.REQUEST_ID_HASHTAG_PREFIX}\d+", update.effective_message.text, re.I):
+        if update.effective_message.text and re.search(rf"{ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}\d+", update.effective_message.text, re.I):
             # send the warning message only if the hashtag is found
             await update.message.reply_html(f"{Emoji.WARNING} impossibile trovare richieste per questo messaggio", do_quote=True)
         return
