@@ -86,11 +86,12 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
         return
 
     user.reset_evaluation()
-    await update.message.reply_text(
-        f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
-        f"(eventuali richieste pendenti o rifiutate sono state dimenticate, se era bannato è stato sbannato)",
-        do_quote=True
-    )
+    # do not answer in the group. it will be sent in the log channel and auto-forwarded in the group
+    # await update.message.reply_text(
+    #     f"{user.mention()} ora potrà richiedere nuovamente di essere ammesso al gruppo "
+    #     f"(eventuali richieste pendenti o rifiutate sono state dimenticate, se era bannato è stato sbannato)",
+    #     do_quote=True
+    # )
 
     # unban the user so they can join again, just in case the user was removed manually before /reset was used
     only_if_banned = not utilities.get_command(update.message.text) == "resetkick"  # check whether to kick the user
@@ -119,7 +120,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     await context.bot.send_message(log_chat.chat_id, log_text)
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
-    session.commit()  # nake sure to commit before executing this function
+    session.commit()  # make sure to commit before executing this function
     await mark_previous_requests_as_reset(context.bot, session, user.user_id)
 
 
