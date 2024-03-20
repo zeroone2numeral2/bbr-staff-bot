@@ -14,7 +14,7 @@ import decorators
 import utilities
 from config import config
 from constants import Group, BotSettingKey, Language, LocalizedTextKey, TempDataKey
-from database.models import User, PrivateChatMessage, Chat, BotSetting
+from database.models import User, PrivateChatMessage, Chat, BotSetting, ApplicationRequest
 from database.queries import texts, settings, users, chats, private_chat_messages, common
 from emojis import Emoji
 from ext.filters import ChatFilter
@@ -35,7 +35,7 @@ def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUs
     admin_mention = utilities.mention_escaped(admin)
     # no need to mention the user, since this text is only added to the log channel message, which
     # already contains the user's info
-    return f"<b>Richiesta #rid{request_id} {result}</b>\n" \
+    return f"<b>Richiesta {ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}{request_id} {result}</b>\n" \
            f"admin: {admin_mention} • #admin{admin.id}"
 
 
