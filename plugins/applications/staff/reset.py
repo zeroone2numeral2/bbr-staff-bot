@@ -30,7 +30,8 @@ async def unban_user(bot: Bot, session: Session, user: User, only_if_banned=True
 
 
 def get_reset_text(user: User, admin_telegram_user: TelegramUser, add_user_info=True, add_explanation=True) -> str:
-    text = f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
+    now_str = utilities.now(tz=True, dst_check=True).strftime("%d/%m/%Y %H:%M")
+    text = f"<b>#RESET</b> ({now_str}) da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
     if add_user_info:
         text += f"\n<b>utente</b>: {user.mention()} • #id{user.user_id}"
     if add_explanation:

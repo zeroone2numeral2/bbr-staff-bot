@@ -33,9 +33,10 @@ def get_reset_keyboard(user_id: int, application_id: int):
 def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUser, user: User):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     admin_mention = utilities.mention_escaped(admin)
+    now_str = utilities.now(tz=True, dst_check=True).strftime("%d/%m/%Y %H:%M")
     # no need to mention the user, since this text is only added to the log channel message, which
     # already contains the user's info
-    return f"<b>Richiesta {ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}{request_id} {result}</b>\n" \
+    return f"<b>Richiesta {ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}{request_id} {result}</b> ({now_str})\n" \
            f"admin: {admin_mention} • #admin{admin.id}"
 
 
