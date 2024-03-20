@@ -188,7 +188,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     request.update_evaluation_buttons_message(edited_evaluation_buttons_message)
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
-    session.commit()  # nake sure to commit before executing this function
+    session.commit()  # make sure to commit before executing this function
     await mark_previous_requests_as_reset(context.bot, session, user.user_id)
 
 
