@@ -29,18 +29,6 @@ from plugins.events.common import (
 logger = logging.getLogger(__name__)
 
 
-def get_evaluation_keyboard(user_id: int, application_id: int, include_reset=True):
-    keyboard = [[
-        InlineKeyboardButton(f"{Emoji.GREEN} accetta", callback_data=f"accept:{user_id}:{application_id}"),
-        InlineKeyboardButton(f"{Emoji.RED} rifiuta", callback_data=f"reject:{user_id}:{application_id}")
-    ]]
-    if include_reset:
-        reset_button = InlineKeyboardButton(f"{Emoji.RECYCLE} resetta", callback_data=f"reset:{user_id}:{application_id}")
-        keyboard[0].insert(1, reset_button)
-
-    return InlineKeyboardMarkup(keyboard)
-
-
 async def send_attachment_comments(message: Message, request: ApplicationRequest):
     # we will save the whole list of attachments we sent just in case we will need to link them,
     # but we actually need just the first one (because it's the message we reply to)

@@ -21,7 +21,6 @@ from database.models import User, ChatMember as DbChatMember, ApplicationRequest
     DescriptionMessageType, Chat
 from database.queries import settings, texts, chat_members, chats, private_chat_messages
 from emojis import Emoji
-from plugins.applications.staff.attachments import get_evaluation_keyboard
 from replacements import replace_placeholders
 
 logger = logging.getLogger(__name__)
@@ -78,6 +77,18 @@ def get_cancel_keyboard(input_field_placeholder: Optional[str] = None):
         input_field_placeholder=input_field_placeholder,
         is_persistent=True
     )
+
+
+def get_evaluation_keyboard(user_id: int, application_id: int, include_reset=True):
+    keyboard = [[
+        InlineKeyboardButton(f"{Emoji.GREEN} accetta", callback_data=f"accept:{user_id}:{application_id}"),
+        InlineKeyboardButton(f"{Emoji.RED} rifiuta", callback_data=f"reject:{user_id}:{application_id}")
+    ]]
+    if include_reset:
+        reset_button = InlineKeyboardButton(f"{Emoji.RECYCLE} resetta", callback_data=f"reset:{user_id}:{application_id}")
+        keyboard[0].insert(1, reset_button)
+
+    return InlineKeyboardMarkup(keyboard)
 
 
 def get_done_keyboard(input_field_placeholder: Optional[str] = None):
