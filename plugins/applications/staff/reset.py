@@ -185,8 +185,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     result = await utilities.delete_messages_by_id_safe(context.bot, request.evaluation_buttons_message_chat_id, request.evaluation_buttons_message_message_id)
     if result:
         logger.info("...successs")
-        # might be worth to clean the message ids fields instead of marking as deleted
-        request.evaluation_buttons_message_deleted = True
+        request.set_evaluation_buttons_message_as_deleted(nullify_message_data=True)
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
     session.commit()  # make sure to commit before executing this function

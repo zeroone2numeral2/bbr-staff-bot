@@ -1532,8 +1532,19 @@ class ApplicationRequest(Base):
         self.evaluation_buttons_message_message_id = message.message_id
         self.evaluation_buttons_message_text_html = message.text_html
         self.evaluation_buttons_message_posted_on = utilities.now()
+        self.evaluation_buttons_message_deleted = False  # mark this as not deleted when we save the message
         if config.settings.db_save_json:
             self.evaluation_buttons_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def set_evaluation_buttons_message_as_deleted(self, nullify_message_data=True):
+        self.evaluation_buttons_message_deleted = True
+
+        if nullify_message_data:
+            self.evaluation_buttons_message_chat_id = None
+            self.evaluation_buttons_message_message_id = None
+            self.evaluation_buttons_message_text_html = None
+            self.evaluation_buttons_message_posted_on = None
+            self.evaluation_buttons_message_json = None
 
     def update_staff_chat_message(self, message: Message):
         self.staff_message_text_html = message.text_html
