@@ -443,7 +443,7 @@ async def send_application_log_message(bot: Bot, log_chat_id: int, request: Appl
     # won't display the comments bar
     reply_markup = get_evaluation_keyboard(request.user_id, request.id)
     evaluation_buttons_message: Message = await log_message.reply_html(
-        f"Decidi che fare con la richiesta {request.id_hashtag()} di {request.user.mention(escape=True)}:",
+        f"Decidi che fare con la richiesta di {request.user.mention(escape=True)}:",
         reply_markup=reply_markup,
         do_quote=True
     )
