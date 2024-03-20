@@ -1400,6 +1400,7 @@ class PartiesMessage(Base):
 class ApplicationRequest(Base):
     __tablename__ = 'application_requests'
     __allow_unmapped__ = True
+    REQUEST_ID_HASHTAG_PREFIX = "#rid"
 
     id = Column(Integer, primary_key=True)
     user_id = mapped_column(Integer, ForeignKey('users.user_id'))
@@ -1469,7 +1470,7 @@ class ApplicationRequest(Base):
         self.user_id = user_id
 
     def id_hashtag(self) -> str:
-        return f"#rid{self.id}"
+        return f"{self.REQUEST_ID_HASHTAG_PREFIX}{self.id}"
 
     def is_pending(self):
         return self.status is None
