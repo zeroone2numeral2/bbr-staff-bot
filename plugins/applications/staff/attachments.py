@@ -149,6 +149,14 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
         if not message.reply_to_message and message.text and re.search(rf"{ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}\d+", message.text, re.I):
             # send the warning message only if the hashtag is found
             await message.reply_html(f"{Emoji.WARNING} impossibile trovare richieste per questo messaggio", do_quote=True)
+
+        # checking whether the message is the log channel message that contains the inline keyboard to evaluate the request
+        # if so, we delete the message automatically forwarded in the evaluation chat
+        request_from_evaluation_message: Optional[ApplicationRequest] = application_requests.get_from_evaluation_buttons_log_channel_message(session, log_message_chat_id, log_message_message_id)
+        if request_from_evaluation_message:
+            logger.info("log message with evaluation buttons forwarded to the evaluation chat: deleting...")
+            await utilities.delete_messages_safe(message)
+
         return
 
     logger.info(f"saving staff chat message...")
