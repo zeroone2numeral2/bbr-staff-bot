@@ -1440,7 +1440,7 @@ class ApplicationRequest(Base):
     staff_message_posted_on = Column(DateTime, default=None)
     staff_message_json = Column(String, default=None)
 
-    # message with the accept/reject buttons sent in the log post comments
+    # message with the accept/reject buttons sent in the log channel
     evaluation_buttons_message_chat_id = mapped_column(Integer, default=None)
     evaluation_buttons_message_message_id = Column(Integer, default=None)
     evaluation_buttons_message_text_html = Column(String, default=None)
