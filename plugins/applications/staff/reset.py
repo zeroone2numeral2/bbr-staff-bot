@@ -154,7 +154,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
         logger.info(f"user {user.user_id} has no completed/pending request")
         await update.callback_query.answer(f"Questo utente non ha alcuna richiesta di ingresso pendente/conclusa da resettare. Può già usare /start",
                                            show_alert=True, cache_time=10)
-        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        await utilities.delete_or_remove_markup_safe(update.effective_message)
         return
 
     await unban_user(context.bot, session, user, only_if_banned=True)

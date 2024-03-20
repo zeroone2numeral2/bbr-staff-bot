@@ -612,6 +612,23 @@ async def delete_messages_safe(messages: Union[Message, List[Message]]) -> Optio
         return success
 
 
+async def delete_or_remove_markup_safe(message: Message) -> bool:
+    success = False
+    try:
+        success = await message.delete()
+    except BadRequest:
+        pass
+
+    if not success:
+        try:
+            await message.edit_reply_markup(reply_markup=None)
+        except BadRequest as e:
+            if "not modified" in e.message.lower():
+                return True
+            else:
+                return False
+
+
 async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[List[int], int]) -> Optional[Tuple[bool, str]]:
     """returns the request result if only one message_id was passed, otherwise None"""
 
