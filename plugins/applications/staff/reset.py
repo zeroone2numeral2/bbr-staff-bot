@@ -29,11 +29,12 @@ async def unban_user(bot: Bot, session: Session, user: User, only_if_banned=True
             return False
 
 
-def get_reset_text(user: User, admin_telegram_user: TelegramUser, add_explanation=False) -> str:
-    text = (f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} (#admin{admin_telegram_user.id}) per "
-            f"{user.mention()} (#id{user.user_id})")
+def get_reset_text(user: User, admin_telegram_user: TelegramUser, add_user_info=True, add_explanation=True) -> str:
+    text = f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
+    if add_user_info:
+        text += f"\n<b>utente</b>: {user.mention()} • #id{user.user_id}"
     if add_explanation:
-        text += f", potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
+        text += f"\n\nPotrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
 
     return text
 
@@ -171,7 +172,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     logger.info("editing log message...")
     # the #pendente and #nojoin hashtags will be removed later, by mark_previous_requests_as_reset()
-    new_log_message_text = f"{request.log_message_text_html}\n\n{get_reset_text(user, update.effective_user)}"
+    new_log_message_text = f"{request.log_message_text_html}\n\n{get_reset_text(user, update.effective_user, add_user_info=False)}"
     edited_log_message: Message = await context.bot.edit_message_text(
         chat_id=request.log_message_chat_id,
         message_id=request.log_message_message_id,
@@ -180,14 +181,11 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     request.update_log_chat_message(edited_log_message)
     session.commit()  # make sure to commit now, because we will loop through the log messages later, to remove the hashtags
 
-    logger.info("editing evaluation buttons message...")
-    edited_evaluation_buttons_message = await context.bot.edit_message_text(
-        chat_id=request.evaluation_buttons_message_chat_id,
-        message_id=request.evaluation_buttons_message_message_id,
-        text=get_reset_text(user, update.effective_user, add_explanation=True),
-        reply_markup=None
-    )
-    request.update_evaluation_buttons_message(edited_evaluation_buttons_message)
+    logger.info("deleting evaluation buttons message...")
+    result = await utilities.delete_messages_by_id_safe(context.bot, request.evaluation_buttons_message_chat_id, request.evaluation_buttons_message_message_id)
+    if result:
+        logger.info("...successs")
+        # mark as deleted?
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
     session.commit()  # make sure to commit before executing this function
