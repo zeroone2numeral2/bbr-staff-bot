@@ -1447,6 +1447,7 @@ class ApplicationRequest(Base):
     evaluation_buttons_message_text_html = Column(String, default=None)
     evaluation_buttons_message_posted_on = Column(DateTime, default=None)
     evaluation_buttons_message_json = Column(String, default=None)
+    evaluation_buttons_message_deleted = Column(Boolean, default=False)
 
     handled_by_user_id = mapped_column(Integer, ForeignKey('users.user_id'), default=None)  # admin that changed the status
 
