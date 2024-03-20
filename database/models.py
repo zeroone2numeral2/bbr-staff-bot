@@ -1468,6 +1468,9 @@ class ApplicationRequest(Base):
     def __init__(self, user_id: int):
         self.user_id = user_id
 
+    def id_hashtag(self) -> str:
+        return f"#rid{self.id}"
+
     def is_pending(self):
         return self.status is None
 

@@ -21,6 +21,7 @@ from database.models import User, ChatMember as DbChatMember, ApplicationRequest
     DescriptionMessageType, Chat
 from database.queries import settings, texts, chat_members, chats, private_chat_messages
 from emojis import Emoji
+from plugins.applications.staff.attachments import get_evaluation_keyboard
 from replacements import replace_placeholders
 
 logger = logging.getLogger(__name__)
@@ -404,7 +405,7 @@ async def send_application_log_message(bot: Bot, log_chat_id: int, request: Appl
     # create and send the log message with user info, social, and other members
     user_mention = utilities.mention_escaped(user)
     user_username = f"@{user.username}" if user.username else "username non impostato"
-    base_text = f"{Emoji.SPARKLE} <b>nuova #richiesta</b> • #rid{request.id} • #pendente • #nojoin\n\n" \
+    base_text = f"{Emoji.SPARKLE} <b>nuova #richiesta</b> • {request.id_hashtag()} • #pendente • #nojoin\n\n" \
                 f"{Emoji.PERSON} <b>utente</b>\n" \
                 f"• {user_mention}\n" \
                 f"• {user_username}\n" \
@@ -426,6 +427,16 @@ async def send_application_log_message(bot: Bot, log_chat_id: int, request: Appl
         **timeouts
     )
     request.set_log_message(log_message)
+
+    # we have to send the keyboard in a new log message because if we send it with the log channel post, Telegram apps
+    # won't display the comments bar
+    reply_markup = get_evaluation_keyboard(request.user_id, request.id)
+    evaluation_buttons_message: Message = await log_message.reply_html(
+        f"Decidi che fare con la richiesta {request.id_hashtag()} di {request.user.mention(escape=True)}:",
+        reply_markup=reply_markup,
+        do_quote=True
+    )
+    request.set_evaluation_buttons_message(evaluation_buttons_message)
 
 
 @decorators.catch_exception()
