@@ -74,17 +74,6 @@ async def handle_events_chat_join_via_bot_link(session: Session, bot: Bot, chat_
 
 
 async def remove_nojoin_hashtag(user: User, bot: Bot):
-    logger.info(f"removing #nojoin hashtag from staff message...")
-    staff_message_no_hashtag = user.last_request.staff_message_text_html.replace(" • #nojoin", "")
-    edited_staff_message = await utilities.edit_text_by_ids_safe(
-        bot=bot,
-        chat_id=user.last_request.staff_message_chat_id,
-        message_id=user.last_request.staff_message_message_id,
-        text=f"{staff_message_no_hashtag}"
-    )
-    if edited_staff_message:
-        user.last_request.update_staff_chat_message(edited_staff_message)
-
     logger.info(f"removing #nojoin hashtag from log message...")
     log_message_no_hashtag = user.last_request.log_message_text_html.replace(" • #nojoin", "")
     edited_log_message = await utilities.edit_text_by_ids_safe(
