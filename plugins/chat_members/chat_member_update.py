@@ -106,7 +106,7 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
     if not added_by_admin and (not user.last_request_id or user.last_request.is_pending() or user.last_request.rejected()):
         # user joined the chat without going through the approval process, or their request was rejected: log to channel
         # note about joins via folder link: when a user joins via a folder link, they actually
-        # joined through the invite link of the admin that generated that folder invite link
+        # joined through the primary invite link of the admin that generated that folder invite link
 
         logger.debug("no last request to check or last request is pending/rejected: we log the join")
         log_chat = chats.get_chat(session, Chat.is_log_chat)
