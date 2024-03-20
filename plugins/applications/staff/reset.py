@@ -30,9 +30,10 @@ async def unban_user(bot: Bot, session: Session, user: User, only_if_banned=True
 
 
 def get_reset_text(user: User, admin_telegram_user: TelegramUser, add_explanation=False) -> str:
-    text = f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
+    text = (f"<b>#RESET</b> da parte di {admin_telegram_user.mention_html()} (#admin{admin_telegram_user.id}) per "
+            f"{user.mention()} (#id{user.user_id})")
     if add_explanation:
-        text += f"\n\n{user.mention()} (#id{user.user_id}) potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
+        text += f", potrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
 
     return text
 
