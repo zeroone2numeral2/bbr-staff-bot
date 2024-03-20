@@ -138,26 +138,28 @@ async def send_attachment_comments(message: Message, request: ApplicationRequest
 async def on_linked_group_event_message(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"evaluation chat: forwarded log channel post {utilities.log(update)}")
 
-    log_message_chat_id = update.message.sender_chat.id
-    log_message_message_id = update.message.forward_origin.message_id
+    message: Message = update.effective_message
+
+    log_message_chat_id = message.sender_chat.id
+    log_message_message_id = message.forward_origin.message_id
 
     request: Optional[ApplicationRequest] = application_requests.get_from_log_channel_message(session, log_message_chat_id, log_message_message_id)
     if not request:
         logger.warning(f"couldn't find any application request for log channel message {log_message_message_id}")
-        if not update.effective_message.reply_to_message and update.effective_message.text and re.search(rf"{ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}\d+", update.effective_message.text, re.I):
+        if not message.reply_to_message and message.text and re.search(rf"{ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}\d+", message.text, re.I):
             # send the warning message only if the hashtag is found
-            await update.message.reply_html(f"{Emoji.WARNING} impossibile trovare richieste per questo messaggio", do_quote=True)
+            await message.reply_html(f"{Emoji.WARNING} impossibile trovare richieste per questo messaggio", do_quote=True)
         return
 
     logger.info(f"saving staff chat message...")
-    request.set_staff_message(update.message)
+    request.set_staff_message(message)
     session.commit()
 
-    await send_attachment_comments(update.message, request)
+    await send_attachment_comments(message, request)
 
     logger.info(f"unpinning log message from evaluation chat...")
     try:
-        await update.message.unpin()
+        await message.unpin()
     except BadRequest as e:
         logger.info(f"error while unpinning: {e}")
 
