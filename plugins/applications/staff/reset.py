@@ -51,6 +51,9 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
     reset_requests_count = 0
     edited_log_messages_count = 0
 
+    evaluation_buttons_message_deleted_count = 0
+    evaluation_buttons_message_removed_markup_count = 0
+
     request: ApplicationRequest
     for request in requests:
         logger.info(f"marking request {request.id} as reset")
@@ -73,15 +76,19 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
 
         if request.evaluation_buttons_message_chat_id and request.evaluation_buttons_message_message_id and not request.evaluation_buttons_message_deleted:
             logger.info(f"trying to delete/remove markup from the log message with the evaluation buttons...")
-            delete_success, _ = await utilities.delete_or_remove_markup_by_ids_safe(
+            delete_success, removed_markup_success = await utilities.delete_or_remove_markup_by_ids_safe(
                 bot,
                 request.evaluation_buttons_message_chat_id,
                 request.evaluation_buttons_message_message_id
             )
             if delete_success:
                 request.set_evaluation_buttons_message_as_deleted()
+                evaluation_buttons_message_deleted_count += 1
+            elif removed_markup_success:
+                evaluation_buttons_message_removed_markup_count += 1
 
     logger.info(f"requests reset: {reset_requests_count}; edited log messages: {edited_log_messages_count}")
+    logger.info(f"deleted evaluation buttons messages: {evaluation_buttons_message_deleted_count}; removed markup: {evaluation_buttons_message_removed_markup_count}")
 
 
 @decorators.catch_exception()
