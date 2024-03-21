@@ -71,6 +71,16 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
                 request.update_log_chat_message(edited_message)
                 edited_log_messages_count += 1
 
+        if request.evaluation_buttons_message_chat_id and request.evaluation_buttons_message_message_id and not request.evaluation_buttons_message_deleted:
+            logger.info(f"trying to delete/remove markup from the log message with the evaluation buttons...")
+            delete_success, _ = await utilities.delete_or_remove_markup_by_ids_safe(
+                bot,
+                request.evaluation_buttons_message_chat_id,
+                request.evaluation_buttons_message_message_id
+            )
+            if delete_success:
+                request.set_evaluation_buttons_message_as_deleted()
+
     logger.info(f"requests reset: {reset_requests_count}; edited log messages: {edited_log_messages_count}")
 
 

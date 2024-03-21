@@ -189,24 +189,15 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
         )
     else:
         # if accepted, try to delete the buttons' message
-        logger.info(f"trying to delete the message with the evaluation buttons...")
-        result = await utilities.delete_messages_by_id_safe(
+        logger.info(f"trying to delete/remove the markup from the message with the evaluation buttons...")
+        delete_success, remove_markup_success = await utilities.delete_or_remove_markup_by_ids_safe(
             bot,
             user.last_request.evaluation_buttons_message_chat_id,
             user.last_request.evaluation_buttons_message_message_id
         )
-        logger.info(f"...result: {result}")
-        if not result:
-            # if the emssage can't be deleted, try to remove the markup
-            logger.info(f"removing reply markup from the evaluation buttons' message...")
-            try:
-                await bot.edit_message_reply_markup(
-                    user.last_request.evaluation_buttons_message_chat_id,
-                    user.last_request.evaluation_buttons_message_message_id,
-                    reply_markup=None
-                )
-            except (TelegramError, BadRequest) as e:
-                logger.info(f"error while removing reply markup: {e}")
+        logger.info(f"...delete success: {delete_success}, remove markup success : {remove_markup_success}")
+        if delete_success:
+            user.last_request.set_evaluation_buttons_message_as_deleted()
 
     logger.info(f"editing log message...")
     edited_log_message = await bot.edit_message_text(
