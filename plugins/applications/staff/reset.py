@@ -48,7 +48,7 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
     pendente_str = " • #pendente"
     nojoin_str = " • #nojoin"
 
-    reset_requests_count = 0
+    requests_reset_count = 0
     edited_log_messages_count = 0
 
     evaluation_buttons_message_deleted_count = 0
@@ -58,7 +58,7 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
     for request in requests:
         logger.info(f"marking request {request.id} as reset")
         request.reset = True
-        reset_requests_count += 1
+        requests_reset_count += 1
 
         if request.log_message_text_html and (pendente_str in request.log_message_text_html or nojoin_str in request.log_message_text_html):
             logger.info(f"removing hashtags from log message {request.log_message_message_id}...")
@@ -87,7 +87,7 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
             elif removed_markup_success:
                 evaluation_buttons_message_removed_markup_count += 1
 
-    logger.info(f"requests reset: {reset_requests_count}; edited log messages: {edited_log_messages_count}")
+    logger.info(f"requests reset: {requests_reset_count}; edited log messages: {edited_log_messages_count}")
     logger.info(f"deleted evaluation buttons messages: {evaluation_buttons_message_deleted_count}; removed markup: {evaluation_buttons_message_removed_markup_count}")
 
 
