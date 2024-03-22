@@ -1546,6 +1546,12 @@ class ApplicationRequest(Base):
             self.evaluation_buttons_message_posted_on = None
             self.evaluation_buttons_message_json = None
 
+    def can_delete_evaluation_buttons_message(self):
+        """an evaluation buttons message can be deleted (or edited) if we know its chat_id/message_id,
+        and it is not marked as deleted"""
+
+        return self.evaluation_buttons_message_chat_id and self.evaluation_buttons_message_message_id and not self.evaluation_buttons_message_deleted
+
     def update_staff_chat_message(self, message: Message):
         self.staff_message_text_html = message.text_html
         if config.settings.db_save_json:

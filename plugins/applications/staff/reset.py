@@ -42,7 +42,7 @@ def get_reset_text(user: User, admin_telegram_user: Optional[TelegramUser] = Non
     return text
 
 
-async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: int):
+async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: int, admin_user: TelegramUser):
     logger.info("marking all requests as reset and removing hashtag where needed...")
 
     requests = application_requests.get_user_requests(session, user_id)
@@ -58,18 +58,23 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
 
     request: ApplicationRequest
     for request in requests:
-        logger.info(f"marking request {request.id} as reset")
         reset_additional_text = ""
         if not request.reset:
-            reset_additional_text = get_reset_text(request.user)
+            logger.debug(f"request {request.id} was already marked as reset")
+            # add the #reset text only if the request is not marked as reset already
+            reset_additional_text = get_reset_text(request.user, admin_user, add_user_info=False, add_explanation=False)
 
-        request.reset = True
+        logger.info(f"marking request {request.id} as reset")
+        request.reset = True  # mark the request as reset as soon as possible
         requests_reset_count += 1
 
-        if request.log_message_text_html and (pendente_str in request.log_message_text_html or nojoin_str in request.log_message_text_html):
-            logger.info(f"removing hashtags from log message {request.log_message_message_id}...")
+        if request.log_message_text_html and (reset_additional_text or pendente_str in request.log_message_text_html or nojoin_str in request.log_message_text_html):
+            logger.info(f"removing hashtags/adding #reset text to log message {request.log_message_message_id}...")
 
             new_log_message_text = request.log_message_text_html.replace(pendente_str, "").replace(nojoin_str, "")
+            if reset_additional_text:
+                new_log_message_text += f"\n\n{reset_additional_text}"
+
             edited_message = await utilities.edit_text_by_ids_safe(
                 bot=bot,
                 chat_id=request.log_message_chat_id,
@@ -80,7 +85,7 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
                 request.update_log_chat_message(edited_message)
                 edited_log_messages_count += 1
 
-        if request.evaluation_buttons_message_chat_id and request.evaluation_buttons_message_message_id and not request.evaluation_buttons_message_deleted:
+        if request.can_delete_evaluation_buttons_message():
             logger.info(f"trying to delete/remove markup from the log message with the evaluation buttons...")
             delete_success, removed_markup_success = await utilities.delete_or_remove_markup_by_ids_safe(
                 bot,
@@ -147,7 +152,7 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
     session.commit()  # make sure to commit before executing this function
-    await mark_previous_requests_as_reset(context.bot, session, user.user_id)
+    await mark_previous_requests_as_reset(context.bot, session, user.user_id, update.effective_user)
 
 
 @decorators.catch_exception()
@@ -213,7 +218,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
     session.commit()  # make sure to commit before executing this function
-    await mark_previous_requests_as_reset(context.bot, session, user.user_id)
+    await mark_previous_requests_as_reset(context.bot, session, user.user_id, update.effective_user)
 
 
 HANDLERS = (
