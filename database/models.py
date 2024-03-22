@@ -1514,7 +1514,7 @@ class ApplicationRequest(Base):
     def set_log_message(self, message: Message):
         self.log_message_chat_id = message.chat.id
         self.log_message_message_id = message.message_id
-        self.log_message_text_html = message.text_html
+        self.log_message_text_html: str = message.text_html
         self.log_message_posted_on = utilities.now()
         if config.settings.db_save_json:
             self.log_message_json = json.dumps(message.to_dict(), indent=2)
