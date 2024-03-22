@@ -29,9 +29,11 @@ async def unban_user(bot: Bot, session: Session, user: User, only_if_banned=True
             return False
 
 
-def get_reset_text(user: User, admin_telegram_user: TelegramUser, add_user_info=True, add_explanation=True) -> str:
+def get_reset_text(user: User, admin_telegram_user: Optional[TelegramUser] = None, add_user_info=True, add_explanation=True) -> str:
     now_str = utilities.now(tz=True, dst_check=True).strftime("%d/%m/%Y %H:%M")
-    text = f"<b>#RESET</b> ({now_str}) da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
+    text = f"<b>#RESET</b> ({now_str})"
+    if admin_telegram_user:
+        text += f" da parte di {admin_telegram_user.mention_html()} • #admin{admin_telegram_user.id}"
     if add_user_info:
         text += f"\n<b>utente</b>: {user.mention()} • #id{user.user_id}"
     if add_explanation:
@@ -57,6 +59,10 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
     request: ApplicationRequest
     for request in requests:
         logger.info(f"marking request {request.id} as reset")
+        reset_additional_text = ""
+        if not request.reset:
+            reset_additional_text = get_reset_text(request.user)
+
         request.reset = True
         requests_reset_count += 1
 
