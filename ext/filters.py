@@ -22,7 +22,9 @@ class FilterReplyToBot(MessageFilter):
     def filter(self, message):
         if (message.reply_to_message
                 and message.reply_to_message.from_user
-                and message.reply_to_message.from_user.id == self.bot_id):
+                and message.reply_to_message.from_user.id == self.bot_id
+                # for some reason, pinned messages service message have a reply_to_message field
+                and not message.pinned_message):
             return True
 
         return False
