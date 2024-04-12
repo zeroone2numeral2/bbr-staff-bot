@@ -154,7 +154,7 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
         logger.info(f"couldn't find any UserMessage/request to reply to, warning staff and returning")
         await update.message.reply_html(f"{Emoji.WARNING} <i>Impossibile inoltrare il messaggio a {user.mention()}: "
                                         f"nessuna richiesta associata all'utente (può essere che sia stato "
-                                        f"eseguito un reset)</i>")
+                                        f"eseguito un reset)</i>", do_quote=True)
         return
 
     sent_message: MessageId = await update.message.copy(
