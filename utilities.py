@@ -12,6 +12,7 @@ from html import escape
 from re import Match
 from typing import List
 from typing import Union, Optional, Tuple
+from pprint import pprint
 
 import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
@@ -609,6 +610,50 @@ async def delete_messages_safe(messages: Union[Message, List[Message]]) -> Optio
 
     if len(messages) == 1:
         return success
+
+
+async def delete_or_remove_markup_by_ids_safe(bot: Bot, chat_id: int, message_id: int) -> (bool, bool):
+    delete_success = False
+    remove_markup_success = False
+
+    try:
+        delete_success = await bot.delete_message(chat_id, message_id)
+    except BadRequest as e:
+        logger.debug(f"error while deleting message {message_id} in chat {chat_id}: {e}")
+
+    if not delete_success:
+        try:
+            await bot.edit_message_reply_markup(reply_markup=None)
+            remove_markup_success = True
+        except BadRequest as e:
+            if "not modified" in e.message.lower():
+                remove_markup_success = True
+            else:
+                logger.debug(f"error while removing markup from message {message_id} in chat {chat_id}: {e}")
+
+    return delete_success, remove_markup_success
+
+
+async def delete_or_remove_markup_safe(message: Message) -> (bool, bool):
+    delete_success = False
+    remove_markup_success = False
+
+    try:
+        success = await message.delete()
+    except BadRequest as e:
+        logger.debug(f"error while deleting message {message.message_id} in chat {message.chat_id}: {e}")
+
+    if not delete_success:
+        try:
+            await message.edit_reply_markup(reply_markup=None)
+            remove_markup_success = True
+        except BadRequest as e:
+            if "not modified" in e.message.lower():
+                remove_markup_success = True
+            else:
+                logger.debug(f"error while removing markup from message {message.message_id} in chat {message.chat_id}: {e}")
+
+    return delete_success, remove_markup_success
 
 
 async def delete_messages_by_id_safe(bot: Bot, chat_id: int, message_ids: Union[List[int], int]) -> Optional[Tuple[bool, str]]:

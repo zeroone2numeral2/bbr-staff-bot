@@ -1400,6 +1400,7 @@ class PartiesMessage(Base):
 class ApplicationRequest(Base):
     __tablename__ = 'application_requests'
     __allow_unmapped__ = True
+    REQUEST_ID_HASHTAG_PREFIX = "#rid"
 
     id = Column(Integer, primary_key=True)
     user_id = mapped_column(Integer, ForeignKey('users.user_id'))
@@ -1426,17 +1427,27 @@ class ApplicationRequest(Base):
     social_message_id = Column(Integer, default=None)
     social_received_on = Column(DateTime, default=None)
 
+    # log message sent to the log channel
     log_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     log_message_message_id = Column(Integer, default=None)
     log_message_text_html = Column(String, default=None)
     log_message_posted_on = Column(DateTime, default=None)
     log_message_json = Column(String, default=None)
 
+    # log message automatically forwarded to the discussion group (evaluation chat)
     staff_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     staff_message_message_id = Column(Integer, default=None)
     staff_message_text_html = Column(String, default=None)
     staff_message_posted_on = Column(DateTime, default=None)
     staff_message_json = Column(String, default=None)
+
+    # message with the accept/reject buttons sent in the log channel
+    evaluation_buttons_message_chat_id = mapped_column(Integer, default=None)
+    evaluation_buttons_message_message_id = Column(Integer, default=None)
+    evaluation_buttons_message_text_html = Column(String, default=None)
+    evaluation_buttons_message_posted_on = Column(DateTime, default=None)
+    evaluation_buttons_message_json = Column(String, default=None)
+    evaluation_buttons_message_deleted = Column(Boolean, default=False)
 
     handled_by_user_id = mapped_column(Integer, ForeignKey('users.user_id'), default=None)  # admin that changed the status
 
@@ -1448,9 +1459,19 @@ class ApplicationRequest(Base):
     log_message_chat: Chat = relationship("Chat", foreign_keys=log_message_chat_id)
     staff_message_chat: Chat = relationship("Chat", foreign_keys=staff_message_chat_id)
     description_messages: List[Mapped['DescriptionMessage']] = relationship("DescriptionMessage", back_populates="application_request")
+    evaluation_buttons_message_chat: Chat = relationship(
+        "Chat",
+        foreign_keys=evaluation_buttons_message_chat_id,
+        primaryjoin="Chat.chat_id == ApplicationRequest.evaluation_buttons_message_chat_id",
+        # remote_side=user_id,
+        uselist=False
+    )
 
     def __init__(self, user_id: int):
         self.user_id = user_id
+
+    def id_hashtag(self) -> str:
+        return f"{self.REQUEST_ID_HASHTAG_PREFIX}{self.id}"
 
     def is_pending(self):
         return self.status is None
@@ -1493,7 +1514,7 @@ class ApplicationRequest(Base):
     def set_log_message(self, message: Message):
         self.log_message_chat_id = message.chat.id
         self.log_message_message_id = message.message_id
-        self.log_message_text_html = message.text_html
+        self.log_message_text_html: str = message.text_html
         self.log_message_posted_on = utilities.now()
         if config.settings.db_save_json:
             self.log_message_json = json.dumps(message.to_dict(), indent=2)
@@ -1506,6 +1527,31 @@ class ApplicationRequest(Base):
         if config.settings.db_save_json:
             self.staff_message_json = json.dumps(message.to_dict(), indent=2)
 
+    def set_evaluation_buttons_message(self, message: Message):
+        self.evaluation_buttons_message_chat_id = message.chat.id
+        self.evaluation_buttons_message_message_id = message.message_id
+        self.evaluation_buttons_message_text_html = message.text_html
+        self.evaluation_buttons_message_posted_on = utilities.now()
+        self.evaluation_buttons_message_deleted = False  # mark this as not deleted when we save the message
+        if config.settings.db_save_json:
+            self.evaluation_buttons_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def set_evaluation_buttons_message_as_deleted(self, nullify_message_data=True):
+        self.evaluation_buttons_message_deleted = True
+
+        if nullify_message_data:
+            self.evaluation_buttons_message_chat_id = None
+            self.evaluation_buttons_message_message_id = None
+            self.evaluation_buttons_message_text_html = None
+            self.evaluation_buttons_message_posted_on = None
+            self.evaluation_buttons_message_json = None
+
+    def can_delete_evaluation_buttons_message(self):
+        """an evaluation buttons message can be deleted (or edited) if we know its chat_id/message_id,
+        and it is not marked as deleted"""
+
+        return self.evaluation_buttons_message_chat_id and self.evaluation_buttons_message_message_id and not self.evaluation_buttons_message_deleted
+
     def update_staff_chat_message(self, message: Message):
         self.staff_message_text_html = message.text_html
         if config.settings.db_save_json:
@@ -1515,6 +1561,11 @@ class ApplicationRequest(Base):
         self.log_message_text_html = message.text_html
         if config.settings.db_save_json:
             self.log_message_json = json.dumps(message.to_dict(), indent=2)
+
+    def update_evaluation_buttons_message(self, message: Message):
+        self.evaluation_buttons_message_text_html = message.text_html
+        if config.settings.db_save_json:
+            self.evaluation_buttons_message_json = json.dumps(message.to_dict(), indent=2)
 
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
@@ -1660,7 +1711,7 @@ class DescriptionMessage(Base):
         elif self.type == DescriptionMessageType.VIDEO:
             return InputMediaVideo(self.media_file_id, caption=self.caption_html)
 
-    def set_log_message(self, message: Message):
+    def set_log_comment_message(self, message: Message):
         self.log_message_chat_id = message.chat.id
         self.log_message_message_id = message.message_id
         self.log_message_json = json.dumps(message.to_dict(), indent=2)
@@ -1668,6 +1719,10 @@ class DescriptionMessage(Base):
     def log_message_link(self):
         chat_id = str(self.log_message_chat_id).replace("-100", "")
         return f"https://t.me/c/{chat_id}/{self.log_message_message_id}"
+
+    def comment_message_link(self):
+        chat_id = str(self.log_message_chat_id).replace("-100", "")
+        return f"https://t.me/c/{chat_id}/{self.log_message_message_id}?thread={self.application_request.staff_message_message_id}"
 
 
 class HashingVersion:

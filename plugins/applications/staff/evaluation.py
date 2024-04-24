@@ -14,7 +14,7 @@ import decorators
 import utilities
 from config import config
 from constants import Group, BotSettingKey, Language, LocalizedTextKey, TempDataKey
-from database.models import User, PrivateChatMessage, Chat, BotSetting
+from database.models import User, PrivateChatMessage, Chat, BotSetting, ApplicationRequest
 from database.queries import texts, settings, users, chats, private_chat_messages, common
 from emojis import Emoji
 from ext.filters import ChatFilter
@@ -33,9 +33,11 @@ def get_reset_keyboard(user_id: int, application_id: int):
 def accepted_or_rejected_text(request_id: int, approved: bool, admin: TelegramUser, user: User):
     result = f"{Emoji.GREEN} #APPROVATA" if approved else f"{Emoji.RED} #RIFIUTATA"
     admin_mention = utilities.mention_escaped(admin)
-    return f"<b>Richiesta #rid{request_id} {result}</b>\n" \
-           f"admin: {admin_mention} • #admin{admin.id}\n" \
-           f"utente: {user.mention()} • #id{user.user_id}"
+    now_str = utilities.now(tz=True, dst_check=True).strftime("%d/%m/%Y %H:%M")
+    # no need to mention the user, since this text is only added to the log channel message, which
+    # already contains the user's info
+    return f"<b>Richiesta {ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}{request_id} {result}</b> ({now_str})\n" \
+           f"admin: {admin_mention} • #admin{admin.id}"
 
 
 async def invite_link_reply_markup(session: Session, bot: Bot, user: User) -> Optional[InlineKeyboardMarkup]:
@@ -166,6 +168,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
         user.accept(by_user_id=admin.id)
     else:
         user.reject(by_user_id=admin.id)
+
     session.commit()
 
     logger.info("editing evaluation chat message and removing keyboard...")
@@ -173,43 +176,36 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, admin, user)
     reply_markup = None
     # we have to remove the #pendente hashtag
-    new_staff_message_text = user.last_request.staff_message_text_html.replace(" • #pendente", "")
-    if not accepted:
-        # if rejected, remove the #nojoin hashtag from the staff message
-        new_staff_message_text = new_staff_message_text.replace(" • #nojoin", "")
-        reply_markup = get_reset_keyboard(user.user_id, user.last_request_id)
-
-    edited_staff_message = await bot.edit_message_text(
-        chat_id=user.last_request.staff_message_chat_id,
-        message_id=user.last_request.staff_message_message_id,
-        text=f"{new_staff_message_text}\n\n{evaluation_text}",
-        reply_markup=reply_markup
-    )
-    user.last_request.update_staff_chat_message(edited_staff_message)
-
-    logger.info("sending new accepted/rejected log chat message...")
-    await bot.send_message(
-        user.last_request.log_message_chat_id,
-        evaluation_text,
-        reply_parameters=ReplyParameters(
-            message_id=user.last_request.log_message_message_id,
-            allow_sending_without_reply=True
-        )
-    )
-
-    logger.info("editing previously sent log chat message...")  # we only need to remove the #pendente/#nojoin hashtag
     new_log_message_text = user.last_request.log_message_text_html.replace(" • #pendente", "")
     if not accepted:
-        # if rejected, remove the #nojoin hashtag too
+        # if rejected, remove the #nojoin hashtag from the log message
         new_log_message_text = new_log_message_text.replace(" • #nojoin", "")
 
-    edited_log_chat_message = await bot.edit_message_text(
+        logger.info("replacing the evaluation buttons' message buttons with the reset button...")
+        await bot.edit_message_reply_markup(
+            user.last_request.evaluation_buttons_message_chat_id,
+            user.last_request.evaluation_buttons_message_message_id,
+            reply_markup=get_reset_keyboard(user.user_id, user.last_request_id)
+        )
+    else:
+        # if accepted, try to delete the buttons' message
+        logger.info(f"trying to delete/remove the markup from the message with the evaluation buttons...")
+        delete_success, remove_markup_success = await utilities.delete_or_remove_markup_by_ids_safe(
+            bot,
+            user.last_request.evaluation_buttons_message_chat_id,
+            user.last_request.evaluation_buttons_message_message_id
+        )
+        logger.info(f"...delete success: {delete_success}, remove markup success : {remove_markup_success}")
+        if delete_success:
+            user.last_request.set_evaluation_buttons_message_as_deleted()
+
+    logger.info(f"editing log message...")
+    edited_log_message = await bot.edit_message_text(
         chat_id=user.last_request.log_message_chat_id,
         message_id=user.last_request.log_message_message_id,
-        text=new_log_message_text,
-        reply_markup=None
+        text=f"{new_log_message_text}\n\n{evaluation_text}"
     )
-    user.last_request.update_log_chat_message(edited_log_chat_message)
+    user.last_request.update_log_chat_message(edited_log_message)
 
     if accepted:
         await send_message_to_user(session, bot, user)

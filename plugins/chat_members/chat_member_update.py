@@ -74,17 +74,6 @@ async def handle_events_chat_join_via_bot_link(session: Session, bot: Bot, chat_
 
 
 async def remove_nojoin_hashtag(user: User, bot: Bot):
-    logger.info(f"removing #nojoin hashtag from staff message...")
-    staff_message_no_hashtag = user.last_request.staff_message_text_html.replace(" • #nojoin", "")
-    edited_staff_message = await utilities.edit_text_by_ids_safe(
-        bot=bot,
-        chat_id=user.last_request.staff_message_chat_id,
-        message_id=user.last_request.staff_message_message_id,
-        text=f"{staff_message_no_hashtag}"
-    )
-    if edited_staff_message:
-        user.last_request.update_staff_chat_message(edited_staff_message)
-
     logger.info(f"removing #nojoin hashtag from log message...")
     log_message_no_hashtag = user.last_request.log_message_text_html.replace(" • #nojoin", "")
     edited_log_message = await utilities.edit_text_by_ids_safe(
@@ -106,7 +95,7 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
     if not added_by_admin and (not user.last_request_id or user.last_request.is_pending() or user.last_request.rejected()):
         # user joined the chat without going through the approval process, or their request was rejected: log to channel
         # note about joins via folder link: when a user joins via a folder link, they actually
-        # joined through the invite link of the admin that generated that folder invite link
+        # joined through the primary invite link of the admin that generated that folder invite link
 
         logger.debug("no last request to check or last request is pending/rejected: we log the join")
         log_chat = chats.get_chat(session, Chat.is_log_chat)
