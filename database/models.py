@@ -867,6 +867,7 @@ class EventTypeHashtag:
     MANIFESTAZIONE = "#manifestazione"
     CORTEO = "#corteo"
     STREET_PARADE = "#streetparade"
+    STREET = "#street"
     PRIVATE_PARTY = "#privateparty"
     FESTIVAL = "#festival"
     PARCHETTO = "#parchetto"
@@ -902,6 +903,7 @@ EVENT_TYPE = {
     EventTypeHashtag.TAZ: EventType.CS_OR_SQUAT,
     EventTypeHashtag.PRIVATE_PARTY: EventType.PRIVATE,
     EventTypeHashtag.STREET_PARADE: EventType.STREET_PARADE,
+    EventTypeHashtag.STREET: EventType.STREET_PARADE,
     EventTypeHashtag.MANIFESTAZIONE: EventType.MANIFESTAZIONE,
     EventTypeHashtag.PARCHETTO: EventType.PARCHETTO,
     EventTypeHashtag.CORTEO: EventType.OTHER,
