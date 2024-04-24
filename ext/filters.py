@@ -69,6 +69,11 @@ class FilterIsAutomaticForward(MessageFilter):
         return bool(message.is_automatic_forward)
 
 
+class FilterReplyToAutomaticForward(MessageFilter):
+    def filter(self, message):
+        return message.reply_to_message and bool(message.reply_to_message.is_automatic_forward)
+
+
 class FilterRadarPassword(MessageFilter):
     def filter(self, message):
         if not config.settings.radar_password or not message.text:
@@ -94,6 +99,7 @@ class Filter:
     ALBUM_MESSAGE = FilterAlbumMessage()
     BELONGS_TO_THREAD = FilterBelongsToThread()
     IS_AUTOMATIC_FORWARD = FilterIsAutomaticForward()
+    REPLY_TO_AUTOMATIC_FORWARD = FilterReplyToAutomaticForward()
     RADAR_PASSWORD = FilterRadarPassword()
     FLY_MEDIA_DOWNLOAD = filters.PHOTO | filters.VIDEO | filters.ANIMATION  # media we can consider as fly, for backups
     EVENTS_CHAT_MESSAGE_LINK = FilterFalse()  # we init this filter later

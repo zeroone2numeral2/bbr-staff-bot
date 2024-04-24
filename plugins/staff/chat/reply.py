@@ -87,8 +87,14 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
 
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
-async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
-    logger.info(f"reply to a bot message {utilities.log(update)}")
+async def on_bot_message_or_automatic_forward_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"reply to a bot message or to an automatic forward from linked channel {utilities.log(update)}")
+
+    # logging
+    if update.message.reply_to_message.is_automatic_forward:
+        logger.info("reply to an automatic forward from linked channel")
+    elif update.message.reply_to_message.from_user.is_bot:
+        logger.info("reply to a message from self")
 
     text = update.message.text or update.message.caption
     if text and text.startswith("."):
@@ -199,5 +205,5 @@ async def on_bot_message_reply(update: Update, context: ContextTypes.DEFAULT_TYP
 
 HANDLERS = (
     (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & Filter.REPLY_TOPICS_AWARE & filters.Regex(r"^\+\+\s*.+"), on_admin_message_reply), Group.NORMAL),
-    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & Filter.REPLY_TO_BOT, on_bot_message_reply), Group.NORMAL),
+    (MessageHandler((ChatFilter.STAFF | ChatFilter.EVALUATION) & ~filters.UpdateType.EDITED_MESSAGE & (Filter.REPLY_TO_BOT | Filter.REPLY_TO_AUTOMATIC_FORWARD), on_bot_message_or_automatic_forward_reply), Group.NORMAL),
 )
