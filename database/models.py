@@ -1088,7 +1088,7 @@ class Event(Base):
 
     def icon(self):
         if not self.event_type:
-            return Emoji.SPEAKER
+            return Emoji.QUESTION
         if self.event_type == EventType.FREE:
             return Emoji.PIRATE
         if self.event_type == EventType.STREET_PARADE:
