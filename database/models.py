@@ -869,6 +869,7 @@ class EventTypeHashtag:
     STREET_PARADE = "#streetparade"
     PRIVATE_PARTY = "#privateparty"
     FESTIVAL = "#festival"
+    PARCHETTO = "#parchetto"
 
 
 class EventType:
@@ -878,6 +879,8 @@ class EventType:
     PRIVATE = "private"
     CS_OR_SQUAT = "cs_or_squat"
     STREET_PARADE = "street_parade"
+    PARCHETTO = "parchetto"
+    MANIFESTAZIONE = "manifestazione"
     OTHER = "other"
 
 
@@ -899,7 +902,8 @@ EVENT_TYPE = {
     EventTypeHashtag.TAZ: EventType.CS_OR_SQUAT,
     EventTypeHashtag.PRIVATE_PARTY: EventType.PRIVATE,
     EventTypeHashtag.STREET_PARADE: EventType.STREET_PARADE,
-    EventTypeHashtag.MANIFESTAZIONE: EventType.OTHER,
+    EventTypeHashtag.MANIFESTAZIONE: EventType.MANIFESTAZIONE,
+    EventTypeHashtag.PARCHETTO: EventType.PARCHETTO,
     EventTypeHashtag.CORTEO: EventType.OTHER,
 }
 
@@ -1084,7 +1088,7 @@ class Event(Base):
 
     def icon(self):
         if not self.event_type:
-            return Emoji.QUESTION
+            return Emoji.SPEAKER
         if self.event_type == EventType.FREE:
             return Emoji.PIRATE
         if self.event_type == EventType.STREET_PARADE:
@@ -1095,6 +1099,13 @@ class Event(Base):
             return Emoji.COMRADE
         if self.event_type == EventType.PRIVATE:
             return Emoji.HOUSE
+        if self.event_type == EventType.PARCHETTO:
+            # return Emoji.FROG
+            # return Emoji.DUCK
+            # return Emoji.TREE_ROUND
+            return Emoji.SUN
+        if self.event_type == EventType.MANIFESTAZIONE:
+            return Emoji.BLACK_FLAG
         if self.event_type == EventType.OTHER:
             return Emoji.SPEAKER
 
