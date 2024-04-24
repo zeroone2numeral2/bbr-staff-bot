@@ -59,8 +59,9 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
     request: ApplicationRequest
     for request in requests:
         reset_additional_text = ""
-        if not request.reset:
+        if request.reset:
             logger.debug(f"request {request.id} was already marked as reset")
+        else:
             # add the #reset text only if the request is not marked as reset already
             reset_additional_text = get_reset_text(request.user, admin_user, add_user_info=False, add_explanation=False)
 
@@ -199,6 +200,12 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     request: Optional[ApplicationRequest] = application_requests.get_by_id(session, request_id)
     logger.info(f"request_id: {request.id}")
 
+    # we need to mark the request as reset here, before calling mark_previous_requests_as_reset(),
+    # because that funtion will go through *all* the user's requests and, if they are not marked as reset, it
+    # will edit the log message and add the #reset string
+    request.reset = True
+    session.commit()
+
     logger.info("editing log message...")
     # the #pendente and #nojoin hashtags will be removed later, by mark_previous_requests_as_reset()
     new_log_message_text = f"{request.log_message_text_html}\n\n{get_reset_text(user, update.effective_user, add_user_info=False)}"
@@ -210,7 +217,7 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     request.update_log_chat_message(edited_log_message)
     session.commit()  # make sure to commit now, because we will loop through the log messages later, to remove the hashtags
 
-    logger.info("deleting evaluation buttons message...")
+    logger.info("deleting the evaluation buttons message that was used to reset the request...")
     result = await utilities.delete_messages_by_id_safe(context.bot, request.evaluation_buttons_message_chat_id, request.evaluation_buttons_message_message_id)
     if result:
         logger.info("...successs")
