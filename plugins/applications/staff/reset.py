@@ -37,7 +37,8 @@ def get_reset_text(user: User, admin_telegram_user: Optional[TelegramUser] = Non
     if add_user_info:
         text += f"\n<b>utente</b>: {user.mention()} • #id{user.user_id}"
     if add_explanation:
-        text += f"\n\nPotrà riutilizzare il bot per fare richiesta di essere aggiunt* al gruppo"
+        name = "\nL'utente" if add_user_info else user.mention()
+        text += f"\n{name} potrà utilizzare di nuovo il bot per inviare una nuova richiesta"
 
     return text
 
