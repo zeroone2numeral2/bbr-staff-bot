@@ -165,11 +165,9 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
 
     await send_attachment_comments(message, request)
 
-    logger.info(f"unpinning log message from evaluation chat...")
-    try:
-        await message.unpin()
-    except BadRequest as e:
-        logger.info(f"error while unpinning: {e}")
+    if config.settings.unpin_reqests_messages:
+        logger.info(f"unpinning forwarded log channel message from evaluation chat...")
+        await utilities.unpin_safe(message)
 
 
 HANDLERS = (

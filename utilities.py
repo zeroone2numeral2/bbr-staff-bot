@@ -722,6 +722,14 @@ async def remove_reply_markup_safe(bot, chat_id: int, message_id: int):
             raise e
 
 
+async def unpin_safe(message:Message) -> bool:
+    try:
+        return await message.unpin()
+    except BadRequest as e:
+        logger.info(f"error while unpinning: {e}")
+        return False
+
+
 def user_log(user: User):
     return f"{user.id} ({user.full_name} [{user.language_code}])"
 
