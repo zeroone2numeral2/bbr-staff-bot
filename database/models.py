@@ -1447,7 +1447,7 @@ class ApplicationRequest(Base):
     log_message_posted_on = Column(DateTime, default=None)
     log_message_json = Column(String, default=None)
 
-    # log message automatically forwarded to the discussion group (evaluation chat)
+    # log channel message automatically forwarded to the discussion group (evaluation chat)
     staff_message_chat_id = mapped_column(Integer, ForeignKey('chats.chat_id'), default=None)
     staff_message_message_id = Column(Integer, default=None)
     staff_message_text_html = Column(String, default=None)

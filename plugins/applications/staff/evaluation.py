@@ -171,7 +171,18 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
 
     session.commit()
 
-    logger.info("editing evaluation chat message and removing keyboard...")
+    if user.last_request.staff_message_chat_id and user.last_request.staff_message_chat_id.staff_message_message_id:
+        # this message might not be pinned, based on the value of 'config.settings.unpin_reqests_messages' when the
+        # request was sent in the log channel
+        # we always try to unpin it anyway
+        logger.info("unpinning evaluation chat log message...")
+        await utilities.unpin_by_ids_safe(
+            bot,
+            user.last_request.staff_message_chat_id,
+            user.last_request.staff_message_chat_id.staff_message_message_id
+        )
+
+    logger.info("editing log chat message and removing keyboard...")
     # we attach it at the end of the original message
     evaluation_text = accepted_or_rejected_text(user.last_request.id, accepted, admin, user)
     reply_markup = None
