@@ -171,7 +171,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
 
     session.commit()
 
-    if user.last_request.staff_message_chat_id and user.last_request.staff_message_chat_id.staff_message_message_id:
+    if user.last_request.staff_message_chat_id and user.last_request.staff_message_message_id:
         # this message might not be pinned, based on the value of 'config.settings.unpin_reqests_messages' when the
         # request was sent in the log channel
         # we always try to unpin it anyway
