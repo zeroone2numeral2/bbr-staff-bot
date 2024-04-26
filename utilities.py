@@ -689,14 +689,29 @@ async def edit_text_safe(update: Update, *args, **kwargs):
             logger.info("message not modified exception ignored")
 
 
-async def edit_text_by_ids_safe(bot: Bot, *args, **kwargs) -> Optional[Message]:
+async def edit_text_by_ids_safe(
+        bot: Bot,
+        error_messages_to_ignore: Optional[List[str]] = None,
+        *args,
+        **kwargs
+) -> Optional[Message]:
+    if not error_messages_to_ignore:
+        error_messages_to_ignore = ["message is not modified"]  # always ignore this exception
+
     try:
         return await bot.edit_message_text(*args, **kwargs)
     except BadRequest as e:
-        if "message is not modified" not in e.message.lower():
+        error_message_lower = e.message.lower()
+        exception_ignored = False
+
+        for error_message in error_messages_to_ignore:
+            if error_message.lower() in error_message_lower:
+                exception_ignored = True
+                logger.info(f"'{e.message}' exception ignored")
+                break
+
+        if not exception_ignored:
             raise e
-        else:
-            logger.info("message not modified exception ignored")
 
 
 async def remove_reply_markup_safe(bot, chat_id: int, message_id: int):

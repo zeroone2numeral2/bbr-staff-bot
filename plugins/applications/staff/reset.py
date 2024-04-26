@@ -79,6 +79,7 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
 
             edited_message = await utilities.edit_text_by_ids_safe(
                 bot=bot,
+                error_messages_to_ignore=["message to edit not found"],  # maybe the log message has been deleted, ignore this error
                 chat_id=request.log_message_chat_id,
                 message_id=request.log_message_message_id,
                 text=new_log_message_text
