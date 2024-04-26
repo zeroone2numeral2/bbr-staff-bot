@@ -213,6 +213,11 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     request.reset = True
     session.commit()
 
+    # try to unpin the request message, ignore api exceptions
+    if request.staff_message_chat_id and request.staff_message_message_id:
+        logger.info(f"trying to unpin evaluation chat log message for the button's request (message_id {request.staff_message_message_id})...")
+        await utilities.unpin_by_ids_safe(context.bot, request.staff_message_chat_id, request.staff_message_message_id)
+
     logger.info("editing log message...")
     # the #pendente and #nojoin hashtags will be removed later, by mark_previous_requests_as_reset()
     new_log_message_text = f"{request.log_message_text_html}\n\n{get_reset_text(user, update.effective_user, add_user_info=False)}"
