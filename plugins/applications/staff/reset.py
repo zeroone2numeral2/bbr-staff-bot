@@ -69,7 +69,7 @@ async def mark_previous_requests_as_reset(bot: Bot, session: Session, user_id: i
             # try to unpin only if the request wasn't reset already
             if request.staff_message_chat_id and request.staff_message_message_id:
                 logger.info("trying to unpin evaluation chat log message...")
-                await utilities.unpin_by_ids_safe(bot, request.staff_message_chat_id, request.staff_message_chat_id)
+                await utilities.unpin_by_ids_safe(bot, request.staff_message_chat_id, request.staff_message_message_id)
 
         logger.info(f"marking request {request.id} as reset")
         request.reset = True  # mark the request as reset as soon as possible
