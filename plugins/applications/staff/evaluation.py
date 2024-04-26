@@ -179,7 +179,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
         await utilities.unpin_by_ids_safe(
             bot,
             user.last_request.staff_message_chat_id,
-            user.last_request.staff_message_chat_id.staff_message_message_id
+            user.last_request.staff_message_message_id
         )
 
     logger.info("editing log chat message and removing keyboard...")
