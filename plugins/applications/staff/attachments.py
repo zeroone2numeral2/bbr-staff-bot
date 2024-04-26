@@ -145,6 +145,11 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
 
     request: Optional[ApplicationRequest] = application_requests.get_from_log_channel_message(session, log_message_chat_id, log_message_message_id)
     if not request:
+        if message.text and message.text.lower().startswith("#reset"):
+            logger.info(f"unpinning message_id {message.message_id} because it's a forwarded log chat message about a reset")
+            await utilities.unpin_safe(message)
+            return
+
         logger.warning(f"couldn't find any application request for log channel message {log_message_message_id}")
         if not message.reply_to_message and message.text and re.search(rf"{ApplicationRequest.REQUEST_ID_HASHTAG_PREFIX}\d+", message.text, re.I):
             # send the warning message only if the hashtag is found
