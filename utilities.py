@@ -722,6 +722,14 @@ async def remove_reply_markup_safe(bot, chat_id: int, message_id: int):
             raise e
 
 
+async def pin_safe(message: Message, disable_notification=True) -> bool:
+    try:
+        return await message.pin(disable_notification=disable_notification)
+    except BadRequest as e:
+        logger.info(f"error while pinning: {e}")
+        return False
+
+
 async def unpin_safe(message: Message) -> bool:
     try:
         return await message.unpin()
