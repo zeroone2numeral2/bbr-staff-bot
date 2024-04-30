@@ -71,7 +71,9 @@ class FilterIsAutomaticForward(MessageFilter):
 
 class FilterReplyToAutomaticForward(MessageFilter):
     def filter(self, message):
-        return message.reply_to_message and bool(message.reply_to_message.is_automatic_forward)
+        # for some reason, pinned messages service message have a reply_to_message field, so we have to check
+        # the message is not a pinned message
+        return message.reply_to_message and bool(message.reply_to_message.is_automatic_forward) and not message.pinned_message
 
 
 class FilterRadarPassword(MessageFilter):

@@ -144,15 +144,15 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
     user_chat_reply_to_message_id = None
     if user_message:
         user_chat_reply_to_message_id = user_message.message_id
-        logger.debug(f"replying to UserMessage with message_id {user_chat_reply_to_message_id}")
+        logger.debug(f"we will reply to an UserMessage with message_id {user_chat_reply_to_message_id}")
     elif user.last_request:
         # the evalutation chat's reply might be a reply to a request that was already accepted/rejected...
         user_chat_reply_to_message_id = user.last_request.request_sent_message_message_id
-        logger.debug(f"replying to \"request sent\" message with message_id {user_chat_reply_to_message_id} (accepted/rejected request)")
+        logger.debug(f"we will reply to a \"request sent\" message with message_id {user_chat_reply_to_message_id} (accepted/rejected request)")
     elif user.pending_request:
         # ...or to a pending request
         user_chat_reply_to_message_id = user.pending_request.request_sent_message_message_id
-        logger.debug(f"replying to \"request sent\" message with message_id {user_chat_reply_to_message_id} (pending request)")
+        logger.debug(f"we will reply to a \"request sent\" message with message_id {user_chat_reply_to_message_id} (pending request)")
     else:
         # might also check this -> 'if not user.last_request and not user.pending_request'
         # might happen after an admin uses /reset, because the bot forgets the last/pending request
