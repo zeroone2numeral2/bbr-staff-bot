@@ -19,7 +19,7 @@ from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
     ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser, MessageOriginChannel, ReplyParameters
 from telegram.constants import MessageType
-from telegram.error import BadRequest
+from telegram.error import BadRequest, TelegramError, Forbidden
 from telegram.helpers import effective_message_type
 
 from config import config
@@ -725,7 +725,7 @@ async def remove_reply_markup_safe(bot, chat_id: int, message_id: int):
 async def pin_safe(message: Message, disable_notification=True) -> bool:
     try:
         return await message.pin(disable_notification=disable_notification)
-    except BadRequest as e:
+    except (TelegramError, BadRequest, Forbidden) as e:
         logger.info(f"error while pinning: {e}")
         return False
 
@@ -733,7 +733,7 @@ async def pin_safe(message: Message, disable_notification=True) -> bool:
 async def unpin_safe(message: Message) -> bool:
     try:
         return await message.unpin()
-    except BadRequest as e:
+    except (TelegramError, BadRequest, Forbidden) as e:
         logger.info(f"error while unpinning: {e}")
         return False
 
@@ -741,7 +741,7 @@ async def unpin_safe(message: Message) -> bool:
 async def unpin_by_ids_safe(bot: Bot, chat_id: int, message_id: int) -> bool:
     try:
         return await bot.unpin_chat_message(chat_id, message_id)
-    except BadRequest as e:
+    except (TelegramError, BadRequest, Forbidden) as e:
         logger.info(f"error while unpinning: {e}")
         return False
 
