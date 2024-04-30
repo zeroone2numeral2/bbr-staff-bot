@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User as TelegramUser
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, Message
 from telegram.constants import MessageLimit, MediaGroupLimit
+from telegram.error import Forbidden
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, \
     CallbackContext
@@ -475,8 +476,12 @@ async def on_timeout_or_done(update: Update, context: ContextTypes.DEFAULT_TYPE,
         # return
         logger.info(f"user didn't complete the conversation (timeout: {CONVERSATION_TIMEOUT} seconds): canceling operation")
         text = get_text(session, LocalizedTextKey.APPLICATION_TIMEOUT, update.effective_user)
-        sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
-        private_chat_messages.save(session, sent_message)
+        try:
+            sent_message = await update.message.reply_text(text, reply_markup=ReplyKeyboardRemove())
+            private_chat_messages.save(session, sent_message)
+        except Forbidden as e:
+            logger.info(f"couldn't send APPLICATION_TIMEOUT message: {e}")
+            user.set_stopped(override=False)  # do not update stopped time if already stopped
 
         logger.info("forgetting current pending request")
         user.pending_request_id = None

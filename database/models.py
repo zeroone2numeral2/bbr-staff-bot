@@ -148,7 +148,10 @@ class User(Base):
         if not self.started_on:
             self.started_on = utilities.now()
 
-    def set_stopped(self):
+    def set_stopped(self, override=True):
+        if self.stopped and not override:
+            return
+
         self.stopped = True
         self.stopped_on = utilities.now()
 
