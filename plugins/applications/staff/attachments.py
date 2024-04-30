@@ -173,6 +173,12 @@ async def on_linked_group_event_message(update: Update, context: ContextTypes.DE
     if config.settings.unpin_reqests_messages:
         logger.info(f"unpinning forwarded log channel message from evaluation chat...")
         await utilities.unpin_safe(message)
+    else:
+        # we need to manually pin the message because apparently sometimes telegram doesn't automatically pin
+        # messages coming from the linked channel
+        # see https://github.com/zeroone2numeral2/bbr-staff-bot/issues/202#issuecomment-2079128004
+        logger.info(f"pinning forwarded channel post in linked group...")
+        await message.pin(disable_notification=True)
 
 
 HANDLERS = (
