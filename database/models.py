@@ -1836,6 +1836,7 @@ class InviteLink(Base):
     destination = Column(String, default=None)
     created_on = Column(DateTime, default=None)
 
+    # info about the user that joined through this invite link
     used_by_user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
     used_on = Column(DateTime, default=None)
 
@@ -1843,7 +1844,7 @@ class InviteLink(Base):
     sent_to_user_user_id = Column(Integer, ForeignKey('users.user_id'), default=None, nullable=True)
     sent_to_user_message_id = Column(Integer, default=None)
     sent_to_user_message_ids_to_delete = Column(String, default=None)  # json, messages we might want to delete once the link is used
-    sent_to_user_via_reply_markup = Column(Boolean, default=False)
+    sent_to_user_via_reply_markup = Column(Boolean, default=False)  # wether we sent it to the user via inline keyboard
     sent_to_user_link_removed = Column(Boolean, default=False)  # wether we removed if from the message
     sent_to_user_on = Column(DateTime, default=None)
 
