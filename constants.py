@@ -553,6 +553,7 @@ class RegionHashtag:
     BELGIUM = "#belgium"
     BENELUX = "#benelux"
     BULGARIA = "#bulgaria"
+    CANADA = "#canada"
     CENTER_ITALY = "#centeritaly"
     CENTRAL_ITALY = "#centralitaly"
     CENTRO_ITALIA = "#centroitalia"
@@ -636,6 +637,7 @@ class RegionName:
     BENELUX = "BeNeLux"
     BULGARIA = "Bulgaria"
     CENTRO_ITALIA = "Centro Italia"
+    CANADA = "Canada"
     CILE = "Cile"
     COLOMBIA = "Colombia"
     CROAZIA = "Croazia"
@@ -679,6 +681,7 @@ REGIONS_DATA = {
     RegionName.BENELUX: dict(hashtags=[RegionHashtag.BENELUX], emoji=Flag.BENELUX),
     RegionName.BULGARIA: dict(hashtags=[RegionHashtag.BULGARIA], emoji=Flag.BULGARIA),
     # RegionName.CENTRO_ITALIA: dict(hashtags=[RegionHashtag.CENTER_ITALY, RegionHashtag.CENTRO_ITALIA, RegionHashtag.CENTRO_ITALY], emoji=Flag.ITALY),
+    RegionName.CANADA: dict(hashtags=[RegionHashtag.CANADA], emoji=Flag.CANADA),
     RegionName.CILE: dict(hashtags=[RegionHashtag.CILE, RegionHashtag.CHILE], emoji=Flag.CHILE),
     RegionName.COLOMBIA: dict(hashtags=[RegionHashtag.COLOMBIA], emoji=Flag.COLOMBIA),
     RegionName.CROAZIA: dict(hashtags=[RegionHashtag.CROATIA, RegionHashtag.CROAZIA], emoji=Flag.CROATIA),

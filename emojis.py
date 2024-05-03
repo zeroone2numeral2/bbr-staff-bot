@@ -83,6 +83,7 @@ class Flag:
     BENELUX = "🇧🇪🇳🇱🇱🇺"
     BLACK = "🏴"
     BULGARIA = "🇧🇬"
+    CANADA = "🇨🇦"
     CHILE = "🇨🇱"
     COLOMBIA = "🇨🇴"
     CROATIA = "🇭🇷"
