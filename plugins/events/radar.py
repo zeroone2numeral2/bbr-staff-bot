@@ -357,9 +357,9 @@ async def on_events_confirm_cb(update: Update, context: ContextTypes.DEFAULT_TYP
         sent_messages = await send_events_messages(update.effective_message, all_events_strings, protect_content)
     else:
         logger.info(f"no event was returned for the selected filters")
-        sent_message = await update.message.reply_text(
+        sent_message = await update.effective_message.edit_text(
             f"Nessun evento in programma per i filtri selezionati {Emoji.SAD}",
-            protect_content=False  # no need to protect content for this message
+            # protect_content=False  # no need to protect content for this message
         )
         sent_messages = [sent_message]
 
