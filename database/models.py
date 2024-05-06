@@ -1165,9 +1165,12 @@ class Event(Base):
         return json.loads(self.media_file_paths)
 
     def add_media_file_path(self, file_path: Union[Path, str]):
-        file_paths = self.media_file_paths or []
-        file_paths.append(str(file_path))  # str(Path) will return the relative path if Path is itself relative
+        if self.media_file_paths:
+            file_paths = json.loads(self.media_file_paths)
+        else:
+            file_paths = []
 
+        file_paths.append(str(file_path))  # str(Path) will return the relative path if Path is itself relative
         self.media_file_paths = json.dumps(file_paths, indent=2)
 
     def as_dict(self, pop_keys: Optional[List] = None):
