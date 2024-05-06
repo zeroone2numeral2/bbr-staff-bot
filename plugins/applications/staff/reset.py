@@ -230,13 +230,10 @@ async def on_reset_button(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     session.commit()  # make sure to commit now, because we will loop through the log messages later, to remove the hashtags
 
     logger.info("deleting the evaluation buttons message that was used to reset the request...")
-    result = await utilities.delete_messages_by_id_safe(context.bot, request.evaluation_buttons_message_chat_id, request.evaluation_buttons_message_message_id)
-    if result:
-        logger.info("...successs")
+    delete_success, remove_markup_success = await utilities.delete_or_remove_markup_by_ids_safe(context.bot, request.evaluation_buttons_message_chat_id, request.evaluation_buttons_message_message_id)
+    logger.info(f"...delete success: {delete_success}, remove markup success: {remove_markup_success}")
+    if delete_success:
         request.set_evaluation_buttons_message_as_deleted(nullify_message_data=True)
-    else:
-        logger.info("...failed, trying to remove reply markup...")
-        await utilities.remove_reply_markup_safe(context.bot, request.evaluation_buttons_message_chat_id, request.evaluation_buttons_message_message_id)
 
     # marks all previous requests as reset, and will remove the #pendente/#nojoin hashtags
     session.commit()  # make sure to commit before executing this function
