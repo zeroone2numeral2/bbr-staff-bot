@@ -44,8 +44,10 @@ async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, se
     #     chat_member_object = await context.bot.get_chat_member(users_chat.chat_id, user.user_id)
     #     chat_member_users_chat = DbChatMember.from_chat_member(users_chat.chat_id, chat_member_object)
     #     session.add(chat_member_users_chat)
-    text += (f"\n• <b>status in group</b>: {chat_member_users_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_users_chat.updated_on)}); "
-             f"<b>in channel</b>: {chat_member_events_chat.status_pretty()} (last update: {utilities.format_datetime(chat_member_events_chat.updated_on)})")
+    users_chat_status = chat_member_users_chat.status_pretty() if chat_member_users_chat else "unknown"
+    events_chat_status = chat_member_events_chat.status_pretty() if chat_member_events_chat else "unknown"
+    text += (f"\n• <b>status in group</b>: {users_chat_status} (last update: {utilities.format_datetime(chat_member_users_chat.updated_on) if chat_member_users_chat else '-'}); "
+             f"<b>in channel</b>: {events_chat_status} (last update: {utilities.format_datetime(chat_member_events_chat.updated_on) if chat_member_events_chat else '-'})")
 
     if False:
         # do nto show for now
