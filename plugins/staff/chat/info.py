@@ -82,7 +82,7 @@ async def on_userchats_command(update: Update, context: ContextTypes.DEFAULT_TYP
                f"<i>{chat_member.status_pretty()}</i>"
 
         if not chat_member.is_member() and chat_member.has_been_member:
-            text = f"{text}<i>, but has been member in the past</i>"
+            text = f"{text}<i> (is/has been member)</i>"
 
         text = f"{text}  (last update: {utilities.format_datetime(chat_member.updated_on, '-')})"
         chats_strings.append(text)
