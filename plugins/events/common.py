@@ -935,14 +935,19 @@ async def download_event_media(message: Message) -> Optional[pathlib.Path]:
     return file_path
 
 
-async def backup_event_media(update: Update) -> Optional[pathlib.Path]:
+async def backup_event_media(update_or_message: Union[Update, Message]) -> Optional[pathlib.Path]:
     # download_event_media() will check whether a file with the same chat_id/message_id/file_unique_id
     # already exists on disk, and will skip the download if so.
     # In this way we will not try to download the same media more than once (eg. when a channel post is edited,
     # but only the caption changed)
 
+    if isinstance(update_or_message, Update):
+        message = update_or_message.effective_message
+    else:
+        message = update_or_message
+
     try:
-        return await download_event_media(update.effective_message)
+        return await download_event_media(message)
     except Exception as e:
         logger.error(f"error while trying to download media: {e}", exc_info=True)
         return
