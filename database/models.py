@@ -1093,7 +1093,7 @@ class Event(Base):
 
     def icon(self):
         if not self.event_type:
-            return Emoji.QUESTION
+            return Emoji.AGENDA
         if self.event_type == EventType.FREE:
             return Emoji.PIRATE
         if self.event_type == EventType.STREET_PARADE:

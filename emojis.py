@@ -1,4 +1,5 @@
 class Emoji:
+    AGENDA = "🗓"
     ALARM = "⏰"
     ALIEN = "👽"
     ANNOUNCEMENT = "📣"
