@@ -623,7 +623,7 @@ async def delete_or_remove_markup_by_ids_safe(bot: Bot, chat_id: int, message_id
 
     if not delete_success:
         try:
-            await bot.edit_message_reply_markup(reply_markup=None)
+            await bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
             remove_markup_success = True
         except BadRequest as e:
             if "not modified" in e.message.lower():
