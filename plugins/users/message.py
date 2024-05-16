@@ -136,5 +136,5 @@ async def on_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, se
 
 
 HANDLERS = (
-    (MessageHandler(filters.ChatType.PRIVATE & ~filters.COMMAND, on_user_message), Group.NORMAL),
+    (MessageHandler(filters.ChatType.PRIVATE & ~filters.COMMAND & ~filters.UpdateType.EDITED_MESSAGE, on_user_message), Group.NORMAL),
 )
