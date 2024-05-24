@@ -7,7 +7,7 @@ from sqlalchemy import false
 from sqlalchemy.orm import Session
 from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel, ReplyParameters, \
     InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.constants import MessageType, MessageLimit
+from telegram.constants import MessageType, MessageLimit, ReactionEmoji
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler, CallbackQueryHandler
 
@@ -511,6 +511,9 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         else:
             raise e
 
+    logger.info("reacting to message to copy...")
+    await update.message.reply_to_message.set_reaction(ReactionEmoji.WRITING_HAND)
+
     # we create the ChannelComment because we will not receive this update
     channel_comment = ChannelComment(
         event.discussion_group_chat_id,  # id of the chat we copied the message to
@@ -533,7 +536,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
     event_title_link = event.title_link_html()
     await update.message.reply_html(
-        f"<a href=\"{message_link}\">Messaggio inviato</a> come commento a \"{event_title_link}\"",
+        f"<a href=\"{message_link}\">messaggio inviato</a> come commento a \"{event_title_link}\"",
         reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
     )
 
@@ -549,7 +552,7 @@ HANDLERS = (
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["comment", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
+    (CommandHandler(["comment", "cmt", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
     (CommandHandler(["getpath"], on_getpath_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     # events chat message link actions
     (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
