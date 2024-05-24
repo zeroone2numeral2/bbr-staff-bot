@@ -98,6 +98,7 @@ async def on_radar_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if update.message.text == f"/start {DeeplinkParam.RADAR_UNLOCK_TRIGGER}":
         logger.info(f"user unlocked /radar via \"{update.message.text}\"")
         user.can_use_radar = True
+        await update.message.reply_html(f"{Emoji.INFO} ora puoi usare il comando /radar23 quando ti pare senza usare il link ;)")
 
     radar_settings = settings.get_settings_as_dict(session, include_categories=BotSettingCategory.RADAR)
     radar_enabled = radar_settings[BotSettingKey.RADAR_ENABLED].value()

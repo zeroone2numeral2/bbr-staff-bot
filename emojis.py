@@ -35,6 +35,7 @@ class Emoji:
     HASHTAG = "#️⃣"
     HELLO = "👋"
     HOUSE = "🏠"
+    INFO = "ℹ️"
     KEY = "🔑"
     LENS = "🔎"
     LINE = "➖"
