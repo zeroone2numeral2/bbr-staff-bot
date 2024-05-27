@@ -121,6 +121,17 @@ def superscript(string: str) -> str:
     return string.translate(SUPERSCRIPT)
 
 
+def text_contains(text: str, strings_to_check: Union[str, List[str]]) -> bool:
+    if isinstance(strings_to_check, str):
+        strings_to_check = [strings_to_check]
+
+    for string in strings_to_check:
+        if string.lower() in text.lower():
+            return True
+
+    return False
+
+
 def round_base(n, base=1.0):
     return int(round(n / base) * base)
 

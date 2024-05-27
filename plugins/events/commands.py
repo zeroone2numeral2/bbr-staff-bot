@@ -493,7 +493,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     caption = None
     caption_reply_text = ""
-    if update.message.reply_to_message.caption and ("--nocaption" in update.message.text.lower() or "-nc" in update.message.text.lower()):
+    if update.message.reply_to_message.caption and utilities.text_contains(update.message.text, ["--nocaption", "-nc"]):
         logger.debug("caption will be ignored")
         caption = ""
         caption_reply_text = " (senza didascalia)"
