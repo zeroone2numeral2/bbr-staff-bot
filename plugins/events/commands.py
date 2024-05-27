@@ -491,9 +491,17 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await update.message.reply_text(f"Il messaggio nel gruppo a cui rispondere non è stato salvato", do_quote=True)
         return
 
+    caption = None
+    caption_reply_text = ""
+    if update.message.reply_to_message.caption and ("--nocaption" in update.message.text.lower() or "-nc" in update.message.text.lower()):
+        logger.debug("caption will be ignored")
+        caption = ""
+        caption_reply_text = " (senza didascalia)"
+
     try:
         comment_message_id: MessageId = await update.message.reply_to_message.copy(
             chat_id=event.discussion_group_chat_id,
+            caption=caption,
             reply_parameters=ReplyParameters(
                 message_id=event.discussion_group_message_id,
                 allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
@@ -536,7 +544,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
     event_title_link = event.title_link_html()
     await update.message.reply_html(
-        f"<a href=\"{message_link}\">messaggio inviato</a> come commento a \"{event_title_link}\"",
+        f"<a href=\"{message_link}\">messaggio inviato</a> come commento a \"{event_title_link}\"{caption_reply_text}",
         reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
     )
 
