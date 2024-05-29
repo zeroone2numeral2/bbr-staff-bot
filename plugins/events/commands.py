@@ -557,7 +557,11 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     session.add(channel_comment)
     session.commit()
 
-    message_link = utilities.tme_link(event.discussion_group_chat_id, comment_message_id.message_id)
+    message_link = utilities.tme_link(
+        event.discussion_group_chat_id,
+        comment_message_id.message_id,
+        comment_message_id.message_id  # opens in comments view
+    )
     event_title_link = event.title_link_html()
     await update.message.reply_html(
         f"➜ <a href=\"{message_link}\">messaggio inviato</a> come commento a \"{event_title_link}\"{caption_reply_text}",
