@@ -584,9 +584,16 @@ FILTER_DESCRIPTION = {
 }
 
 
-def extract_query_filters(args: List[str], today: Optional[datetime.date] = None) -> List:
+def extract_query_filters(
+        args: List[str],
+        today: Optional[datetime.date] = None,
+        title_filter: Optional[str] = None
+) -> List:
     query_filters = []
     args = [arg.lower() for arg in args]
+
+    if title_filter:
+        query_filters.append(Event.event_title.like(title_filter))
 
     # EVENT TYPE
     if EventFilter.NOT_FREE in args or EventFilter.LEGAL in args:
@@ -866,14 +873,16 @@ def get_all_events_strings_from_db(session: Session, args: List[str], date_overr
 
 
 def get_all_events_strings_from_db_group_by(
-        session: Session, args: List[str],
+        session: Session,
+        args: List[str],
         date_override: Optional[datetime.date] = None,
-        formatting: Optional[EventFormatting] = None
+        formatting: Optional[EventFormatting] = None,
+        title_filter: Optional[str] = None
 ) -> List[str]:
     logger.debug("getting events from db...")
     logger.debug(f"formatting: {formatting}")
 
-    query_filters = extract_query_filters(args, today=date_override)
+    query_filters = extract_query_filters(args, today=date_override, title_filter=title_filter)
     order_by = extract_order_by(args)  # returns the default ordering if no elegible arg is provided
     group_by_key = extract_group_by(args)
     logger.info(f"group by key: {group_by_key}")

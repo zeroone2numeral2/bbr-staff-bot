@@ -61,6 +61,23 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 
 @decorators.catch_exception()
+@decorators.pass_session()
+@decorators.staff_member()
+async def on_title_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
+    logger.info(f"/title {utilities.log(update)}")
+
+    title_filter = utilities.get_argument(["title"], update.message.text)
+    logger.info(f"like filter: {title_filter}")
+
+    all_events_strings = get_all_events_strings_from_db_group_by(session, args=[], title_filter=title_filter)
+
+    # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
+
+    protect_content = not utilities.is_superadmin(update.effective_user)
+    await send_events_messages(update.message, all_events_strings, protect_content)
+
+
+@decorators.catch_exception()
 async def on_drop_events_cache_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"/dropeventscache {utilities.log(update)}")
 
@@ -557,6 +574,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 HANDLERS = (
     (CommandHandler(["events", "feste", "e"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["title"], on_title_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
