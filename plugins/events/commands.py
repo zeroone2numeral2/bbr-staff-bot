@@ -66,12 +66,10 @@ async def on_events_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 async def on_title_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/title {utilities.log(update)}")
 
-    title_filter = utilities.get_argument(["title"], update.message.text)
+    title_filter = utilities.get_argument(update.message.text)
     logger.info(f"like filter: {title_filter}")
 
     all_events_strings = get_all_events_strings_from_db_group_by(session, args=[], title_filter=title_filter)
-
-    # logger.debug(f"result: {len(messages_to_send)} messages, {len(text_lines)} lines")
 
     protect_content = not utilities.is_superadmin(update.effective_user)
     await send_events_messages(update.message, all_events_strings, protect_content)
@@ -481,7 +479,7 @@ async def on_getpath_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     logger.info(f"/getpath {utilities.log(update)}")
 
     command = utilities.get_command(update.message.text)
-    file_path = utilities.get_argument(command, update.message.text, context.bot.username)
+    file_path = utilities.get_argument(update.message.text, commands=command, bot_username=context.bot.username)
     if not file_path:
         await update.message.reply_html("manca path file!")
         return
@@ -574,7 +572,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 HANDLERS = (
     (CommandHandler(["events", "feste", "e"], on_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["title"], on_title_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
+    (CommandHandler(["title", "t"], on_title_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),

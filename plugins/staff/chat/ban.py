@@ -27,8 +27,8 @@ async def on_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, ses
 
     logger.info(f"banning user {user.full_name()} ({user.user_id})...")
     reason = utilities.get_argument(
-        ["ban", "shadowban"],
         update.message.text,
+        commands=["ban", "shadowban"],
         bot_username=context.bot.username,
         remove_user_id_hashtag=True
     ) or None

@@ -144,8 +144,8 @@ async def on_reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     log_text = get_reset_text(user, update.effective_user)
 
     additional_context = utilities.get_argument(
-        ["resetkick", "reset"],
         update.message.text_html,
+        commands=["resetkick", "reset"],
         bot_username=context.bot.username,
         remove_user_id_hashtag=True
     )
