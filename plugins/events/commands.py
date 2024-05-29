@@ -9,11 +9,12 @@ from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOr
     InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import MessageType, MessageLimit, ReactionEmoji
 from telegram.error import TelegramError, BadRequest
-from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler, CallbackQueryHandler
+from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler, CallbackQueryHandler, \
+    PrefixHandler
 
 import decorators
 import utilities
-from constants import Group, TempDataKey
+from constants import Group, TempDataKey, COMMAND_PREFIXES
 from database.models import Event, User, DeletionReason, DELETION_REASON_DESC, ChannelComment
 from database.queries import events, private_chat_messages
 from ext.filters import Filter, ChatFilter
@@ -576,7 +577,7 @@ HANDLERS = (
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler(["comment", "cmt", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ["comment", "cmt", "replyto", "rt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY), Group.NORMAL),
     (CommandHandler(["getpath"], on_getpath_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     # events chat message link actions
     (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
