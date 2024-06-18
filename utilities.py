@@ -604,7 +604,7 @@ def get_command(text: str, lower=True) -> str:
 
 
 def count_html_entities(string: str) -> int:
-    return len(re.findall(r"(<(?:b|i|u|s|code|pre)>|<a href=)", string))
+    return len(re.findall(r"(<(?:b|i|u|s|code|pre|blockquote(?: expandable)?)>|<a href=)", string))
 
 
 def get_language_code(selected_language_code, telegram_language_code):
