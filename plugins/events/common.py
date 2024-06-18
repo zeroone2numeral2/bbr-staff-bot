@@ -415,11 +415,12 @@ def drop_events_cache(context: CallbackContext):
 
 
 class EventFormatting:
-    def __init__(self, bold=True, region_emoji=True, discussion_group_link=True, use_message_date=False):
+    def __init__(self, bold=True, region_emoji=True, discussion_group_link=True, use_message_date=False, collapse=False):
         self.bold = bold
         self.region_emoji = region_emoji
         self.discussion_group_link = discussion_group_link
         self.use_message_date = use_message_date
+        self.collapse = collapse
 
     def __str__(self):
         defaults = EventFormatting()  # mention only non-default properties
@@ -432,6 +433,8 @@ class EventFormatting:
             options.append(f"discussion_group_link={self.discussion_group_link}")
         if self.use_message_date != defaults.use_message_date:
             options.append(f"use_message_date={self.use_message_date}")
+        if self.collapse != defaults.collapse:
+            options.append(f"collapse={self.collapse}")
 
         options_str = ", ".join(options)
         return f"EventFormatting({options_str})"
@@ -896,15 +899,23 @@ def get_all_events_strings_from_db_group_by(
         if group_by:
             # 'group_by' might be an empty string: do not apply grouping headers
 
-            header_line = f"\n<b>{group_by}</b>"
+            newline_or_none = "\n" if not formatting.collapse else ""  # no newline if collapse is true (it would look ugly)
+            header_line = f"{newline_or_none}<b>{group_by}</b>"
             all_events_strings.append(header_line)
             total_entities_count += utilities.count_html_entities(header_line)
+
+            if formatting.collapse:
+                all_events_strings.append("<blockquote expandable>")
+                total_entities_count += 1
 
         event: Event
         for event in events_list:
             text_line, event_entities_count = format_event_string(event, formatting)
             all_events_strings.append(text_line)
             total_entities_count += event_entities_count  # not used yet, find something to do with this
+
+        if formatting.collapse:
+            all_events_strings.append("</blockquote>")
 
     return all_events_strings
 

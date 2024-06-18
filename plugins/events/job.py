@@ -210,6 +210,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     parties_message_pin = pl_settings[BotSettingKey.PARTIES_LIST_PIN].value()
     parties_message_delete_old = pl_settings[BotSettingKey.PARTIES_LIST_DELETE_OLD].value()
     parties_message_group_messages_links = pl_settings[BotSettingKey.PARTIES_LIST_DISCUSSION_LINK].value()
+    parties_message_collapse = pl_settings[BotSettingKey.PARTIES_LIST_COLLAPSE].value()
 
     # this flag is set every time something that edits the parties list happens (new/edited event, /delevent...)
     # we need to get it before the for loop because it should be valid for every filter
@@ -285,7 +286,7 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
             bot_username=context.bot.username,
             append_bottom_text=filter_key == last_filter_key,
             send_to_group=parties_message_send_to_group,
-            formatting=EventFormatting(discussion_group_link=parties_message_group_messages_links)
+            formatting=EventFormatting(discussion_group_link=parties_message_group_messages_links, collapse=parties_message_collapse)
         )
         if not text:
             logger.info("no events for this filter, continuing to next one...")

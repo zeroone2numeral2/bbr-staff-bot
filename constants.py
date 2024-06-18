@@ -94,6 +94,7 @@ class BotSettingKey:
     PARTIES_LIST_DELETE_OLD = "parties_list_delete_old"
     PARTIES_LIST_DISCUSSION_LINK = "parties_list_discussion_link"
     PARTIES_LIST_POST_TO_USERS_CHAT = "parties_list_post_to_users_chat"
+    PARTIES_LIST_COLLAPSE = "parties_list_collapse"
 
 
 class BotSettingCategory:
@@ -394,6 +395,15 @@ BOT_SETTINGS_DEFAULTS = {
         label="invia nel gruppo",
         emoji=Emoji.ANNOUNCEMENT,
         description="se inviare la lista delle feste nel gruppo invece che nel canale",
+        show_if_true_key=BotSettingKey.APPROVAL_MODE,
+        telegram_media=False
+    ),
+    BotSettingKey.PARTIES_LIST_COLLAPSE: dict(
+        category=BotSettingCategory.PARTIES_LIST,
+        default=False,
+        label="comprimi lista",
+        emoji=Emoji.UP_DOWN,
+        description="rendi espandibile/comprimibile la lista",
         show_if_true_key=BotSettingKey.APPROVAL_MODE,
         telegram_media=False
     ),

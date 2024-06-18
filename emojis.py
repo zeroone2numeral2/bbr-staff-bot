@@ -37,6 +37,7 @@ class Emoji:
     HOUSE = "🏠"
     INFO = "ℹ️"
     KEY = "🔑"
+    LEFT_RIGHT = "↔️"
     LENS = "🔎"
     LINE = "➖"
     LINK = "🔗"
@@ -72,6 +73,7 @@ class Emoji:
     TREE_ROUND = "🌳"
     TRUCK = "🚛"
     UFO = "🛸"
+    UP_DOWN = "↕️"
     USER_ICON = "🚹"
     WARNING = "⚠️"
 
