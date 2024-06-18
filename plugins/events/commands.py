@@ -518,8 +518,9 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     elif update.message.reply_to_message.text:
         text_or_caption_html = update.message.reply_to_message.text_html
 
-    if utilities.text_contains(update.message.text, ["--collapse", "-c"]):
-        if update.message.reply_to_message.parse_entities([MessageEntity.BLOCKQUOTE]) or update.message.reply_to_message.parse_caption_entities([MessageEntity.BLOCKQUOTE]):
+    if utilities.text_contains(update.message.text, ["--collapse", "-c", "-cf"]):
+        if (update.message.reply_to_message.parse_entities([MessageEntity.BLOCKQUOTE]) or update.message.reply_to_message.parse_caption_entities([MessageEntity.BLOCKQUOTE])) and not utilities.text_contains(update.message.text, ["-cf"]):
+            # using "-cf" will force the text to be collapsable
             logger.warning(f"ignoring --collapse: message already contains a blockquote entity")
             additional_info_reply_text = " (non comprimibile: il testo contiene già una citazione)"
         else:
