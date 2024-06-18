@@ -6,7 +6,7 @@ from typing import Optional, List, Union
 from sqlalchemy import false
 from sqlalchemy.orm import Session
 from telegram import Update, Message, Chat as TelegramChat, MessageId, MessageOriginChannel, ReplyParameters, \
-    InlineKeyboardButton, InlineKeyboardMarkup
+    InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from telegram.constants import MessageType, MessageLimit, ReactionEmoji
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ContextTypes, filters, CommandHandler, CallbackContext, MessageHandler, CallbackQueryHandler, \
@@ -507,21 +507,35 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         await update.message.reply_text(f"Il messaggio nel gruppo a cui rispondere non è stato salvato", do_quote=True)
         return
 
-    caption = None
-    caption_reply_text = ""
-    if update.message.reply_to_message.caption and utilities.text_contains(update.message.text, ["--nocaption", "-nc"]):
-        logger.debug("caption will be ignored")
-        caption = ""
-        caption_reply_text = " (senza didascalia)"
+    text_or_caption_html = ""
+    additional_info_reply_text = ""
+    if update.message.reply_to_message.caption:
+        if not utilities.text_contains(update.message.text, ["--nocaption", "-nc"]):
+            text_or_caption_html = update.message.reply_to_message.caption_html
+        else:
+            logger.debug("caption will be ignored")
+            additional_info_reply_text = " (senza didascalia)"
+    elif update.message.reply_to_message.text:
+        text_or_caption_html = update.message.reply_to_message.text_html
+
+    if utilities.text_contains(update.message.text, ["--collapse", "-c"]):
+        if update.message.reply_to_message.parse_entities([MessageEntity.BLOCKQUOTE]) or update.message.reply_to_message.parse_caption_entities([MessageEntity.BLOCKQUOTE]):
+            logger.warning(f"ignoring --collapse: message already contains a blockquote entity")
+            additional_info_reply_text = " (non comprimibile: il testo contiene già una citazione)"
+        else:
+            logger.debug("text will be collapsable")
+            text_or_caption_html = text_or_caption_html.strip()
+            text_or_caption_html = f"<blockquote expandable>{text_or_caption_html}</blockquote>"
 
     try:
-        comment_message_id: MessageId = await update.message.reply_to_message.copy(
+        comment_message: Message = await utilities.copy_message(
+            bot=context.bot,
+            message=update.message.reply_to_message,
             chat_id=event.discussion_group_chat_id,
-            caption=caption,
-            reply_parameters=ReplyParameters(
-                message_id=event.discussion_group_message_id,
-                allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
-            )
+            text_or_caption_override=text_or_caption_html,
+            # reply parameters
+            reply_to_message_id=event.discussion_group_message_id,
+            allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
         )
     except (TelegramError, BadRequest) as e:
         logger.error(f"error while copying message: {e.message}")
@@ -541,7 +555,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     # we create the ChannelComment because we will not receive this update
     channel_comment = ChannelComment(
         event.discussion_group_chat_id,  # id of the chat we copied the message to
-        comment_message_id.message_id,  # result of copy()
+        comment_message.message_id,
         event
     )
     channel_comment.user_id = context.bot.id  # the bot sent the comment
@@ -559,12 +573,12 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     message_link = utilities.tme_link(
         event.discussion_group_chat_id,
-        comment_message_id.message_id,
-        comment_message_id.message_id  # opens in comments view
+        comment_message.message_id,
+        comment_message.message_id  # opens in comments view
     )
     event_title_link = event.title_link_html()
     await update.message.reply_html(
-        f"➜ <a href=\"{message_link}\">messaggio inviato</a> come commento a \"{event_title_link}\"{caption_reply_text}",
+        f"➜ <a href=\"{message_link}\">messaggio inviato</a> come commento a \"{event_title_link}\"{additional_info_reply_text}",
         reply_parameters=ReplyParameters(message_id=update.effective_message.reply_to_message.message_id)
     )
 
