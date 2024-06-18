@@ -120,15 +120,15 @@ def get_events_text(
     if entities_count > MessageLimit.MESSAGE_ENTITIES:
         # remove bold entities if we cross the limit
         # this will assume no nested <b> tags
-        html_tags_to_remove = (entities_count - MessageLimit.MESSAGE_ENTITIES) * 2
+        html_tags_to_remove_count = (entities_count - MessageLimit.MESSAGE_ENTITIES) * 2
 
         # we want to remove the last <b> entities, but 'count' in re.sub() doesn't work in reverse
         # so we reverse the string (and also the regex, </b> becomes >b/<
         text_reversed = text[::-1]
-        text_reversed = re.sub(r">b/?<", "", text_reversed, count=html_tags_to_remove)
+        text_reversed = re.sub(r">b/?<", "", text_reversed, count=html_tags_to_remove_count)
         text = text_reversed[::-1]
 
-        logger.debug(f"entities count (no bold, {html_tags_to_remove} html tags removed): {utilities.count_html_entities(text) + additional_entities}")
+        logger.debug(f"entities count (no bold, {html_tags_to_remove_count} html tags removed): {utilities.count_html_entities(text) + additional_entities}")
 
     return text
 
