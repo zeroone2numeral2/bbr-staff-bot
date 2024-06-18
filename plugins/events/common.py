@@ -894,7 +894,6 @@ def get_all_events_strings_from_db_group_by(
     events_dict = events_to_dict(events_list, group_by_key)
 
     all_events_strings = []
-    total_entities_count = 0  # total number of telegram entities for the list of events
     for group_by, events_list in events_dict.items():
         if group_by:
             # 'group_by' might be an empty string: do not apply grouping headers
@@ -902,17 +901,14 @@ def get_all_events_strings_from_db_group_by(
             newline_or_none = "\n" if not formatting.collapse else ""  # no newline if collapse is true (it would look ugly)
             header_line = f"{newline_or_none}<b>{group_by}</b>"
             all_events_strings.append(header_line)
-            total_entities_count += utilities.count_html_entities(header_line)
 
             if formatting.collapse:
                 all_events_strings.append("<blockquote expandable>")
-                total_entities_count += 1
 
         event: Event
         for event in events_list:
             text_line, event_entities_count = format_event_string(event, formatting)
             all_events_strings.append(text_line)
-            total_entities_count += event_entities_count  # not used yet, find something to do with this
 
         if formatting.collapse:
             all_events_strings.append("</blockquote>")
