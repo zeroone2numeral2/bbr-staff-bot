@@ -1,6 +1,6 @@
 sqlalchemy==2.0.23
 alembic==1.12.1
-python-telegram-bot[ext]==20.8
+python-telegram-bot[ext]==21.3
 toml==0.10.2
 httpcore>=1.0.2
 pytz
