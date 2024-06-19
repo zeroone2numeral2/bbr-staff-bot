@@ -6,21 +6,32 @@ import pytz
 print(f"python version: {sys.version}")
 print(f"pytz version: {pytz.__version__}\n")
 
-local_time = pytz.timezone("Europe/Rome")
+
+def print_dst_aware_time(tz_aware_dt):
+    tz_aware_dt_with_dst = tz_aware_dt + tz_aware_dt.dst()
+    if not tz_aware_dt.dst():
+        print(f"[{tz_aware_dt}] tzaware now, dst-aware (dst: false, add dst): {tz_aware_dt_with_dst}")
+    else:
+        print(f"[{tz_aware_dt}] tzaware now, dst-aware (dst: true, do not add dst): {tz_aware_dt}")
+
+
+local_timezone = pytz.timezone("Europe/Rome")
 
 utc_now = datetime.datetime.now(datetime.timezone.utc)
 utc_now_naive = datetime.datetime.utcnow()
-now_tzaware = utc_now.astimezone(local_time)
-now_rome = local_time.localize(utc_now_naive)
 
 print(f"utc now: {utc_now}")
 print(f"utc now naive: {utc_now_naive}")
-print(f"tzaware now: {now_tzaware}")
-print(f"tzaware now with dst: {now_tzaware + now_tzaware.dst()}")
+print(f"")
+
+now_tzaware = utc_now.astimezone(local_timezone)
+
+print_dst_aware_time(now_tzaware)
+print(f"")
+
 
 for month in (1, 6):
-    now_dt = datetime.datetime(year=2023, month=month, day=1)
-    now_dt_rome = local_time.localize(now_dt)
-    now_dt_rome_dst_timedelta = now_dt_rome + now_dt_rome.dst()
+    now_dt = datetime.datetime(year=2023, month=month, day=1, hour=10)
+    now_dt_rome = local_timezone.localize(now_dt)
 
-    print(f"dst rome: {now_dt_rome.dst()}, bool: {bool(now_dt_rome.dst())}, result: {now_dt_rome_dst_timedelta}")
+    print_dst_aware_time(now_dt_rome)
