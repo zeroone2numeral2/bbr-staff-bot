@@ -883,6 +883,9 @@ def get_all_events_strings_from_db_group_by(
         title_filter: Optional[str] = None
 ) -> List[str]:
     logger.debug("getting events from db...")
+
+    if not formatting:
+        formatting = EventFormatting()  # use default formatting
     logger.debug(f"formatting: {formatting}")
 
     query_filters = extract_query_filters(args, today=date_override, title_filter=title_filter)
