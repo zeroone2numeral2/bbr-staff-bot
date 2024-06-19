@@ -78,7 +78,7 @@ def get_events_text(
     events_text = events_text.strip()
 
     text = f"<b>{LIST_TYPE_DESCRIPTION[filter_key]}</b>\n\n" \
-           f"{events_text}\n\n"
+           f"{events_text}"
 
     if append_bottom_text:
         # include all of this only if the filter_key (that is, the parties list message) is the last one we
@@ -103,11 +103,12 @@ def get_events_text(
 
         freq_minutes = utilities.round_to_hour(config.settings.parties_message_job_frequency)
         refresh_freq = utilities.elapsed_str_from_seconds(freq_minutes * 60, if_empty="pochi minuti")
-        text += f"➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
+        # newline_or_empty = "\n" if formatting.collapse else ""
+        text += f"\n➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
                 f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a>" \
                 f"{radar_deeplink_part}</i>\n" \
                 f"{request_channel_invite_link_part}" \
-                f"➜ <i>aggiornato in automatico (frequenza: {refresh_freq})</i>\n"
+                f"➜ <i>aggiornato in automatico (frequenza: {refresh_freq})</i>"
 
     html_entities_count = utilities.count_html_entities(text)
     additional_entities = 2 if append_bottom_text else 0  # add hashtags to the count
@@ -128,7 +129,7 @@ def get_events_text(
         logger.debug(f"entities count (no bold, {html_tags_to_remove_count} html tags removed): {utilities.count_html_entities(text) + additional_entities}")
 
     now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
-    text += f"{utilities.subscript(now_str)} {utilities.subscript(str(entities_count))}"
+    text += f"\n{utilities.subscript(now_str)} {utilities.subscript(str(entities_count))}"
 
     return text
 
