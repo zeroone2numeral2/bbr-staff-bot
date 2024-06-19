@@ -10,9 +10,9 @@ print(f"pytz version: {pytz.__version__}\n")
 def print_dst_aware_time(tz_aware_dt):
     tz_aware_dt_with_dst = tz_aware_dt + tz_aware_dt.dst()
     if not tz_aware_dt.dst():
-        print(f"[{tz_aware_dt}] tzaware now, dst-aware (dst: false, add dst): {tz_aware_dt_with_dst}")
+        print(f"[{tz_aware_dt}] tzaware now, dst-aware (dst: {tz_aware_dt.dst()}, add dst): {tz_aware_dt_with_dst}")
     else:
-        print(f"[{tz_aware_dt}] tzaware now, dst-aware (dst: true, do not add dst): {tz_aware_dt}")
+        print(f"[{tz_aware_dt}] tzaware now, dst-aware (dst: {tz_aware_dt.dst()}, do not add dst): {tz_aware_dt}")
 
 
 local_timezone = pytz.timezone("Europe/Rome")

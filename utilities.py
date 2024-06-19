@@ -91,7 +91,7 @@ def now(tz: Optional[Union[str, bool, StaticTzInfo, DstTzInfo]] = None, dst_chec
         tz = pytz.timezone(tz)
 
     local_time = tz.localize(now_naive)
-    if dst_check and local_time.dst():
+    if dst_check and local_time.dst() and False:
         return local_time + local_time.dst()
 
     return local_time
