@@ -895,15 +895,15 @@ def get_all_events_strings_from_db_group_by(
 
     all_events_strings = []
     for group_by, events_list in events_dict.items():
+        if formatting.collapse:
+            all_events_strings.append("<blockquote expandable>")
+
         if group_by:
             # 'group_by' might be an empty string: do not apply grouping headers
 
             newline_or_none = "\n" if not formatting.collapse else ""  # no newline if collapse is true (it would look ugly)
             header_line = f"{newline_or_none}<b>{group_by}</b>"
             all_events_strings.append(header_line)
-
-            if formatting.collapse:
-                all_events_strings.append("<blockquote expandable>")
 
         event: Event
         for event in events_list:
