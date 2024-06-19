@@ -109,9 +109,6 @@ def get_events_text(
                 f"{request_channel_invite_link_part}" \
                 f"➜ <i>aggiornato in automatico (frequenza: {refresh_freq})</i>\n"
 
-    now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
-    text += f"{utilities.subscript(now_str)}"
-
     html_entities_count = utilities.count_html_entities(text)
     additional_entities = 2 if append_bottom_text else 0  # add hashtags to the count
     additional_entities += 1  # just to make sure...
@@ -129,6 +126,9 @@ def get_events_text(
         text = text_reversed[::-1]
 
         logger.debug(f"entities count (no bold, {html_tags_to_remove_count} html tags removed): {utilities.count_html_entities(text) + additional_entities}")
+
+    now_str = utilities.format_datetime(now, format_str='%Y%m%d %H%M')
+    text += f"{utilities.subscript(now_str)} {utilities.subscript(str(entities_count))}"
 
     return text
 
