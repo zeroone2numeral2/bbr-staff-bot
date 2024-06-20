@@ -232,8 +232,9 @@ async def parties_message_job(context: ContextTypes.DEFAULT_TYPE, session: Sessi
     # we need this so we can add the footer text just to the last message
     last_filter_key = list(PARTIES_MESSAGE_TYPES_ARGS.keys())[-1]
 
-    for filter_key, args in PARTIES_MESSAGE_TYPES_ARGS.items():
+    for filter_key, filter_args in PARTIES_MESSAGE_TYPES_ARGS.items():
         logger.info(f"filter: {filter_key}")
+        args = [arg for arg in filter_args]  # create a copy of the args list, because we will add items to it
 
         last_parties_message: Optional[PartiesMessage] = parties_messages.get_last_parties_message(session, target_chat.chat_id, events_type=filter_key)
 
