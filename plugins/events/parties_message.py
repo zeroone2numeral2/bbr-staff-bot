@@ -137,6 +137,7 @@ async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYP
     pin = pls_dict[BotSettingKey.PARTIES_LIST_PIN].value()
     delete_old = pls_dict[BotSettingKey.PARTIES_LIST_DELETE_OLD].value()
     group_messages_links = pls_dict[BotSettingKey.PARTIES_LIST_DISCUSSION_LINK].value()
+    collapsed = pls_dict[BotSettingKey.PARTIES_LIST_COLLAPSE].value()
 
     list_was_updated = context.bot_data.get(TempDataKey.UPDATE_PARTIES_MESSAGE, False)  # do not pop
 
@@ -151,6 +152,7 @@ async def on_listsinfo_command(update: Update, context: ContextTypes.DEFAULT_TYP
         f"<b>Fissa messaggi</b>: {utilities.bool_to_str_it(pin, si_no=True)}\n"
         f"<b>Elimina vecchio messaggio dopo averne inviato uno nuovo</b>: {utilities.bool_to_str_it(delete_old, si_no=True)}\n"
         f"<b>Linka messaggi canale nel gruppo di discussione</b>: {utilities.bool_to_str_it(group_messages_links, si_no=True)}\n"
+        f"<b>Raggruppamento comprimibile</b>: {utilities.bool_to_str_it(collapsed, si_no=True)}\n"
         f"<b>Frequenza aggiornamento</b>: {config.settings.parties_message_job_frequency} minuti"
     )
 
