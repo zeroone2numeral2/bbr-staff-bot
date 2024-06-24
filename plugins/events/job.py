@@ -103,8 +103,8 @@ def get_events_text(
 
         freq_minutes = utilities.round_to_hour(config.settings.parties_message_job_frequency)
         refresh_freq = utilities.elapsed_str_from_seconds(freq_minutes * 60, if_empty="pochi minuti")
-        # newline_or_empty = "\n" if formatting.collapse else ""
-        text += f"\n➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
+        newline_or_empty = "\n" if formatting.collapse else ""  # additional new line if collapse is false
+        text += f"{newline_or_empty}\n➜ <i>per una ricerca più approfondita usa gli hashtag {hashtag_current_month} e {hashtag_next_month}, " \
                 f"e consulta la <a href=\"https://t.me/c/1926530314/45\">guida alla ricerca tramite hashtag</a>" \
                 f"{radar_deeplink_part}</i>\n" \
                 f"{request_channel_invite_link_part}" \
