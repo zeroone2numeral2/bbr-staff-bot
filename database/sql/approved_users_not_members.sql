@@ -17,7 +17,7 @@ from application_requests as ar
 	left join chat_members as cm
 		on ar.user_id = cm.user_id
 		-- left 
-		and (cm.status not in ('creator', 'administrator', 'member') or cm.status is null)
+		and (cm.status not in ('creator', 'administrator', 'member', 'restricted') or cm.status is null)
 where 1=1
 	and ar.status = 1
 	and ar.accepted_message_message_id is not null
