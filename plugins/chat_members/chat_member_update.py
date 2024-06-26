@@ -117,7 +117,7 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
                f"generato da: {admin_mention} • #admin{created_by.id}"
 
         if chat_member_updated.via_chat_folder_invite_link:
-            text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
+            text += (f"\n\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
                      f"aggiungere la cartella del network")
 
         await bot.send_message(log_chat.chat_id, text)
