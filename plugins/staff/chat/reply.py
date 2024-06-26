@@ -21,6 +21,15 @@ from ext.filters import ChatFilter, Filter
 logger = logging.getLogger(__name__)
 
 
+def get_protect_content_flag(chat: Chat) -> bool:
+    if chat.is_staff_chat:
+        return config.settings.protected_admin_replies
+    elif chat.is_evaluation_chat:
+        return config.settings.protected_admin_replies_evaluation
+
+    return False
+
+
 @decorators.catch_exception()
 @decorators.pass_session(pass_chat=True)
 async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
@@ -64,7 +73,7 @@ async def on_admin_message_reply(update: Update, context: ContextTypes.DEFAULT_T
             message_id=admin_message.reply_message_id,  # reply to the admin message we previously sent in the chat
             allow_sending_without_reply=True
         ),
-        protect_content=config.settings.protected_admin_replies
+        protect_content=get_protect_content_flag(chat)
     )
     private_chat_messages.save(session, sent_message)
     await update.message.set_reaction(ReactionEmoji.WRITING_HAND)  # react as soon as we forward the message
@@ -169,7 +178,7 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
             message_id=user_chat_reply_to_message_id,
             allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
         ),
-        protect_content=config.settings.protected_admin_replies
+        protect_content=get_protect_content_flag(chat)
     )
 
     # react right after we send the message: if something goes wrong after the message is forwarded,
