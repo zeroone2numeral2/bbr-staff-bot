@@ -87,8 +87,7 @@ async def check_cooldown(update: Update, session: Session, chat: Chat, link_dest
             seconds_diff = (utilities.now() - created_on_utc).total_seconds()
             if seconds_diff < config.settings.events_chat_deeplink_cooldown:
                 logger.info(f"link requested too soon, diff: {seconds_diff} seconds")
-                diff_str = utilities.elapsed_str_from_seconds(
-                    int(config.settings.events_chat_deeplink_cooldown - seconds_diff), "poco")
+                diff_str = utilities.elapsed_str_from_seconds(int(config.settings.events_chat_deeplink_cooldown - seconds_diff), "poco")
                 sent_message = await update.message.reply_html(
                     f"Mi dispiace, è trascorso troppo poco tempo da quando hai richiesto questo link d'invito l'ultima volta. "
                     f"Riprova tra ~{diff_str}"
