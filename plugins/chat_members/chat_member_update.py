@@ -107,7 +107,7 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
         elif chat_member_updated.invite_link.name:
             invite_link_name = f"\"{utilities.escape_html(chat_member_updated.invite_link.name)}\""
         else:
-            invite_link_name = "senza nome"
+            invite_link_name = "link senza nome"
 
         invite_link_id = utilities.extract_invite_link_id(chat_member_updated.invite_link.invite_link)
         created_by = chat_member_updated.invite_link.creator
