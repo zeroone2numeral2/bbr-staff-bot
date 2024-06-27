@@ -528,12 +528,20 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             text_or_caption_html = text_or_caption_html.strip()
             text_or_caption_html = f"<blockquote expandable>{text_or_caption_html}</blockquote>"
 
+    ignore_media = False
+    if utilities.text_contains(update.message.text, ["--nomedia", "-nm"]):
+        if not update.message.reply_to_message.caption and not update.message.reply_to_message.text:
+            additional_info_reply_text = " (impossibile inviare solo didascalia perchè non presente)"
+        elif update.message.reply_to_message.caption:
+            ignore_media = True
+
     try:
         comment_message: Message = await utilities.copy_message(
             bot=context.bot,
             message=update.message.reply_to_message,
             chat_id=event.discussion_group_chat_id,
             text_or_caption_override=text_or_caption_html,
+            ignore_media=ignore_media,
             # reply parameters
             reply_to_message_id=event.discussion_group_message_id,
             allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff

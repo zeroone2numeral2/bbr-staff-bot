@@ -303,6 +303,7 @@ async def copy_message(
     message: Message,
     chat_id: int,
     text_or_caption_override: Optional[str] = None,
+    ignore_media: Optional[bool] = False,
     reply_to_message_id: Optional[int] = None,
     reply_markup: Optional[int] = None,
     allow_sending_without_reply: Optional[bool] = None,
@@ -326,7 +327,18 @@ async def copy_message(
             allow_sending_without_reply=allow_sending_without_reply
         )
 
-    if message_type == MessageType.ANIMATION:
+    if message_type == MessageType.TEXT or ignore_media:
+        if ignore_media and not message.caption:
+            raise ValueError(f"ignore_media is true but the message doesn't have a caption")
+        elif ignore_media:
+            # use message caption (or override)
+            kwargs["text"] = text_or_caption_override if text_or_caption_override else message.caption_html
+        else:
+            # use message text (or override)
+            kwargs["text"] = text_or_caption_override if text_or_caption_override else message.text_html
+
+        result = await bot.send_message(**kwargs)
+    elif message_type == MessageType.ANIMATION:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
         kwargs["has_spoiler"] = has_spoiler_ovverride if has_spoiler_ovverride is not None else message.has_media_spoiler
         result = await bot.send_animation(animation=message.animation.file_id, **kwargs)
@@ -354,9 +366,6 @@ async def copy_message(
     elif message_type == MessageType.STICKER:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
         result = await bot.send_sticker(sticker=message.sticker.file_id, **kwargs)
-    elif message_type == MessageType.TEXT:
-        kwargs["text"] = text_or_caption_override if text_or_caption_override else message.text_html
-        result = await bot.send_message(**kwargs)
     elif message_type == MessageType.VIDEO:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override else message.caption_html
         kwargs["has_spoiler"] = has_spoiler_ovverride if has_spoiler_ovverride is not None else message.has_media_spoiler
