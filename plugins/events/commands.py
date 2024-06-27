@@ -528,13 +528,22 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             text_or_caption_html = text_or_caption_html.strip()
             text_or_caption_html = f"<blockquote expandable>{text_or_caption_html}</blockquote>"
 
-    ignore_media = False
+    ignore_media = None
     if utilities.text_contains(update.message.text, ["--nomedia", "-nm"]):
         if not update.message.reply_to_message.caption and not update.message.reply_to_message.text:
             additional_info_reply_text = " (impossibile inviare solo didascalia perchè non presente)"
         elif update.message.reply_to_message.caption:
             ignore_media = True
             additional_info_reply_text = " (solo didascalia senza media)"
+
+    has_spoiler_override = None
+    if utilities.text_contains(update.message.text, ["--spoiler", "-s"]):
+        logger.debug("spoiler effect will be added (if message supports it)")
+        has_spoiler_override = True
+    elif utilities.text_contains(update.message.text, ["--nospoiler", "-ns"]) and update.message.reply_to_message.has_media_spoiler:
+        logger.debug("spoiler effect will be removed")
+        additional_info_reply_text = " (l'effetto spoiler verrà rimosso)"
+        has_spoiler_override = False
 
     try:
         comment_message: Message = await utilities.copy_message(
@@ -543,6 +552,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             chat_id=event.discussion_group_chat_id,
             text_or_caption_override=text_or_caption_html,
             ignore_media=ignore_media,
+            has_spoiler_ovverride=has_spoiler_override,
             # reply parameters
             reply_to_message_id=event.discussion_group_message_id,
             allow_sending_without_reply=False  # if the discussion group post has been removed, do not send + warn the staff
