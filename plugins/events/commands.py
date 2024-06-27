@@ -534,6 +534,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
             additional_info_reply_text = " (impossibile inviare solo didascalia perchè non presente)"
         elif update.message.reply_to_message.caption:
             ignore_media = True
+            additional_info_reply_text = " (solo didascalia senza media)"
 
     try:
         comment_message: Message = await utilities.copy_message(
