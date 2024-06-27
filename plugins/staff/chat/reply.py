@@ -4,7 +4,7 @@ import re
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from telegram import Update, MessageId, ReplyParameters
+from telegram import Update, MessageId, ReplyParameters, Message
 from telegram.constants import ChatAction, ReactionEmoji
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import filters, ContextTypes, MessageHandler
@@ -19,6 +19,8 @@ from emojis import Emoji
 from ext.filters import ChatFilter, Filter
 
 logger = logging.getLogger(__name__)
+
+INIT_CONVERSATION_STR = ">"
 
 
 def get_protect_content_flag(chat: Chat) -> bool:
@@ -111,7 +113,12 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
         return
 
     user_message: Optional[UserMessage] = None
-    if chat.is_evaluation_chat and update.message.reply_to_message.text and re.search(r"^.+nuova #richiesta", update.message.reply_to_message.text):
+
+    # text version with the leading INIT_CONVERSATION_STR removed, which is needed to start a conversation from a request message
+    text_or_caption_override = None
+    text_or_caption_no_html = update.message.text or update.message.caption  # do not use the _html version
+
+    if chat.is_evaluation_chat and text_or_caption_no_html and text_or_caption_no_html.startswith(INIT_CONVERSATION_STR) and re.search(r"^.+nuova #richiesta", update.message.reply_to_message.text):
         logger.info("reply to an user request message sent by the bot in the evaluation chat")
         # get the User object from the db based on the #id hashtag
         user_id = utilities.get_user_id_from_text(update.message.reply_to_message.text)
@@ -123,6 +130,12 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
 
         # set this flag to true, so we know that the user's replies should be forwarded to the staff
         user.conversate_with_staff_override = True
+
+        # do this only if the message starts a conversation from a request
+        if update.message.text:
+            text_or_caption_override = update.message.text_html.lstrip(utilities.escape_html(INIT_CONVERSATION_STR)).strip()
+        elif update.message.caption:
+            text_or_caption_override = update.message.caption_html.lstrip(utilities.escape_html(INIT_CONVERSATION_STR)).strip()
     else:
         user_message: UserMessage = user_messages.get_user_message(session, update)
         if not user_message:
@@ -172,12 +185,23 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
                                         f"eseguito un reset)</i>", do_quote=True)
         return
 
-    sent_message: MessageId = await update.message.copy(
+    # old way of forwarding messages using message.copy()
+    # sent_message: MessageId = await update.message.copy(
+    #     chat_id=user.user_id,
+    #     reply_parameters=ReplyParameters(
+    #         message_id=user_chat_reply_to_message_id,
+    #         allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
+    #     ),
+    #     protect_content=get_protect_content_flag(chat)
+    # )
+
+    sent_message: Message = await utilities.copy_message(
+        bot=context.bot,
+        message=update.message,
         chat_id=user.user_id,
-        reply_parameters=ReplyParameters(
-            message_id=user_chat_reply_to_message_id,
-            allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
-        ),
+        text_or_caption_override=text_or_caption_override,
+        reply_to_message_id=user_chat_reply_to_message_id,
+        allow_sending_without_reply=True,  # in case the user deleted their own message in the bot's chat
         protect_content=get_protect_content_flag(chat)
     )
 
