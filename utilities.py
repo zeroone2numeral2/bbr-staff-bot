@@ -321,7 +321,7 @@ async def copy_message(
         message_thread_id=message_thread_id,
     )
 
-    if reply_to_message_id or allow_sending_without_reply:
+    if reply_to_message_id:
         kwargs["reply_parameters"] = ReplyParameters(
             message_id=reply_to_message_id,
             allow_sending_without_reply=allow_sending_without_reply
