@@ -29,6 +29,13 @@ def get_event_from_discussion_group_message(session: Session, message: Message) 
     ).one_or_none()
 
 
+def get_event_from_discussion_group_message_id(session: Session, chat_id: int, message_id: int) -> Optional[Event]:
+    return session.query(Event).filter(
+        Event.discussion_group_chat_id == chat_id,
+        Event.discussion_group_message_id == message_id
+    ).one_or_none()
+
+
 def get_events(
         session: Session,
         skip_canceled: bool = False,

@@ -133,7 +133,7 @@ async def on_parse_events_command(update: Update, context: ContextTypes.DEFAULT_
     await update.message.reply_text(f"parsed {events_count} db entries")
 
 
-async def event_from_link(update_or_message: Union[Update, Message], context: CallbackContext, session: Session) -> Optional[Event]:
+async def event_from_link(update_or_message: Union[Update, Message], context: CallbackContext, session: Session, try_from_discussion_group_message=False) -> Optional[Event]:
     if isinstance(update_or_message, Update):
         message: Message = update_or_message.effective_message
     elif isinstance(update_or_message, Message):
@@ -156,6 +156,10 @@ async def event_from_link(update_or_message: Union[Update, Message], context: Ca
     event_ids_str = f"<code>{chat_id}</code>/<code>{message_id}</code>"
 
     event: Event = events.get_or_create(session, chat_id, message_id, create_if_missing=False)
+    if not event and try_from_discussion_group_message:
+        logger.debug("no event saved for this message link, trying to check whether the link links a discussion group channel message...")
+        event: Event = events.get_event_from_discussion_group_message_id(session, chat_id, message_id)
+
     if not event:
         logger.debug("no event saved for this message link")
         await message.reply_text(f"Nessuna festa salvata per <a href=\"{message_link}\">"
@@ -497,7 +501,7 @@ async def on_getpath_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
 async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
     logger.info(f"/comment {utilities.log(update)}")
 
-    event: Event = await event_from_link(update, context, session)
+    event: Event = await event_from_link(update, context, session, try_from_discussion_group_message=True)
     if not event:
         # event_from_link() will also answer in case of error
         return
