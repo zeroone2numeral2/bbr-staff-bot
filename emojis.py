@@ -109,6 +109,7 @@ class Flag:
     POLAND = "🇵🇱"
     PORTUGAL = "🇵🇹"
     ROMANIA = "🇷🇴"
+    RUSSIA = "🇷🇺"
     SCOTLAND = "🏴󠁧󠁢󠁳󠁣󠁴󠁿"
     SLOVAKIA = "🇸🇰"
     SLOVENIA = "🇸🇮"

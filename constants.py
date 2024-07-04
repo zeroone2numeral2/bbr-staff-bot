@@ -617,6 +617,7 @@ class RegionHashtag:
     REUNION = "#reunion"
     RO = "#ro"
     ROMANIA = "#romania"
+    RUSSIA = "#russia"
     SARDEGNA = "#sardegna"
     SARDINIA = "#sardinia"
     SCOTLAND = "#scotland"
@@ -670,6 +671,7 @@ class RegionName:
     REPUBBLICA_CECA = "Repubblica Ceca"
     RESTO_DEL_MONDO = "Resto del Mondo"
     ROMANIA = "Romania"
+    RUSSIA = "Russia"
     SARDEGNA = "Sardegna"
     SCOZIA = "Scozia"
     SICILIA = "Sicilia"
@@ -711,6 +713,7 @@ REGIONS_DATA = {
     RegionName.PORTOGALLO: dict(hashtags=[RegionHashtag.PORTUGAL, RegionHashtag.PORTOGALLO], emoji=Flag.PORTUGAL),
     RegionName.REPUBBLICA_CECA: dict(hashtags=[RegionHashtag.CZ, RegionHashtag.CZECHIA, RegionHashtag.REPUBBLICA_CECA], emoji=Flag.CZECH_REPUBLIC),
     RegionName.ROMANIA: dict(hashtags=[RegionHashtag.ROMANIA, RegionHashtag.RO], emoji=Flag.ROMANIA),
+    RegionName.RUSSIA: dict(hashtags=[RegionHashtag.RUSSIA], emoji=Flag.RUSSIA),
     # RegionName.SARDEGNA: dict(hashtags=[RegionHashtag.SARDEGNA, RegionHashtag.SARDINIA], emoji=Flag.ITALY),
     RegionName.SCOZIA: dict(hashtags=[RegionHashtag.SCOTLAND, RegionHashtag.SCOZIA], emoji=Flag.SCOTLAND),
     # RegionName.SICILIA: dict(hashtags=[RegionHashtag.SICILIA, RegionHashtag.SICILY], emoji=Flag.ITALY),
