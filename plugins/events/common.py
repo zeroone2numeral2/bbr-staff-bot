@@ -368,6 +368,13 @@ def parse_message_text(message_text: str, event: Event):
     else:
         logger.info("couldn't parse any title")
 
+    # DETAILED LOCATION
+    location_match = re.search(Regex.DETAILED_LOCATION, message_text, re.M)
+    if location_match and location_match.group(1) is not None:
+        logger.info(f"detailed location: {location_match.group(1)}")
+    else:
+        logger.info(f"couldn't match detailed location")
+
     # DATES
     parsing_success = False
     date_tests = [DateMatchMonthsJump, DateMatchDaysList, DateMatchNormal]
