@@ -30,6 +30,7 @@ class Emoji:
     FORWARD = "⏩"
     FROG = "🐸"
     GEAR = "⚙️"
+    GOLF = "⛳️"
     GREEN = "🟢"
     HANDSHAKE = "🤝"
     HASHTAG = "#️⃣"
