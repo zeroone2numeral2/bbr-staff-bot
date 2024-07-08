@@ -549,7 +549,6 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         additional_info_reply_text = " (l'effetto spoiler verrà rimosso)"
         has_spoiler_override = False
 
-    print(text_or_caption_html)
     try:
         comment_message: Message = await utilities.copy_message(
             bot=context.bot,
