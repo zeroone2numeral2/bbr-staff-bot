@@ -959,6 +959,7 @@ class Event(Base):
 
     soon = Column(Boolean, default=False)
     region = Column(String, default=None)
+    detailed_location = Column(String, default=None)
     event_type = Column(String, default=None)
     localata = Column(Boolean, default=False)
     canceled = Column(Boolean, default=False)
