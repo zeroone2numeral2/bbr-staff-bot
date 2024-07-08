@@ -514,11 +514,11 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
     text_or_caption_html = ""
     additional_info_reply_text = ""
     if update.message.reply_to_message.caption:
-        if not utilities.text_contains(update.message.text, ["--nocaption", "-nc"]):
-            text_or_caption_html = update.message.reply_to_message.caption_html
-        else:
+        if utilities.text_contains(update.message.text, ["--nocaption", "-nc"]):
             logger.debug("caption will be ignored")
             additional_info_reply_text = " (senza didascalia)"
+        else:
+            text_or_caption_html = update.message.reply_to_message.caption_html
     elif update.message.reply_to_message.text:
         text_or_caption_html = update.message.reply_to_message.text_html
 
@@ -549,6 +549,7 @@ async def on_comment_command(update: Update, context: ContextTypes.DEFAULT_TYPE,
         additional_info_reply_text = " (l'effetto spoiler verrà rimosso)"
         has_spoiler_override = False
 
+    print(text_or_caption_html)
     try:
         comment_message: Message = await utilities.copy_message(
             bot=context.bot,
