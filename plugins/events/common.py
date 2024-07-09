@@ -13,7 +13,7 @@ from telegram.constants import MessageLimit, FileSizeLimit
 from telegram.ext import CallbackContext
 
 import utilities
-from constants import Regex, RegionName, REGIONS_DATA, TempDataKey, MONTHS_IT
+from constants import Regex, RegionName, REGIONS_DATA, TempDataKey, MONTHS_IT, SUBREGIONS_DATA
 from database.models import Event, EVENT_TYPE, EventType, EventTypeHashtag
 from database.queries import events
 from emojis import Emoji, Flag
@@ -240,6 +240,18 @@ MONTHS = (
 )
 
 
+def find_region_in_list(regions_data, hashtags_list):
+    # REGION and SUBREGION
+    for region_name, region_data in regions_data.items():
+        for region_hashtag in region_data["hashtags"]:
+            if region_hashtag.lower() in hashtags_list:
+                # return after the first match
+                # logger.debug(f"found {region_hashtag}")
+                return region_name
+
+    return None
+
+
 def parse_message_entities_list(hashtags_list: List[str], event: Event):
     event.save_hashtags(hashtags_list)
 
@@ -281,22 +293,28 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
         # un-soon events that do not have these hashtags
         event.soon = False
 
+    # if no region/subregion is found in the hashtags list, set it to NULL
     # REGION
-    region_found = False
-    for region_name, region_data in REGIONS_DATA.items():
-        for region_hashtag in region_data["hashtags"]:
-            if region_hashtag.lower() in hashtags_list:
+    event.region = find_region_in_list(REGIONS_DATA, hashtags_list)
+    # SUBREGION
+    event.subregion = find_region_in_list(SUBREGIONS_DATA, hashtags_list)
+
+    # SUB-REGION
+    subregion_found = False
+    for subregion_name, subregion_data in SUBREGIONS_DATA.items():
+        for subregion_hashtag in subregion_data["hashtags"]:
+            if subregion_hashtag.lower() in hashtags_list:
                 # logger.debug(f"found {region_hashtag}")
-                event.region = region_name
+                event.subregion = subregion_data
                 # return after the first match
-                region_found = True
+                subregion_found = True
                 break
 
-        if region_found:
+        if subregion_found:
             break
-    if not region_found:
-        # if no region is found in the hashtags list, set it to NULL
-        event.region = None
+    if not subregion_found:
+        # if no subregion is found in the hashtags list, set it to NULL
+        event.subregion = None
 
     # DATES
     # enter this only if dates are not already filled
@@ -455,7 +473,9 @@ def format_event_string(event: Event, formatting: Optional[EventFormatting] = No
         formatting = EventFormatting()
 
     region_icon = ""
-    if event.region and event.region in REGIONS_DATA:
+    if event.subregion and event.subregion in SUBREGIONS_DATA:
+        region_icon = SUBREGIONS_DATA[event.subregion]["emoji"]
+    elif event.region and event.region in REGIONS_DATA:
         region_icon = REGIONS_DATA[event.region]["emoji"]
 
     if event.event_title:

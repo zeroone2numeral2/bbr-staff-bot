@@ -748,3 +748,27 @@ REGIONS_DATA = {
     ], emoji=Flag.ITALY),
     RegionName.RESTO_DEL_MONDO: dict(hashtags=[RegionHashtag.AROUND_THE_WORLD], emoji=Flag.AROUND_THE_WORLD),
 }
+
+
+SUBREGIONS_DATA = {
+    RegionName.SUD_ITALIA: dict(hashtags=[
+        RegionHashtag.SUD_ITALIA,
+        RegionHashtag.SUD_ITALY,
+        RegionHashtag.SOUTHERN_ITALY,
+        RegionHashtag.SICILY,
+        RegionHashtag.SICILIA,
+        RegionHashtag.SARDEGNA,
+        RegionHashtag.SARDINIA
+    ], emoji=Flag.SOUTHERN_ITALY, parent_region=RegionName.ITALIA),
+    RegionName.NORD_ITALIA: dict(hashtags=[
+        RegionHashtag.NORD_ITALIA,
+        RegionHashtag.NORD_ITALY,
+        RegionHashtag.NORTHERN_ITALY
+    ], emoji=Flag.NORTHERN_ITALY, parent_region=RegionName.ITALIA),
+    RegionName.CENTRO_ITALIA: dict(hashtags=[
+        RegionHashtag.CENTER_ITALY,
+        RegionHashtag.CENTRO_ITALIA,
+        RegionHashtag.CENTRO_ITALY,
+        RegionHashtag.CENTRAL_ITALY,
+    ], emoji=Flag.CENTRAL_ITALY, parent_region=RegionName.ITALIA),
+}
