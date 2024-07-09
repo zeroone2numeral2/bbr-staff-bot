@@ -299,23 +299,6 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
     # SUBREGION
     event.subregion = find_region_in_list(SUBREGIONS_DATA, hashtags_list)
 
-    # SUB-REGION
-    subregion_found = False
-    for subregion_name, subregion_data in SUBREGIONS_DATA.items():
-        for subregion_hashtag in subregion_data["hashtags"]:
-            if subregion_hashtag.lower() in hashtags_list:
-                # logger.debug(f"found {region_hashtag}")
-                event.subregion = subregion_data
-                # return after the first match
-                subregion_found = True
-                break
-
-        if subregion_found:
-            break
-    if not subregion_found:
-        # if no subregion is found in the hashtags list, set it to NULL
-        event.subregion = None
-
     # DATES
     # enter this only if dates are not already filled
     if not event.start_month and not event.start_year:
