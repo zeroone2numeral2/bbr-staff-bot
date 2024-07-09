@@ -371,7 +371,7 @@ def parse_message_text(message_text: str, event: Event):
     # DETAILED LOCATION
     location_match = re.search(Regex.DETAILED_LOCATION, message_text, re.M)
     if location_match and location_match.group(1) is not None:
-        detailed_location = location_match.group(1)
+        detailed_location = location_match.group(1).strip()
         logger.info(f"detailed location: {detailed_location}")
     else:
         logger.info(f"couldn't match detailed location")
