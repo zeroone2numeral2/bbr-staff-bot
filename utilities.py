@@ -18,7 +18,7 @@ import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
     ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser, MessageOriginChannel, ReplyParameters
-from telegram.constants import MessageType
+from telegram.constants import MessageType, ChatAction
 from telegram.error import BadRequest, TelegramError, Forbidden
 from telegram.helpers import effective_message_type
 
@@ -770,6 +770,21 @@ async def unpin_by_ids_safe(bot: Bot, chat_id: int, message_id: int) -> bool:
     except (TelegramError, BadRequest, Forbidden) as e:
         logger.info(f"error while unpinning: {e}")
         return False
+
+
+async def test_blocked(bot: Bot, user_id: int, raise_on_other_error: bool = True) -> Optional[bool]:
+    try:
+        await bot.send_chat_action(user_id, ChatAction.TYPING)
+    except (TelegramError, BadRequest) as e:
+        if e.message.lower() == "forbidden: bot was blocked by the user":
+            # logger.warning("bot was blocked by the user")
+            return True
+        else:
+            logger.warning(f"error while sending 'typing...' chat action: {e}")
+            if raise_on_other_error:
+                raise e
+
+            return False
 
 
 def user_log(user: User):

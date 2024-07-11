@@ -5,6 +5,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyParameters
 from telegram import Update, User as TelegramUser, ChatInviteLink, Bot
+from telegram.constants import ChatAction
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import CallbackQueryHandler, CommandHandler
 from telegram.ext import ContextTypes
@@ -219,7 +220,22 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     user.last_request.update_log_chat_message(edited_log_message)
 
     if accepted:
-        await send_message_to_user(session, bot, user)
+        if not user.stopped:
+            if await utilities.test_blocked(bot, user.user_id, raise_on_other_error=False):
+                user.stopped = True
+
+        if user.stopped:
+            logger.info(f"user {user.user_id} blocked the bot: cannot send invite link")
+            await bot.send_message(
+                user.last_request.staff_message_chat_id,
+                f"La richiesta è stata approvata, ma non è stato impossibile inviare il link d'invito a {user.mention()} perchè ha bloccato il bot (nessun link è stato generato)\n"
+                f"Potrà comunque inviare una nuova richiesta in futuro",
+                reply_parameters=ReplyParameters(message_id=user.last_request.staff_message_message_id)  # reply in the comments
+            )
+            logger.info("will remove the completed request that has just been accepted from the User object, so the user will be able to send another request in the future")
+            user.reset_evaluation()
+        else:
+            await send_message_to_user(session, bot, user)
     elif not accepted and delete_history_if_rejected:
         # make sure to only enter here if 'accepted' is false
         logger.info("deleting history...")
