@@ -146,20 +146,14 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
         user: User = user_message.user
 
     user: User
-    try:
-        await context.bot.send_chat_action(user.user_id, ChatAction.TYPING)
-        # time.sleep(3)
-    except (TelegramError, BadRequest) as e:
-        if e.message.lower() == "forbidden: bot was blocked by the user":
-            logger.warning("bot was blocked by the user")
-            await update.message.reply_text(
-                f"{Emoji.WARNING} <i>coudln't send the message to {user.mention()}: they blocked the bot</i>",
-                do_quote=True
-            )
-            user.set_stopped()
-            return
-        else:
-            raise e
+    if await utilities.test_blocked(context.bot, user.user_id, raise_on_other_error=True):
+        logger.warning("bot was blocked by the user")
+        await update.message.reply_text(
+            f"{Emoji.WARNING} <i>coudln't send the message to {user.mention()}: they blocked the bot</i>",
+            do_quote=True
+        )
+        user.set_stopped()
+        return
 
     # if the admin message is a reply to a request message in the evaluation chat, reply to the message we sent the user
     # when we told them their request was sent to the staff
