@@ -2,6 +2,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from telegram import Update, ReplyParameters
+from telegram.constants import ReactionEmoji
 from telegram.ext import filters, ContextTypes, CommandHandler
 
 import decorators
@@ -51,6 +52,9 @@ async def on_revoke_admin_command(update: Update, context: ContextTypes.DEFAULT_
     )
 
     admin_message.revoke(revoked_by=update.effective_user.id)
+
+    # remove the sign rection from the replied-to message
+    await update.message.reply_to_message.set_reaction(reaction=None)
 
 
 HANDLERS = (
