@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional, List, Any, Tuple
 
-from sqlalchemy import select, false, null, true
+from sqlalchemy import select, false, null, true, or_, and_
 from sqlalchemy.orm import Session
 from telegram import Message
 
@@ -33,6 +33,15 @@ def get_event_from_discussion_group_message_id(session: Session, chat_id: int, m
     return session.query(Event).filter(
         Event.discussion_group_chat_id == chat_id,
         Event.discussion_group_message_id == message_id
+    ).one_or_none()
+
+
+def get_event_from_channel_or_discussion_group(session: Session, chat_id: int, message_id: int) -> Optional[Event]:
+    return session.query(Event).filter(
+        or_(
+            and_(Event.chat_id == chat_id, Event.message_id == message_id),
+            and_(Event.discussion_group_chat_id == chat_id, Event.discussion_group_message_id == message_id)
+        )
     ).one_or_none()
 
 
