@@ -44,7 +44,7 @@ PARTIES_MESSAGE_TYPES = {
 
 # we will post a channel message for each of these lists types
 PARTIES_MESSAGE_TYPES_ARGS = {
-    ListTypeKey.ITALY: [EventFilter.IT, OrderBy.SUBREGION],
+    ListTypeKey.ITALY: [EventFilter.IT, OrderBy.SUBREGION, OrderBy.DATE],
     ListTypeKey.ABROAD: [EventFilter.NOT_IT]
 }
 
