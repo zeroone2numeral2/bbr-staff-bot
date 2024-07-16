@@ -18,7 +18,7 @@ import pytz
 from pytz.tzinfo import StaticTzInfo, DstTzInfo
 from telegram import User, Update, Chat, InlineKeyboardButton, KeyboardButton, Message, ChatMemberUpdated, \
     ChatMember, Bot, MessageOriginUser, MessageOriginHiddenUser, MessageOriginChannel, ReplyParameters
-from telegram.constants import MessageType, ChatAction
+from telegram.constants import MessageType, ChatAction, ParseMode
 from telegram.error import BadRequest, TelegramError, Forbidden
 from telegram.helpers import effective_message_type
 
@@ -38,6 +38,21 @@ SUPERSCRIPT = str.maketrans(
 )
 
 SUBSCRIPT = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+
+CAPTIONABLE_TYPES = (
+    MessageType.ANIMATION,
+    MessageType.AUDIO,
+    MessageType.DOCUMENT,
+    MessageType.PHOTO,
+    MessageType.VIDEO,
+    MessageType.VOICE,
+)
+
+SUPPORT_SPOILER_TYPES = (
+    MessageType.PHOTO,
+    MessageType.VIDEO,
+    MessageType.ANIMATION,
+)
 
 
 def load_logging_config(file_name='logging.json'):
@@ -331,24 +346,32 @@ async def copy_message(
         if ignore_media and not message.caption:
             raise ValueError(f"ignore_media is true but the message doesn't have a caption")
         elif ignore_media:
-            # use message caption (or override)
+            # send the message's caption (or override) as text
             kwargs["text"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
         else:
-            # use message text (or override)
+            # use the message's text (or override)
             kwargs["text"] = text_or_caption_override if text_or_caption_override is not None else message.text_html
 
-        result = await bot.send_message(**kwargs)
-    elif message_type == MessageType.ANIMATION:
-        kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
+        return await bot.send_message(**kwargs)
+
+    if message_type in CAPTIONABLE_TYPES:
+        if text_or_caption_override is not None:
+            # for some reason, if 'text_or_caption_override' is an empty string, "[]" will be sent as caption,
+            # so we need to set it to None
+            kwargs["caption"] = text_or_caption_override if text_or_caption_override else None
+        else:
+            kwargs["caption"] = message.caption_html
+
+    if message_type in SUPPORT_SPOILER_TYPES:
         kwargs["has_spoiler"] = has_spoiler_ovverride if has_spoiler_ovverride is not None else message.has_media_spoiler
+
+    if message_type == MessageType.ANIMATION:
         result = await bot.send_animation(animation=message.animation.file_id, **kwargs)
     elif message_type == MessageType.AUDIO:
-        kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
         result = await bot.send_audio(audio=message.audio.file_id, **kwargs)
     elif message_type == MessageType.DICE:
         result = await bot.send_dice(emoji=message.text, **kwargs)
     elif message_type == MessageType.DOCUMENT:
-        kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
         result = await bot.send_document(document=message.document.file_id, **kwargs)
     elif message_type == MessageType.LOCATION:
         result = await bot.send_location(
@@ -360,19 +383,14 @@ async def copy_message(
             **kwargs
         )
     elif message_type == MessageType.PHOTO:
-        kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
-        kwargs["has_spoiler"] = has_spoiler_ovverride if has_spoiler_ovverride is not None else message.has_media_spoiler
         result = await bot.send_photo(photo=message.photo[-1].file_id, **kwargs)
     elif message_type == MessageType.STICKER:
         result = await bot.send_sticker(sticker=message.sticker.file_id, **kwargs)
     elif message_type == MessageType.VIDEO:
-        kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
-        kwargs["has_spoiler"] = has_spoiler_ovverride if has_spoiler_ovverride is not None else message.has_media_spoiler
         result = await bot.send_video(video=message.video.file_id, **kwargs)
     elif message_type == MessageType.VIDEO_NOTE:
         result = await bot.send_video_note(video_note=message.video_note.file_id, **kwargs)
     elif message_type == MessageType.VOICE:
-        kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
         result = await bot.send_voice(voice=message.voice.file_id, **kwargs)
     else:
         if raise_on_unsupported_type:

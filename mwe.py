@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    kwargs = {"caption": ""}
+    kwargs = {"caption": "", "reply_markup": None, "protect_content": None, "message_thread_id": None, "has_spoiler": None}
+    print(kwargs)
     await context.bot.send_photo(
         chat_id=update.message.chat.id,
         photo=update.message.photo[-1].file_id,
