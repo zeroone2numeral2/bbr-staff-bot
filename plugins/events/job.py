@@ -18,7 +18,7 @@ from database.models import Chat, Event, PartiesMessage, ChatMember
 from database.queries import chats, settings, parties_messages, chat_members
 from emojis import Flag, Emoji
 from plugins.events.common import EventFilter, get_all_events_strings_from_db_group_by, GroupBy, \
-    EventFormatting
+    EventFormatting, OrderBy
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ PARTIES_MESSAGE_TYPES = {
 
 # we will post a channel message for each of these lists types
 PARTIES_MESSAGE_TYPES_ARGS = {
-    ListTypeKey.ITALY: [EventFilter.IT],
+    ListTypeKey.ITALY: [EventFilter.IT, OrderBy.SUBREGION],
     ListTypeKey.ABROAD: [EventFilter.NOT_IT]
 }
 

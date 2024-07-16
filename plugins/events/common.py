@@ -718,6 +718,7 @@ class OrderBy:
     TITLE = "obet"
     TYPE = "obt"
     REGION = "obr"
+    SUBREGION = "obsr"
 
 
 ORDER_BY_DESCRIPTION = {
@@ -726,6 +727,7 @@ ORDER_BY_DESCRIPTION = {
     OrderBy.TITLE: "per nome festa",
     OrderBy.TYPE: "per tipo festa",
     OrderBy.REGION: "per stato/regione",
+    OrderBy.SUBREGION: "per stato/regione e subregione",
 }
 
 
@@ -751,6 +753,10 @@ def extract_order_by(args: List[str]) -> List:
             order_by.append(Event.event_title)
         elif arg == OrderBy.REGION:
             order_by.append(Event.region)
+        elif arg == OrderBy.SUBREGION:
+            # always order by region first, and then subregion
+            order_by.append(Event.region)
+            order_by.append(Event.subregion)
 
     if not order_by:
         # If no OrderBy arg, return the default ordering, based on EventFilter
