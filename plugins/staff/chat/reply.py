@@ -201,7 +201,7 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
         protect_content=get_protect_content_flag(chat)
     )
 
-    # react right after we send the message: if something goes wrong after the message is forwarded,
+    # react as soon as we send the message: if something goes wrong after the message is forwarded,
     # the staff should know that the message has been delivered even if an exception has been raised
     logger.debug("reacting...")
     await update.message.set_reaction(ReactionEmoji.WRITING_HAND)
