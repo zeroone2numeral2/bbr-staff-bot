@@ -24,6 +24,8 @@ INIT_CONVERSATION_STR = ">"
 
 
 def get_protect_content_flag(chat: Chat) -> bool:
+    """returns the corresponding config value, based on teh chat (staff/evaluation)"""
+
     if chat.is_staff_chat:
         return config.settings.protected_admin_replies
     elif chat.is_evaluation_chat:
