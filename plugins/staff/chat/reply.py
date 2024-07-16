@@ -111,7 +111,7 @@ async def on_bot_message_or_automatic_forward_reply(update: Update, context: Con
 
     text = update.message.text or update.message.caption
     if text and text.startswith("."):
-        logger.info("ignoring staff reply starting by .")
+        logger.info("ignoring staff replies starting by .")
         return
 
     user_message: Optional[UserMessage] = None
