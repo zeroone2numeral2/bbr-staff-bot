@@ -222,7 +222,7 @@ async def accept_or_reject(session: Session, bot: Bot, user: User, accepted: boo
     if accepted:
         if not user.stopped:
             if await utilities.test_blocked(bot, user.user_id, raise_on_other_error=False):
-                user.stopped = True
+                user.set_stopped()
 
         if user.stopped:
             logger.info(f"user {user.user_id} blocked the bot: cannot send invite link")
