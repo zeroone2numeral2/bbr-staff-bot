@@ -364,7 +364,6 @@ async def copy_message(
         kwargs["has_spoiler"] = has_spoiler_ovverride if has_spoiler_ovverride is not None else message.has_media_spoiler
         result = await bot.send_photo(photo=message.photo[-1].file_id, **kwargs)
     elif message_type == MessageType.STICKER:
-        kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
         result = await bot.send_sticker(sticker=message.sticker.file_id, **kwargs)
     elif message_type == MessageType.VIDEO:
         kwargs["caption"] = text_or_caption_override if text_or_caption_override is not None else message.caption_html
