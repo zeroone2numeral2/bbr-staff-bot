@@ -1,7 +1,7 @@
 import logging
 
 from sqlalchemy.orm import Session
-from telegram import Update
+from telegram import Update, ReplyParameters
 from telegram.ext import ContextTypes, CommandHandler
 
 import decorators
@@ -17,10 +17,17 @@ logger = logging.getLogger(__name__)
 @decorators.catch_exception()
 @decorators.pass_session()
 async def on_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session):
-    logger.info(f"/info {utilities.log(update)}")
+    logger.info(f"/info or /userhashtag {utilities.log(update)}")
 
     user: User = await common.get_user_instance_from_message(update, context, session)
     if not user:
+        return
+
+    if utilities.get_command(update.message.text) == "userhashtag":
+        logger.info("/userhashtag: sending just the user_id hashtag")
+        # quote the replied-to message if the message is a reply, otherwise the message itself
+        reply_parameters = ReplyParameters(message_id=update.message.message_id) if not update.message.reply_to_message else ReplyParameters(message_id=update.message.reply_to_message.message_id)
+        await update.effective_message.reply_text(f"#id{user.user_id}", reply_parameters=reply_parameters, do_quote=True)
         return
 
     text = f"• <b>name</b>: {user.mention()} ({user.username_pretty(if_none='no username')})\n" \
@@ -96,7 +103,7 @@ async def on_userchats_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 HANDLERS = (
-    (CommandHandler('info', on_info_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
+    (CommandHandler(['info', 'userhashtag'], on_info_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
     (CommandHandler('userchats', on_userchats_command, Filter.SUPERADMIN_AND_PRIVATE | ChatFilter.STAFF | ChatFilter.EVALUATION), Group.NORMAL),
 )
 
