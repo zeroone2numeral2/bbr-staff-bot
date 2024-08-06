@@ -21,8 +21,8 @@ async def on_group_message(update: Update, context: ContextTypes.DEFAULT_TYPE, s
     if not config.settings.save_chat_member_from_message:
         return
 
-    if not chat.is_special_chat() and not chat.save_chat_members:
-        # don't do anything if not one of the special groups and if save_chat_members is false
+    if not chat.is_network_chat() and not chat.save_chat_members:
+        # don't do anything if not one of the network chats and if save_chat_members is false
         return
 
     logger.debug(f"group message: saving chat member {utilities.log(update)}")

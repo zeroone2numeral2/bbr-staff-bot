@@ -151,8 +151,8 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
 async def on_chat_member_update(update: Update, context: CallbackContext, session: Session, chat: Optional[Chat] = None):
     logger.info(f"chat member update {utilities.log(update)}")
 
-    if not chat.is_special_chat() and not chat.save_chat_members:
-        logger.info(f"chat is not a special chat and save_chat_members is false: ignoring update")
+    if not chat.is_network_chat() and not chat.save_chat_members:
+        logger.info(f"chat is not a network chat and save_chat_members is false: ignoring update")
         return
 
     logger.info("saving or updating User objects...")
@@ -177,9 +177,9 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
         logger.info("user joined the users chat")
         await handle_users_chat_join(session, chat, context.bot, update.chat_member)
 
-    if utilities.is_join_update(update.chat_member) and chat.is_special_chat():
+    if utilities.is_join_update(update.chat_member) and chat.is_network_chat():
         if update.chat_member.invite_link and update.chat_member.invite_link.creator.id == context.bot.id:
-            logger.info(f"user joined a special chat ({chat.title}) with a link created by the bot")
+            logger.info(f"user joined a netwrok chat ({chat.title}) with a link created by the bot")
             await handle_events_chat_join_via_bot_link(session, context.bot, update.chat_member)
 
 
