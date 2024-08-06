@@ -56,6 +56,6 @@ async def on_unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE, s
 
 
 HANDLERS = (
-    (CommandHandler(['ban', 'shadowban'], on_ban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
-    (CommandHandler('unban', on_unban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY), Group.NORMAL),
+    (CommandHandler(['ban', 'shadowban'], on_ban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
+    (CommandHandler('unban', on_unban_command, (ChatFilter.STAFF | ChatFilter.EVALUATION) & filters.REPLY & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
 )

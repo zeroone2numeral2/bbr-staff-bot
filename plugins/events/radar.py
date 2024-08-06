@@ -388,13 +388,13 @@ async def on_radar_password(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
 HANDLERS = (
     # radar
-    (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
-    (CommandHandler("start", on_radar_command, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR}$")), Group.NORMAL),
-    (CommandHandler("start", on_radar_command, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR_UNLOCK_TRIGGER}$")), Group.NORMAL),
+    (CommandHandler(["radar", "radar23", "radar24"], on_radar_command, filters=filters.ChatType.PRIVATE & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
+    (CommandHandler("start", on_radar_command, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR}$") & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
+    (CommandHandler("start", on_radar_command, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR_UNLOCK_TRIGGER}$") & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
 
     # unlocking radar
-    (MessageHandler(filters.ChatType.PRIVATE & Filter.RADAR_PASSWORD, on_radar_password), Group.NORMAL),
-    (CommandHandler("start", on_radar_password, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR_UNLOCK}$")), Group.NORMAL),
+    (MessageHandler(filters.ChatType.PRIVATE & Filter.RADAR_PASSWORD & ~filters.UpdateType.EDITED_MESSAGE, on_radar_password), Group.NORMAL),
+    (CommandHandler("start", on_radar_password, filters=filters.ChatType.PRIVATE & filters.Regex(fr"{DeeplinkParam.RADAR_UNLOCK}$") & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
 
     # radar callback queries
     (CallbackQueryHandler(on_change_filter_cb, pattern=r"changefilterto:(?P<filter>\w+)$"), Group.NORMAL),
