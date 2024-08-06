@@ -200,6 +200,10 @@ async def on_chat_shared_update(update: Update, context: ContextTypes.DEFAULT_TY
 
         bot_chat_member.chat.set_as_log_chat()
 
+    logger.info("re-setting NETWORK chats filter...")
+    network_chats: Iterable[Chat] = chats.get_core_chats(session)
+    ChatFilter.NETWORK.chat_ids = {c.chat_id for c in network_chats}
+
     await update.effective_message.reply_text(
         f"{utilities.escape_html(bot_chat_member.chat.title)} impostata come {bot_chat_member.chat.type_pretty()}",
         reply_markup=ReplyKeyboardRemove()
@@ -234,6 +238,12 @@ async def on_setnetworkchat_command(update: Update, context: ContextTypes.DEFAUL
         error_str = f"couldn't {operation_type} {update.effective_chat.title} ({update.effective_chat.id}) as network chat: {e}"
         logger.warning(error_str)
         await context.bot.send_message(update.effective_user.id, error_str, parse_mode=None)
+
+    session.commit()
+
+    logger.info("re-setting NETWORK chats filter...")
+    network_chats: Iterable[Chat] = chats.get_core_chats(session)
+    ChatFilter.NETWORK.chat_ids = {c.chat_id for c in network_chats}
 
 
 HANDLERS = (

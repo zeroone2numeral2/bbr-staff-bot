@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import Iterable
 
 from sqlalchemy.orm import Session
 from telegram.ext import filters
@@ -112,6 +113,7 @@ class ChatFilter:
     EVALUATION = filters.Chat([])
     USERS = filters.Chat([])
     EVENTS = filters.Chat([])
+    NETWORK = filters.Chat([])
     EVENTS_GROUP_POST = filters.SenderChat([])  # filter to catch EVENTS post in the linked group
     EVALUATION_LOG_GROUP_POST = filters.SenderChat([])  # filter to catch log post in the evaluation group
 
@@ -147,6 +149,10 @@ def init_filters():
         if users_chat:
             logger.debug(f"initializing USERS filter ({users_chat.chat_id})...")
             ChatFilter.USERS.chat_ids = {users_chat.chat_id}
+
+        logger.info("initializing NETWORK filter...")
+        network_chats: Iterable[Chat] = chats.get_core_chats(session)
+        ChatFilter.NETWORK.chat_ids = {c.chat_id for c in network_chats}
 
 
 init_filters()
