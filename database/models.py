@@ -223,6 +223,7 @@ class Chat(Base):
     is_events_chat = Column(Boolean, default=False)
     is_log_chat = Column(Boolean, default=False)
     is_modlog_chat = Column(Boolean, default=False)
+    network_chat = Column(Boolean, default=False)  # whether the chat belongs to the network
 
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
@@ -323,7 +324,16 @@ class Chat(Base):
         return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat or self.is_events_chat or self.is_log_chat
 
     def is_network_chat(self):
-        return self.is_special_chat()
+        return self.is_special_chat() or self.network_chat
+
+    def set_as_network_chat(self):
+        self.network_chat = True
+
+    def unset_as_network_chat(self, raise_if_special=True):
+        if raise_if_special and self.is_special_chat():
+            raise ValueError(f"Cannot unset {self.chat_id} as netwrok chat because it is marked as {self.type_pretty()}")
+
+        self.network_chat = False
 
 
 chat_member_union_type = Union[
