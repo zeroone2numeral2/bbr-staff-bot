@@ -322,6 +322,9 @@ class Chat(Base):
     def is_special_chat(self):
         return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat or self.is_events_chat or self.is_log_chat
 
+    def is_network_chat(self):
+        return self.is_special_chat()
+
 
 chat_member_union_type = Union[
     TgChatMember,
