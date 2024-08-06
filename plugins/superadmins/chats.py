@@ -213,11 +213,35 @@ async def on_cancel_selection(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.effective_message.reply_text(f"Okay, selezione annullata", reply_markup=ReplyKeyboardRemove())
 
 
+@decorators.catch_exception()
+@decorators.pass_session(pass_chat=True)
+async def on_setnetworkchat_command(update: Update, context: ContextTypes.DEFAULT_TYPE, session: Session, chat: Chat):
+    logger.info(f"/(un)setnetworkchat {utilities.log(update)}")
+
+    # delete as soon as possible
+    await utilities.delete_messages_safe(update.effective_message)
+
+    operation_type = "unset" if "unsetnetworkchat" in update.effective_message.text.lower() else "set"
+
+    try:
+        if operation_type == "set":
+            chat.set_as_network_chat()
+        else:
+            chat.unset_as_network_chat()
+
+        await context.bot.send_message(update.effective_user.id, f"{update.effective_chat.title} {operation_type} as network chat", parse_mode=None)
+    except Exception as e:
+        error_str = f"couldn't {operation_type} {update.effective_chat.title} ({update.effective_chat.id}) as network chat: {e}"
+        logger.warning(error_str)
+        await context.bot.send_message(update.effective_user.id, error_str, parse_mode=None)
+
+
 HANDLERS = (
     (CommandHandler(["chats"], on_chats_command, filters=Filter.SUPERADMIN), Group.NORMAL),
     (CommandHandler(["setchatold"], on_setchat_group_command, filters=Filter.SUPERADMIN_AND_GROUP), Group.NORMAL),
     (CommandHandler(["setchatold"], on_setchat_private_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
     (CommandHandler(["setchat"], on_setchat_new_command, filters=Filter.SUPERADMIN_AND_PRIVATE), Group.NORMAL),
+    (CommandHandler(["setnetworkchat", "unsetnetworkchat"], on_setnetworkchat_command, filters=Filter.SUPERADMIN & ~filters.SenderChat.ALL), Group.NORMAL),
     (MessageHandler(filters.StatusUpdate.CHAT_SHARED, on_chat_shared_update), Group.NORMAL),
     (MessageHandler(filters.Regex(rf"^{Emoji.CANCEL} annulla selezione$"), on_cancel_selection), Group.NORMAL),
 )

@@ -331,7 +331,7 @@ class Chat(Base):
 
     def unset_as_network_chat(self, raise_if_special=True):
         if raise_if_special and self.is_special_chat():
-            raise ValueError(f"Cannot unset {self.chat_id} as netwrok chat because it is marked as {self.type_pretty()}")
+            raise ValueError(f"Cannot unset {self.chat_id} as network chat because it is marked as {self.type_pretty()}")
 
         self.network_chat = False
 
