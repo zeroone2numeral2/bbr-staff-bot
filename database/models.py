@@ -223,7 +223,7 @@ class Chat(Base):
     is_events_chat = Column(Boolean, default=False)
     is_log_chat = Column(Boolean, default=False)
     is_modlog_chat = Column(Boolean, default=False)
-    network_chat = Column(Boolean, default=False)  # whether the chat belongs to the network
+    network_chat = Column(Boolean, default=False)  # whether the chat belongs to the network (eg. TAZ)
 
     enabled = Column(Boolean, default=True)
     left = Column(Boolean, default=None)
