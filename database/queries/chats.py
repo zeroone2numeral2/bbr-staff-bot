@@ -21,6 +21,7 @@ def get_core_chats(session: Session):
         Chat.is_users_chat == true(),
         Chat.is_log_chat == true(),
         Chat.is_events_chat == true(),
+        Chat.network_chat == true(),
     ))
 
     return session.scalars(query)

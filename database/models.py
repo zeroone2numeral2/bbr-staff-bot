@@ -264,6 +264,8 @@ class Chat(Base):
             return "log chat"
         if self.is_evaluation_chat:
             return "evaluation chat"
+        if self.network_chat:
+            return "network chat"
         else:
             return "chat"
 
@@ -278,6 +280,8 @@ class Chat(Base):
             return "chat log"
         if self.is_evaluation_chat:
             return "chat approvazioni"
+        if self.network_chat:
+            return "chat del network"
         else:
             return "chat"
 
