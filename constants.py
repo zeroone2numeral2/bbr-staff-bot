@@ -588,6 +588,7 @@ class RegionHashtag:
     FRANCIA = "#francia"
     GERMANIA = "#germania"
     GERMANY = "#germany"
+    GIAPPONE = "#giappone"
     GRECIA = "#grecia"
     GREECE = "#greece"
     GUADELOUPE = "#guadeloupe"
@@ -596,6 +597,7 @@ class RegionHashtag:
     IRLANDA = "#irlanda"
     ITALIA = "#italia"
     ITALY = "#italy"
+    JAPAN = "#japan"
     LITUANIA = "#lituania"
     LITHUANIA = "#lithuania"
     MAROCCO = "#marocco"
@@ -658,6 +660,7 @@ class RegionName:
     FINLANDIA = "Finlandia"
     FRANCIA = "Francia"
     GERMANIA = "Germania"
+    GIAPPONE = "Giappone"
     GRECIA = "Grecia"
     INGHILTERRA = "Inghilterra"
     IRLANDA = "Irlanda"
@@ -702,6 +705,7 @@ REGIONS_DATA = {
     RegionName.FINLANDIA: dict(hashtags=[RegionHashtag.FINLAND, RegionHashtag.FINLANDIA], emoji=Flag.FINLAND),
     RegionName.FRANCIA: dict(hashtags=[RegionHashtag.FRANCE, RegionHashtag.FRANCIA, RegionHashtag.FR, RegionHashtag.REUNION, RegionHashtag.GUADELOUPE], emoji=Flag.FRANCE),
     RegionName.GERMANIA: dict(hashtags=[RegionHashtag.GERMANY, RegionHashtag.GERMANIA], emoji=Flag.GERMANY),
+    RegionName.GIAPPONE: dict(hashtags=[RegionHashtag.JAPAN, RegionHashtag.GIAPPONE], emoji=Flag.JAPAN),
     RegionName.GRECIA: dict(hashtags=[RegionHashtag.GRECIA, RegionHashtag.GREECE], emoji=Flag.GREECE),
     RegionName.INGHILTERRA: dict(hashtags=[RegionHashtag.UK, RegionHashtag.ENGLAND], emoji=Flag.ENGLAND),
     RegionName.IRLANDA: dict(hashtags=[RegionHashtag.IRELAND, RegionHashtag.IRLANDA], emoji=Flag.IRELAND),

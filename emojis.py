@@ -103,6 +103,7 @@ class Flag:
     HUNGARY = "🇭🇺"
     IRELAND = "🇮🇪"
     ITALY = "🇮🇹"
+    JAPAN = "🇯🇵"
     NORTHERN_ITALY = "🇮🇹🔼"
     CENTRAL_ITALY = "🇮🇹⏺"
     SOUTHERN_ITALY = "🇮🇹🔽"
