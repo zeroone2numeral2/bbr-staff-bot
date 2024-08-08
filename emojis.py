@@ -119,6 +119,7 @@ class Flag:
     SLOVAKIA = "🇸🇰"
     SLOVENIA = "🇸🇮"
     SPAIN = "🇪🇸"
+    UNITED_STATES = "🇺🇸"
     SWEDEN = "🇸🇪"
     SWISS = "🇨🇭"
     TURKEY = "🇹🇷"

@@ -641,6 +641,9 @@ class RegionHashtag:
     TURKEY = "#turkey"
     UK = "#uk"
     UNGARIA = "#ungaria"
+    UNITED_STATES = "#unitedstates"
+    US = "#us"
+    USA = "#usa"
 
 
 class RegionName:
@@ -682,6 +685,7 @@ class RegionName:
     SLOVACCHIA = "Slovacchia"
     SLOVENIA = "Slovenia"
     SPAGNA = "Spagna"
+    STATI_UNITI = "Stati Uniti"
     SUD_ITALIA = "Sud Italia"
     SVEZIA = "Svezia"
     SVIZZERA = "Svizzera"
@@ -725,6 +729,7 @@ REGIONS_DATA = {
     RegionName.SLOVACCHIA: dict(hashtags=[RegionHashtag.SLOVAKIA], emoji=Flag.SLOVAKIA),
     RegionName.SLOVENIA: dict(hashtags=[RegionHashtag.SLOVENIA], emoji=Flag.SLOVENIA),
     RegionName.SPAGNA: dict(hashtags=[RegionHashtag.SPAIN, RegionHashtag.SPAGNA], emoji=Flag.SPAIN),
+    RegionName.STATI_UNITI: dict(hashtags=[RegionHashtag.US, RegionHashtag.USA, RegionHashtag.UNITED_STATES], emoji=Flag.SPAIN),
     RegionName.SVIZZERA: dict(hashtags=[RegionHashtag.SWISS], emoji=Flag.SWISS),
     # RegionName.SUD_ITALIA: dict(hashtags=[RegionHashtag.SUD_ITALIA, RegionHashtag.SUD_ITALY], emoji=Flag.ITALY),
     RegionName.SVEZIA: dict(hashtags=[RegionHashtag.SVEZIA, RegionHashtag.SWEDEN], emoji=Flag.SWEDEN),
