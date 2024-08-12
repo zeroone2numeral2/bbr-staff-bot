@@ -226,7 +226,12 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
 
     if utilities.is_left_update(update.chat_member):
         # do nothing for now, delete history maybe?
-        logger.info("user was member and left the chat/was kicked (not in the ban list)")
+        logger.info("user was member and left the chat")
+        await log_join_or_leave(True, session, context.bot, update.chat_member)
+        return
+
+    if utilities.is_kicked_update(update.chat_member):
+        logger.info("user was member and was kicked (not in the ban list)")
         await log_join_or_leave(True, session, context.bot, update.chat_member)
         return
 
