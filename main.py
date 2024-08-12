@@ -118,6 +118,7 @@ async def set_flytek_commands(session: Session, bot: ExtBot):
         BotCommand("texts", "testi risposte bot"),
     ]
     staff_chat_commands = [
+        BotCommand("commenta", "in risposta: invia un messaggio come commento ad un post"),
         BotCommand("info", "id/in risposta: info su un utente"),
         BotCommand("ban", "in risposta: banna l'utente dall'utilizzo del bot"),
         BotCommand("shadowban", "in risposta: banna l'utente dall'utilizzo del bot"),
