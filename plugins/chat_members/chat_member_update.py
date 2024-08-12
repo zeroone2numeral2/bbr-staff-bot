@@ -86,7 +86,7 @@ async def remove_nojoin_hashtag(user: User, bot: Bot):
         user.last_request.update_log_chat_message(edited_log_message)
 
 
-async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
+async def check_suspicious_join(session: Session, user: User, chat: Chat, bot: Bot, chat_member_updated: ChatMemberUpdated):
     user: User = users.get_safe(session, chat_member_updated.new_chat_member.user)
     added_by_admin = not chat_member_updated.invite_link and not chat_member_updated.via_chat_folder_invite_link
     if added_by_admin:
@@ -123,19 +123,19 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
         await bot.send_message(log_chat.chat_id, text)
         return
 
+
+async def remove_and_revoke_invite_link(user: User, chat: Chat, bot: Bot):
     if user.last_request_id:
-        # when a new member joins the chat, always try to remove the last link we sent them
+        # when a new member joins the users chat, always try to remove the last link we sent them
         if user.last_request.accepted_message_message_id:
             # always remove the inline keyboard
             logger.debug(f"removing keyboard from message_id {user.last_request.accepted_message_message_id}")
-            try:
-                await bot.edit_message_reply_markup(
-                    user.user_id,
-                    user.last_request.accepted_message_message_id,
-                    reply_markup=None
-                )
-            except (TelegramError, BadRequest) as e:
-                logger.error(f"error while removing reply makrup: {e}")
+            await utilities.remove_reply_markup_safe(
+                bot,
+                user.user_id,
+                user.last_request.accepted_message_message_id,
+                raise_if_exception_is_not_message_not_modified=False  # do not raise an exception
+            )
 
         if user.last_request.invite_link_can_be_revoked_after_join and not user.last_request.invite_link_revoked:
             # if the user was sent the folder link instead of a joinchat link, invite_link_can_be_revoked_after_join will be False
@@ -151,33 +151,42 @@ async def handle_users_chat_join(session: Session, chat: Chat, bot: Bot, chat_me
 async def on_chat_member_update(update: Update, context: CallbackContext, session: Session, chat: Optional[Chat] = None):
     logger.info(f"chat member update {utilities.log(update)}")
 
-    if not chat.is_network_chat() and not chat.save_chat_members:
-        logger.info(f"chat is not a network chat and save_chat_members is false: ignoring update")
+    if chat.is_network_chat() or chat.save_chat_members:
+        # update User, Chat and ChatMember only if it's a network chat, or we manually set to save ChatMembers
+
+        logger.info("saving or updating User objects...")
+        save_or_update_users_from_chat_member_update(session, update, commit=True)
+        if update.effective_chat.type in (TelegramChat.CHANNEL, TelegramChat.SUPERGROUP):
+            logger.info("saving or updating Chat object...")
+            save_or_update_chat_from_chat_member_update(session, update, commit=True)
+
+        logger.info("saving new chat_member object...")
+        db_member_record: DbChatMember = save_chat_member(session, update)
+
+        if db_member_record.is_member():
+            # mark the user as "has_been_member" even if it isn't the users chat
+            db_member_record.has_been_member = True
+
+    user: User = users.get_safe(session, update.chat_member.new_chat_member.user)
+
+    if not chat.is_network_chat():
+        logger.info(f"chat is not a network chat: exiting")
         return
-
-    logger.info("saving or updating User objects...")
-    save_or_update_users_from_chat_member_update(session, update, commit=True)
-    if update.effective_chat.type in (TelegramChat.CHANNEL, TelegramChat.SUPERGROUP):
-        logger.info("saving or updating Chat object...")
-        save_or_update_chat_from_chat_member_update(session, update, commit=True)
-
-    logger.info("saving new chat_member object...")
-    db_member_record: DbChatMember = save_chat_member(session, update)
-
-    if db_member_record.is_member():
-        # mark the user as "has_been_member" even if it isn't the users chat
-        db_member_record.has_been_member = True
 
     if utilities.is_left_update(update.chat_member):
         # do nothing for now, delete history maybe?
         logger.info("user was member and left the chat")
         return
 
-    if utilities.is_join_update(update.chat_member) and chat.is_users_chat:
-        logger.info("user joined the users chat")
-        await handle_users_chat_join(session, chat, context.bot, update.chat_member)
+    if utilities.is_join_update(update.chat_member):
+        logger.info("user joined a network chat")
+        await check_suspicious_join(session, user, chat, context.bot, update.chat_member)
 
-    if utilities.is_join_update(update.chat_member) and chat.is_network_chat():
+        if chat.is_users_chat:
+            logger.info("user joined the users chat: trying to remove and revoke invite link")
+            await remove_and_revoke_invite_link(user, chat, context.bot)
+
+        # this will check in the new InviteLink table and do what needs to be done with the invite link
         if update.chat_member.invite_link and update.chat_member.invite_link.creator.id == context.bot.id:
             logger.info(f"user joined a netwrok chat ({chat.title}) with a link created by the bot")
             await handle_events_chat_join_via_bot_link(session, context.bot, update.chat_member)

@@ -757,11 +757,11 @@ async def edit_text_by_ids_safe(
             raise e
 
 
-async def remove_reply_markup_safe(bot, chat_id: int, message_id: int):
+async def remove_reply_markup_safe(bot: Bot, chat_id: int, message_id: int, raise_if_exception_is_not_message_not_modified=True):
     try:
         await bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
     except BadRequest as e:
-        if "message is not modified" not in e.message.lower():
+        if raise_if_exception_is_not_message_not_modified and "message is not modified" not in e.message.lower():
             raise e
 
 
