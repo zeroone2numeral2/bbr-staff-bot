@@ -24,6 +24,7 @@ class RequestId:
     EVALUATION = 3
     EVENTS = 4
     LOG = 5
+    MODLOG = 6
 
 
 REQUEST_ID_TO_DESTINATION = {
@@ -32,6 +33,7 @@ REQUEST_ID_TO_DESTINATION = {
     RequestId.EVALUATION: ChatDestination.EVALUATION,
     RequestId.EVENTS: ChatDestination.EVENTS,
     RequestId.LOG: ChatDestination.LOG,
+    RequestId.MODLOG: ChatDestination.MODLOG,
 }
 
 
@@ -50,8 +52,9 @@ SET_CHAT_MARKUP = ReplyKeyboardMarkup([
     ],
     [
         KeyboardButton(f"{Emoji.ANNOUNCEMENT} eventi", request_chat=KeyboardButtonRequestChat(RequestId.EVENTS, chat_is_channel=True, bot_is_member=True)),
-        KeyboardButton(f"{Emoji.CANCEL} annulla selezione")
-    ]
+        KeyboardButton(f"{Emoji.ANNOUNCEMENT} modlog", request_chat=KeyboardButtonRequestChat(RequestId.MODLOG, chat_is_channel=True, bot_is_member=True)),
+    ],
+    [KeyboardButton(f"{Emoji.CANCEL} annulla selezione")]
 ], resize_keyboard=True)
 
 
@@ -199,6 +202,11 @@ async def on_chat_shared_update(update: Update, context: ContextTypes.DEFAULT_TY
         session.commit()
 
         bot_chat_member.chat.set_as_log_chat()
+    elif destination_type == ChatDestination.MODLOG:
+        chats.reset_modlog_chat(session)
+        session.commit()
+
+        bot_chat_member.chat.set_as_modlog_chat()
 
     logger.info("re-setting NETWORK chats filter...")
     network_chats: Iterable[Chat] = chats.get_core_chats(session)

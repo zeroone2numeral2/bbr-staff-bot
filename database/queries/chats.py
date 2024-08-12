@@ -20,6 +20,7 @@ def get_core_chats(session: Session):
         Chat.is_evaluation_chat == true(),
         Chat.is_users_chat == true(),
         Chat.is_log_chat == true(),
+        Chat.is_modlog_chat == true(),
         Chat.is_events_chat == true(),
         Chat.network_chat == true(),
     ))
@@ -37,6 +38,10 @@ def reset_users_chat(session: Session):
 
 def reset_log_chat(session: Session):
     session.execute(update(Chat).values(is_log_chat=False))
+
+
+def reset_modlog_chat(session: Session):
+    session.execute(update(Chat).values(is_modlog_chat=False))
 
 
 def reset_events_chat(session: Session):

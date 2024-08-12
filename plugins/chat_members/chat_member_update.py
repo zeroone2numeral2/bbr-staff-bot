@@ -3,6 +3,7 @@ from typing import Optional, List
 
 from sqlalchemy.orm import Session
 from telegram import Update, ChatMemberUpdated, Bot, Chat as TelegramChat
+from telegram.constants import ParseMode
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import ChatMemberHandler, CallbackContext
 
@@ -146,6 +147,56 @@ async def remove_and_revoke_invite_link(user: User, chat: Chat, bot: Bot):
         await remove_nojoin_hashtag(user, bot)
 
 
+async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bot, chat_member_updated: ChatMemberUpdated):
+    user_joined = not user_left_or_kicked
+
+    modlog_chat = chats.get_chat(session, Chat.is_modlog_chat)
+    if not modlog_chat:
+        logger.warning(f"no modlog chat set: we won't log join/leave")
+        return
+
+    chat = chat_member_updated.chat
+    new_user = chat_member_updated.new_chat_member.user
+    from_user = chat_member_updated.from_user
+
+    event_type = "USCITA_UTENTE" if user_left_or_kicked else "INGRESO_UTENTE"
+    event_emoji = Emoji.MOON if user_left_or_kicked else Emoji.SUN
+    admin_action_type = "rimosso" if user_left_or_kicked else "aggiunto"
+
+    chat_string = f"{Emoji.UFO} <b>chat:</b> {utilities.escape(chat.title)} • #chat{str(chat.id).replace('-100', '')}"
+    user_string = f"{Emoji.ALIEN} <b>user:</b> {utilities.mention_escaped(new_user)}"
+    if new_user.username:
+        user_string += f" • @{new_user.username}"
+    user_string += f" • #id{new_user.id}"
+
+    text = f"{event_emoji} <b>#{event_type}</b>\n\n{chat_string}\n{user_string}"
+
+    if from_user.id != new_user.id:
+        # if different, the user was added/removed by an admin
+        text += f"\n<b>{admin_action_type} da:</b> {utilities.mention_escaped(from_user)} • #admin{from_user.id}"
+        text += f" (#modaction)"  # we can use this hashtag to search for actions that were taken by admins
+
+    if chat_member_updated.invite_link:
+        invite_link = chat_member_updated.invite_link
+        if invite_link.is_primary:
+            invite_link_name = "link d'invito primario"
+        elif invite_link.name:
+            invite_link_name = f"\"{utilities.escape_html(chat_member_updated.invite_link.name)}\""
+        else:
+            invite_link_name = "link senza nome"
+
+        invite_link_id = utilities.extract_invite_link_id(invite_link.invite_link)
+        created_by = invite_link.creator
+        admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
+        text += f"\n\n{Emoji.LINK} <b>link:</b> #link{invite_link_id} ({invite_link_name}) <b>generato da</b> {admin_mention} • #admin{created_by.id}"
+
+        if chat_member_updated.via_chat_folder_invite_link:
+            text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
+                     f"aggiungere la cartella del network")
+
+    await bot.send_message(modlog_chat.chat_id, text, parse_mode=ParseMode.HTML)
+
+
 @decorators.catch_exception(silent=True)
 @decorators.pass_session(pass_chat=True)
 async def on_chat_member_update(update: Update, context: CallbackContext, session: Session, chat: Optional[Chat] = None):
@@ -175,11 +226,19 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
 
     if utilities.is_left_update(update.chat_member):
         # do nothing for now, delete history maybe?
-        logger.info("user was member and left the chat")
+        logger.info("user was member and left the chat/was kicked (not in the ban list)")
+        await log_join_or_leave(True, session, context.bot, update.chat_member)
+        return
+
+    if utilities.is_banned_update(update.chat_member):
+        logger.info("user was member and was banned")
+        await log_join_or_leave(True, session, context.bot, update.chat_member)
         return
 
     if utilities.is_join_update(update.chat_member):
         logger.info("user joined a network chat")
+        await log_join_or_leave(False, session, context.bot, update.chat_member)
+
         await check_suspicious_join(session, user, chat, context.bot, update.chat_member)
 
         if chat.is_users_chat:

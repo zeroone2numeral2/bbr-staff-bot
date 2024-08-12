@@ -43,6 +43,7 @@ class Emoji:
     LINE = "➖"
     LINK = "🔗"
     MIDDLE_FINGER = "🖕"
+    MOON = "🌙"
     NUMBERS = "🔢"
     PEACE = "🖖"
     PENCIL = "✏️"

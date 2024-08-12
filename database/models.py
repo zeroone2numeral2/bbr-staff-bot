@@ -202,6 +202,7 @@ class ChatDestination:
     USERS = "users"
     EVALUATION = "evaluation"
     LOG = "log"
+    MODLOG = "modlog"
     EVENTS = "venets"
 
 
@@ -209,7 +210,7 @@ class Chat(Base):
     __tablename__ = 'chats'
 
     DESTINATION_TYPES_GROUP = (ChatDestination.STAFF, ChatDestination.USERS, ChatDestination.EVALUATION)
-    DESTINATION_TYPES_CHANNEL = (ChatDestination.LOG, ChatDestination.EVENTS)
+    DESTINATION_TYPES_CHANNEL = (ChatDestination.LOG, ChatDestination.MODLOG, ChatDestination.EVENTS)
 
     chat_id = Column(Integer, primary_key=True)
     title = Column(String, default=None)
@@ -262,6 +263,8 @@ class Chat(Base):
             return "events chat"
         if self.is_log_chat:
             return "log chat"
+        if self.is_modlog_chat:
+            return "moderation log chat"
         if self.is_evaluation_chat:
             return "evaluation chat"
         if self.network_chat:
@@ -318,14 +321,24 @@ class Chat(Base):
 
     def set_as_log_chat(self):
         self.is_log_chat = True
+
+        self.is_modlog_chat = False
+        self.is_events_chat = False
+
+    def set_as_modlog_chat(self):
+        self.is_modlog_chat = True
+
+        self.is_log_chat = False
         self.is_events_chat = False
 
     def set_as_events_chat(self):
         self.is_events_chat = True
+
         self.is_log_chat = False
+        self.is_modlog_chat = False
 
     def is_special_chat(self):
-        return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat or self.is_events_chat or self.is_log_chat
+        return self.is_users_chat or self.is_staff_chat or self.is_evaluation_chat or self.is_events_chat or self.is_log_chat or self.is_modlog_chat
 
     def is_network_chat(self):
         return self.is_special_chat() or self.network_chat

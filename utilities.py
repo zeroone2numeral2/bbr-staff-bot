@@ -473,7 +473,7 @@ def is_join_update(chat_member_update: ChatMemberUpdated):
 
 
 def is_left_update(chat_member_update: ChatMemberUpdated) -> bool:
-    if chat_member_update.from_user != chat_member_update.new_chat_member.user.id:
+    if chat_member_update.from_user.id != chat_member_update.new_chat_member.user.id:
         # performer of the action (chat_member_update.from_user) != user that changed status: user was kicked (didn't leave)
         return False
 
@@ -483,13 +483,23 @@ def is_left_update(chat_member_update: ChatMemberUpdated) -> bool:
 
 
 def is_kicked_update(chat_member_update: ChatMemberUpdated) -> bool:
-    if chat_member_update.from_user == chat_member_update.new_chat_member.user.id:
-        # performer of the action (chat_member_update.from_user) == user that changed status: user left (not kicked)
+    if chat_member_update.from_user.id == chat_member_update.new_chat_member.user.id:
+        # performer of the action (chat_member_update.from_user) == user that changed status: user left (wasn't kicked)
         return False
 
     member_statuses = (ChatMember.MEMBER, ChatMember.RESTRICTED, ChatMember.ADMINISTRATOR, ChatMember.OWNER)
 
     return chat_member_update.old_chat_member.status in member_statuses and chat_member_update.new_chat_member.status == ChatMember.LEFT
+
+
+def is_banned_update(chat_member_update: ChatMemberUpdated) -> bool:
+    if chat_member_update.from_user.id == chat_member_update.new_chat_member.user.id:
+        # performer of the action (chat_member_update.from_user) == user that changed status: user left (not kicked)
+        return False
+
+    member_statuses = (ChatMember.MEMBER, ChatMember.RESTRICTED, ChatMember.ADMINISTRATOR, ChatMember.OWNER)
+
+    return chat_member_update.old_chat_member.status in member_statuses and chat_member_update.new_chat_member.status == ChatMember.BANNED
 
 
 def is_unban_update(chat_member_update: ChatMemberUpdated) -> bool:
