@@ -53,6 +53,7 @@ class Emoji:
     PHONE = "📱"
     PIN_2 = "📌"
     PIRATE = "🏴‍☠️"
+    PLANET = "🌐"
     PLUS = "➕"
     POINT_DOWN = "👇"
     QUESTION = "❓"
