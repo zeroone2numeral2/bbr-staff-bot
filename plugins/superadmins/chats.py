@@ -25,8 +25,10 @@ class RequestId:
     EVENTS = 4
     LOG = 5
     MODLOG = 6
-    NETWORK_ADD = 7
-    NETWORK_REMOVE = 8
+    NETWORK_ADD_GROUP = 7
+    NETWORK_REMOVE_GROUP = 8
+    NETWORK_ADD_CHANNEL = 9
+    NETWORK_REMOVE_CHANNEL = 10
 
 
 REQUEST_ID_TO_DESTINATION = {
@@ -36,8 +38,10 @@ REQUEST_ID_TO_DESTINATION = {
     RequestId.EVENTS: ChatDestination.EVENTS,
     RequestId.LOG: ChatDestination.LOG,
     RequestId.MODLOG: ChatDestination.MODLOG,
-    RequestId.NETWORK_ADD: "network_add",
-    RequestId.NETWORK_REMOVE: "network_remove"
+    RequestId.NETWORK_ADD_GROUP: "network_add",
+    RequestId.NETWORK_REMOVE_GROUP: "network_remove",
+    RequestId.NETWORK_ADD_CHANNEL: "network_add",
+    RequestId.NETWORK_REMOVE_CHANNEL: "network_remove"
 }
 
 
