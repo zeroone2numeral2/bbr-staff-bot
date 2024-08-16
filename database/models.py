@@ -281,6 +281,8 @@ class Chat(Base):
             return "chat eventi"
         if self.is_log_chat:
             return "chat log"
+        if self.is_modlog_chat:
+            return "chat log moderazione"
         if self.is_evaluation_chat:
             return "chat approvazioni"
         if self.network_chat:
