@@ -19,6 +19,7 @@ class Emoji:
     CRYSTAL_SPHERE = "🔮"
     DISCO = "🪩"
     DONE = "✅"
+    DOOR = "🚪"
     DUCK = "🦆"
     EARTH = "🌍"
     ENVELOPE = "✉️"
