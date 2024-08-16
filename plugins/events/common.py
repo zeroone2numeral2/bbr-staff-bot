@@ -280,6 +280,7 @@ def parse_message_entities_list(hashtags_list: List[str], event: Event):
         or "#rimandato" in hashtags_list
         or "#posticipato" in hashtags_list
         or "#posticipata" in hashtags_list
+        or "#fake" in hashtags_list
     ):
         event.canceled = True
     else:
