@@ -58,9 +58,13 @@ SET_CHAT_MARKUP = ReplyKeyboardMarkup([
         KeyboardButton(f"{Emoji.ANNOUNCEMENT} eventi", request_chat=KeyboardButtonRequestChat(RequestId.EVENTS, chat_is_channel=True, bot_is_member=True)),
         KeyboardButton(f"{Emoji.ANNOUNCEMENT} modlog", request_chat=KeyboardButtonRequestChat(RequestId.MODLOG, chat_is_channel=True, bot_is_member=True)),
     ],
-[
-        KeyboardButton(f"{Emoji.PLANET} nuova chat network", request_chat=KeyboardButtonRequestChat(RequestId.NETWORK_ADD, chat_is_channel=True, bot_is_member=True)),
-        KeyboardButton(f"{Emoji.PLANET} rimuovi chat network", request_chat=KeyboardButtonRequestChat(RequestId.NETWORK_REMOVE, chat_is_channel=True, bot_is_member=True)),
+    [
+        KeyboardButton(f"{Emoji.PLANET} nuovo gruppo network", request_chat=KeyboardButtonRequestChat(RequestId.NETWORK_ADD, chat_is_channel=False, bot_is_member=True)),
+        KeyboardButton(f"{Emoji.PLANET} rimuovi gruppo network", request_chat=KeyboardButtonRequestChat(RequestId.NETWORK_REMOVE, chat_is_channel=False, bot_is_member=True)),
+    ],
+    [
+        KeyboardButton(f"{Emoji.PLANET} nuovo canale network", request_chat=KeyboardButtonRequestChat(RequestId.NETWORK_ADD, chat_is_channel=True, bot_is_member=True)),
+        KeyboardButton(f"{Emoji.PLANET} rimuovi canale network", request_chat=KeyboardButtonRequestChat(RequestId.NETWORK_REMOVE, chat_is_channel=True, bot_is_member=True)),
     ],
     [KeyboardButton(f"{Emoji.CANCEL} annulla selezione")]
 ], resize_keyboard=True)
