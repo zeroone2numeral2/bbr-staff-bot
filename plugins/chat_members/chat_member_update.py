@@ -247,7 +247,10 @@ async def on_chat_member_update(update: Update, context: CallbackContext, sessio
 
     if utilities.is_join_update(update.chat_member):
         logger.info("user joined a network chat")
-        await log_join_or_leave(False, session, context.bot, update.chat_member)
+        try:
+            await log_join_or_leave(False, session, context.bot, update.chat_member)
+        except Exception as e:
+            logger.error(f"error while logging join: {e}", exc_info=True)
 
         await check_suspicious_join(session, user, chat, context.bot, update.chat_member)
 
