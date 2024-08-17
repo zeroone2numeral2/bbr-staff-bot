@@ -1867,7 +1867,7 @@ class InviteLink(Base):
     __tablename__ = 'invite_links'
     __allow_unmapped__ = True
 
-    link_id = Column(Integer, primary_key=True, autoincrement=True)
+    link_id = Column(Integer, primary_key=True, autoincrement=True)  # '-' are replaced by '_'
     chat_id = Column(Integer, ForeignKey('chats.chat_id'))
 
     destination = Column(String, default=None)

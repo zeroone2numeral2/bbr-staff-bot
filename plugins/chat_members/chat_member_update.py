@@ -111,7 +111,7 @@ async def check_suspicious_join(session: Session, user: User, chat: Chat, bot: B
         else:
             invite_link_name = "link senza nome"
 
-        logger.debug(f"chat_member_updated (type: {type(chat_member_updated)}): {json.dumps(chat_member_updated.to_dict(), indent=2)}")
+        # logger.debug(f"chat_member_updated (type: {type(chat_member_updated)}): {json.dumps(chat_member_updated.to_dict(), indent=2)}")
         invite_link_id = utilities.extract_invite_link_id(chat_member_updated.invite_link.invite_link)
         created_by = chat_member_updated.invite_link.creator
         admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
@@ -196,8 +196,7 @@ async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bo
             text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
                      f"aggiungere la cartella del network")
 
-    logger.debug(f"chat_member_updated (type: {type(chat_member_updated)}): {json.dumps(chat_member_updated.to_dict(), indent=2)}")
-
+    # logger.debug(f"chat_member_updated (type: {type(chat_member_updated)}): {json.dumps(chat_member_updated.to_dict(), indent=2)}")
     if hasattr(chat_member_updated, "via_join_request") and chat_member_updated.via_join_request:
         # true if the user joined the chat after sending a direct join request without using an
         # invite link and being approved by an administrator. so when true, invite_link is probably not set

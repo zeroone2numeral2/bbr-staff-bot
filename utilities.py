@@ -513,8 +513,10 @@ def is_unban_update(chat_member_update: ChatMemberUpdated) -> bool:
 
 
 def extract_invite_link_id(invite_link: str) -> str:
-    match = re.search(r"t\.me/\+(?P<invite_link>\w+)\b", invite_link, re.I)
-    return match.group("invite_link")
+    match = re.search(r"t\.me/\+(?P<invite_link>[\w-]+)\b", invite_link, re.I)
+
+    # we replace '-' with '_' because otherwise hashtags with the link_id wouldn't work
+    return match.group("invite_link").replace("-", "_")
 
 
 def is_reply_to_forwarded_channel_message(message: Message) -> bool:
