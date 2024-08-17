@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional, List
 
@@ -110,12 +111,14 @@ async def check_suspicious_join(session: Session, user: User, chat: Chat, bot: B
         else:
             invite_link_name = "link senza nome"
 
+        logger.debug(f"chat_member_updated (type: {type(chat_member_updated)}): {json.dumps(chat_member_updated.to_dict(), indent=2)}")
         invite_link_id = utilities.extract_invite_link_id(chat_member_updated.invite_link.invite_link)
         created_by = chat_member_updated.invite_link.creator
         admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
         text = f"{Emoji.LINK} <b>#JOIN_SENZA_RICHIESTA</b> di {user_mention} • #id{user.user_id}\n\n" \
-               f"link: #link{invite_link_id} ({invite_link_name})\n" \
-               f"generato da: {admin_mention} • #admin{created_by.id}"
+               f"{Emoji.UFO} <b>#chat{str(chat.chat_id).replace('-100', '')}</b> • {utilities.escape(chat.title)}\n" \
+               f"<b>link</b>: #link{invite_link_id} ({invite_link_name})\n" \
+               f"<b>generato da</b>: {admin_mention} • #admin{created_by.id}"
 
         if chat_member_updated.via_chat_folder_invite_link:
             text += (f"\n\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
@@ -192,6 +195,8 @@ async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bo
         if chat_member_updated.via_chat_folder_invite_link:
             text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
                      f"aggiungere la cartella del network")
+
+    logger.debug(f"chat_member_updated (type: {type(chat_member_updated)}): {json.dumps(chat_member_updated.to_dict(), indent=2)}")
 
     if hasattr(chat_member_updated, "via_join_request") and chat_member_updated.via_join_request:
         # true if the user joined the chat after sending a direct join request without using an
