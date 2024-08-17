@@ -275,6 +275,9 @@ async def post_init(application: Application) -> None:
 def main():
     utilities.load_logging_config('logging.json')
 
+    import telegram
+    logger.info(f"ptb version: {telegram.__version__}")
+
     app: Application = builder.post_init(post_init).build()
 
     load_modules(app, "plugins", manifest_file_name=config.handlers.manifest)

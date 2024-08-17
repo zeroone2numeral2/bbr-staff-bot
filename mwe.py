@@ -1,7 +1,8 @@
+import json
 import logging
 
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButtonRequestChat, KeyboardButton, ReplyKeyboardRemove
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, ChatMemberHandler
 
 from config import config
 
@@ -12,24 +13,15 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    kwargs = {"caption": "", "reply_markup": None, "protect_content": None, "message_thread_id": None, "has_spoiler": None}
-    print(kwargs)
-    await context.bot.send_photo(
-        chat_id=update.message.chat.id,
-        photo=update.message.photo[-1].file_id,
-        **kwargs
-    )
-
-
-async def on_chat_shared_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(f"{update.message.chat_shared}", reply_markup=ReplyKeyboardRemove())
+async def on_chat_member_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print(update.to_dict())
+    print(update.chat_member.via_join_request)
 
 
 def main() -> None:
     application = Application.builder().token(config.telegram.token).build()
 
-    application.add_handler(MessageHandler(filters.PHOTO, on_photo))
+    application.add_handler(ChatMemberHandler(on_chat_member_update, ChatMemberHandler.ANY_CHAT_MEMBER))
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
