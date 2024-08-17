@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 async def on_chat_member_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print(update.to_dict())
+    from pprint import pprint
+    pprint(update.to_dict())
     print(update.chat_member.via_join_request)
 
 
