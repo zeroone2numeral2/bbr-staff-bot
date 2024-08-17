@@ -194,7 +194,7 @@ async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bo
             text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
                      f"aggiungere la cartella del network")
 
-    if chat_member_updated.via_join_request:
+    if hasattr(chat_member_updated, "via_join_request") and chat_member_updated.via_join_request:
         # true if the user joined the chat after sending a direct join request without using an
         # invite link and being approved by an administrator. so when true, invite_link is probably not set
         text += f"\n{Emoji.DOOR} l'utente ha inviato una richiesta di unirsi senza utilizzare un link d'invito"
