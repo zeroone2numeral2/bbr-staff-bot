@@ -38,6 +38,7 @@ class Emoji:
     HELLO = "👋"
     HOUSE = "🏠"
     INFO = "ℹ️"
+    JOKER = "🃏"
     KEY = "🔑"
     LEFT_RIGHT = "↔️"
     LENS = "🔎"

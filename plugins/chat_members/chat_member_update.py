@@ -115,13 +115,13 @@ async def check_suspicious_join(session: Session, user: User, chat: Chat, bot: B
         invite_link_id = utilities.extract_invite_link_id(chat_member_updated.invite_link.invite_link)
         created_by = chat_member_updated.invite_link.creator
         admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
-        text = f"{Emoji.USER_ICON} <b>#JOIN_SENZA_RICHIESTA</b> di {user_mention} • #id{user.user_id}\n\n" \
+        text = f"{Emoji.ALIEN} <b>#JOIN_SENZA_RICHIESTA</b> di {user_mention} • #id{user.user_id}\n\n" \
                f"{Emoji.UFO} <b>#chat{str(chat.chat_id).replace('-100', '')}</b> • {utilities.escape(chat.title)}\n\n" \
                f"{Emoji.LINK} <b>link</b>: #link{invite_link_id} ({invite_link_name})\n" \
-               f"<b>generato da</b>: {admin_mention} • #admin{created_by.id}"
+               f"{Emoji.PERSON} <b>generato da</b>: {admin_mention} • #admin{created_by.id}"
 
         if chat_member_updated.via_chat_folder_invite_link:
-            text += (f"\n\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
+            text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
                      f"aggiungere la cartella del network")
 
         await bot.send_message(log_chat.chat_id, text)
@@ -190,7 +190,8 @@ async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bo
         invite_link_id = utilities.extract_invite_link_id(invite_link.invite_link)
         created_by = invite_link.creator
         admin_mention = created_by.mention_html(utilities.escape_html(created_by.full_name))
-        text += f"\n\n{Emoji.LINK} <b>link:</b> #link{invite_link_id} ({invite_link_name}) <b>generato da</b> {admin_mention} • #admin{created_by.id}"
+        text += (f"\n\n{Emoji.LINK} <b>link:</b> #link{invite_link_id} ({invite_link_name})\n"
+                 f"{Emoji.PERSON} <b>generato da</b> {admin_mention} • #admin{created_by.id}")
 
         if chat_member_updated.via_chat_folder_invite_link:
             text += (f"\n{Emoji.FOLDER} per unirsi, l'utente ha utilizzato il link generato da {admin_mention} per "
