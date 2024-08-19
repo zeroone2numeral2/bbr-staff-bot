@@ -166,8 +166,8 @@ async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bo
     event_emoji = Emoji.MOON if user_left_or_kicked else Emoji.SUN
     admin_action_type = "rimosso" if user_left_or_kicked else "aggiunto"
 
-    chat_string = f"{Emoji.UFO} <b>#chat{str(chat.id).replace('-100', '')}</b> • {utilities.escape(chat.title)}"
-    user_string = f"{Emoji.ALIEN} <b>#id{new_user.id}</b> • {utilities.mention_escaped(new_user)}"
+    chat_string = f"{Emoji.UFO} {utilities.escape(chat.title)} • <b>#chat{str(chat.id).replace('-100', '')}</b>"
+    user_string = f"{Emoji.ALIEN} {utilities.mention_escaped(new_user)} • <b>#id{new_user.id}</b>"
     if new_user.username:
         user_string += f" • @{new_user.username}"
 
