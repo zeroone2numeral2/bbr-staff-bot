@@ -162,7 +162,7 @@ async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bo
     new_user = chat_member_updated.new_chat_member.user
     from_user = chat_member_updated.from_user
 
-    event_type = "USCITA_UTENTE" if user_left_or_kicked else "INGRESO_UTENTE"
+    event_type = "USCITA_UTENTE" if user_left_or_kicked else "INGRESSO_UTENTE"
     event_emoji = Emoji.MOON if user_left_or_kicked else Emoji.SUN
     admin_action_type = "rimosso" if user_left_or_kicked else "aggiunto"
 
