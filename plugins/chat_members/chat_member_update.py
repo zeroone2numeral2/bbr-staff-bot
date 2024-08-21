@@ -167,15 +167,21 @@ async def log_join_or_leave(user_left_or_kicked: bool, session: Session, bot: Bo
     admin_action_type = "rimosso" if user_left_or_kicked else "aggiunto"
 
     chat_string = f"{Emoji.UFO} {utilities.escape(chat.title)} • <b>#chat{str(chat.id).replace('-100', '')}</b>"
-    user_string = f"{Emoji.ALIEN} {utilities.mention_escaped(new_user)} • <b>#id{new_user.id}</b>"
+    user_string = f"{Emoji.ALIEN} {utilities.mention_escaped(new_user)}"
     if new_user.username:
         user_string += f" • @{new_user.username}"
+    user_string += f" • <b>#id{new_user.id}</b>"
 
     text = f"{event_emoji} <b>#{event_type}</b>\n\n{chat_string}\n{user_string}"
 
     if from_user.id != new_user.id:
-        # if different, the user was added/removed by an admin
-        text += f"\n<b>{admin_action_type} da:</b> {utilities.mention_escaped(from_user)} • #admin{from_user.id}"
+        # if the two user ids are different, the user was added/removed/accepted by an admin
+
+        if chat_member_updated.invite_link and chat_member_updated.invite_link.creates_join_request:
+            # join request approved by an admin
+            admin_action_type = "richiesta approvata"
+
+        text += f"\n{Emoji.PERSON} <b>{admin_action_type} da:</b> {utilities.mention_escaped(from_user)} • #admin{from_user.id}"
         text += f" (#modaction)"  # we can use this hashtag to search for actions that were taken by admins
 
     if chat_member_updated.invite_link:
