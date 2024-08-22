@@ -619,7 +619,7 @@ HANDLERS = (
     (CommandHandler(["invalidevents", "ie"], on_invalid_events_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["getfilters", "gf"], on_getfilters_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     (CommandHandler(["reparse", "rp"], on_reparse_command, filters=filters.REPLY & filters.ChatType.PRIVATE), Group.NORMAL),
-    (PrefixHandler(COMMAND_PREFIXES, ["comment", "commenta", "cmt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
+    (PrefixHandler(COMMAND_PREFIXES, ["c", "comment", "commenta", "cmt"], on_comment_command, filters=ChatFilter.STAFF & filters.REPLY & ~filters.UpdateType.EDITED_MESSAGE), Group.NORMAL),
     (CommandHandler(["getpath"], on_getpath_command, filters=filters.ChatType.PRIVATE), Group.NORMAL),
     # events chat message link actions
     (MessageHandler(filters.ChatType.PRIVATE & Filter.EVENTS_CHAT_MESSAGE_LINK, on_event_chat_message_link), Group.NORMAL),
